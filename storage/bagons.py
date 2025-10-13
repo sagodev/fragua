@@ -1,9 +1,10 @@
 """Bagon: temporary container for extracted data."""
 
-from typing import Any, Dict, Optional
-import pandas as pd
+from typing import Any, Dict
 from dataclasses import dataclass, field
 from datetime import datetime
+import pandas as pd
+
 
 @dataclass
 class Bagon:
@@ -15,6 +16,7 @@ class Bagon:
         data: pandas.DataFrame with the extracted rows.
         metadata: dictionary for storing source, timing, row counts, etc.
     """
+
     name: str
     data: pd.DataFrame
     metadata: Dict[str, Any] = field(default_factory=dict)
