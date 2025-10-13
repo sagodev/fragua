@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .DS_Store
 tests/
+DESIGN.md
+DEVELOPMENT_PLAN.md
+plan_español.txt
+furnaces/
