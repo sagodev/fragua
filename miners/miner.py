@@ -2,10 +2,10 @@
 
 from typing import Iterable, List
 from time import sleep, time
-from ..miners.pickaxes.base_pickaxe import Pickaxe
-from ..storage.bagons import Bagon
-from ..core.logger import get_logger
-from ..core.metrics import MetricsRegistry
+from miners.pickaxes.base_pickaxe import Pickaxe
+from storage.bagons import Bagon
+from core.logger import get_logger
+from core.metrics import MetricsRegistry
 
 logger = get_logger(__name__)
 

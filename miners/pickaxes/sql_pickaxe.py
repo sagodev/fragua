@@ -5,8 +5,8 @@ Requires SQLAlchemy (and optionally a DB driver).
 
 from typing import Optional
 import pandas as pd
-from ...miners.pickaxes.base_pickaxe import Pickaxe
-from ...storage.bagons import Bagon
+from miners.pickaxes.base_pickaxe import Pickaxe
+from storage.bagons import Bagon
 
 class SQLPickaxe(Pickaxe):
     """

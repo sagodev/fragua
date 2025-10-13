@@ -1,7 +1,7 @@
 """Abstract base class for pickaxes (extractors)."""
 
 from abc import ABC, abstractmethod
-from ...storage.bagons import Bagon
+from storage.bagons import Bagon
 
 
 class Pickaxe(ABC):

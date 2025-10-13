@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Any
 from collections import defaultdict
-from ..core.logger import get_logger
+from core.logger import get_logger
 
 logger = get_logger("fragua.metrics")
 
