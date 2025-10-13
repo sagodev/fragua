@@ -1,2 +1,5 @@
-.venv
-tests
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+tests/
