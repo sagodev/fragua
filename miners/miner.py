@@ -60,7 +60,7 @@ class Miner:
                     result = pickaxe.extract()
                     # Wrap in Bagon if needed
                     if not isinstance(result, Bagon):
-                        from fragua.storage.bagons import Bagon as _Bagon
+                        from storage.bagons import Bagon as _Bagon
 
                         result = _Bagon(
                             name=getattr(pickaxe, "name", "unknown"), data=result
