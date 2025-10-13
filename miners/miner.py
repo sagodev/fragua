@@ -1,8 +1,13 @@
-"""Miner: orchestrates extraction using pickaxes with retries, metrics, and logging."""
+"""Miner: orchestrates extraction with auto-selection of Pickaxe, retries, logging, and metrics."""
 
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 from time import sleep, time
+from pathlib import Path
+import io
+
 from miners.pickaxes.base_pickaxe import Pickaxe
+from miners.pickaxes.csv_pickaxe import CSVPickaxe
+from miners.pickaxes.excel_pickaxe import ExcelPickaxe
 from storage.bagons import Bagon
 from core.logger import get_logger
 from core.metrics import MetricsRegistry
@@ -12,36 +17,52 @@ logger = get_logger(__name__)
 
 class Miner:
     """
-    Coordinator for extraction. Executes a series of Pickaxes, handling retries,
-    collecting metrics in Bagons and registering events globally.
+    Coordinator for extraction. Can auto-select Pickaxe based on source type.
+    Handles retries, logging, and metrics.
     """
+
+    SUPPORTED_EXTENSIONS = {".csv", ".xlsx", ".xls", ".json"}
 
     def __init__(
         self,
         name: str = "miner",
         max_retries: int = 3,
         retry_delay: float = 1.0,
-        metrics: MetricsRegistry = None,
+        metrics: Optional[MetricsRegistry] = None,
     ):
-        """
-        Args:
-            name: Name of the miner.
-            max_retries: Number of times to retry a pickaxe on failure.
-            retry_delay: Initial delay between retries in seconds (exponential backoff).
-            metrics: Optional MetricsRegistry to log events.
-        """
         self.name = name
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.logger = get_logger(f"fragua.miner.{self.name}")
         self.metrics = metrics or MetricsRegistry()
 
-    def extract(self, pickaxes: Iterable[Pickaxe]) -> List[Bagon]:
+    # ----------------------------
+    # Public interface
+    # ----------------------------
+    def exact(
+        self,
+        sources: Iterable[str | Path | bytes | io.BytesIO],
+        sheet_name: Optional[str] = None,
+    ) -> List[Bagon]:
         """
-        Execute each pickaxe's extract() method with retry logic, logging, and metrics.
+        Extract multiple sources automatically selecting the correct Pickaxe.
+        Returns a list of Bagons.
+        """
+        bagons = []
 
-        Returns:
-            List of successfully extracted Bagons.
+        for src in sources:
+            pickaxe = self._select_pickaxe(src, sheet_name)
+            if pickaxe:
+                bagons.extend(self.manual_extract([pickaxe]))
+            else:
+                self.logger.warning("Could not select Pickaxe for source: %s", src)
+
+        return bagons
+
+    def manual_extract(self, pickaxes: Iterable[Pickaxe]) -> List[Bagon]:
+        """
+        Execute each pickaxe with retry logic, logging, and metrics.
+        Returns a list of successfully extracted Bagons.
         """
         bagons = []
         errors = []
@@ -58,14 +79,12 @@ class Miner:
                         "Extraction attempt %d for pickaxe: %s", attempt, pickaxe.name
                     )
                     result = pickaxe.extract()
-                    # Wrap in Bagon if needed
                     if not isinstance(result, Bagon):
-                        from storage.bagons import Bagon as _Bagon
+                        from fragua.storage.bagons import Bagon as _Bagon
 
                         result = _Bagon(
                             name=getattr(pickaxe, "name", "unknown"), data=result
                         )
-                    # Add metrics
                     duration = time() - pickaxe_start
                     result.metadata.update(
                         {
@@ -74,7 +93,6 @@ class Miner:
                             "status": "success",
                         }
                     )
-                    # Record in MetricsRegistry
                     self.metrics.record_event(
                         agent=f"miner.{self.name}",
                         action="extract",
@@ -114,7 +132,6 @@ class Miner:
                             attempt,
                             pickaxe.name,
                         )
-                        # Record failure in metrics
                         self.metrics.record_event(
                             agent=f"miner.{self.name}",
                             action="extract",
@@ -129,8 +146,52 @@ class Miner:
         total_duration = time() - total_start
         self.logger.info("Mining session completed in %.2f sec", total_duration)
         self.logger.info("Bagons extracted: %d, Failures: %d", len(bagons), len(errors))
-
         if errors:
             self.logger.warning("Errors summary: %s", errors)
 
         return bagons
+
+    # ----------------------------
+    # Internal helpers
+    # ----------------------------
+    def _select_pickaxe(
+        self, source: str | Path | bytes | io.BytesIO, sheet_name: Optional[str] = None
+    ) -> Optional[Pickaxe]:
+        """
+        Detect the type of source and return the corresponding Pickaxe.
+        """
+        ext = None
+        if isinstance(source, (str, Path)):
+            ext = Path(source).suffix.lower()
+        elif isinstance(source, (bytes, io.BytesIO)):
+            if hasattr(source, "read"):
+                header = source.read(8)
+                source.seek(0)
+            else:
+                header = source[:8]
+            if header.startswith(b"PK\x03\x04"):
+                ext = ".xlsx"
+            elif header.strip().startswith((b"{", b"[")):
+                ext = ".json"
+            elif b"," in header or b";" in header:
+                ext = ".csv"
+
+        if ext not in self.SUPPORTED_EXTENSIONS:
+            self.logger.warning("Unsupported source type or format: %s", source)
+            return None
+
+        # Instantiate Pickaxe
+        if ext in (".xlsx", ".xls"):
+            return ExcelPickaxe(
+                source=source, name=f"excel:{source}", sheet_name=sheet_name
+            )
+        elif ext == ".csv":
+            return CSVPickaxe(path=source, name=f"csv:{source}")
+        elif ext == ".json":
+            from fragua.miners.pickaxes.json_pickaxe import (
+                JSONPickaxe,
+            )  # suponiendo que exista
+
+            return JSONPickaxe(path=source, name=f"json:{source}")
+        else:
+            return None
