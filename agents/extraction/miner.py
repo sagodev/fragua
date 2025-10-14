@@ -32,7 +32,7 @@ class Miner(BaseAgent):
         """
         self.pickaxes.append(pickaxe)
 
-    def execute(self, storage):
+    def work(self, storage):
         """
         Execute all pickaxes and store data in Bagons.
 

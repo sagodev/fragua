@@ -32,7 +32,7 @@ class Transporter(BaseAgent):
         """
         self.carts.append(cart)
 
-    def execute(self, storage):
+    def work(self, storage):
         """
         Deliver data from Boxes to final destinations using carts.
 

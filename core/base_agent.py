@@ -23,7 +23,7 @@ class BaseAgent(ABC):
         self.name = name
 
     @abstractmethod
-    def execute(self, storage):
+    def work(self, storage):
         """
         Execute the agent's main task using the provided storage.
 

@@ -32,7 +32,7 @@ class Blacksmith(BaseAgent):
         """
         self.forge_styles.append(forge_style)
 
-    def execute(self, storage):
+    def work(self, storage):
         """
         Apply all forge styles to data from Wagons and store in Boxes.
 
