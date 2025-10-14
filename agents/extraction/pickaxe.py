@@ -12,16 +12,22 @@ class Pickaxe(Tool):
     Base class for Pickaxe tools.
     """
 
-    def use(self, data):
+    def use(self, data=None):
         """
         Extract data using this Pickaxe.
-
-        Args:
-            data: Optional input data (if needed for extraction).
-
-        Returns:
-            Extracted data.
+        To be implemented in subclasses.
         """
-        # Placeholder: implement extraction logic in subclasses
         print(f"Using {self.tool_name} to extract data...")
         return None
+
+    def extract(self, **kwargs):
+        """
+        Unified extraction method.
+        Wraps use() and allows future extension (logging, validation, etc.)
+
+        Returns:
+            Wagon: Extracted data.
+        """
+        wagon = self.use(**kwargs)
+        print(f"{self.tool_name} extracted data into Wagon: {wagon.name}")
+        return wagon
