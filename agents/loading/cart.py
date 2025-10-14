@@ -1,23 +1,21 @@
 """
-Cart tools used by Transporters to deliver data.
-
-Carts handle the transfer to various destinations such as databases, files, or APIs.
+Base class for all carts used by Transporters in Fragua.
+Defines the interface for delivering data.
 """
 
-from core.tool import Tool
+from abc import ABC, abstractmethod
 
 
-class Cart(Tool):
-    """
-    Base class for Cart tools.
-    """
+class Cart(ABC):
+    """Abstract base class for delivery carts."""
 
-    def use(self, data):
+    @abstractmethod
+    def deliver(self, *args, **kwargs):
         """
-        Deliver data to the final destination.
+        Deliver data to the cart's destination.
+        Must be implemented by all subclasses.
 
-        Args:
-            data: Data retrieved from Boxes.
+        Parameters:
+        - *args, **kwargs: Subclass-specific arguments.
         """
-        # Placeholder: implement loading logic in subclasses
-        print(f"Using {self.tool_name} to deliver data...")
+        pass
