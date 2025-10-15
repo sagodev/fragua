@@ -17,7 +17,8 @@ def _serialize_dataframe(df: pd.DataFrame) -> bytes:
 def _serialize_other(obj: Any) -> bytes:
     if isinstance(obj, (dict, list)):
         return json.dumps(obj, sort_keys=True, default=str).encode("utf-8")
-    return str(obj).encode("utf-8")
+    else:
+        return repr(obj).encode("utf-8")
 
 
 def calculate_checksum(data: Any, algorithm: str = "sha256") -> str:
