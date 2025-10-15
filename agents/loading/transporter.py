@@ -4,7 +4,7 @@ The Transporter uses Carts to deliver data from Boxes to databases, files, or AP
 """
 
 from core.base_agent import BaseAgent
-from core.storage_manager import StorageManager
+from agents.store.storage_manager import StorageManager
 from agents.loading.cart import Cart
 
 

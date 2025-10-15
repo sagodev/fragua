@@ -4,7 +4,7 @@ Acts as the central interface between agents and the unified Storage.
 """
 
 from core.base_agent import BaseAgent
-from core.storage import Storage
+from agents.store.storage import Storage
 from utils.logger import get_logger
 
 

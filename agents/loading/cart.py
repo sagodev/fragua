@@ -5,7 +5,7 @@ Defines the interface for delivering data.
 
 from abc import ABC, abstractmethod
 from typing import Type, Dict, Optional
-from core.storage_manager import StorageManager
+from agents.store.storage_manager import StorageManager
 
 CART_REGISTRY: Dict[str, Type["Cart"]] = {}
 
