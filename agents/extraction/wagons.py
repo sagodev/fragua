@@ -4,8 +4,9 @@ Wagons for storing extracted data from Miners.
 Wagons provide temporary storage and versioning for raw data.
 """
 
-from datetime import datetime
 import hashlib
+import json
+from datetime import datetime
 import pandas as pd
 
 
@@ -23,33 +24,31 @@ class Wagon:
             self.store(data)
 
     def store(self, data, postprocess=None):
-        """
-        Store data in the Wagon.
-
-        Args:
-            data: Data to store (DataFrame, list of dicts, etc.).
-            postprocess: Optional function to apply to the data before storing.
-        """
-        # Convert lists of dicts to DataFrame
+        # Convert list of dicts to DataFrame
         if isinstance(data, list):
             data = pd.DataFrame(data)
 
-        # Apply optional postprocessing
         if postprocess:
             data = postprocess(data)
 
-        # Store data and compute checksum
         self.data = data
-        self._checksum = hashlib.sha256(
-            pd.util.hash_pandas_object(data, index=True).values
-        ).hexdigest()
+
+        # Compute checksum
+        if isinstance(self.data, pd.DataFrame):
+            self._checksum = hashlib.sha256(
+                pd.util.hash_pandas_object(self.data, index=True).values
+            ).hexdigest()
+        else:
+            # For dicts or other objects
+            self._checksum = hashlib.sha256(
+                json.dumps(self.data, sort_keys=True).encode()
+            ).hexdigest()
 
     def retrieve(self):
         return self.data
 
     @property
     def metadata(self):
-        """Return metadata dict."""
         return {
             "name": self.name,
             "created_at": self._created_at,

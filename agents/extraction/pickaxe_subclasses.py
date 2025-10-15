@@ -115,20 +115,23 @@ class APIPickaxe(Pickaxe):
     """
 
     def __init__(
-        self,
-        endpoint: str,
-        params: Optional[dict] = None,
-        headers: Optional[dict] = None,
-        name: Optional[str] = None,
-    ):
-        super().__init__(tool_name=name or f"api:{endpoint[:30]}")
-        self.endpoint = endpoint
-        self.params = params or {}
-        self.headers = headers or {}
+            self,
+            endpoint: str,
+            params: Optional[dict] = None,
+            headers: Optional[dict] = None,
+            name: Optional[str] = None,
+        ):
+            super().__init__(tool_name=name or f"api:{endpoint[:30]}")
+            self.endpoint = endpoint
+            self.params = params or {}
+            self.headers = headers or {}
 
-    def extract(self, source=None) -> Wagon:
-        """Fetches data from the API and wraps it in a Wagon."""
-        response = requests.get(self.endpoint, params=self.params, headers=self.headers)
-        response.raise_for_status()
-        result_data = response.json()
-        return Wagon(name=self.tool_name, data=result_data)
+        def extract(self, source=None) -> Wagon:
+            """Fetches data from the API and wraps it in a Wagon with proper checksum."""
+            response = requests.get(self.endpoint, params=self.params, headers=self.headers)
+            response.raise_for_status()
+            result_data = response.json()
+
+            # If the response is a list of dicts, Wagon.store() will convert it to DataFrame
+            # If it's a dict or other structure, Wagon.store() will handle checksum correctly
+            return Wagon(name=self.tool_name, data=result_data)
