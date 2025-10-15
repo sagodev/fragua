@@ -97,7 +97,7 @@ class SQLPickaxe(Pickaxe):
         name: Optional[str] = None,
         read_kwargs: Optional[dict] = None,
     ):
-        super().__init__(name=name or f"sql:{query[:20]}")
+        super().__init__(tool_name=name or f"sql:{query[:20]}")
         self.connection_string = connection_string
         self.query = query
         self.read_kwargs = read_kwargs or {}
@@ -124,7 +124,7 @@ class SQLPickaxe(Pickaxe):
         with engine.connect() as conn:
             df = pd.read_sql(self.query, con=conn, **self.read_kwargs)
 
-        wagon = Wagon(name=self.name, data=df)
+        wagon = Wagon(name=self.tool_name, data=df)
         return wagon
 
 
@@ -146,7 +146,7 @@ class APIPickaxe(Pickaxe):
         headers: Optional[dict] = None,
         name: Optional[str] = None,
     ):
-        super().__init__(name=name or f"api:{endpoint[:30]}")
+        super().__init__(tool_name=name or f"api:{endpoint[:30]}")
         self.endpoint = endpoint
         self.params = params or {}
         self.headers = headers or {}
@@ -165,5 +165,5 @@ class APIPickaxe(Pickaxe):
         response.raise_for_status()  # Raise an error for bad responses
         result_data = response.json()  # Assuming API returns JSON
 
-        wagon = Wagon(name=self.name, data=result_data)
+        wagon = Wagon(name=self.tool_name, data=result_data)
         return wagon

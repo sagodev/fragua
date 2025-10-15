@@ -25,6 +25,8 @@ class MLForge(ForgeStyle):
     - Treat outliers
     """
 
+    tool_name = "MLForge"
+
     def use(self, data) -> Box:
         # Convert list of dicts to DataFrame if needed
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
@@ -72,6 +74,8 @@ class ReportForge(ForgeStyle):
     - Format strings and numeric columns for presentation
     """
 
+    tool_name = "ReportForge"
+
     def use(self, data) -> Box:
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
 
@@ -104,6 +108,8 @@ class AnalysisForge(ForgeStyle):
     - Standardize strings
     - Add derived columns for totals and rates
     """
+
+    tool_name = "AnalysisForge"
 
     def use(self, data) -> Box:
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
