@@ -1,43 +1,61 @@
 """
-Bagons for storing extracted data from Miners.
+Wagons for storing extracted data from Miners.
 
-Bagons provide temporary storage and versioning for raw data.
+Wagons provide temporary storage and versioning for raw data.
 """
+
+from datetime import datetime
+import hashlib
+import pandas as pd
 
 
 class Wagon:
     """
-    Represents a storage container for extracted data.
+    Wagon: container for extracted data with metadata, validation, and optional postprocessing.
     """
 
     def __init__(self, name: str, data=None):
-        """
-        Initialize a wagon with a name and optional data.
-
-        Args:
-            name (str): Name of the wagon.
-            data: Optional initial data.
-        """
         self.name = name
-        self.data = data
+        self._created_at = datetime.utcnow()
+        self.data = None
+        self._checksum = None
+        if data is not None:
+            self.store(data)
 
-    def store(self, data):
+    def store(self, data, postprocess=None):
         """
-        Store data in the wagon.
+        Store data in the Wagon.
 
         Args:
-            data: Data to store.
+            data: Data to store (DataFrame, list of dicts, etc.).
+            postprocess: Optional function to apply to the data before storing.
         """
+        # Convert lists of dicts to DataFrame
+        if isinstance(data, list):
+            data = pd.DataFrame(data)
+
+        # Apply optional postprocessing
+        if postprocess:
+            data = postprocess(data)
+
+        # Store data and compute checksum
         self.data = data
+        self._checksum = hashlib.sha256(
+            pd.util.hash_pandas_object(data, index=True).values
+        ).hexdigest()
 
     def retrieve(self):
-        """
-        Retrieve data from the wagon.
-
-        Returns:
-            Stored data.
-        """
         return self.data
 
+    @property
+    def metadata(self):
+        """Return metadata dict."""
+        return {
+            "name": self.name,
+            "created_at": self._created_at,
+            "checksum": self._checksum,
+            "type": type(self.data).__name__ if self.data is not None else None,
+        }
+
     def __repr__(self):
-        return f"<Wagon name={self.name} data={'set' if self.data else 'empty'}>"
+        return f"<Wagon name={self.name} data={'set' if self.data is not None else 'empty'}>"

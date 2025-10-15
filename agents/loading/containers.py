@@ -4,40 +4,45 @@ Containers for storing loaded data before final delivery.
 Containers allow versioned storage of data that has been processed and is ready for delivery.
 """
 
+from datetime import datetime
+import hashlib
+import pandas as pd
+
 
 class Container:
     """
-    Represents a storage container for loaded data.
+    Container: stores final data ready for delivery with metadata, validation, and optional postprocessing.
     """
 
     def __init__(self, name: str, data=None):
-        """
-        Initialize a Container with a name and optional data.
-
-        Args:
-            name (str): Name of the Container.
-            data: Optional initial data.
-        """
         self.name = name
-        self.data = data
+        self._stored_at = datetime.utcnow()
+        self.data = None
+        self._checksum = None
+        if data is not None:
+            self.store(data)
 
-    def store(self, data):
-        """
-        Store data in the Container.
-
-        Args:
-            data: Data to store.
-        """
+    def store(self, data, postprocess=None):
+        if isinstance(data, list):
+            data = pd.DataFrame(data)
+        if postprocess:
+            data = postprocess(data)
         self.data = data
+        self._checksum = hashlib.sha256(
+            pd.util.hash_pandas_object(data, index=True).values
+        ).hexdigest()
 
     def retrieve(self):
-        """
-        Retrieve data from the Container.
-
-        Returns:
-            Stored data.
-        """
         return self.data
 
+    @property
+    def metadata(self):
+        return {
+            "name": self.name,
+            "stored_at": self._stored_at,
+            "checksum": self._checksum,
+            "type": type(self.data).__name__ if self.data is not None else None,
+        }
+
     def __repr__(self):
-        return f"<Container name={self.name} data={'set' if self.data else 'empty'}>"
+        return f"<Container name={self.name} data={'set' if self.data is not None else 'empty'}>"
