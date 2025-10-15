@@ -5,8 +5,8 @@ Boxes provide versioned storage for transformed data before loading.
 """
 
 from datetime import datetime
-import hashlib
 import pandas as pd
+from utils.metrics import calculate_checksum
 
 
 class Box:
@@ -28,9 +28,7 @@ class Box:
         if postprocess:
             data = postprocess(data)
         self.data = data
-        self._checksum = hashlib.sha256(
-            pd.util.hash_pandas_object(data, index=True).values
-        ).hexdigest()
+        self._checksum = calculate_checksum(self.data)
 
     def retrieve(self):
         return self.data

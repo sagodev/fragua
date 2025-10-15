@@ -4,10 +4,9 @@ Wagons for storing extracted data from Miners.
 Wagons provide temporary storage and versioning for raw data.
 """
 
-import hashlib
-import json
 from datetime import datetime
 import pandas as pd
+from utils.metrics import calculate_checksum
 
 
 class Wagon:
@@ -32,17 +31,7 @@ class Wagon:
             data = postprocess(data)
 
         self.data = data
-
-        # Compute checksum
-        if isinstance(self.data, pd.DataFrame):
-            self._checksum = hashlib.sha256(
-                pd.util.hash_pandas_object(self.data, index=True).values
-            ).hexdigest()
-        else:
-            # For dicts or other objects
-            self._checksum = hashlib.sha256(
-                json.dumps(self.data, sort_keys=True).encode()
-            ).hexdigest()
+        self._checksum = calculate_checksum(self.data)
 
     def retrieve(self):
         return self.data

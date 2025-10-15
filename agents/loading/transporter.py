@@ -32,7 +32,7 @@ class Transporter(BaseAgent):
         """
         for cart, params in self.carts:
             # Retrieve data from Box
-            box_name = f"{self.name}_{cart.__class__.__name__}"
+            box_name = f"{self.name}_{cart.tool_name}"
             input_data = storage.load_box(box_name)
 
             if input_data is None:

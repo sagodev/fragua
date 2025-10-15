@@ -4,10 +4,11 @@ Contains common utilities for transformations.
 """
 
 from abc import ABC, abstractmethod
-import hashlib
 from datetime import datetime
-import pandas as pd
 import logging
+import pandas as pd
+from utils.metrics import calculate_checksum
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -19,15 +20,17 @@ FORGESTYLE_REGISTRY: dict[str, type] = {}
 def register_forge_style(name: str):
     """
     Decorator to register a ForgeStyle subclass dynamically.
-    
+
     Usage:
         @register_forge_style("ml")
         class MLForge(ForgeStyle):
             ...
     """
+
     def wrapper(cls):
         FORGESTYLE_REGISTRY[name] = cls
         return cls
+
     return wrapper
 
 
@@ -71,14 +74,14 @@ class ForgeStyle(ABC):
             df[col] = df[col].astype(str).str.strip().str.lower()
         logger.info(f"{self.name}: String columns standardized.")
 
-    def _add_metadata(self, df: pd.DataFrame):
+    def _add_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Add metadata columns: _forge_name, _transform_timestamp, _checksum.
+        Add metadata columns to the transformed dataframe.
         """
-        checksum = hashlib.sha256(
-            pd.util.hash_pandas_object(df, index=True).values
-        ).hexdigest()
+        checksum_value = calculate_checksum(df)
         df["_forge_name"] = self.name
         df["_transform_timestamp"] = datetime.utcnow()
-        df["_checksum"] = checksum
-        logger.info(f"{self.name}: Metadata added.")
+        df["_checksum"] = checksum_value
+
+        self.metadata["checksum"] = checksum_value
+        return df
