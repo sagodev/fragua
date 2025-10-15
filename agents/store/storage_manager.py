@@ -19,6 +19,13 @@ class StorageManager(BaseAgent):
         self.logger = get_logger(name)
         self.storage = Storage()
 
+    def work(self):
+        """
+        StorageManager doesn't perform active work.
+        This method exists to satisfy BaseAgent's abstract interface.
+        """
+        pass
+
     # -------------------
     # Wagons
     # -------------------
@@ -71,5 +78,12 @@ class StorageManager(BaseAgent):
     # -------------------
     # Reporting
     # -------------------
+    def list_all(self):
+        return {
+            "wagons": list(self._wagons.keys()),
+            "boxes": list(self._boxes.keys()),
+            "containers": list(self._containers.keys()),
+        }
+
     def report(self):
         return self.storage.metadata_report()

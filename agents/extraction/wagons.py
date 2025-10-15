@@ -23,6 +23,10 @@ class Wagon:
             self.store(data)
 
     def store(self, data, postprocess=None):
+        """Store data in the Wagon, optionally applying postprocess."""
+        if data is None:
+            raise ValueError("Cannot store None data in Wagon")
+
         # Convert list of dicts to DataFrame
         if isinstance(data, list):
             data = pd.DataFrame(data)

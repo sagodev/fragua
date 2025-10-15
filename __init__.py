@@ -10,12 +10,13 @@ from .agents import (
     Transporter,
     Container,
     Cart,
+    StorageManager,
+    Storage,
 )
 
 from .core import (
     BaseAgent,
     Tool,
-    StorageManager,
 )
 
 from .utils import (
@@ -35,6 +36,7 @@ __all__ = [
     "Cart",
     "BaseAgent",
     "StorageManager",
+    "Storage",
     "Tool",
     "get_logger",
     "Config",
