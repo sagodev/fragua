@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from agents.transformation.forge_style import ForgeStyle
+from agents.transformation.forge_style import ForgeStyle, register_forge_style
 from agents.transformation.boxes import Box
 
 logger = logging.getLogger(__name__)
@@ -15,29 +15,18 @@ logging.basicConfig(level=logging.INFO)
 
 
 # ---------------- MLForge ----------------
+@register_forge_style("ml")
 class MLForge(ForgeStyle):
-    """
-    Prepares Wagons for ML:
-    - Fill missing with mean
-    - Standardize string columns
-    - Encode categoricals
-    - Scale numeric columns
-    - Treat outliers
-    """
-
     tool_name = "MLForge"
 
     def use(self, data) -> Box:
-        # Convert list of dicts to DataFrame if needed
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
-
         self._fill_missing(df, numeric_fill="mean")
         self._standardize(df)
         self._encode_categoricals(df)
         self._treat_outliers(df)
         self._scale_numeric(df)
         self._add_metadata(df)
-
         return Box(name="MLForge_Result", data=df)
 
     def _encode_categoricals(self, df: pd.DataFrame):
@@ -65,26 +54,17 @@ class MLForge(ForgeStyle):
 
 
 # ---------------- ReportForge ----------------
+@register_forge_style("report")
 class ReportForge(ForgeStyle):
-    """
-    Prepares data for reporting:
-    - Fill missing with zero
-    - Standardize strings
-    - Add derived columns
-    - Format strings and numeric columns for presentation
-    """
-
     tool_name = "ReportForge"
 
     def use(self, data) -> Box:
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
-
         self._fill_missing(df, numeric_fill="zero")
         self._standardize(df)
         self._add_derived_columns(df)
         self._format_for_report(df)
         self._add_metadata(df)
-
         return Box(name="ReportForge_Result", data=df)
 
     def _add_derived_columns(self, df: pd.DataFrame):
@@ -101,24 +81,16 @@ class ReportForge(ForgeStyle):
 
 
 # ---------------- AnalysisForge ----------------
+@register_forge_style("analysis")
 class AnalysisForge(ForgeStyle):
-    """
-    Prepares data for exploratory analysis:
-    - Fill missing with mean
-    - Standardize strings
-    - Add derived columns for totals and rates
-    """
-
     tool_name = "AnalysisForge"
 
     def use(self, data) -> Box:
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
-
         self._fill_missing(df, numeric_fill="mean")
         self._standardize(df)
         self._add_derived_columns(df)
         self._add_metadata(df)
-
         return Box(name="AnalysisForge_Result", data=df)
 
     def _add_derived_columns(self, df: pd.DataFrame):

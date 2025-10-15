@@ -12,6 +12,24 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+# Registry for dynamic ForgeStyle discovery
+FORGESTYLE_REGISTRY: dict[str, type] = {}
+
+
+def register_forge_style(name: str):
+    """
+    Decorator to register a ForgeStyle subclass dynamically.
+    
+    Usage:
+        @register_forge_style("ml")
+        class MLForge(ForgeStyle):
+            ...
+    """
+    def wrapper(cls):
+        FORGESTYLE_REGISTRY[name] = cls
+        return cls
+    return wrapper
+
 
 class ForgeStyle(ABC):
     """
