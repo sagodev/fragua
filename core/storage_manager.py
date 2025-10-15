@@ -1,88 +1,75 @@
 """
-Central storage interface for Fragua ETL agents.
-
-This class manages Wagons, Boxes, and Containers for versioned data storage.
+StorageManager agent for Fragua ETL.
+Acts as the central interface between agents and the unified Storage.
 """
 
+from core.base_agent import BaseAgent
+from core.storage import Storage
+from utils.logger import get_logger
 
-class StorageManager:
+
+class StorageManager(BaseAgent):
     """
-    Storage manager to handle intermediate and final data storage.
+    StorageManager agent that interacts with Storage and provides
+    a clean API for other agents (Miner, Blacksmith, Transporter).
     """
 
-    def __init__(self):
-        """
-        Initialize empty storage containers.
-        """
-        self.wagons = {}
-        self.boxes = {}
-        self.containers = {}
+    def __init__(self, name: str = "StorageManager"):
+        super().__init__(name)
+        self.logger = get_logger(name)
+        self.storage = Storage()
 
-    # Wagons (extraction)
-    def save_wagon(self, name: str, data):
-        """
-        Save data to a Wagon.
-
-        Args:
-            name (str): Name identifier for the Wagon.
-            data: Data to store.
-        """
-        self.wagons[name] = data
+    # -------------------
+    # Wagons
+    # -------------------
+    def save_wagon(self, name: str, wagon):
+        self.logger.info(f"Saving Wagon: {name}")
+        self.storage.save_wagon(name, wagon)
 
     def load_wagon(self, name: str):
-        """
-        Load data from a Wagon.
+        return self.storage.load_wagon(name)
 
-        Args:
-            name (str): Name identifier for the Wagon.
+    def remove_wagon(self, name: str):
+        return self.storage.remove_wagon(name)
 
-        Returns:
-            Stored data.
-        """
-        return self.wagons.get(name, None)
+    def has_wagon(self, name: str):
+        return self.storage.has_wagon(name)
 
-    # Boxes (transformation)
-    def save_box(self, name: str, data):
-        """
-        Save data to a Box.
-
-        Args:
-            name (str): Name identifier for the Box.
-            data: Data to store.
-        """
-        self.boxes[name] = data
+    # -------------------
+    # Boxes
+    # -------------------
+    def save_box(self, name: str, box):
+        self.logger.info(f"Saving Box: {name}")
+        self.storage.save_box(name, box)
 
     def load_box(self, name: str):
-        """
-        Load data from a Box.
+        return self.storage.load_box(name)
 
-        Args:
-            name (str): Name identifier for the Box.
+    def remove_box(self, name: str):
+        return self.storage.remove_box(name)
 
-        Returns:
-            Stored data.
-        """
-        return self.boxes.get(name, None)
+    def has_box(self, name: str):
+        return self.storage.has_box(name)
 
-    # Containers (loading)
-    def save_container(self, name: str, data):
-        """
-        Save data to a Container.
+    # -------------------
+    # Containers
+    # -------------------
 
-        Args:
-            name (str): Name identifier for the Container.
-            data: Data to store.
-        """
-        self.containers[name] = data
+    def save_container(self, name: str, container):
+        self.logger.info(f"Saving Container: {name}")
+        self.storage.save_container(name, container)
 
     def load_container(self, name: str):
-        """
-        Load data from a Container.
+        return self.storage.load_container(name)
 
-        Args:
-            name (str): Name identifier for the Container.
+    def remove_container(self, name: str):
+        return self.storage.remove_container(name)
 
-        Returns:
-            Stored data.
-        """
-        return self.containers.get(name, None)
+    def has_container(self, name: str):
+        return self.storage.has_container(name)
+
+    # -------------------
+    # Reporting
+    # -------------------
+    def report(self):
+        return self.storage.metadata_report()
