@@ -5,18 +5,19 @@ Concrete Pickaxe tools for different types of extraction.
 from typing import Optional
 import pandas as pd
 import requests
-from agents.extraction.pickaxe import Pickaxe
+from agents.extraction.pickaxe import Pickaxe, register_pickaxe
 from agents.extraction.wagons import Wagon
 
 
+@register_pickaxe("csv")
 class CSVPickaxe(Pickaxe):
     """
     CSVPickaxe extracts data from CSV files.
 
     Args:
-        path: filesystem path to CSV.
-        name: optional name for the Pickaxe/Wagon.
-        read_kwargs: optional kwargs forwarded to pandas.read_csv.
+        path: Filesystem path to CSV.
+        name: Optional name for the Pickaxe/Wagon.
+        read_kwargs: Optional kwargs forwarded to pandas.read_csv.
     """
 
     def __init__(
@@ -26,21 +27,13 @@ class CSVPickaxe(Pickaxe):
         self.path = path
         self.read_kwargs = read_kwargs or {}
 
-    def use(self, data=None) -> Wagon:
-        """
-        Extract data from CSV and store in a Wagon.
-
-        Args:
-            data: Not used, present for interface consistency.
-
-        Returns:
-            Wagon: Wagon containing extracted data.
-        """
+    def extract(self, source=None) -> Wagon:
+        """Extracts data from CSV file and wraps it in a Wagon."""
         df = pd.read_csv(self.path, **self.read_kwargs)
-        wagon = Wagon(name=self.tool_name, data=df)
-        return wagon
+        return Wagon(name=self.tool_name, data=df)
 
 
+@register_pickaxe("excel")
 class ExcelPickaxe(Pickaxe):
     """
     ExcelPickaxe extracts data from Excel files.
@@ -64,30 +57,22 @@ class ExcelPickaxe(Pickaxe):
         self.sheet_name = sheet_name
         self.read_kwargs = read_kwargs or {}
 
-    def use(self, data=None) -> Wagon:
-        """
-        Extract data from the Excel file and store in a Wagon.
-
-        Args:
-            data: Not used (placeholder for compatibility with BaseAgent).
-
-        Returns:
-            Wagon: A Wagon containing the extracted data.
-        """
+    def extract(self, source=None) -> Wagon:
+        """Extracts data from Excel file and wraps it in a Wagon."""
         df = pd.read_excel(self.path, sheet_name=self.sheet_name, **self.read_kwargs)
-        wagon = Wagon(name=self.tool_name, data=df)
-        return wagon
+        return Wagon(name=self.tool_name, data=df)
 
 
+@register_pickaxe("sql")
 class SQLPickaxe(Pickaxe):
     """
     SQLPickaxe executes a SQL query against a database connection string.
 
     Args:
-        connection_string (str): SQLAlchemy connection string (e.g. 'sqlite:///db.sqlite').
-        query (str): SQL query to run.
-        name (Optional[str]): Optional logical name for the pickaxe.
-        read_kwargs (Optional[dict]): Optional kwargs for pandas.read_sql.
+        connection_string: SQLAlchemy connection string (e.g. 'sqlite:///db.sqlite').
+        query: SQL query to run.
+        name: Optional logical name for the pickaxe.
+        read_kwargs: Optional kwargs for pandas.read_sql.
     """
 
     def __init__(
@@ -102,41 +87,31 @@ class SQLPickaxe(Pickaxe):
         self.query = query
         self.read_kwargs = read_kwargs or {}
 
-    def use(self, data=None) -> Wagon:
-        """
-        Execute the SQL query and return the results as a Wagon.
-
-        Args:
-            data: Not used here.
-
-        Returns:
-            Wagon: Contains the query results.
-        """
+    def extract(self, source=None) -> Wagon:
+        """Executes SQL query and returns a Wagon with the results."""
         try:
-            # Lazy import to avoid strict dependency if not needed
             from sqlalchemy import create_engine
         except ImportError as e:
             raise RuntimeError(
-                "SQLPickaxe requires SQLAlchemy. Install with `pip install sqlalchemy`."
+                "SQLPickaxe requires SQLAlchemy. Install it with `pip install sqlalchemy`."
             ) from e
 
         engine = create_engine(self.connection_string)
         with engine.connect() as conn:
             df = pd.read_sql(self.query, con=conn, **self.read_kwargs)
-
-        wagon = Wagon(name=self.tool_name, data=df)
-        return wagon
+        return Wagon(name=self.tool_name, data=df)
 
 
+@register_pickaxe("api")
 class APIPickaxe(Pickaxe):
     """
     APIPickaxe fetches data from a REST API endpoint.
 
     Args:
-        endpoint (str): The API endpoint URL.
-        params (Optional[dict]): Query parameters for the request.
-        headers (Optional[dict]): HTTP headers for the request.
-        name (Optional[str]): Optional logical name for the pickaxe.
+        endpoint: The API endpoint URL.
+        params: Query parameters for the request.
+        headers: HTTP headers for the request.
+        name: Optional logical name for the pickaxe.
     """
 
     def __init__(
@@ -151,19 +126,9 @@ class APIPickaxe(Pickaxe):
         self.params = params or {}
         self.headers = headers or {}
 
-    def use(self, data=None) -> Wagon:
-        """
-        Execute the API request and return the results as a Wagon.
-
-        Args:
-            data: Not used here.
-
-        Returns:
-            Wagon: Contains the API response data (usually JSON).
-        """
+    def extract(self, source=None) -> Wagon:
+        """Fetches data from the API and wraps it in a Wagon."""
         response = requests.get(self.endpoint, params=self.params, headers=self.headers)
-        response.raise_for_status()  # Raise an error for bad responses
-        result_data = response.json()  # Assuming API returns JSON
-
-        wagon = Wagon(name=self.tool_name, data=result_data)
-        return wagon
+        response.raise_for_status()
+        result_data = response.json()
+        return Wagon(name=self.tool_name, data=result_data)
