@@ -15,9 +15,6 @@ from core import Style
 # Unified logger for ForgeStyle
 logger = get_logger(__name__)
 
-# Registry for dynamic ForgeStyle discovery
-FORGESTYLE_REGISTRY: dict[str, type] = {}
-
 
 def register_forge_style(name: str):
     """
@@ -109,3 +106,7 @@ class ForgeStyle(Style):
             "%s: Metadata added with checksum %s.", self.style_name, checksum_value
         )
         return df
+
+
+# Registry for dynamic ForgeStyle discovery
+FORGESTYLE_REGISTRY: dict[str, type[ForgeStyle]] = {}

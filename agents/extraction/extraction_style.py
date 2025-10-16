@@ -11,8 +11,6 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-EXTRACTIONSTYLE_REGISTRY: dict[str, type] = {}
-
 
 def register_extraction_style(name: str):
     def wrapper(cls):
@@ -38,19 +36,19 @@ class ExtractionStyle(Style):
 
     def use(self, data: Any) -> Any:
         """
-        Main transformation method.
-        Executes forge -> validate -> postprocess pipeline.
+        Main extraction method.
+        Executes extract -> validate -> postprocess pipeline.
         """
         if data is None:
             raise ValueError("Input data cannot be None")
 
         logger.debug(
-            "Starting ForgeStyle '%s' transformation pipeline.", self.style_name
+            "Starting ExtractionStyle '%s' extraction pipeline.", self.style_name
         )
 
         try:
             data = self.extract(data)
-            logger.debug("%s: forge() step completed.", self.style_name)
+            logger.debug("%s: extract() step completed.", self.style_name)
 
             data = self.validate(data)
             logger.debug("%s: validate() step completed.", self.style_name)
@@ -63,3 +61,7 @@ class ExtractionStyle(Style):
         except Exception as e:
             self.log_error(e)
             raise
+
+
+# Registry for dynamic ExtractionStyle discovery
+EXTRACTIONSTYLE_REGISTRY: dict[str, type[ExtractionStyle]] = {}
