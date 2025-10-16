@@ -1,17 +1,29 @@
 """
 Base class for all ETL agents in Fragua.
 
-This class defines the common interface and behavior for Miners,
-Blacksmiths, and Transporters.
+Defines the common interface and shared behavior for
+agents like Miner, Blacksmith, and Transporter.
 """
 
 from abc import ABC, abstractmethod
+from datetime import datetime, timezone
+from typing import Any, Dict, Type
+import pandas as pd
+from utils.logger import get_logger
+
+logger = get_logger("BaseAgent")
 
 
 class BaseAgent(ABC):
     """
-    Abstract base class for ETL agents.
+    Abstract base class for ETL agents with built-in support
+    for learning and applying registered styles.
     """
+
+    # Subclasses must override these
+    style_registry: Dict[str, Type] = {}
+    result_type: Type = object
+    metadata_table_name: str = "operations"
 
     def __init__(self, name: str):
         """
@@ -21,14 +33,114 @@ class BaseAgent(ABC):
             name (str): The name of the agent.
         """
         self.name = name
+        self.known_styles: Dict[str, Any] = {}
+        self.metadata: Dict[str, Any] = {
+            "name": name,
+            "learned_styles": {},
+            self.metadata_table_name: pd.DataFrame(
+                columns=[
+                    "style_name",
+                    "timestamp",
+                    "output_name",
+                    "rows",
+                    "columns",
+                    "checksum",
+                ]
+            ),
+        }
 
-    @abstractmethod
-    def work(self, storage):
+    # ---------------- Learning ---------------- #
+    def learn_style(self, style_instance: Any):
         """
-        Execute the agent's main task using the provided storage.
+        Register a style instance and record its metadata.
+        """
+        self.known_styles[style_instance.style_name] = style_instance
+        self.metadata["learned_styles"][style_instance.style_name] = {
+            "class": style_instance.__class__.__name__,
+            "learned_at": datetime.now(timezone.utc),
+        }
+        logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
 
-        Args:
-            storage (StorageManager): Storage manager instance.
+    def learn_style_by_name(self, name: str, **kwargs):
+        """
+        Create and learn a style dynamically from the registry.
+        """
+        if name not in self.style_registry:
+            logger.error("[%s] No style registered under '%s'", self.name, name)
+            raise ValueError(f"No style registered under name '{name}'")
+
+        style_cls = self.style_registry[name]
+        style_name = kwargs.pop("style_name", name)
+        instance = style_cls(style_name=style_name, **kwargs)
+        self.learn_style(instance)
+
+    # ---------------- Working ---------------- #
+    def apply_style(self, style_name: str, data: Any):
+        """
+        Apply a learned style and record operation metadata.
+        """
+        if style_name not in self.known_styles:
+            logger.error("[%s] Style '%s' not learned", self.name, style_name)
+            raise ValueError(f"Style '{style_name}' not learned")
+
+        style = self.known_styles[style_name]
+        result = style.use(data)
+
+        if not isinstance(result, self.result_type):
+            logger.error(
+                "[%s] Style '%s' must return %s, got %s",
+                self.name,
+                style_name,
+                self.result_type.__name__,
+                type(result).__name__,
+            )
+            raise TypeError(
+                f"Style '{style_name}' must return {self.result_type.__name__}, got {type(result).__name__}"
+            )
+
+        new_row = {
+            "style_name": style_name,
+            "timestamp": datetime.now(timezone.utc),
+            "output_name": getattr(result, "name", None),
+            "rows": getattr(getattr(result, "data", None), "shape", [None, None])[0],
+            "columns": getattr(getattr(result, "data", None), "shape", [None, None])[1],
+            "checksum": getattr(getattr(style, "metadata", {}), "get", lambda _: None)(
+                "checksum"
+            ),
+        }
+        self.metadata[self.metadata_table_name] = pd.concat(
+            [self.metadata[self.metadata_table_name], pd.DataFrame([new_row])],
+            ignore_index=True,
+        )
+
+        logger.info("[%s] Applied style '%s'", self.name, style_name)
+        return result
+
+    # ---------------- Storage Interaction ---------------- #
+    def store_result(self, storage_manager, result: Any, name: str):
+        """
+        Store a result object in the StorageManager using the appropriate save method.
+        """
+        save_method_name = f"save_{self.result_type.__name__.lower()}"
+        save_method = getattr(storage_manager, save_method_name, None)
+
+        if not callable(save_method):
+            raise AttributeError(f"StorageManager has no method '{save_method_name}'")
+
+        save_method(name, result)
+        logger.info(
+            "[%s] Stored %s '%s' in StorageManager",
+            self.name,
+            self.result_type.__name__,
+            name,
+        )
+
+    # ---------------- Abstract Work ---------------- #
+    @abstractmethod
+    def work(self, *args, **kwargs):
+        """
+        Abstract method that defines how the agent performs its task.
+        Should typically call apply_style().
         """
         pass
 
