@@ -1,99 +1,54 @@
 """
-Unified storage backend for Fragua ETL.
-Handles Wagons, Boxes, and Containers efficiently with metadata tracking.
+Efficient in-memory storage for Fragua ETL objects.
 """
 
-from typing import Any, Dict
-from agents.store.wagon import Wagon
-from agents.store.box import Box
-from agents.store.container import Container
+from datetime import datetime
+from utils.metrics import calculate_checksum
 
 
 class Storage:
     """
-    Central in-memory storage for Fragua pipeline.
-
-    Responsible for storing, retrieving, and managing all Wagons, Boxes, and Containers.
+    Stores objects in a centralized dict by type with minimal metadata.
+    Prepares for lazy loading and checksum verification.
     """
 
     def __init__(self):
-        self._wagons: Dict[str, Wagon] = {}
-        self._boxes: Dict[str, Box] = {}
-        self._containers: Dict[str, Container] = {}
-
-    # -----------------------
-    # Generic Access Methods
-    # -----------------------
-    def _save(self, collection: Dict[str, Any], name: str, item: Any):
-        collection[name] = item
-
-    def _load(self, collection: Dict[str, Any], name: str) -> Any:
-        return collection.get(name)
-
-    def _remove(self, collection: Dict[str, Any], name: str) -> bool:
-        return collection.pop(name, None) is not None
-
-    def _exists(self, collection: Dict[str, Any], name: str) -> bool:
-        return name in collection
-
-    # -----------------------
-    # Wagons
-    # -----------------------
-    def save_wagon(self, name: str, wagon: Wagon):
-        self._save(self._wagons, name, wagon)
-
-    def load_wagon(self, name: str):
-        return self._load(self._wagons, name)
-
-    def remove_wagon(self, name: str):
-        return self._remove(self._wagons, name)
-
-    def has_wagon(self, name: str):
-        return self._exists(self._wagons, name)
-
-    # -----------------------
-    # Boxes
-    # -----------------------
-    def save_box(self, name: str, box: Box):
-        self._save(self._boxes, name, box)
-
-    def load_box(self, name: str):
-        return self._load(self._boxes, name)
-
-    def remove_box(self, name: str):
-        return self._remove(self._boxes, name)
-
-    def has_box(self, name: str):
-        return self._exists(self._boxes, name)
-
-    # -----------------------
-    # Containers
-    # -----------------------
-    def save_container(self, name: str, container: Container):
-        self._save(self._containers, name, container)
-
-    def load_container(self, name: str):
-        return self._load(self._containers, name)
-
-    def remove_container(self, name: str):
-        return self._remove(self._containers, name)
-
-    def has_container(self, name: str):
-        return self._exists(self._containers, name)
-
-    # -----------------------
-    # Metadata and Reporting
-    # -----------------------
-    def list_all(self):
-        return {
-            "wagons": list(self._wagons.keys()),
-            "boxes": list(self._boxes.keys()),
-            "containers": list(self._containers.keys()),
+        # type -> name -> {obj, saved_at, checksum, data_ref}
+        self._store = {
+            "wagon": {},
+            "box": {},
+            "container": {},
         }
 
-    def metadata_report(self):
-        return {
-            "wagons": {n: w.metadata for n, w in self._wagons.items()},
-            "boxes": {n: b.metadata for n, b in self._boxes.items()},
-            "containers": {n: c.metadata for n, c in self._containers.items()},
+    def add(self, obj_type: str, name: str, obj: object, compute_checksum: bool = True):
+        """Add an object with metadata to storage."""
+        checksum = None
+        if compute_checksum:
+            # calculate checksum if object has 'data', otherwise use the object itself
+            if hasattr(obj, "data"):
+                checksum = calculate_checksum(obj.data)
+            else:
+                checksum = calculate_checksum(obj)
+        self._store[obj_type][name] = {
+            "obj": obj,
+            "saved_at": datetime.utcnow(),
+            "checksum": checksum,
+            "data_ref": None,  # placeholder for lazy loading
         }
+
+    def get(self, obj_type: str, name: str):
+        """Retrieve an object from storage."""
+        entry = self._store[obj_type].get(name)
+        if entry:
+            return entry["obj"]
+        return None
+
+    def remove(self, obj_type: str, name: str):
+        """Remove an object from storage."""
+        return self._store[obj_type].pop(name, None)
+
+    def exists(self, obj_type: str, name: str) -> bool:
+        return name in self._store[obj_type]
+
+    def list_all(self, obj_type: str):
+        return list(self._store[obj_type].keys())

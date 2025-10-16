@@ -1,28 +1,30 @@
 """
 StorageManager agent for Fragua ETL.
-Provides centralized storage interface with full metadata tracking,
-checksums, lazy logging, and automatic data integrity verification on load.
+Manages Wagons, Boxes, and Containers using pure in-memory Storage.
+Handles metadata, checksums, lazy logging, and reporting with minimal code.
 """
 
-import pandas as pd
 from datetime import datetime, UTC
+import pandas as pd
 from agents.store.storage import Storage
-from utils.logger import get_logger
 from utils.metrics import calculate_checksum
+from utils.logger import get_logger
 
 
 class StorageManager:
-    """
-    Central manager that interacts with Storage, tracks metadata,
-    checksums, and automatically verifies integrity on load.
-    """
+    """Ultra-dynamic StorageManager using optimized Storage."""
+
+    TYPE_MAP = {
+        "wagon": "wagon",
+        "box": "box",
+        "container": "container",
+    }
 
     def __init__(self, name: str = "StorageManager"):
         self.name = name
         self.logger = get_logger(name)
         self.storage = Storage()
-
-        # DataFrame to track all storage operations
+        # Metadata log for all operations
         self.metadata = pd.DataFrame(
             columns=[
                 "object_name",
@@ -35,18 +37,16 @@ class StorageManager:
             ]
         )
 
-    # ------------------- Internal helper ------------------- #
+    # ------------------- Internal helpers ------------------- #
     def _record_metadata(
         self, obj_name: str, obj_type: str, operation: str, obj: object
     ):
-        """Record metadata and checksum for a storage operation."""
         rows, cols, checksum = None, None, None
         if hasattr(obj, "data") and hasattr(obj.data, "shape"):
             rows, cols = obj.data.shape
             checksum = calculate_checksum(obj.data)
         else:
             checksum = calculate_checksum(obj)
-
         new_row = {
             "object_name": obj_name,
             "object_type": obj_type,
@@ -60,130 +60,72 @@ class StorageManager:
             [self.metadata, pd.DataFrame([new_row])], ignore_index=True
         )
 
-    def _verify_on_load(self, obj_name: str, obj_type: str, obj: object):
-        """Verify checksum and log on object load."""
+    def _verify_on_load(self, obj_type: str, obj_name: str, obj: object):
         if obj is None:
             return
-        meta_rows = self.metadata[
-            (self.metadata["object_name"] == obj_name)
-            & (self.metadata["object_type"] == obj_type)
-            & (self.metadata["operation"] == "save")
-        ]
-        if meta_rows.empty:
+        stored_checksum = self.storage.get_checksum(obj_type, obj_name)
+        if stored_checksum is None:
             self.logger.warning(
                 "[%s] No checksum recorded for '%s' (%s)", self.name, obj_name, obj_type
             )
             return
-
-        last_checksum = meta_rows.iloc[-1]["checksum"]
         current_checksum = calculate_checksum(obj.data if hasattr(obj, "data") else obj)
-
-        if last_checksum != current_checksum:
+        if stored_checksum != current_checksum:
             self.logger.error(
-                "[%s] Checksum mismatch detected on load for '%s' (%s)",
-                self.name,
-                obj_name,
-                obj_type,
+                "[%s] Checksum mismatch for '%s' (%s)", self.name, obj_name, obj_type
             )
         else:
             self.logger.info(
-                "[%s] Checksum verified on load for '%s' (%s)",
+                "[%s] Checksum verified for '%s' (%s)", self.name, obj_name, obj_type
+            )
+
+    # ------------------- Public generic methods ------------------- #
+    def save(self, obj_type: str, name: str, obj: object, overwrite: bool = False):
+        if obj_type not in self.TYPE_MAP:
+            raise ValueError(f"Unknown object type '{obj_type}'")
+        coll_name = self.TYPE_MAP[obj_type]
+        if self.storage.exists(coll_name, name) and not overwrite:
+            self.logger.warning(
+                "[%s] %s '%s' exists. Use overwrite=True to replace.",
                 self.name,
-                obj_name,
                 obj_type,
-            )
-
-    # ------------------- Wagons ------------------- #
-    def save_wagon(self, name: str, wagon, overwrite: bool = False):
-        if self.has_wagon(name) and not overwrite:
-            self.logger.warning(
-                "[%s] Wagon '%s' exists. Use overwrite=True to replace.",
-                self.name,
                 name,
             )
             return
-        self.logger.info("[%s] Saving Wagon: %s", self.name, name)
-        self.storage.save_wagon(name, wagon)
-        self._record_metadata(name, "Wagon", "save", wagon)
+        self.logger.info("[%s] Saving %s: %s", self.name, obj_type, name)
+        self.storage.add(coll_name, name, obj)
+        self._record_metadata(name, obj_type, "save", obj)
 
-    def load_wagon(self, name: str):
-        wagon = self.storage.load_wagon(name)
-        self._verify_on_load(name, "Wagon", wagon)
-        return wagon
+    def load(self, obj_type: str, name: str):
+        coll_name = self.TYPE_MAP[obj_type]
+        obj = self.storage.get(coll_name, name)
+        self._verify_on_load(coll_name, name, obj)
+        return obj
 
-    def remove_wagon(self, name: str):
-        if not self.has_wagon(name):
-            self.logger.warning("[%s] Wagon '%s' does not exist.", self.name, name)
-            return
-        wagon = self.storage.remove_wagon(name)
-        self._record_metadata(name, "Wagon", "remove", wagon)
-        return wagon
-
-    def has_wagon(self, name: str):
-        return self.storage.has_wagon(name)
-
-    # ------------------- Boxes ------------------- #
-    def save_box(self, name: str, box, overwrite: bool = False):
-        if self.has_box(name) and not overwrite:
+    def remove(self, obj_type: str, name: str):
+        coll_name = self.TYPE_MAP[obj_type]
+        obj = self.storage.remove(coll_name, name)
+        if obj:
+            self._record_metadata(name, obj_type, "remove", obj)
+        else:
             self.logger.warning(
-                "[%s] Box '%s' exists. Use overwrite=True to replace.", self.name, name
+                "[%s] %s '%s' does not exist.", self.name, obj_type, name
             )
-            return
-        self.logger.info("[%s] Saving Box: %s", self.name, name)
-        self.storage.save_box(name, box)
-        self._record_metadata(name, "Box", "save", box)
+        return obj
 
-    def load_box(self, name: str):
-        box = self.storage.load_box(name)
-        self._verify_on_load(name, "Box", box)
-        return box
-
-    def remove_box(self, name: str):
-        if not self.has_box(name):
-            self.logger.warning("[%s] Box '%s' does not exist.", self.name, name)
-            return
-        box = self.storage.remove_box(name)
-        self._record_metadata(name, "Box", "remove", box)
-        return box
-
-    def has_box(self, name: str):
-        return self.storage.has_box(name)
-
-    # ------------------- Containers ------------------- #
-    def save_container(self, name: str, container, overwrite: bool = False):
-        if self.has_container(name) and not overwrite:
-            self.logger.warning(
-                "[%s] Container '%s' exists. Use overwrite=True to replace.",
-                self.name,
-                name,
-            )
-            return
-        self.logger.info("[%s] Saving Container: %s", self.name, name)
-        self.storage.save_container(name, container)
-        self._record_metadata(name, "Container", "save", container)
-
-    def load_container(self, name: str):
-        container = self.storage.load_container(name)
-        self._verify_on_load(name, "Container", container)
-        return container
-
-    def remove_container(self, name: str):
-        if not self.has_container(name):
-            self.logger.warning("[%s] Container '%s' does not exist.", self.name, name)
-            return
-        container = self.storage.remove_container(name)
-        self._record_metadata(name, "Container", "remove", container)
-        return container
-
-    def has_container(self, name: str):
-        return self.storage.has_container(name)
+    def has(self, obj_type: str, name: str) -> bool:
+        coll_name = self.TYPE_MAP[obj_type]
+        return self.storage.exists(coll_name, name)
 
     # ------------------- Reporting ------------------- #
     def report(self):
-        """
-        Return a metadata report of all storage operations with checksums.
-        """
         return self.metadata.copy()
 
+    def list_all(self):
+        return {
+            obj_type: self.storage.list_all(coll_name)
+            for obj_type, coll_name in self.TYPE_MAP.items()
+        }
+
     def __repr__(self):
-        return "<StorageManager name=%s>" % self.name
+        return f"<StorageManager name={self.name}>"
