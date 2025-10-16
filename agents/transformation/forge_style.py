@@ -3,8 +3,9 @@ Base ForgeStyle class for Fragua Blacksmiths.
 Contains common utilities for transformations.
 """
 
+from abc import abstractmethod
 from typing import Any, Generator
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import pandas as pd
 
 from utils.metrics import calculate_checksum
@@ -70,23 +71,9 @@ class ForgeStyle(Style):
             self.log_error(e)
             raise
 
+    @abstractmethod
     def forge(self, data: Any) -> Generator | Any:
         """Must be implemented by subclasses to transform data."""
-        raise NotImplementedError("Subclasses must implement forge()")
-
-    def validate(self, data: Any) -> Any:
-        """Basic validation of the data."""
-        if data is None:
-            raise ValueError("No data extracted")
-        return data
-
-    def postprocess(self, data: Any) -> Any:
-        """Optional step for cleaning or formatting data."""
-        return data
-
-    def log_error(self, error: Exception) -> None:
-        """Basic error logging."""
-        logger.error("[ForgeStyle ERROR] %s: %s", type(error).__name__, error)
 
     # ------------------ Utilities for DataFrames ------------------ #
 
@@ -114,7 +101,7 @@ class ForgeStyle(Style):
         """Add metadata columns to the transformed dataframe."""
         checksum_value = calculate_checksum(df)
         df["_forge_name"] = self.style_name
-        df["_transform_timestamp"] = datetime.now(timezone.utc)
+        df["_transform_timestamp"] = datetime.now(UTC)
         df["_checksum"] = checksum_value
 
         self.metadata["checksum"] = checksum_value

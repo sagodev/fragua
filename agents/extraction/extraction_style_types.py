@@ -10,7 +10,6 @@ from agents.extraction.extraction_style import (
     ExtractionStyle,
     register_extraction_style,
 )
-
 from agents.store.wagon import Wagon
 
 

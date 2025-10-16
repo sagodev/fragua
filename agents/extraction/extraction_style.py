@@ -3,24 +3,18 @@ Base ExtractionStyle class for Fragua Miners.
 Contains common utilities for extraction workflows.
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Generator
 from datetime import datetime, UTC
-
+from core.base_style import Style
 from utils.logger import get_logger
 
-# Unified logger for ExtractionStyle
 logger = get_logger(__name__)
 
-# Registry for dynamic ExtractionStyle discovery
 EXTRACTIONSTYLE_REGISTRY: dict[str, type] = {}
 
 
 def register_extraction_style(name: str):
-    """
-    Decorator to register an ExtractionStyle subclass dynamically.
-    """
-
     def wrapper(cls):
         EXTRACTIONSTYLE_REGISTRY[name] = cls
         logger.debug("Registered ExtractionStyle: %s", name)
@@ -29,63 +23,43 @@ def register_extraction_style(name: str):
     return wrapper
 
 
-class ExtractionStyle(ABC):
+class ExtractionStyle(Style):
     """
     Base class for all extraction styles in Fragua ETL.
-
-    Defines the lifecycle of data extraction:
-    - extract: obtain data from a source
-    - validate: ensure data integrity
-    - postprocess: optional cleanup or formatting
     """
 
     def __init__(self, style_name: str):
-        if not style_name or not isinstance(style_name, str):
-            raise ValueError("style_name must be a non-empty string")
-        self.style_name = style_name
+        super().__init__(style_name)
         self.created_at = datetime.now(UTC)
-
-    def use(self, source: Any) -> Any:
-        """
-        Execute the full extraction workflow.
-        Handles errors, validation, and optional postprocessing.
-        """
-        try:
-            logger.debug(
-                "[%s] Using extraction style on source: %s", self.style_name, source
-            )
-            data = self.extract(source)
-            validated = self.validate(data)
-            result = self.postprocess(validated)
-            logger.debug("[%s] Extraction completed successfully.", self.style_name)
-            return result
-        except Exception as e:
-            self.log_error(e)
-            raise
 
     @abstractmethod
     def extract(self, source: Any) -> Generator | Any:
         """Extract data from the given source."""
-        pass
 
-    def validate(self, data: Any) -> Any:
-        """Performs a basic validation of the extracted data."""
+    def use(self, data: Any) -> Any:
+        """
+        Main transformation method.
+        Executes forge -> validate -> postprocess pipeline.
+        """
         if data is None:
-            raise ValueError("No data extracted")
-        return data
+            raise ValueError("Input data cannot be None")
 
-    def postprocess(self, data: Any) -> Any:
-        """Optional data cleanup or transformation step."""
-        return data
-
-    def log_error(self, error: Exception) -> None:
-        """Handles error reporting."""
-        logger.error(
-            "[%s] ExtractionStyle ERROR: %s: %s",
-            self.style_name,
-            type(error).__name__,
-            error,
+        logger.debug(
+            "Starting ForgeStyle '%s' transformation pipeline.", self.style_name
         )
 
-    def __repr__(self):
-        return f"<{self.__class__.__name__} style_name={self.style_name}>"
+        try:
+            data = self.extract(data)
+            logger.debug("%s: forge() step completed.", self.style_name)
+
+            data = self.validate(data)
+            logger.debug("%s: validate() step completed.", self.style_name)
+
+            data = self.postprocess(data)
+            logger.debug("%s: postprocess() step completed.", self.style_name)
+
+            return data
+
+        except Exception as e:
+            self.log_error(e)
+            raise
