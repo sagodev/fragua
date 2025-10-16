@@ -5,13 +5,14 @@ Contains common utilities for transformations.
 
 from typing import Any, Generator
 from datetime import datetime, timezone
-import logging
 import pandas as pd
+
 from utils.metrics import calculate_checksum
+from utils.logger import get_logger
 from core import Style
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+# Unified logger for ForgeStyle
+logger = get_logger(__name__)
 
 # Registry for dynamic ForgeStyle discovery
 FORGESTYLE_REGISTRY: dict[str, type] = {}
@@ -24,6 +25,7 @@ def register_forge_style(name: str):
 
     def wrapper(cls):
         FORGESTYLE_REGISTRY[name] = cls
+        logger.debug("Registered ForgeStyle: %s", name)
         return cls
 
     return wrapper
@@ -48,10 +50,22 @@ class ForgeStyle(Style):
         if data is None:
             raise ValueError("Input data cannot be None")
 
+        logger.debug(
+            "Starting ForgeStyle '%s' transformation pipeline.", self.style_name
+        )
+
         try:
             data = self.forge(data)
+            logger.debug("%s: forge() step completed.", self.style_name)
+
             data = self.validate(data)
-            return self.postprocess(data)
+            logger.debug("%s: validate() step completed.", self.style_name)
+
+            data = self.postprocess(data)
+            logger.debug("%s: postprocess() step completed.", self.style_name)
+
+            return data
+
         except Exception as e:
             self.log_error(e)
             raise
@@ -72,7 +86,7 @@ class ForgeStyle(Style):
 
     def log_error(self, error: Exception) -> None:
         """Basic error logging."""
-        logger.error(f"[ForgeStyle ERROR] {type(error).__name__}: {error}")
+        logger.error("[ForgeStyle ERROR] %s: %s", type(error).__name__, error)
 
     # ------------------ Utilities for DataFrames ------------------ #
 
@@ -88,13 +102,13 @@ class ForgeStyle(Style):
                     df[col].fillna(0, inplace=True)
             else:
                 df[col].fillna(categorical_fill, inplace=True)
-        logger.info(f"{self.style_name}: Missing values filled.")
+        logger.info("%s: Missing values filled.", self.style_name)
 
     def _standardize(self, df: pd.DataFrame):
         """Standardize string columns (strip spaces and lowercase)."""
         for col in df.select_dtypes(include="object").columns:
             df[col] = df[col].astype(str).str.strip().str.lower()
-        logger.info(f"{self.style_name}: String columns standardized.")
+        logger.info("%s: String columns standardized.", self.style_name)
 
     def _add_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add metadata columns to the transformed dataframe."""
@@ -104,4 +118,7 @@ class ForgeStyle(Style):
         df["_checksum"] = checksum_value
 
         self.metadata["checksum"] = checksum_value
+        logger.debug(
+            "%s: Metadata added with checksum %s.", self.style_name, checksum_value
+        )
         return df
