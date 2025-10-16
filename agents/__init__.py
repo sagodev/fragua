@@ -2,7 +2,7 @@
 
 from .extraction import Miner, Wagon, ExtractionStyle
 from .transformation import Blacksmith, Box, ForgeStyle
-from .loading import Transporter, Container, Cart
+from .loading import Transporter, Container, DeliveryStyle
 from .store import Storage, StorageManager
 
 __all__ = [
@@ -14,7 +14,7 @@ __all__ = [
     "ForgeStyle",
     "Transporter",
     "Container",
-    "Cart",
+    "DeliveryStyle",
     "Storage",
     "StorageManager",
 ]

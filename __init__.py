@@ -9,9 +9,9 @@ from .agents import (
     ForgeStyle,
     Transporter,
     Container,
-    Cart,
     StorageManager,
     Storage,
+    DeliveryStyle,
 )
 
 from .core import (
@@ -33,7 +33,7 @@ __all__ = [
     "ForgeStyle",
     "Transporter",
     "Container",
-    "Cart",
+    "DeliveryStyle",
     "BaseAgent",
     "StorageManager",
     "Storage",
