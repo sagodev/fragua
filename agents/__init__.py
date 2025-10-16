@@ -1,14 +1,14 @@
 """Package for ETL agents."""
 
-from .extraction import Miner, Pickaxe, Wagon
+from .extraction import Miner, Wagon, ExtractionStyle
 from .transformation import Blacksmith, Box, ForgeStyle
 from .loading import Transporter, Container, Cart
 from .store import Storage, StorageManager
 
 __all__ = [
     "Miner",
-    "Pickaxe",
     "Wagon",
+    "ExtractionStyle",
     "Blacksmith",
     "Box",
     "ForgeStyle",

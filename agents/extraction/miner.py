@@ -6,7 +6,8 @@ and stores results in Wagons via StorageManager.
 """
 
 from typing import Any, Dict
-from datetime import datetime, timezone
+from datetime import datetime, UTC
+import pandas as pd
 from core.base_agent import BaseAgent
 from agents.extraction.extraction_style import ExtractionStyle, EXTRACTIONSTYLE_REGISTRY
 from agents.extraction.wagons import Wagon
@@ -51,7 +52,7 @@ class Miner(BaseAgent):
         self.known_styles[style.style_name] = style
         self.metadata["learned_styles"][style.style_name] = {
             "class": style.__class__.__name__,
-            "learned_at": datetime.now(timezone.utc),
+            "learned_at": datetime.now(UTC),
         }
         logger.info("Learned style '%s'", style.style_name)
 
@@ -93,7 +94,7 @@ class Miner(BaseAgent):
         # Record extraction metadata
         new_row = {
             "style_name": style_name,
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
             "output_name": result.name,
             "rows": getattr(result.data, "shape", [None, None])[0],
             "columns": getattr(result.data, "shape", [None, None])[1],

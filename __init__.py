@@ -2,7 +2,7 @@
 
 from .agents import (
     Miner,
-    Pickaxe,
+    ExtractionStyle,
     Wagon,
     Blacksmith,
     Box,
@@ -27,7 +27,7 @@ from .utils import (
 
 __all__ = [
     "Miner",
-    "Pickaxe",
+    "ExtractionStyle",
     "Wagon",
     "Blacksmith",
     "Box",
