@@ -16,7 +16,6 @@ from .agents import (
 
 from .core import (
     BaseAgent,
-    Tool,
     Style,
 )
 
@@ -38,7 +37,6 @@ __all__ = [
     "BaseAgent",
     "StorageManager",
     "Storage",
-    "Tool",
     "Style",
     "get_logger",
     "Config",
