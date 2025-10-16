@@ -4,9 +4,9 @@ Handles Wagons, Boxes, and Containers efficiently with metadata tracking.
 """
 
 from typing import Any, Dict
-from agents.extraction.wagons import Wagon
-from agents.transformation.boxes import Box
-from agents.loading.containers import Container
+from agents.store.wagon import Wagon
+from agents.store.box import Box
+from agents.store.container import Container
 
 
 class Storage:

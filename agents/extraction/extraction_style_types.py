@@ -11,7 +11,7 @@ from agents.extraction.extraction_style import (
     register_extraction_style,
 )
 
-from agents.extraction.wagons import Wagon
+from agents.store.wagon import Wagon
 
 
 @register_extraction_style("csv")

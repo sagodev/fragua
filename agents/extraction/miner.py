@@ -10,7 +10,7 @@ from datetime import datetime, UTC
 import pandas as pd
 from core.base_agent import BaseAgent
 from agents.extraction.extraction_style import ExtractionStyle, EXTRACTIONSTYLE_REGISTRY
-from agents.extraction.wagons import Wagon
+from agents.store.wagon import Wagon
 from utils.logger import get_logger
 
 logger = get_logger("Miner")

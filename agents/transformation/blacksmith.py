@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import pandas as pd
 from core.base_agent import BaseAgent
 from agents.transformation.forge_style import ForgeStyle, FORGESTYLE_REGISTRY
-from agents.transformation.boxes import Box
+from agents.store.box import Box
 from utils.logger import get_logger
 
 logger = get_logger("Blacksmith")

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from agents.transformation.forge_style import ForgeStyle, register_forge_style
-from agents.transformation.boxes import Box
+from agents.store.box import Box
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
