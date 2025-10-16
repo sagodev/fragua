@@ -4,7 +4,7 @@ Boxes for storing transformed data from Blacksmiths.
 Boxes provide versioned storage for transformed data before loading.
 """
 
-from datetime import datetime
+from datetime import datetime, UTC
 import pandas as pd
 from utils.metrics import calculate_checksum
 
@@ -16,7 +16,7 @@ class Box:
 
     def __init__(self, name: str, data=None):
         self.name = name
-        self._processed_at = datetime.utcnow()
+        self._processed_at = datetime.now(UTC)
         self.data = None
         self._checksum = None
         if data is not None:

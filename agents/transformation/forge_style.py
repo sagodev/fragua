@@ -4,7 +4,7 @@ Contains common utilities for transformations.
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, UTC
 import logging
 import pandas as pd
 from utils.metrics import calculate_checksum
@@ -80,7 +80,7 @@ class ForgeStyle(ABC):
         """
         checksum_value = calculate_checksum(df)
         df["_forge_name"] = self.name
-        df["_transform_timestamp"] = datetime.utcnow()
+        df["_transform_timestamp"] = datetime.now(UTC)
         df["_checksum"] = checksum_value
 
         self.metadata["checksum"] = checksum_value

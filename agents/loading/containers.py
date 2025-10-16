@@ -4,7 +4,7 @@ Containers for storing loaded data before final delivery.
 Containers allow versioned storage of data that has been processed and is ready for delivery.
 """
 
-from datetime import datetime
+from datetime import datetime, UTC
 import pandas as pd
 from utils.metrics import calculate_checksum
 
@@ -16,7 +16,7 @@ class Container:
 
     def __init__(self, name: str, data=None):
         self.name = name
-        self._stored_at = datetime.utcnow()
+        self._stored_at = datetime.now(UTC)
         self.data = None
         self._checksum = None
         if data is not None:
