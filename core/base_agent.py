@@ -6,7 +6,7 @@ agents like Miner, Blacksmith, and Transporter.
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Any, Dict, Type
 import pandas as pd
 from utils.logger import get_logger
@@ -57,7 +57,7 @@ class BaseAgent(ABC):
         self.known_styles[style_instance.style_name] = style_instance
         self.metadata["learned_styles"][style_instance.style_name] = {
             "class": style_instance.__class__.__name__,
-            "learned_at": datetime.now(timezone.utc),
+            "learned_at": datetime.now(UTC),
         }
         logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
 
@@ -100,7 +100,7 @@ class BaseAgent(ABC):
 
         new_row = {
             "style_name": style_name,
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
             "output_name": getattr(result, "name", None),
             "rows": getattr(getattr(result, "data", None), "shape", [None, None])[0],
             "columns": getattr(getattr(result, "data", None), "shape", [None, None])[1],

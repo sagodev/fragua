@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 # ---------------- MLForge ----------------
 @register_forge_style("ml")
-class MLForge(ForgeStyle):
+class MLStyle(ForgeStyle):
 
     def forge(self, data: pd.DataFrame) -> Box:
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
@@ -64,7 +64,7 @@ class MLForge(ForgeStyle):
 
 # ---------------- ReportForge ----------------
 @register_forge_style("report")
-class ReportForge(ForgeStyle):
+class ReportStyle(ForgeStyle):
 
     def forge(self, data: pd.DataFrame) -> Box:
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
@@ -99,7 +99,7 @@ class ReportForge(ForgeStyle):
 
 # ---------------- AnalysisForge ----------------
 @register_forge_style("analysis")
-class AnalysisForge(ForgeStyle):
+class AnalysisStyle(ForgeStyle):
 
     def forge(self, data: pd.DataFrame) -> Box:
         df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
