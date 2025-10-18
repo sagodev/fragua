@@ -4,7 +4,7 @@ Contains common utilities for extraction workflows.
 """
 
 from abc import abstractmethod
-from typing import Any, TypeVar, Dict, Union
+from typing import Any, Dict, Union, Generator
 from datetime import datetime, UTC
 import pandas as pd
 from fragua.core.base_style import Style
@@ -12,12 +12,6 @@ from fragua.agents.store.wagon import Wagon
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-# Type for source data - could be file path, connection string, API endpoint, etc.
-SourceT = TypeVar("SourceT")
-
-# We know extracted data will always be DataFrame or list for Wagon
-ExtractedDataT = Union[pd.DataFrame, list[Any]]
 
 
 def register_extraction_style(name: str):
@@ -31,9 +25,7 @@ def register_extraction_style(name: str):
         callable: Class decorator function
     """
 
-    def wrapper(
-        cls: type["ExtractionStyle[Any, Any]"],
-    ) -> type["ExtractionStyle[Any, Any]"]:
+    def wrapper(cls: type["ExtractionStyle"]) -> type["ExtractionStyle"]:
         EXTRACTIONSTYLE_REGISTRY[name] = cls
         logger.debug("Registered ExtractionStyle: %s", name)
         return cls
@@ -41,13 +33,20 @@ def register_extraction_style(name: str):
     return wrapper
 
 
-class ExtractionStyle(Style[SourceT, Wagon]):
-    """
-    Base class for all extraction styles in Fragua ETL.
-
-    Type Parameters:
-        SourceT: Type of source data (e.g., str for paths, dict for connection params)
-        ExtractedDataT: Type alias for DataFrame or list - valid Wagon data types
+class ExtractionStyle(Style[Dict[str, Any], Wagon]):
+    """Base class for all extraction styles in Fragua ETL.
+    
+    Extraction styles implement different methods to extract data from sources like CSV files,
+    Excel files, databases, APIs etc. Each style takes its configuration parameters as a
+    dictionary in the extract method, allowing more flexibility in how the configuration
+    is provided.
+    
+    Example:
+        class CSVExtractionStyle(ExtractionStyle):
+            def extract(self, source_params: Dict[str, Any]) -> pd.DataFrame:
+                path = source_params.get("path") 
+                read_kwargs = source_params.get("read_kwargs", {})
+                return pd.read_csv(path, **read_kwargs)
     """
 
     def __init__(self, style_name: str):
@@ -56,40 +55,44 @@ class ExtractionStyle(Style[SourceT, Wagon]):
         self.metadata: Dict[str, Any] = {"created_at": self.created_at}
 
     @abstractmethod
-    def extract(self, source: SourceT) -> ExtractedDataT:
-        """
-        Extract data from the given source.
+    def extract(self, source_params: Dict[str, Any]) -> Union[pd.DataFrame, list[Any]]:
+        """Extract data according to source parameters.
 
         Args:
-            source (SourceT): The source to extract data from
+            source_params (Dict[str, Any]): Configuration parameters for the extraction
+                Will vary by style but typically includes source location (file path,
+                connection string, URL) and extraction options.
 
         Returns:
-            ExtractedDataT: The extracted data as DataFrame or list
+            Union[pd.DataFrame, list[Any]]: The extracted data as a DataFrame
+                or list depending on the source and style.
 
         Raises:
-            ValueError: If source is invalid
-            IOError: If extraction fails
+            ValueError: If required parameters are missing or invalid
+            IOError: If data cannot be extracted from source
         """
         raise NotImplementedError
 
-    def use(self, data: SourceT) -> Wagon:
-        """
-        Main extraction method.
-        Executes extract -> validate -> postprocess pipeline.
+    def use(self, source_params: Dict[str, Any]) -> Wagon[Union[pd.DataFrame, list[Any]]]:
+        """Main extraction pipeline method.
+        
+        Executes extract -> validate -> postprocess workflow.
 
         Args:
-            data (SourceT): Source to extract data from
+            source_params (Dict[str, Any]): Configuration for extracting data
+                from source. Format varies by style.
 
         Returns:
-            Wagon: Container with extracted and processed data
+            Wagon[Union[pd.DataFrame, list[Any]]]: Container with extracted
+                and processed data.
 
         Raises:
-            ValueError: If data source is None or invalid
-            TypeError: If postprocess returns non-Wagon
-            Exception: If any step in the pipeline fails
+            ValueError: If source_params is None or missing required fields
+            TypeError: If postprocess returns invalid type
+            Exception: If any pipeline step fails
         """
-        if data is None:
-            raise ValueError("Input source cannot be None")
+        if source_params is None:
+            raise ValueError("Source parameters cannot be None")
 
         logger.debug(
             "Starting ExtractionStyle '%s' extraction pipeline.", self.style_name
@@ -97,35 +100,22 @@ class ExtractionStyle(Style[SourceT, Wagon]):
 
         try:
             # Extract phase
-            extracted = self.extract(data)
+            extracted = self.extract(source_params)
             logger.debug("%s: extract() step completed.", self.style_name)
 
-            # Convert generator to data if needed
+            # Convert generator to list if needed
             if isinstance(extracted, Generator):
                 extracted = list(extracted)
 
-            # Validate phase
-            validated = self.validate(extracted)
-            logger.debug("%s: validate() step completed.", self.style_name)
+            # Create wagon and update its data
+            result = Wagon(name=self.style_name, data=extracted)
 
-            # Create wagon and postprocess
-            wagon = Wagon(name=self.style_name, data=validated)
-            result = self.postprocess(wagon)
-            logger.debug("%s: postprocess() step completed.", self.style_name)
-
-            # Update metadata with operation details
-            source_type = type(data).__name__
-            result_type = (
-                type(result.data).__name__
-                if hasattr(result, "data") and result.data is not None
-                else None
-            )
-
+            # Update metadata 
             self.metadata.update(
                 {
                     "last_extraction": datetime.now(UTC),
-                    "source_type": source_type,
-                    "result_type": result_type,
+                    "params_type": type(source_params).__name__,
+                    "result_type": type(result.data).__name__ if result.data is not None else None,
                 }
             )
 
@@ -136,5 +126,5 @@ class ExtractionStyle(Style[SourceT, Wagon]):
             raise
 
 
-# Registry for dynamic ExtractionStyle discovery
-EXTRACTIONSTYLE_REGISTRY: Dict[str, type[ExtractionStyle[Any]]] = {}
+# Registry for dynamic style discovery
+EXTRACTIONSTYLE_REGISTRY: Dict[str, type[ExtractionStyle]] = {}

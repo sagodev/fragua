@@ -3,7 +3,7 @@ Concrete ForgeStyle subclasses for Fragua Blacksmiths.
 Includes MLForge, ReportForge, and AnalysisForge.
 """
 
-from typing import Dict
+from typing import Any, Dict, TypedDict, NotRequired
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
@@ -15,13 +15,64 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+class MLSourceParams(TypedDict, total=False):
+    """ML transformation source parameters."""
+
+    data: DataFrame
+    target_column: NotRequired[str]
+    categorical_cols: NotRequired[list[str]]
+    numeric_cols: NotRequired[list[str]]
+    outlier_threshold: NotRequired[float]
+
+
+class ReportSourceParams(TypedDict, total=False):
+    """Report transformation source parameters."""
+
+    data: DataFrame
+    format_config: NotRequired[Dict[str, Any]]
+    derived_columns: NotRequired[Dict[str, str]]
+    rounding_precision: NotRequired[int]
+
+
+class AnalysisSourceParams(TypedDict, total=False):
+    """Analysis transformation source parameters."""
+
+    data: DataFrame
+    groupby_cols: NotRequired[list[str]]
+    agg_functions: NotRequired[Dict[str, str]]
+    sort_by: NotRequired[list[str]]
+
+
 # ---------------- MLForge ----------------
 @register_forge_style("ml")
-class MLStyle(ForgeStyle[DataFrame, DataFrame]):
+class MLStyle(ForgeStyle):
     """Forge style for machine learning preprocessing."""
 
-    def forge(self, source: Dict[str, DataFrame]) -> DataFrame:
-        data: DataFrame = source["data"]
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
+
+    def forge(self, source_params: Dict[str, Any]) -> DataFrame:
+        """Transform data for machine learning.
+
+        Args:
+            source_params: Dictionary containing:
+                data (DataFrame): Data to transform
+                target_column (str, optional): Target variable name
+                categorical_cols (list[str], optional): Categorical columns to encode
+                numeric_cols (list[str], optional): Numeric columns to scale
+                outlier_threshold (float, optional): IQR multiplier for outliers
+
+        Returns:
+            DataFrame: Transformed data ready for ML
+
+        Raises:
+            ValueError: If data is missing or invalid
+            TypeError: If data is not a DataFrame
+        """
+        data = source_params["data"]
+        if not isinstance(data, DataFrame):
+            raise TypeError("MLStyle requires a pandas DataFrame")
+
         df: DataFrame = data.copy()
 
         self._fill_missing(df, numeric_fill="mean")
@@ -71,11 +122,33 @@ class MLStyle(ForgeStyle[DataFrame, DataFrame]):
 
 # ---------------- ReportForge ----------------
 @register_forge_style("report")
-class ReportStyle(ForgeStyle[DataFrame, DataFrame]):
+class ReportStyle(ForgeStyle):
     """Forge style for reporting transformations."""
 
-    def forge(self, source: Dict[str, DataFrame]) -> DataFrame:
-        data: DataFrame = source["data"]
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
+
+    def forge(self, source_params: Dict[str, Any]) -> DataFrame:
+        """Transform data for reporting.
+
+        Args:
+            source_params: Dictionary containing:
+                data (DataFrame): Data to transform
+                format_config (dict, optional): Column formatting options
+                derived_columns (dict, optional): Column calculations
+                rounding_precision (int, optional): Decimal places
+
+        Returns:
+            DataFrame: Transformed data ready for reporting
+
+        Raises:
+            ValueError: If data is missing or invalid
+            TypeError: If data is not a DataFrame
+        """
+        data = source_params["data"]
+        if not isinstance(data, DataFrame):
+            raise TypeError("ReportStyle requires a pandas DataFrame")
+
         df: DataFrame = data.copy()
 
         self._fill_missing(df, numeric_fill="zero")
@@ -96,49 +169,69 @@ class ReportStyle(ForgeStyle[DataFrame, DataFrame]):
         logger.info("%s: Derived columns added.", self.style_name)
 
     def _format_for_report(self, df: DataFrame) -> None:
+        # Format object columns
         obj_cols = df.select_dtypes(include="object").columns
-        num_cols = df.select_dtypes(include="number").columns
-
         for col in obj_cols:
-            df[col] = df[col].astype(str).str.title()
+            df[col] = df[col].astype(str).str.strip()
+
+        # Format numeric columns
+        num_cols = df.select_dtypes(include="number").columns
         for col in num_cols:
             df[col] = df[col].round(2)
 
-        logger.debug(
-            "%s: Formatted columns for report: %s", self.style_name, list(df.columns)
-        )
-        logger.info("%s: Formatting for report completed.", self.style_name)
+        logger.info("%s: Column formatting applied.", self.style_name)
 
 
 # ---------------- AnalysisForge ----------------
 @register_forge_style("analysis")
-class AnalysisStyle(ForgeStyle[DataFrame, DataFrame]):
-    """Forge style for analytical transformations."""
+class AnalysisStyle(ForgeStyle):
+    """Forge style for data analysis transformations."""
 
-    def forge(self, source: Dict[str, DataFrame]) -> DataFrame:
-        data: DataFrame = source["data"]
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
+
+    def forge(self, source_params: Dict[str, Any]) -> DataFrame:
+        """Transform data for analysis.
+
+        Args:
+            source_params: Dictionary containing:
+                data (DataFrame): Data to analyze
+                groupby_cols (list[str], optional): Columns to group by
+                agg_functions (dict, optional): Aggregation functions
+                sort_by (list[str], optional): Columns to sort by
+
+        Returns:
+            DataFrame: Transformed data ready for analysis
+
+        Raises:
+            ValueError: If data is missing or invalid
+            TypeError: If data is not a DataFrame
+        """
+        data = source_params["data"]
+        if not isinstance(data, DataFrame):
+            raise TypeError("AnalysisStyle requires a pandas DataFrame")
+
         df: DataFrame = data.copy()
+        groupby_cols = source_params.get("groupby_cols", [])
+        agg_functions = source_params.get("agg_functions", {})
+        sort_by = source_params.get("sort_by", [])
 
+        # Clean and prepare
         self._fill_missing(df, numeric_fill="mean")
         self._standardize(df)
-        self._add_derived_columns(df)
+
+        # Group and aggregate if specified
+        if groupby_cols:
+            if agg_functions:
+                df = df.groupby(groupby_cols).agg(agg_functions).reset_index()
+            else:
+                df = df.groupby(groupby_cols).agg("sum").reset_index()
+
+        # Sort if specified
+        if sort_by:
+            df = df.sort_values(by=sort_by)
+
         self._add_metadata(df)
 
-        logger.info(
-            "%s: forge process completed with shape %s.", self.style_name, df.shape
-        )
+        logger.info("%s: analysis completed with %d rows.", self.style_name, len(df))
         return df
-
-    def _add_derived_columns(self, df: DataFrame) -> None:
-        added: list[str] = []
-
-        if {"quantity", "price"}.issubset(df.columns):
-            df["total"] = df["quantity"] * df["price"]
-            added.append("total")
-
-        if {"total", "discount_rate"}.issubset(df.columns):
-            df["discounted_total"] = df["total"] * (1 - df["discount_rate"])
-            added.append("discounted_total")
-
-        logger.debug("%s: Added derived columns: %s", self.style_name, added)
-        logger.info("%s: Derived columns added.", self.style_name)

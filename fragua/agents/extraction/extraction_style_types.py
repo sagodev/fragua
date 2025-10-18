@@ -2,10 +2,13 @@
 Concrete ExtractionStyle classes with dynamic registration for Fragua ETL.
 """
 
-from typing import Optional, Dict, Any, Union, TypedDict, cast
-import pandas as pd
+from typing import Any, Dict, Literal, Union
+from pathlib import Path
+from sqlalchemy import create_engine
 from pandas import DataFrame
+import pandas as pd
 import requests
+from requests.auth import HTTPBasicAuth
 
 from fragua.agents.extraction.extraction_style import (
     ExtractionStyle,
@@ -13,211 +16,239 @@ from fragua.agents.extraction.extraction_style import (
 )
 
 
-class CSVSource(TypedDict, total=False):
-    """Type definition for CSV source parameters."""
-
-    path: str
+class CSVSourceParams(TypedDict, total=False):
+    """CSV source configuration parameters."""
+    path: Union[str, Path]
     read_kwargs: Dict[str, Any]
 
 
-class ExcelSource(TypedDict, total=False):
-    """Type definition for Excel source parameters."""
-
-    path: str
+class ExcelSourceParams(TypedDict, total=False):
+    """Excel source configuration parameters."""
+    path: Union[str, Path]
     sheet_name: Union[str, int]
     read_kwargs: Dict[str, Any]
 
 
-class SQLSource(TypedDict, total=False):
-    """Type definition for SQL source parameters."""
-
+class SQLSourceParams(TypedDict, total=False):
+    """SQL source configuration parameters."""
     connection_string: str
     query: str
     read_kwargs: Dict[str, Any]
 
 
-class APISource(TypedDict, total=False):
-    """Type definition for API source parameters."""
-
-    endpoint: str
+class APISourceParams(TypedDict, total=False):
+    """API source configuration parameters."""
+    url: str 
     method: str
     headers: Dict[str, str]
-    params: Dict[str, str]
+    params: Dict[str, Any]
+    data: Dict[str, Any] 
+    auth: Dict[str, str]
+    proxy: Dict[str, str]
     timeout: float
-
-
-# Source type definitions
-class CSVSource(TypedDict):
-    """Type definition for CSV source parameters."""
-
-    path: str
-    read_kwargs: Optional[Dict[str, Any]]
-
-
-class ExcelSource(TypedDict):
-    """Type definition for Excel source parameters."""
-
-    path: str
-    sheet_name: Optional[Union[str, int]]
-    read_kwargs: Optional[Dict[str, Any]]
-
-
-class SQLSource(TypedDict):
-    """Type definition for SQL source parameters."""
-
-    connection_string: str
-    query: str
-    read_kwargs: Optional[Dict[str, Any]]
-
-
-class APISource(TypedDict):
-    """Type definition for API source parameters."""
-
-    endpoint: str
-    params: Optional[Dict[str, Any]]
-    headers: Optional[Dict[str, Any]]
+    read_kwargs: Dict[str, Any]
 
 
 @register_extraction_style("csv")
-class CSVExtractionStyle(ExtractionStyle[DataFrame]):
-    """Extracts data from CSV files."""
+class CSVExtractionStyle(ExtractionStyle):
+    """Extracts data from CSV files.
+    
+    Source parameters:
+        path (str): Path to the CSV file
+        read_kwargs (dict, optional): Parameters for pd.read_csv
+    """
 
-    def __init__(
-        self, style_name: str, path: str, read_kwargs: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def __init__(self, style_name: str) -> None:
         super().__init__(style_name=style_name)
-        self.path = path
-        self.read_kwargs = read_kwargs or {}
 
-    def extract(self, source: Optional[DataFrame] = None) -> DataFrame:
+    def extract(self, source_params: Dict[str, Any]) -> DataFrame:
         """Extract data from a CSV file.
 
         Args:
-            source: Not used in CSV extraction, here for interface compatibility.
+            source_params: Dictionary containing CSV source parameters.
 
         Returns:
-            DataFrame: The extracted data.
+            DataFrame: The extracted data
+
+        Raises:
+            ValueError: If path is missing or invalid 
+            pd.errors.EmptyDataError: If CSV file is empty
+            IOError: If file cannot be opened/read
         """
-        # We ignore source since CSVExtractionStyle doesn't transform existing data
-        df: DataFrame = pd.read_csv(self.path, **cast(Dict[str, Any], self.read_kwargs))
-        return df
+        # Input validation
+        path = source_params["path"]
+        if not path:
+            raise ValueError("path is required in source_params")
+
+        # Extract with optional parameters
+        read_kwargs = source_params.get("read_kwargs", {})
+
+        if isinstance(path, Path):
+            path_str = str(path)
+        else:
+            path_str = path
+
+        return pd.read_csv(path_str, **read_kwargs)
 
 
 @register_extraction_style("excel")
-class ExcelExtractionStyle(ExtractionStyle[DataFrame]):
-    """Extracts data from Excel files."""
+class ExcelExtractionStyle(ExtractionStyle):
+    """Extracts data from Excel files.
 
-    def __init__(
-        self,
-        path: str,
-        sheet_name: Optional[Union[str, int]] = 0,
-        name: Optional[str] = None,
-        read_kwargs: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        super().__init__(style_name=name or f"excel:{path}")
-        self.path = path
-        self.sheet_name = sheet_name
-        self.read_kwargs = read_kwargs or {}
+    Source parameters:
+        path (str): Path to the Excel file
+        sheet_name (str|int, optional): Name or index of sheet to read. Defaults to 0
+        read_kwargs (dict, optional): Parameters for pd.read_excel
+    """
 
-    def extract(self, source: Optional[DataFrame] = None) -> DataFrame:
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
+
+    def extract(self, source_params: Dict[str, Any]) -> DataFrame:
         """Extract data from an Excel file.
 
         Args:
-            source: Not used in Excel extraction, here for interface compatibility.
+            source_params: Dictionary containing Excel source parameters.
 
         Returns:
-            DataFrame: The extracted data.
+            DataFrame: The extracted data
+
+        Raises:
+            ValueError: If path is missing or invalid
+            pd.errors.EmptyDataError: If Excel file is empty 
+            IOError: If file cannot be opened/read
         """
-        # We ignore source since ExcelExtractionStyle doesn't transform existing data
-        df: DataFrame = pd.read_excel(
-            self.path,
-            sheet_name=self.sheet_name,
-            **cast(Dict[str, Any], self.read_kwargs),
-        )
-        return df
+        # Input validation 
+        path = source_params["path"]
+        if not path:
+            raise ValueError("path is required in source_params")
+
+        # Extract with optional parameters
+        sheet_name = source_params.get("sheet_name", 0)
+        read_kwargs = source_params.get("read_kwargs", {})
+
+        if isinstance(path, Path):
+            path_str = str(path)
+        else:
+            path_str = path
+
+        return pd.read_excel(path_str, sheet_name=sheet_name, **read_kwargs)
 
 
-@register_extraction_style("sql")
-class SQLExtractionStyle(ExtractionStyle[DataFrame]):
-    """Executes SQL queries against a database connection."""
+@register_extraction_style("sql")  
+class SQLExtractionStyle(ExtractionStyle):
+    """Extracts data from SQL databases.
 
-    def __init__(
-        self,
-        connection_string: str,
-        query: str,
-        name: Optional[str] = None,
-        read_kwargs: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        super().__init__(style_name=name or f"sql:{query[:20]}")
-        self.connection_string = connection_string
-        self.query = query
-        self.read_kwargs = read_kwargs or {}
+    Source parameters:
+        connection_string (str): SQLAlchemy connection URL
+        query (str): SQL query to execute
+        read_kwargs (dict, optional): Parameters for pd.read_sql
+    """
 
-    def extract(self, source: Optional[DataFrame] = None) -> DataFrame:
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
+
+    def extract(self, source_params: Dict[str, Any]) -> DataFrame:
         """Extract data from a SQL database.
 
         Args:
-            source: Not used in SQL extraction, here for interface compatibility.
+            source_params: Dictionary containing SQL source parameters.
 
         Returns:
-            DataFrame: The extracted data.
-        """
-        try:
-            from sqlalchemy import create_engine
-        except ImportError as e:
-            raise RuntimeError(
-                "SQLExtractionStyle requires SQLAlchemy. Install it with `pip install sqlalchemy`."
-            ) from e
+            DataFrame: The extracted data
 
-        engine = create_engine(self.connection_string)
-        with engine.connect() as conn:
-            df: DataFrame = pd.read_sql_query(
-                sql=self.query, con=conn, **cast(Dict[str, Any], self.read_kwargs)
-            )
-        return df
+        Raises:
+            ValueError: If connection string or query is missing
+            RuntimeError: If SQLAlchemy is not installed
+            SQLAlchemyError: If database connection fails
+        """
+        # Input validation
+        connection_string = source_params["connection_string"]
+        if not connection_string:
+            raise ValueError("connection_string is required in source_params")
+
+        query = source_params["query"]
+        if not query:
+            raise ValueError("query is required in source_params")
+
+        # Extract with optional parameters
+        read_kwargs = source_params.get("read_kwargs", {})
+
+        engine = create_engine(connection_string)
+        try:
+            with engine.connect() as conn:
+                df = pd.read_sql_query(query, conn, **read_kwargs)
+                return df
+        finally:
+            engine.dispose()
 
 
 @register_extraction_style("api")
-class APIExtractionStyle(ExtractionStyle[DataFrame]):
-    """Fetches data from a REST API endpoint."""
+class APIExtractionStyle(ExtractionStyle):
+    """Extracts data from REST APIs.
 
-    def __init__(
-        self,
-        endpoint: str,
-        params: Optional[Dict[str, str]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        name: Optional[str] = None,
-        timeout: float = 30.0,
-    ) -> None:
-        super().__init__(style_name=name or f"api:{endpoint[:30]}")
-        self.endpoint = endpoint
-        self.params = params or {}
-        self.headers = headers or {}
-        self.timeout = timeout
+    Source parameters:
+        url (str): API endpoint URL
+        method (str, optional): HTTP method. Defaults to GET
+        headers (dict, optional): Request headers 
+        params (dict, optional): URL parameters
+        data (dict, optional): Request body data
+        auth (dict, optional): HTTP Basic auth credentials
+        proxy (dict, optional): Proxy configuration
+        timeout (float, optional): Request timeout in seconds
+        read_kwargs (dict, optional): Parameters for pd.DataFrame constructor
+    """
 
-    def extract(self, source: Optional[DataFrame] = None) -> DataFrame:
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
+
+    def extract(self, source_params: Dict[str, Any]) -> DataFrame:
         """Extract data from a REST API endpoint.
 
         Args:
-            source: Not used in API extraction, here for interface compatibility.
+            source_params: Dictionary containing API source parameters.
 
         Returns:
-            DataFrame: The extracted data.
+            DataFrame: The extracted data
+
+        Raises:
+            ValueError: If URL is missing or response is not JSON
+            RequestException: If API request fails
         """
-        response = requests.get(
-            self.endpoint,
-            params=self.params,
-            headers=self.headers,
-            timeout=self.timeout,
+        # Input validation
+        url = source_params["url"]
+        if not url:
+            raise ValueError("url is required in source_params")
+
+        # Request configuration
+        method = source_params.get("method", "GET").upper()
+        headers = source_params.get("headers", {})
+        params = source_params.get("params", None)
+        data = source_params.get("data", None)
+        auth = source_params.get("auth", None)
+        proxy = source_params.get("proxy", None)
+        timeout = source_params.get("timeout", 30.0)
+        read_kwargs = source_params.get("read_kwargs", {})
+
+        # Make request
+        response = requests.request(
+            method=method,
+            url=url,
+            headers=headers, 
+            params=params,
+            data=data,
+            auth=HTTPBasicAuth(**auth) if auth else None,
+            proxies=proxy,
+            timeout=timeout,
         )
         response.raise_for_status()
-        result_data = response.json()
 
-        # Convert JSON data to DataFrame
+        # Convert response to DataFrame
+        result_data = response.json()
         if isinstance(result_data, list):
-            return pd.DataFrame(result_data)
+            return pd.DataFrame(result_data, **read_kwargs)
         elif isinstance(result_data, dict):
             # Try to handle nested structures by normalizing
-            return pd.json_normalize(result_data)
+            return pd.json_normalize(result_data, **read_kwargs)
         else:
             raise ValueError(f"Unexpected API response type: {type(result_data)}")

@@ -2,73 +2,198 @@
 SubTypes of DeliveryStyle representing specific delivery methods with a unified delivery method.
 """
 
-from typing import Any, Optional
+from typing import Any, Dict, Literal, TypedDict, NotRequired
 import requests
 from sqlalchemy import create_engine
 from pandas import DataFrame
-from fragua.agents.loading.delivery_style import DeliveryStyle, register_delivery_style, logger
+
+from fragua.agents.loading.delivery_style import DeliveryStyle, register_delivery_style
+from fragua.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+class ExcelDeliveryParams(TypedDict, total=False):
+    """Excel delivery configuration parameters."""
+
+    data: DataFrame
+    destination: str
+    sheet_name: NotRequired[str]
+    index: NotRequired[bool]
+    engine: NotRequired[Literal["openpyxl", "xlsxwriter"]]
+
+
+class SQLDeliveryParams(TypedDict, total=False):
+    """SQL delivery configuration parameters."""
+
+    data: DataFrame
+    connection_string: str
+    table_name: str
+    if_exists: NotRequired[Literal["fail", "replace", "append"]]
+    index: NotRequired[bool]
+    chunksize: NotRequired[int]
+
+
+class APIDeliveryParams(TypedDict, total=False):
+    """API delivery configuration parameters."""
+
+    data: Any
+    endpoint: str
+    method: NotRequired[Literal["GET", "POST", "PUT", "DELETE", "PATCH"]]
+    headers: NotRequired[Dict[str, str]]
+    auth: NotRequired[Dict[str, str]]
+    timeout: NotRequired[float]
 
 
 @register_delivery_style("excel")
 class ExcelDeliveryStyle(DeliveryStyle):
     """DeliveryStyle for exporting data to Excel files."""
 
-    def __init__(self, style_name: str, destination: str) -> None:
-        super().__init__(style_name)
-        self.destination = destination  # path del archivo Excel
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
 
-    def deliver(self, data: DataFrame) -> DataFrame:
+    def deliver(self, source_params: Dict[str, Any]) -> DataFrame:
+        """Export data to Excel file.
+
+        Args:
+            source_params: Dictionary containing:
+                data (DataFrame): Data to export
+                destination (str): Excel file path
+                sheet_name (str, optional): Sheet name
+                index (bool, optional): Whether to write index
+                engine (str, optional): Excel writer engine
+
+        Returns:
+            DataFrame: The delivered data (unchanged)
+
+        Raises:
+            ValueError: If destination is missing
+            TypeError: If data is not a DataFrame
+        """
+        data = source_params["data"]
         if not isinstance(data, DataFrame):
             raise TypeError("ExcelDeliveryStyle requires a pandas DataFrame")
-        data.to_excel(self.destination, index=False)
-        logger.info(f"{self.style_name} delivered data to {self.destination}")
-        return data  # devuelve la data para continuar pipeline
+
+        destination = source_params["destination"]
+        if not destination:
+            raise ValueError("destination is required")
+
+        # Get optional parameters
+        sheet_name = source_params.get("sheet_name", "Sheet1")
+        index = source_params.get("index", False)
+        engine = source_params.get("engine", None)
+
+        # Export to Excel
+        data.to_excel(destination, sheet_name=sheet_name, index=index, engine=engine)
+        logger.info(f"{self.style_name} delivered data to {destination}")
+        return data
 
 
 @register_delivery_style("sql")
 class SQLDeliveryStyle(DeliveryStyle):
     """DeliveryStyle for delivering data to SQL databases."""
 
-    def __init__(
-        self, style_name: str, connection_string: str, table_name: str
-    ) -> None:
-        super().__init__(style_name)
-        self.connection_string = connection_string
-        self.table_name = table_name
-        self.destination = f"SQL Table: {table_name}"
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
 
-    def deliver(self, data: DataFrame) -> DataFrame:
+    def deliver(self, source_params: Dict[str, Any]) -> DataFrame:
+        """Deliver data to SQL database.
+
+        Args:
+            source_params: Dictionary containing:
+                data (DataFrame): Data to deliver
+                connection_string (str): SQLAlchemy connection URL
+                table_name (str): Target table name
+                if_exists (str, optional): How to behave if table exists
+                index (bool, optional): Whether to write index
+                chunksize (int, optional): Rows per chunk
+
+        Returns:
+            DataFrame: The delivered data (unchanged)
+
+        Raises:
+            ValueError: If connection_string or table_name is missing
+            TypeError: If data is not a DataFrame
+        """
+        data = source_params["data"]
         if not isinstance(data, DataFrame):
             raise TypeError("SQLDeliveryStyle requires a pandas DataFrame")
-        engine = create_engine(self.connection_string)
-        data.to_sql(self.table_name, engine, if_exists="replace", index=False)
-        engine.dispose()
-        logger.info(f"{self.style_name} delivered data to table '{self.table_name}'")
-        return data
+
+        connection_string = source_params["connection_string"]
+        if not connection_string:
+            raise ValueError("connection_string is required")
+
+        table_name = source_params["table_name"]
+        if not table_name:
+            raise ValueError("table_name is required")
+
+        # Get optional parameters
+        if_exists = source_params.get("if_exists", "replace")
+        index = source_params.get("index", False)
+        chunksize = source_params.get("chunksize", None)
+
+        # Export to database
+        engine = create_engine(connection_string)
+        try:
+            data.to_sql(
+                table_name,
+                engine,
+                if_exists=if_exists,
+                index=index,
+                chunksize=chunksize,
+            )
+            logger.info(f"{self.style_name} delivered data to table '{table_name}'")
+            return data
+        finally:
+            engine.dispose()
 
 
 @register_delivery_style("api")
 class APIDeliveryStyle(DeliveryStyle):
     """DeliveryStyle for delivering data to external APIs."""
 
-    def __init__(
-        self,
-        style_name: str,
-        api_endpoint: str,
-        api_key: Optional[str] = None,
-        timeout: float = 30.0,
-    ) -> None:
-        super().__init__(style_name)
-        self.api_endpoint = api_endpoint
-        self.api_key = api_key
-        self.timeout = timeout
-        self.destination = f"API: {api_endpoint}"
+    def __init__(self, style_name: str) -> None:
+        super().__init__(style_name=style_name)
 
-    def deliver(self, data: Any) -> Any:
-        headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
-        response = requests.post(
-            self.api_endpoint, json=data, headers=headers, timeout=self.timeout
+    def deliver(self, source_params: Dict[str, Any]) -> Any:
+        """Deliver data to REST API endpoint.
+
+        Args:
+            source_params: Dictionary containing:
+                data (Any): Data to deliver
+                endpoint (str): API endpoint URL
+                method (str, optional): HTTP method
+                headers (dict, optional): Request headers
+                auth (dict, optional): Basic auth credentials
+                timeout (float, optional): Request timeout
+
+        Returns:
+            Any: The delivered data (unchanged)
+
+        Raises:
+            ValueError: If endpoint is missing
+            RequestException: If API request fails
+        """
+        data = source_params["data"]
+        endpoint = source_params["endpoint"]
+        if not endpoint:
+            raise ValueError("endpoint is required")
+
+        # Get optional parameters
+        method = source_params.get("method", "POST")
+        headers = source_params.get("headers", {})
+        auth = source_params.get("auth", None)
+        timeout = source_params.get("timeout", 30.0)
+
+        # Add auth if provided
+        if auth:
+            headers["Authorization"] = f"Bearer {auth}"
+
+        # Make request
+        response = requests.request(
+            method=method, url=endpoint, json=data, headers=headers, timeout=timeout
         )
         response.raise_for_status()
-        logger.info(f"{self.style_name} delivered data to API {self.api_endpoint}")
+
+        logger.info(f"{self.style_name} delivered data to API {endpoint}")
         return data
