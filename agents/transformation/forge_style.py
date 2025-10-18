@@ -36,8 +36,8 @@ class ForgeStyle(Style):
     Inherits from abstract Style.
     """
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, style_name: str):
+        super().__init__(style_name)
         self.metadata: dict[str, Any] = {}
 
     def use(self, data: Any) -> Any:

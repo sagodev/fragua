@@ -121,13 +121,17 @@ class BaseAgent(ABC):
         """
         Store a result object in the StorageManager using the appropriate save method.
         """
-        save_method_name = f"save_{self.result_type.__name__.lower()}"
-        save_method = getattr(storage_manager, save_method_name, None)
+        # Use the generic StorageManager.save(obj_type, name, obj) method
+        # to avoid relying on dynamically-named save_* methods.
+        obj_type = self.result_type.__name__.lower()
+        try:
+            storage_manager.save(obj_type, name, result)
+        except AttributeError:
+            # If StorageManager doesn't implement generic save, raise a clear error
+            raise AttributeError(
+                "StorageManager does not implement 'save(obj_type, name, obj)'."
+            )
 
-        if not callable(save_method):
-            raise AttributeError(f"StorageManager has no method '{save_method_name}'")
-
-        save_method(name, result)
         logger.info(
             "[%s] Stored %s '%s' in StorageManager",
             self.name,

@@ -45,7 +45,17 @@ class Storage:
 
     def remove(self, obj_type: str, name: str):
         """Remove an object from storage."""
-        return self._store[obj_type].pop(name, None)
+        entry = self._store[obj_type].pop(name, None)
+        if entry:
+            return entry.get("obj")
+        return None
+
+    def get_checksum(self, obj_type: str, name: str):
+        """Return the stored checksum for an object, or None if not found."""
+        entry = self._store.get(obj_type, {}).get(name)
+        if not entry:
+            return None
+        return entry.get("checksum")
 
     def exists(self, obj_type: str, name: str) -> bool:
         return name in self._store[obj_type]

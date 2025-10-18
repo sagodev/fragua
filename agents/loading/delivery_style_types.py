@@ -6,7 +6,7 @@ from typing import Any
 import requests
 from sqlalchemy import create_engine
 import pandas as pd
-from agents.loading.delivery_style import DeliveryStyle, register_delivery_style
+from agents.loading.delivery_style import DeliveryStyle, register_delivery_style, logger
 
 
 @register_delivery_style("excel")
