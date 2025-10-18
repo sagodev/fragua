@@ -6,3 +6,5 @@ tests/
 fragua.py
 test_*
 fragua.egg-info/
+output_files/
+main.py
