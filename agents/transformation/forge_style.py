@@ -4,97 +4,120 @@ Contains common utilities for transformations.
 """
 
 from abc import abstractmethod
-from typing import Any, Generator
+from typing import Any, TypeVar, Generic, Dict, Type, Callable, Literal, cast
 from datetime import datetime, UTC
-import pandas as pd
+from pandas import DataFrame
+from pandas.api.types import is_numeric_dtype
 
 from utils.metrics import calculate_checksum
 from utils.logger import get_logger
 from core import Style
 
+# Type variables for generics
+DataT = TypeVar("DataT", bound=DataFrame)
+ResultT = TypeVar("ResultT", bound=DataFrame)
+
+# Type alias for source data
+SourceType = Dict[str, DataT]
+
 # Unified logger for ForgeStyle
 logger = get_logger(__name__)
 
+# Registry for forge styles
+_forge_registry: Dict[str, Type["ForgeStyle[DataFrame, DataFrame]"]] = {}
 
-def register_forge_style(name: str):
+
+def register_forge_style(
+    name: str,
+) -> Callable[[Type["ForgeStyle[DataT, ResultT]"]], Type["ForgeStyle[DataT, ResultT]"]]:
     """
     Decorator to register a ForgeStyle subclass dynamically.
     """
 
-    def wrapper(cls):
-        FORGESTYLE_REGISTRY[name] = cls
+    def wrapper(
+        cls: Type["ForgeStyle[DataT, ResultT]"],
+    ) -> Type["ForgeStyle[DataT, ResultT]"]:
+        _forge_registry[name] = cast(Type["ForgeStyle[DataFrame, DataFrame]"], cls)
         logger.debug("Registered ForgeStyle: %s", name)
         return cls
 
     return wrapper
 
 
-class ForgeStyle(Style):
+class ForgeStyle(Style[DataT, ResultT], Generic[DataT, ResultT]):
     """
     Base class for ForgeStyles.
     Provides common utilities for transformations.
     Inherits from abstract Style.
     """
 
-    def __init__(self, style_name: str):
+    def __init__(self, style_name: str) -> None:
         super().__init__(style_name)
-        self.metadata: dict[str, Any] = {}
+        self.metadata: Dict[str, Any] = {}
 
-    def use(self, data: Any) -> Any:
+    def use(self, data: DataT) -> ResultT:
         """
         Main transformation method.
         Executes forge -> validate -> postprocess pipeline.
         """
-        if data is None:
-            raise ValueError("Input data cannot be None")
+        if data is None or data.empty:
+            raise ValueError("Input data cannot be None or empty")
 
         logger.debug(
             "Starting ForgeStyle '%s' transformation pipeline.", self.style_name
         )
 
         try:
-            data = self.forge(data)
-            logger.debug("%s: forge() step completed.", self.style_name)
-
-            data = self.validate(data)
-            logger.debug("%s: validate() step completed.", self.style_name)
-
-            data = self.postprocess(data)
-            logger.debug("%s: postprocess() step completed.", self.style_name)
-
-            return data
+            source = {"data": data}
+            result = self._apply_pipeline(source)
+            return result
 
         except Exception as e:
             self.log_error(e)
             raise
 
+    def _apply_pipeline(self, source: SourceType) -> ResultT:
+        """Internal method to apply the transformation pipeline."""
+        transformed = self.forge(source)
+        logger.debug("%s: forge() step completed.", self.style_name)
+
+        transformed = cast(ResultT, transformed)  # Cast after forge
+        validated = cast(DataT, self.validate(transformed))  # Cast for validate
+        logger.debug("%s: validate() step completed.", self.style_name)
+
+        result = self.postprocess(validated)  # No cast needed, matches type
+        logger.debug("%s: postprocess() step completed.", self.style_name)
+
+        return result
+
     @abstractmethod
-    def forge(self, data: Any) -> Generator | Any:
+    def forge(self, source: SourceType) -> ResultT:
         """Must be implemented by subclasses to transform data."""
 
     # ------------------ Utilities for DataFrames ------------------ #
 
     def _fill_missing(
-        self, df: pd.DataFrame, numeric_fill="mean", categorical_fill="unknown"
-    ):
+        self,
+        df: DataFrame,
+        numeric_fill: Literal["mean", "zero"] = "mean",
+        categorical_fill: str = "unknown",
+    ) -> None:
         """Fill missing values in DataFrame."""
         for col in df.columns:
-            if pd.api.types.is_numeric_dtype(df[col]):
-                if numeric_fill == "mean":
-                    df[col].fillna(df[col].mean(), inplace=True)
-                elif numeric_fill == "zero":
-                    df[col].fillna(0, inplace=True)
+            if is_numeric_dtype(df[col]):
+                fill_value = df[col].mean() if numeric_fill == "mean" else 0
+                df[col] = df[col].fillna(fill_value)
             else:
-                df[col].fillna(categorical_fill, inplace=True)
+                df[col] = df[col].fillna(categorical_fill)
         logger.info("%s: Missing values filled.", self.style_name)
 
-    def _standardize(self, df: pd.DataFrame):
+    def _standardize(self, df: DataFrame) -> None:
         """Standardize string columns (strip spaces and lowercase)."""
         for col in df.select_dtypes(include="object").columns:
             df[col] = df[col].astype(str).str.strip().str.lower()
         logger.info("%s: String columns standardized.", self.style_name)
 
-    def _add_metadata(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _add_metadata(self, df: DataFrame) -> DataFrame:
         """Add metadata columns to the transformed dataframe."""
         checksum_value = calculate_checksum(df)
         df["_forge_name"] = self.style_name
