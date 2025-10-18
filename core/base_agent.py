@@ -7,22 +7,30 @@ agents like Miner, Blacksmith, and Transporter.
 
 from abc import ABC, abstractmethod
 from datetime import datetime, UTC
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, TypeVar, Generic, Optional, TYPE_CHECKING
 import pandas as pd
 from utils.logger import get_logger
+from core.base_style import Style
+
+if TYPE_CHECKING:
+    from agents.store.storage_manager import StorageManager
+
+# Generic type variables
+StyleT = TypeVar('StyleT', bound=Style)
+ResultT = TypeVar('ResultT')
 
 logger = get_logger("BaseAgent")
 
 
-class BaseAgent(ABC):
+class BaseAgent(ABC, Generic[StyleT, ResultT]):
     """
     Abstract base class for ETL agents with built-in support
     for learning and applying registered styles.
     """
 
     # Subclasses must override these
-    style_registry: Dict[str, Type] = {}
-    result_type: Type = object
+    style_registry: Dict[str, Type[StyleT]] = {}
+    result_type: Type[ResultT] = object
     metadata_table_name: str = "operations"
 
     def __init__(self, name: str):
@@ -33,7 +41,7 @@ class BaseAgent(ABC):
             name (str): The name of the agent.
         """
         self.name = name
-        self.known_styles: Dict[str, Any] = {}
+        self.known_styles: Dict[str, StyleT] = {}
         self.metadata: Dict[str, Any] = {
             "name": name,
             "learned_styles": {},
@@ -50,9 +58,12 @@ class BaseAgent(ABC):
         }
 
     # ---------------- Learning ---------------- #
-    def learn_style(self, style_instance: Any):
+    def learn_style(self, style_instance: StyleT) -> None:
         """
         Register a style instance and record its metadata.
+        
+        Args:
+            style_instance (StyleT): Instance of a Style subclass to register
         """
         self.known_styles[style_instance.style_name] = style_instance
         self.metadata["learned_styles"][style_instance.style_name] = {
@@ -61,9 +72,16 @@ class BaseAgent(ABC):
         }
         logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
 
-    def learn_style_by_name(self, name: str, **kwargs):
+    def learn_style_by_name(self, name: str, **kwargs: Any) -> None:
         """
         Create and learn a style dynamically from the registry.
+
+        Args:
+            name (str): Name of the style to create from registry
+            **kwargs: Additional arguments passed to style constructor
+        
+        Raises:
+            ValueError: If style name is not in registry
         """
         if name not in self.style_registry:
             logger.error("[%s] No style registered under '%s'", self.name, name)
@@ -75,9 +93,20 @@ class BaseAgent(ABC):
         self.learn_style(instance)
 
     # ---------------- Working ---------------- #
-    def apply_style(self, style_name: str, data: Any):
+    def apply_style(self, style_name: str, data: Any) -> ResultT:
         """
         Apply a learned style and record operation metadata.
+        
+        Args:
+            style_name: Name of the style to apply
+            data: Input data for the style
+            
+        Returns:
+            ResultT: Result of applying the style
+            
+        Raises:
+            ValueError: If style is not learned
+            TypeError: If style returns wrong type
         """
         if style_name not in self.known_styles:
             logger.error("[%s] Style '%s' not learned", self.name, style_name)
@@ -98,15 +127,20 @@ class BaseAgent(ABC):
                 f"Style '{style_name}' must return {self.result_type.__name__}, got {type(result).__name__}"
             )
 
+        # Safely extract metadata
+        result_name = getattr(result, "name", None)
+        result_data = getattr(result, "data", None)
+        result_shape = getattr(result_data, "shape", (None, None))
+        style_metadata = getattr(style, "metadata", {})
+        style_checksum = style_metadata.get("checksum") if isinstance(style_metadata, dict) else None
+
         new_row = {
             "style_name": style_name,
             "timestamp": datetime.now(UTC),
-            "output_name": getattr(result, "name", None),
-            "rows": getattr(getattr(result, "data", None), "shape", [None, None])[0],
-            "columns": getattr(getattr(result, "data", None), "shape", [None, None])[1],
-            "checksum": getattr(getattr(style, "metadata", {}), "get", lambda _: None)(
-                "checksum"
-            ),
+            "output_name": result_name,
+            "rows": result_shape[0],
+            "columns": result_shape[1],
+            "checksum": style_checksum,
         }
         self.metadata[self.metadata_table_name] = pd.concat(
             [self.metadata[self.metadata_table_name], pd.DataFrame([new_row])],
@@ -117,9 +151,17 @@ class BaseAgent(ABC):
         return result
 
     # ---------------- Storage Interaction ---------------- #
-    def store_result(self, storage_manager, result: Any, name: str):
+    def store_result(self, storage_manager: 'StorageManager', result: ResultT, name: str) -> None:
         """
         Store a result object in the StorageManager using the appropriate save method.
+        
+        Args:
+            storage_manager: The StorageManager instance to store the result in
+            result: The result object to store (must match ResultT type)
+            name: Name to store the result under
+            
+        Raises:
+            AttributeError: If StorageManager doesn't implement required save method
         """
         # Use the generic StorageManager.save(obj_type, name, obj) method
         # to avoid relying on dynamically-named save_* methods.
@@ -141,10 +183,18 @@ class BaseAgent(ABC):
 
     # ---------------- Abstract Work ---------------- #
     @abstractmethod
-    def work(self, *args, **kwargs):
+    @abstractmethod
+    def work(self, *args: Any, **kwargs: Any) -> ResultT:
         """
         Abstract method that defines how the agent performs its task.
         Should typically call apply_style().
+        
+        Args:
+            *args: Variable positional arguments
+            **kwargs: Variable keyword arguments
+        
+        Returns:
+            ResultT: The result type specific to this agent subclass
         """
         pass
 
