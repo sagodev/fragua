@@ -4,7 +4,7 @@ Contains common utilities for delivery workflows.
 """
 
 from abc import abstractmethod
-from typing import Any
+from typing import Any, TypeVar, Generic, Dict, Type
 from datetime import datetime, timezone
 from core.base_style import Style
 from utils.logger import get_logger
@@ -25,7 +25,11 @@ def register_delivery_style(name: str):
     return wrapper
 
 
-class DeliveryStyle(Style):
+
+# Generic type variable for delivery data
+T = TypeVar("T")
+
+class DeliveryStyle(Style, Generic[T]):
     """
     Base class for all delivery styles in Fragua ETL.
     """
@@ -36,14 +40,14 @@ class DeliveryStyle(Style):
         self.created_at = datetime.now(timezone.utc)
 
     @abstractmethod
-    def deliver(self, data: Any) -> Any:
+    def deliver(self, data: T) -> T:
         """
         Deliver the given data to the target destination.
         Must be implemented by subclasses.
         """
         pass
 
-    def validate(self, data: Any) -> Any:
+    def validate(self, data: T) -> T:
         """
         Extend basic validation for delivery-specific requirements.
 
@@ -88,4 +92,4 @@ class DeliveryStyle(Style):
 
 
 # Registry for dynamic DeliveryStyle discovery
-DELIVERYSTYLE_REGISTRY: dict[str, type[DeliveryStyle]] = {}
+DELIVERYSTYLE_REGISTRY: Dict[str, Type[DeliveryStyle[Any]]] = {}

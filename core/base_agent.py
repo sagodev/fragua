@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from agents.store.storage_manager import StorageManager
 
 # Generic type variables
-StyleT = TypeVar('StyleT', bound=Style)
-ResultT = TypeVar('ResultT')
+StyleT = TypeVar("StyleT", bound=Style)
+ResultT = TypeVar("ResultT")
 
 logger = get_logger("BaseAgent")
 
@@ -61,7 +61,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
     def learn_style(self, style_instance: StyleT) -> None:
         """
         Register a style instance and record its metadata.
-        
+
         Args:
             style_instance (StyleT): Instance of a Style subclass to register
         """
@@ -79,7 +79,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         Args:
             name (str): Name of the style to create from registry
             **kwargs: Additional arguments passed to style constructor
-        
+
         Raises:
             ValueError: If style name is not in registry
         """
@@ -96,14 +96,14 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
     def apply_style(self, style_name: str, data: Any) -> ResultT:
         """
         Apply a learned style and record operation metadata.
-        
+
         Args:
             style_name: Name of the style to apply
             data: Input data for the style
-            
+
         Returns:
             ResultT: Result of applying the style
-            
+
         Raises:
             ValueError: If style is not learned
             TypeError: If style returns wrong type
@@ -132,7 +132,9 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         result_data = getattr(result, "data", None)
         result_shape = getattr(result_data, "shape", (None, None))
         style_metadata = getattr(style, "metadata", {})
-        style_checksum = style_metadata.get("checksum") if isinstance(style_metadata, dict) else None
+        style_checksum = (
+            style_metadata.get("checksum") if isinstance(style_metadata, dict) else None
+        )
 
         new_row = {
             "style_name": style_name,
@@ -151,15 +153,17 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         return result
 
     # ---------------- Storage Interaction ---------------- #
-    def store_result(self, storage_manager: 'StorageManager', result: ResultT, name: str) -> None:
+    def store_result(
+        self, storage_manager: "StorageManager", result: ResultT, name: str
+    ) -> None:
         """
         Store a result object in the StorageManager using the appropriate save method.
-        
+
         Args:
             storage_manager: The StorageManager instance to store the result in
             result: The result object to store (must match ResultT type)
             name: Name to store the result under
-            
+
         Raises:
             AttributeError: If StorageManager doesn't implement required save method
         """
@@ -182,17 +186,17 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         )
 
     # ---------------- Abstract Work ---------------- #
-    @abstractmethod
+
     @abstractmethod
     def work(self, *args: Any, **kwargs: Any) -> ResultT:
         """
         Abstract method that defines how the agent performs its task.
         Should typically call apply_style().
-        
+
         Args:
             *args: Variable positional arguments
             **kwargs: Variable keyword arguments
-        
+
         Returns:
             ResultT: The result type specific to this agent subclass
         """
