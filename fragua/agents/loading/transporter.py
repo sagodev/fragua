@@ -2,6 +2,8 @@
 Transporter Class.
 """
 
+from __future__ import annotations
+
 from typing import Type, Any
 from fragua.agents.loading.delivery_style import DeliveryStyle, DELIVERYSTYLE_REGISTRY
 from fragua.agents.store.container import Container

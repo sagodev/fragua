@@ -4,6 +4,8 @@ Blacksmith agent responsible for transforming data.
 The Blacksmith uses ForgeStyles to process data from Wagons and stores results in Boxes via StorageManager.
 """
 
+from __future__ import annotations
+
 from typing import Type, Any
 from fragua.agents.transformation.forge_style import ForgeStyle, FORGESTYLE_REGISTRY
 from fragua.agents.store.box import Box

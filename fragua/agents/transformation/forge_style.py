@@ -23,8 +23,8 @@ SourceType = Dict[str, DataT]
 # Unified logger for ForgeStyle
 logger = get_logger(__name__)
 
-# Registry for forge styles
-_forge_registry: Dict[str, Type["ForgeStyle[DataFrame, DataFrame]"]] = {}
+# Registry for forge styles (single public registry)
+FORGESTYLE_REGISTRY: Dict[str, Type["ForgeStyle[DataFrame, DataFrame]"]] = {}
 
 
 def register_forge_style(
@@ -34,10 +34,12 @@ def register_forge_style(
     Decorator to register a ForgeStyle subclass dynamically.
     """
 
-    def wrapper(
-        cls: Type["ForgeStyle[DataT, ResultT]"],
-    ) -> Type["ForgeStyle[DataT, ResultT]"]:
-        _forge_registry[name] = cast(Type["ForgeStyle[DataFrame, DataFrame]"], cls)
+    def wrapper(cls: Type["ForgeStyle[DataT, ResultT]"]) -> Type["ForgeStyle[DataT, ResultT]"]:
+        # Register on the public registry so other modules that import
+        # FORGESTYLE_REGISTRY will see the registered styles.
+        FORGESTYLE_REGISTRY[name] = cast(
+            Type["ForgeStyle[DataFrame, DataFrame]"], cls
+        )
         logger.debug("Registered ForgeStyle: %s", name)
         return cls
 
@@ -131,5 +133,4 @@ class ForgeStyle(Style[DataT, ResultT], Generic[DataT, ResultT]):
         return df
 
 
-# Registry for dynamic ForgeStyle discovery
-FORGESTYLE_REGISTRY: dict[str, type[ForgeStyle]] = {}
+# Registry for dynamic ForgeStyle discovery is the `FORGESTYLE_REGISTRY` defined above.

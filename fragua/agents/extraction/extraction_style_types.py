@@ -2,7 +2,7 @@
 Concrete ExtractionStyle classes with dynamic registration for Fragua ETL.
 """
 
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, Literal, Union, TypedDict
 from pathlib import Path
 from sqlalchemy import create_engine
 from pandas import DataFrame

@@ -35,16 +35,16 @@ def register_extraction_style(name: str):
 
 class ExtractionStyle(Style[Dict[str, Any], Wagon]):
     """Base class for all extraction styles in Fragua ETL.
-    
+
     Extraction styles implement different methods to extract data from sources like CSV files,
     Excel files, databases, APIs etc. Each style takes its configuration parameters as a
     dictionary in the extract method, allowing more flexibility in how the configuration
     is provided.
-    
+
     Example:
         class CSVExtractionStyle(ExtractionStyle):
             def extract(self, source_params: Dict[str, Any]) -> pd.DataFrame:
-                path = source_params.get("path") 
+                path = source_params.get("path")
                 read_kwargs = source_params.get("read_kwargs", {})
                 return pd.read_csv(path, **read_kwargs)
     """
@@ -73,9 +73,11 @@ class ExtractionStyle(Style[Dict[str, Any], Wagon]):
         """
         raise NotImplementedError
 
-    def use(self, source_params: Dict[str, Any]) -> Wagon[Union[pd.DataFrame, list[Any]]]:
+    def use(
+        self, source_params: Dict[str, Any]
+    ) -> Wagon[Union[pd.DataFrame, list[Any]]]:
         """Main extraction pipeline method.
-        
+
         Executes extract -> validate -> postprocess workflow.
 
         Args:
@@ -110,12 +112,14 @@ class ExtractionStyle(Style[Dict[str, Any], Wagon]):
             # Create wagon and update its data
             result = Wagon(name=self.style_name, data=extracted)
 
-            # Update metadata 
+            # Update metadata
             self.metadata.update(
                 {
                     "last_extraction": datetime.now(UTC),
                     "params_type": type(source_params).__name__,
-                    "result_type": type(result.data).__name__ if result.data is not None else None,
+                    "result_type": (
+                        type(result.data).__name__ if result.data is not None else None
+                    ),
                 }
             )
 
