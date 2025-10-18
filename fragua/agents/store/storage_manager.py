@@ -6,9 +6,9 @@ Handles metadata, checksums, lazy logging, and reporting with minimal code.
 
 from datetime import datetime, UTC
 import pandas as pd
-from agents.store.storage import Storage
-from utils.metrics import calculate_checksum
-from utils.logger import get_logger
+from fragua.agents.store.storage import Storage
+from fragua.utils.metrics import calculate_checksum
+from fragua.utils.logger import get_logger
 
 
 class StorageManager:

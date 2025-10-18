@@ -9,8 +9,8 @@ import pandas as pd
 from pandas import DataFrame
 from sklearn.preprocessing import MinMaxScaler
 
-from agents.transformation.forge_style import ForgeStyle, register_forge_style
-from utils.logger import get_logger
+from fragua.agents.transformation.forge_style import ForgeStyle, register_forge_style
+from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

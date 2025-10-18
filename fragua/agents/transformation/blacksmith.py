@@ -5,9 +5,9 @@ The Blacksmith uses ForgeStyles to process data from Wagons and stores results i
 """
 
 from typing import Type, Any
-from agents.transformation.forge_style import ForgeStyle, FORGESTYLE_REGISTRY
-from agents.store.box import Box
-from core.base_agent import BaseAgent
+from fragua.agents.transformation.forge_style import ForgeStyle, FORGESTYLE_REGISTRY
+from fragua.agents.store.box import Box
+from fragua.core.base_agent import BaseAgent
 
 
 class Blacksmith(BaseAgent[ForgeStyle[Any, Any], Box]):

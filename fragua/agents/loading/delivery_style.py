@@ -6,8 +6,8 @@ Contains common utilities for delivery workflows.
 from abc import abstractmethod
 from typing import Any, TypeVar, Generic, Dict, Type
 from datetime import datetime, timezone
-from core.base_style import Style
-from utils.logger import get_logger
+from fragua.core.base_style import Style
+from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

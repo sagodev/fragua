@@ -9,9 +9,9 @@ from datetime import datetime, UTC
 from pandas import DataFrame
 from pandas.api.types import is_numeric_dtype
 
-from utils.metrics import calculate_checksum
-from utils.logger import get_logger
-from core import Style
+from fragua.utils.metrics import calculate_checksum
+from fragua.utils.logger import get_logger
+from fragua.core import Style
 
 # Type variables for generics
 DataT = TypeVar("DataT", bound=DataFrame)

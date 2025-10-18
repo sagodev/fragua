@@ -6,7 +6,7 @@ Examples of styles include Forge Styles, Extraction Styles, and Delivery Styles.
 
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar, Generic, Dict, Optional
-from utils.logger import get_logger
+from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

@@ -6,9 +6,12 @@ and stores results in Wagons via StorageManager.
 """
 
 from typing import Type, Any
-from agents.extraction.extraction_style import ExtractionStyle, EXTRACTIONSTYLE_REGISTRY
-from agents.store.wagon import Wagon
-from core.base_agent import BaseAgent
+from fragua.agents.extraction.extraction_style import (
+    ExtractionStyle,
+    EXTRACTIONSTYLE_REGISTRY,
+)
+from fragua.agents.store.wagon import Wagon
+from fragua.core.base_agent import BaseAgent
 
 
 class Miner(BaseAgent[ExtractionStyle[Any], Wagon]):

@@ -3,9 +3,9 @@ Transporter Class.
 """
 
 from typing import Type, Any
-from agents.loading.delivery_style import DeliveryStyle, DELIVERYSTYLE_REGISTRY
-from agents.store.container import Container
-from core.base_agent import BaseAgent
+from fragua.agents.loading.delivery_style import DeliveryStyle, DELIVERYSTYLE_REGISTRY
+from fragua.agents.store.container import Container
+from fragua.core.base_agent import BaseAgent
 
 
 class Transporter(BaseAgent[DeliveryStyle[Any], Container]):

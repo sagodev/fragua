@@ -9,11 +9,11 @@ from abc import ABC, abstractmethod
 from datetime import datetime, UTC
 from typing import Any, Dict, Type, TypeVar, Generic, Optional, TYPE_CHECKING
 import pandas as pd
-from utils.logger import get_logger
-from core.base_style import Style
+from fragua.utils.logger import get_logger
+from fragua.core.base_style import Style
 
 if TYPE_CHECKING:
-    from agents.store.storage_manager import StorageManager
+    from fragua.agents.store.storage_manager import StorageManager
 
 # Generic type variables
 StyleT = TypeVar("StyleT", bound=Style)

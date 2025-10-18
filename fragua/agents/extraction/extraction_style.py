@@ -7,9 +7,9 @@ from abc import abstractmethod
 from typing import Any, TypeVar, Dict, Union
 from datetime import datetime, UTC
 import pandas as pd
-from core.base_style import Style
-from agents.store.wagon import Wagon
-from utils.logger import get_logger
+from fragua.core.base_style import Style
+from fragua.agents.store.wagon import Wagon
+from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

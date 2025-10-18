@@ -5,7 +5,7 @@ Efficient in-memory storage for Fragua ETL objects.
 
 from datetime import datetime, UTC
 from typing import Any, Dict, Optional
-from utils.metrics import calculate_checksum
+from fragua.utils.metrics import calculate_checksum
 
 
 class Storage:

@@ -6,7 +6,7 @@ from typing import Any, Optional
 import requests
 from sqlalchemy import create_engine
 from pandas import DataFrame
-from agents.loading.delivery_style import DeliveryStyle, register_delivery_style, logger
+from fragua.agents.loading.delivery_style import DeliveryStyle, register_delivery_style, logger
 
 
 @register_delivery_style("excel")

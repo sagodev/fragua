@@ -1,25 +1,25 @@
 """
-Containers for storing loaded data before final delivery.
+Boxes for storing transformed data from Blacksmiths.
 
-Containers allow versioned storage of data that has been processed and is ready for delivery.
+Boxes provide versioned storage for transformed data before loading.
 """
 
 
 from typing import Generic, TypeVar, Callable, Optional
 from datetime import datetime, UTC
 import pandas as pd
-from utils.metrics import calculate_checksum
+from fragua.utils.metrics import calculate_checksum
 
 T = TypeVar("T")
 
-class Container(Generic[T]):
+class Box(Generic[T]):
     """
-    Container: stores final data ready for delivery with metadata, validation, and optional postprocessing.
+    Box: container for transformed data with metadata, validation, and optional postprocessing.
     """
 
     def __init__(self, name: str, data: Optional[T] = None):
         self.name = name
-        self._stored_at = datetime.now(UTC)
+        self._processed_at = datetime.now(UTC)
         self.data: Optional[T] = None
         self._checksum: Optional[str] = None
         if data is not None:
@@ -40,10 +40,10 @@ class Container(Generic[T]):
     def metadata(self) -> dict[str, object]:
         return {
             "name": self.name,
-            "stored_at": self._stored_at,
+            "processed_at": self._processed_at,
             "checksum": self._checksum,
             "type": type(self.data).__name__ if self.data is not None else None,
         }
 
     def __repr__(self) -> str:
-        return f"<Container name={self.name} data={'set' if self.data is not None else 'empty'}>"
+        return f"<Box name={self.name} data={'set' if self.data is not None else 'empty'}>"

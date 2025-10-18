@@ -1,6 +1,6 @@
 """Fragua ETL Core package."""
 
-from .agents import (
+from fragua.agents import (
     Miner,
     Wagon,
     Blacksmith,
@@ -23,15 +23,12 @@ from .agents import (
     ExcelDeliveryStyle,
 )
 
-from .core import (
+from fragua.core import (
     BaseAgent,
     Style,
 )
 
-from .utils import (
-    get_logger,
-    Config,
-)
+from fragua.utils import get_logger, Config, calculate_checksum
 
 __all__ = [
     "Miner",
@@ -46,6 +43,7 @@ __all__ = [
     "Style",
     "get_logger",
     "Config",
+    "calculate_checksum",
     "CSVExtractionStyle",
     "APIExtractionStyle",
     "SQLExtractionStyle",

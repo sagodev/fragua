@@ -7,7 +7,7 @@ import pandas as pd
 from pandas import DataFrame
 import requests
 
-from agents.extraction.extraction_style import (
+from fragua.agents.extraction.extraction_style import (
     ExtractionStyle,
     register_extraction_style,
 )
