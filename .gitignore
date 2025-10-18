@@ -5,3 +5,4 @@ __pycache__/
 tests/
 fragua.py
 test_*
+fragua.egg-info/
