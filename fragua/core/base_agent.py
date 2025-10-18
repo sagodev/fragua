@@ -72,13 +72,13 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         }
         logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
 
-    def learn_style_by_name(self, name: str, **kwargs: Any) -> None:
+    def learn_style_by_name(self, name: str) -> None:
         """
         Create and learn a style dynamically from the registry.
+        The style is registered with the same name used to look it up.
 
         Args:
-            name (str): Name of the style to create from registry
-            **kwargs: Additional arguments passed to style constructor
+            name (str): Name of the style to create and register
 
         Raises:
             ValueError: If style name is not in registry
@@ -88,8 +88,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             raise ValueError(f"No style registered under name '{name}'")
 
         style_cls = self.style_registry[name]
-        style_name = kwargs.pop("style_name", name)
-        instance = style_cls(style_name=style_name, **kwargs)
+        instance = style_cls(style_name=name)
         self.learn_style(instance)
 
     # ---------------- Working ---------------- #
