@@ -4,25 +4,28 @@ Containers for storing loaded data before final delivery.
 Containers allow versioned storage of data that has been processed and is ready for delivery.
 """
 
+
+from typing import Generic, TypeVar, Callable, Optional
 from datetime import datetime, UTC
 import pandas as pd
 from utils.metrics import calculate_checksum
 
+T = TypeVar("T")
 
-class Container:
+class Container(Generic[T]):
     """
     Container: stores final data ready for delivery with metadata, validation, and optional postprocessing.
     """
 
-    def __init__(self, name: str, data=None):
+    def __init__(self, name: str, data: Optional[T] = None):
         self.name = name
         self._stored_at = datetime.now(UTC)
-        self.data = None
-        self._checksum = None
+        self.data: Optional[T] = None
+        self._checksum: Optional[str] = None
         if data is not None:
             self.store(data)
 
-    def store(self, data, postprocess=None):
+    def store(self, data: T, postprocess: Optional[Callable[[T], T]] = None) -> None:
         if isinstance(data, list):
             data = pd.DataFrame(data)
         if postprocess:
@@ -30,11 +33,11 @@ class Container:
         self.data = data
         self._checksum = calculate_checksum(self.data)
 
-    def retrieve(self):
+    def retrieve(self) -> Optional[T]:
         return self.data
 
     @property
-    def metadata(self):
+    def metadata(self) -> dict[str, object]:
         return {
             "name": self.name,
             "stored_at": self._stored_at,
@@ -42,5 +45,5 @@ class Container:
             "type": type(self.data).__name__ if self.data is not None else None,
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Container name={self.name} data={'set' if self.data is not None else 'empty'}>"
