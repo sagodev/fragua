@@ -4,7 +4,7 @@ Contains common utilities for delivery workflows.
 """
 
 from abc import abstractmethod
-from typing import Any, TypeVar, Generic, Dict, Type
+from typing import Any, TypeVar, Generic, Dict, Type, Callable
 from datetime import datetime, timezone
 from fragua.core.base_style import BaseStyle
 from fragua.utils.logger import get_logger
@@ -12,12 +12,12 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def register_delivery_style(name: str):
+def register_delivery_style(name: str) -> Callable[[Type[Any]], Type[Any]]:
     """
     Decorator to register a DeliveryStyle subclass.
     """
 
-    def wrapper(cls):
+    def wrapper(cls: Type[Any]) -> Type[Any]:
         DELIVERYSTYLE_REGISTRY[name] = cls
         logger.debug("Registered DeliveryStyle: %s", name)
         return cls
@@ -88,7 +88,7 @@ class DeliveryStyle(BaseStyle, Generic[T]):
             data = self.postprocess(data)
             logger.debug("%s: postprocess() step completed.", self.style_name)
 
-            return source_params
+            return data
 
         except Exception as e:
             self.log_error(e)
