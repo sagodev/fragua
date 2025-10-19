@@ -123,7 +123,8 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
                 type(result).__name__,
             )
             raise TypeError(
-                f"Style '{style_name}' must return {self.result_type.__name__}, got {type(result).__name__}"
+                f"Style '{style_name}' must return {self.result_type.__name__}, "
+                f"got {type(result).__name__}"
             )
 
         # Safely extract metadata
@@ -171,11 +172,10 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         obj_type = self.result_type.__name__.lower()
         try:
             storage_manager.save(obj_type, name, result)
-        except AttributeError:
-            # If StorageManager doesn't implement generic save, raise a clear error
+        except AttributeError as exc:
             raise AttributeError(
                 "StorageManager does not implement 'save(obj_type, name, obj)'."
-            )
+            ) from exc
 
         logger.info(
             "[%s] Stored %s '%s' in StorageManager",

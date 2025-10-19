@@ -5,7 +5,7 @@ Wagons provide temporary storage and versioning for raw data.
 """
 
 from typing import Generic, TypeVar, Callable, Optional
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import pandas as pd
 from fragua.utils.metrics import calculate_checksum
 
@@ -19,7 +19,7 @@ class Wagon(Generic[T]):
 
     def __init__(self, name: str, data: Optional[T] = None):
         self.name = name
-        self._created_at = datetime.now(UTC)
+        self._created_at = datetime.now(timezone.utc)
         self.data: Optional[T] = None
         self._checksum: Optional[str] = None
         if data is not None:

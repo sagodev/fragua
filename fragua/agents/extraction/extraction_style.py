@@ -76,7 +76,10 @@ class ExtractionStyle(Style[Dict[str, Any], Wagon]):
     def use(
         self, source_params: Dict[str, Any]
     ) -> Wagon[Union[pd.DataFrame, list[Any]]]:
-        """Main extraction pipeline method.
+        """Main extraction pipeline method, overriding Style.use.
+
+        This method replaces the 'data' parameter from the base Style class
+        with 'source_params' for better clarity and specificity in extraction workflows.
 
         Executes extract -> validate -> postprocess workflow.
 

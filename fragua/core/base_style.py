@@ -35,19 +35,19 @@ class Style(ABC, Generic[DataT, ResultT]):
         self.metadata: Dict[str, Any] = {}
 
     @abstractmethod
-    def use(self, data: DataT) -> ResultT:
+    def use(self, source_params: DataT) -> ResultT:
         """
-        Apply the style to the given data.
+        Apply the style to the given input parameters.
 
         Args:
-            data (DataT): Input data to be processed or transformed.
+            source_params (DataT): Input configuration or data to be processed or transformed.
 
         Returns:
             ResultT: The processed/transformed result.
 
         Raises:
-            ValueError: If data is None or invalid
-            TypeError: If data is of wrong type
+            ValueError: If source_params is None or invalid
+            TypeError: If source_params is of wrong type
         """
 
     def validate(self, data: DataT) -> DataT:

@@ -219,12 +219,10 @@ class APIExtractionStyle(ExtractionStyle):
             ValueError: If URL is missing or response is not JSON
             RequestException: If API request fails
         """
-        # Input validation
         url = source_params["url"]
         if not url:
             raise ValueError("url is required in source_params")
 
-        # Request configuration
         method = source_params.get("method", "GET").upper()
         headers = source_params.get("headers", {})
         params = source_params.get("params", None)
@@ -234,7 +232,6 @@ class APIExtractionStyle(ExtractionStyle):
         timeout = source_params.get("timeout", 30.0)
         read_kwargs = source_params.get("read_kwargs", {})
 
-        # Make request
         response = requests.request(
             method=method,
             url=url,
@@ -246,13 +243,11 @@ class APIExtractionStyle(ExtractionStyle):
             timeout=timeout,
         )
         response.raise_for_status()
-
-        # Convert response to DataFrame
         result_data = response.json()
+
         if isinstance(result_data, list):
             return pd.DataFrame(result_data, **read_kwargs)
         if isinstance(result_data, dict):
-            # Try to handle nested structures by normalizing
             return pd.json_normalize(result_data, **read_kwargs)
-        else:
-            raise ValueError(f"Unexpected API response type: {type(result_data)}")
+
+        raise ValueError(f"Unexpected API response type: {type(result_data)}")

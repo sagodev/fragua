@@ -2,7 +2,8 @@
 SubTypes of DeliveryStyle representing specific delivery methods with a unified delivery method.
 """
 
-from typing import Any, Dict, Literal, TypedDict, NotRequired
+from typing import Any, Dict, Literal, TypedDict
+from typing_extensions import NotRequired
 import requests
 from sqlalchemy import create_engine
 from pandas import DataFrame
