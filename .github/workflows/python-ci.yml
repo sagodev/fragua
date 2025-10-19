@@ -48,6 +48,6 @@ jobs:
           mypy fragua/agents fragua/core fragua/utils tests
 
       - name: Run tests with pytest
-        working-directory: ./fragua/tests
+        working-directory: ./tests
         run: |
           pytest -v
