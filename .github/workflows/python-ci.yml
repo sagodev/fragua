@@ -45,7 +45,7 @@ jobs:
 
       - name: Type checking with mypy
         run: |
-          mypy fragua/agents fragua/core fragua/utils fragua/tests
+          mypy fragua/agents fragua/core fragua/utils tests
 
       - name: Run tests with pytest
         working-directory: ./fragua/tests
