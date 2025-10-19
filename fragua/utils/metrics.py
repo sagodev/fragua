@@ -9,7 +9,7 @@ by serializing the data in a consistent way.
 
 import hashlib
 import json
-from typing import Any
+from typing import Any, cast
 import pandas as pd
 
 
@@ -18,7 +18,8 @@ def _serialize_dataframe(df: pd.DataFrame) -> bytes:
     df_copy = df.copy()
     cols = sorted(df_copy.columns.tolist())
     df_copy = df_copy[cols]
-    return df_copy.to_csv(index=False).encode("utf-8")
+    csv_str = cast(str, df_copy.to_csv(index=False))
+    return csv_str.encode("utf-8")
 
 
 def _serialize_other(obj: Any) -> bytes:
