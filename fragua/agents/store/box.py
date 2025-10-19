@@ -5,7 +5,7 @@ Boxes provide versioned storage for transformed data before loading.
 """
 
 from typing import Generic, TypeVar, Callable, Optional
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import pandas as pd
 from fragua.utils.metrics import calculate_checksum
 
@@ -19,7 +19,7 @@ class Box(Generic[T]):
 
     def __init__(self, name: str, data: Optional[T] = None):
         self.name = name
-        self._processed_at = datetime.now(UTC)
+        self._processed_at = datetime.now(timezone.utc)
         self.data: Optional[T] = None
         self._checksum: Optional[str] = None
         if data is not None:

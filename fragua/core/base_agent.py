@@ -6,8 +6,8 @@ agents like Miner, Blacksmith, and Transporter.
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime, UTC
-from typing import Any, Dict, Type, TypeVar, Generic, Optional, TYPE_CHECKING
+from datetime import datetime, timezone
+from typing import Any, Dict, Type, TypeVar, Generic, TYPE_CHECKING
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import Style
@@ -68,7 +68,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         self.known_styles[style_instance.style_name] = style_instance
         self.metadata["learned_styles"][style_instance.style_name] = {
             "class": style_instance.__class__.__name__,
-            "learned_at": datetime.now(UTC),
+            "learned_at": datetime.now(timezone.utc),
         }
         logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
 
@@ -137,7 +137,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
 
         new_row = {
             "style_name": style_name,
-            "timestamp": datetime.now(UTC),
+            "timestamp": datetime.now(timezone.utc),
             "output_name": result_name,
             "rows": result_shape[0],
             "columns": result_shape[1],

@@ -5,7 +5,7 @@ Contains common utilities for transformations.
 
 from abc import abstractmethod
 from typing import Any, TypeVar, Generic, Dict, Type, Callable, Literal, cast
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pandas import DataFrame
 from pandas.api.types import is_numeric_dtype
 
@@ -123,7 +123,7 @@ class ForgeStyle(Style[DataT, ResultT], Generic[DataT, ResultT]):
         """Add metadata columns to the transformed dataframe."""
         checksum_value = calculate_checksum(df)
         df["_forge_name"] = self.style_name
-        df["_transform_timestamp"] = datetime.now(UTC)
+        df["_transform_timestamp"] = datetime.now(timezone.utc)
         df["_checksum"] = checksum_value
 
         self.metadata["checksum"] = checksum_value

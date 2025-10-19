@@ -5,7 +5,7 @@ Contains common utilities for extraction workflows.
 
 from abc import abstractmethod
 from typing import Any, Dict, Union, Generator
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import pandas as pd
 from fragua.core.base_style import Style
 from fragua.agents.store.wagon import Wagon
@@ -51,7 +51,7 @@ class ExtractionStyle(Style[Dict[str, Any], Wagon]):
 
     def __init__(self, style_name: str):
         super().__init__(style_name)
-        self.created_at = datetime.now(UTC)
+        self.created_at = datetime.now(timezone.utc)
         self.metadata: Dict[str, Any] = {"created_at": self.created_at}
 
     @abstractmethod
@@ -115,7 +115,7 @@ class ExtractionStyle(Style[Dict[str, Any], Wagon]):
             # Update metadata
             self.metadata.update(
                 {
-                    "last_extraction": datetime.now(UTC),
+                    "last_extraction": datetime.now(timezone.utc),
                     "params_type": type(source_params).__name__,
                     "result_type": (
                         type(result.data).__name__ if result.data is not None else None

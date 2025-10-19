@@ -41,7 +41,7 @@ jobs:
 
       - name: Lint with pylint
         run: |
-          pylint --disable=C0111,C0103 fragua/agents fragua/core fragua/utils fragua/tests
+          pylint --disable=C0111,C0103 fragua/agents fragua/core fragua/utils tests
 
       - name: Type checking with mypy
         run: |

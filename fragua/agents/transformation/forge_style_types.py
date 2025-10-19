@@ -3,7 +3,8 @@ Concrete ForgeStyle subclasses for Fragua Blacksmiths.
 Includes MLForge, ReportForge, and AnalysisForge.
 """
 
-from typing import Any, Dict, TypedDict, NotRequired
+from typing import Any, Dict, TypedDict
+from typing_extensions import NotRequired
 import numpy as np
 import pandas as pd
 from pandas import DataFrame

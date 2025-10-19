@@ -4,7 +4,7 @@ Manages Wagons, Boxes, and Containers using pure in-memory Storage.
 Handles metadata, checksums, lazy logging, and reporting with minimal code.
 """
 
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import pandas as pd
 from fragua.agents.store.storage import Storage
 from fragua.utils.metrics import calculate_checksum
@@ -50,7 +50,7 @@ class StorageManager:
         new_row = {
             "object_name": obj_name,
             "object_type": obj_type,
-            "timestamp": datetime.now(UTC),
+            "timestamp": datetime.now(timezone.utc),
             "rows": rows,
             "columns": cols,
             "checksum": checksum,

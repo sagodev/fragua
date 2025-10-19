@@ -2,7 +2,7 @@
 Efficient in-memory storage for Fragua ETL objects.
 """
 
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from fragua.utils.metrics import calculate_checksum
 
@@ -38,7 +38,7 @@ class Storage:
                 checksum = calculate_checksum(obj)
         self._store[obj_type][name] = {
             "obj": obj,
-            "saved_at": datetime.now(UTC),
+            "saved_at": datetime.now(timezone.utc),
             "checksum": checksum,
             "data_ref": None,  # placeholder for lazy loading
         }
