@@ -13,6 +13,9 @@ jobs:
       matrix:
         python-version: ["3.10"]
 
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,4 +50,4 @@ jobs:
       - name: Run tests with pytest
         working-directory: ./tests
         run: |
-          PYTHONPATH=$PWD pytest -v
+          pytest -v
