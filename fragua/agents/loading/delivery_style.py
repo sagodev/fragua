@@ -45,7 +45,6 @@ class DeliveryStyle(Style, Generic[T]):
         Deliver the given data to the target destination.
         Must be implemented by subclasses.
         """
-        pass
 
     def validate(self, data: T) -> T:
         """
@@ -64,17 +63,23 @@ class DeliveryStyle(Style, Generic[T]):
             )
         return data
 
-    def use(self, data: Any) -> Any:
+    def use(self, source_params: Any) -> Any:
         """
         Main Delivery method.
-        Executes forge -> validate -> postprocess pipeline.
+        Executes deliver -> validate -> postprocess pipeline.
+
+        Args:
+            source_params: Input data or configuration for delivery.
         """
-        if data is None:
-            raise ValueError("Input data cannot be None")
+        if source_params is None:
+            raise ValueError("Input source_params cannot be None")
 
         logger.debug("Starting DeliveryStyle '%s' loading pipeline.", self.style_name)
 
         try:
+            # Alias interno para compatibilidad con Style.use()
+            data = source_params
+
             data = self.deliver(data)
             logger.debug("%s: deliver() step completed.", self.style_name)
 
