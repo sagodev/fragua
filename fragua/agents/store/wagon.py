@@ -4,13 +4,13 @@ Wagons for storing extracted data from Miners.
 Wagons provide temporary storage and versioning for raw data.
 """
 
-
 from typing import Generic, TypeVar, Callable, Optional
 from datetime import datetime, UTC
 import pandas as pd
 from fragua.utils.metrics import calculate_checksum
 
 T = TypeVar("T")
+
 
 class Wagon(Generic[T]):
     """

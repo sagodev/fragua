@@ -34,12 +34,12 @@ def register_forge_style(
     Decorator to register a ForgeStyle subclass dynamically.
     """
 
-    def wrapper(cls: Type["ForgeStyle[DataT, ResultT]"]) -> Type["ForgeStyle[DataT, ResultT]"]:
+    def wrapper(
+        cls: Type["ForgeStyle[DataT, ResultT]"],
+    ) -> Type["ForgeStyle[DataT, ResultT]"]:
         # Register on the public registry so other modules that import
         # FORGESTYLE_REGISTRY will see the registered styles.
-        FORGESTYLE_REGISTRY[name] = cast(
-            Type["ForgeStyle[DataFrame, DataFrame]"], cls
-        )
+        FORGESTYLE_REGISTRY[name] = cast(Type["ForgeStyle[DataFrame, DataFrame]"], cls)
         logger.debug("Registered ForgeStyle: %s", name)
         return cls
 

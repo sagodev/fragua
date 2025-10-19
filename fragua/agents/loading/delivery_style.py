@@ -25,9 +25,9 @@ def register_delivery_style(name: str):
     return wrapper
 
 
-
 # Generic type variable for delivery data
 T = TypeVar("T")
+
 
 class DeliveryStyle(Style, Generic[T]):
     """

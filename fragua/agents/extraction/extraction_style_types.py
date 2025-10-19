@@ -2,7 +2,7 @@
 Concrete ExtractionStyle classes with dynamic registration for Fragua ETL.
 """
 
-from typing import Any, Dict, Literal, Union, TypedDict
+from typing import Any, Dict, Union, TypedDict
 from pathlib import Path
 from sqlalchemy import create_engine
 from pandas import DataFrame
@@ -18,12 +18,14 @@ from fragua.agents.extraction.extraction_style import (
 
 class CSVSourceParams(TypedDict, total=False):
     """CSV source configuration parameters."""
+
     path: Union[str, Path]
     read_kwargs: Dict[str, Any]
 
 
 class ExcelSourceParams(TypedDict, total=False):
     """Excel source configuration parameters."""
+
     path: Union[str, Path]
     sheet_name: Union[str, int]
     read_kwargs: Dict[str, Any]
@@ -31,6 +33,7 @@ class ExcelSourceParams(TypedDict, total=False):
 
 class SQLSourceParams(TypedDict, total=False):
     """SQL source configuration parameters."""
+
     connection_string: str
     query: str
     read_kwargs: Dict[str, Any]
@@ -38,11 +41,12 @@ class SQLSourceParams(TypedDict, total=False):
 
 class APISourceParams(TypedDict, total=False):
     """API source configuration parameters."""
-    url: str 
+
+    url: str
     method: str
     headers: Dict[str, str]
     params: Dict[str, Any]
-    data: Dict[str, Any] 
+    data: Dict[str, Any]
     auth: Dict[str, str]
     proxy: Dict[str, str]
     timeout: float
@@ -52,7 +56,7 @@ class APISourceParams(TypedDict, total=False):
 @register_extraction_style("csv")
 class CSVExtractionStyle(ExtractionStyle):
     """Extracts data from CSV files.
-    
+
     Source parameters:
         path (str): Path to the CSV file
         read_kwargs (dict, optional): Parameters for pd.read_csv
@@ -71,7 +75,7 @@ class CSVExtractionStyle(ExtractionStyle):
             DataFrame: The extracted data
 
         Raises:
-            ValueError: If path is missing or invalid 
+            ValueError: If path is missing or invalid
             pd.errors.EmptyDataError: If CSV file is empty
             IOError: If file cannot be opened/read
         """
@@ -115,10 +119,10 @@ class ExcelExtractionStyle(ExtractionStyle):
 
         Raises:
             ValueError: If path is missing or invalid
-            pd.errors.EmptyDataError: If Excel file is empty 
+            pd.errors.EmptyDataError: If Excel file is empty
             IOError: If file cannot be opened/read
         """
-        # Input validation 
+        # Input validation
         path = source_params["path"]
         if not path:
             raise ValueError("path is required in source_params")
@@ -135,7 +139,7 @@ class ExcelExtractionStyle(ExtractionStyle):
         return pd.read_excel(path_str, sheet_name=sheet_name, **read_kwargs)
 
 
-@register_extraction_style("sql")  
+@register_extraction_style("sql")
 class SQLExtractionStyle(ExtractionStyle):
     """Extracts data from SQL databases.
 
@@ -190,7 +194,7 @@ class APIExtractionStyle(ExtractionStyle):
     Source parameters:
         url (str): API endpoint URL
         method (str, optional): HTTP method. Defaults to GET
-        headers (dict, optional): Request headers 
+        headers (dict, optional): Request headers
         params (dict, optional): URL parameters
         data (dict, optional): Request body data
         auth (dict, optional): HTTP Basic auth credentials
@@ -234,7 +238,7 @@ class APIExtractionStyle(ExtractionStyle):
         response = requests.request(
             method=method,
             url=url,
-            headers=headers, 
+            headers=headers,
             params=params,
             data=data,
             auth=HTTPBasicAuth(**auth) if auth else None,

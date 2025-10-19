@@ -2,7 +2,6 @@
 Efficient in-memory storage for Fragua ETL objects.
 """
 
-
 from datetime import datetime, UTC
 from typing import Any, Dict, Optional
 from fragua.utils.metrics import calculate_checksum
@@ -26,7 +25,9 @@ class Storage:
             "container": {},
         }
 
-    def add(self, obj_type: str, name: str, obj: object, compute_checksum: bool = True) -> None:
+    def add(
+        self, obj_type: str, name: str, obj: object, compute_checksum: bool = True
+    ) -> None:
         """Add an object with metadata to storage."""
         checksum: Optional[str] = None
         if compute_checksum:

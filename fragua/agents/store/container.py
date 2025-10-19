@@ -4,13 +4,13 @@ Containers for storing loaded data before final delivery.
 Containers allow versioned storage of data that has been processed and is ready for delivery.
 """
 
-
 from typing import Generic, TypeVar, Callable, Optional
 from datetime import datetime, UTC
 import pandas as pd
 from fragua.utils.metrics import calculate_checksum
 
 T = TypeVar("T")
+
 
 class Container(Generic[T]):
     """
