@@ -14,7 +14,8 @@ T = TypeVar("T")
 
 class Container(Generic[T]):
     """
-    Container: stores final data ready for delivery with metadata, validation, and optional postprocessing.
+    Container: stores final data ready for delivery
+    with metadata, validation, and optional postprocessing.
     """
 
     def __init__(self, name: str, data: Optional[T] = None):

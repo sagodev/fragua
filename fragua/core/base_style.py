@@ -5,7 +5,7 @@ Examples of styles include Forge Styles, Extraction Styles, and Delivery Styles.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, TypeVar, Generic, Dict, Optional
+from typing import Any, TypeVar, Generic, Dict
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -49,7 +49,6 @@ class Style(ABC, Generic[DataT, ResultT]):
             ValueError: If data is None or invalid
             TypeError: If data is of wrong type
         """
-        pass
 
     def validate(self, data: DataT) -> DataT:
         """

@@ -1,7 +1,8 @@
 """
 Blacksmith agent responsible for transforming data.
 
-The Blacksmith uses ForgeStyles to process data from Wagons and stores results in Boxes via StorageManager.
+The Blacksmith uses ForgeStyles to process data from Wagons
+and stores results in Boxes via StorageManager.
 """
 
 from __future__ import annotations

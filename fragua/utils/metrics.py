@@ -1,3 +1,12 @@
+"""
+Metrics Utilities for Fragua ETL Framework.
+
+This module provides stable and deterministic checksum calculations
+for various data structures including pandas DataFrames, dictionaries,
+lists, and other Python objects. It ensures reproducible checksums
+by serializing the data in a consistent way.
+"""
+
 import hashlib
 import json
 from typing import Any
@@ -5,20 +14,17 @@ import pandas as pd
 
 
 def _serialize_dataframe(df: pd.DataFrame) -> bytes:
-    # Make a copy and sort columns to guarantee deterministic ordering
+    """Make a copy and sort columns to guarantee deterministic ordering."""
     df_copy = df.copy()
-    # ensure reproducible column order
     cols = sorted(df_copy.columns.tolist())
     df_copy = df_copy[cols]
-    # Use to_csv without index to avoid index differences
     return df_copy.to_csv(index=False).encode("utf-8")
 
 
 def _serialize_other(obj: Any) -> bytes:
     if isinstance(obj, (dict, list)):
         return json.dumps(obj, sort_keys=True, default=str).encode("utf-8")
-    else:
-        return repr(obj).encode("utf-8")
+    return repr(obj).encode("utf-8")  # de-indented else
 
 
 def calculate_checksum(data: Any, algorithm: str = "sha256") -> str:

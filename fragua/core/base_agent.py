@@ -199,7 +199,6 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         Returns:
             ResultT: The result type specific to this agent subclass
         """
-        pass
 
     def __repr__(self):
         return f"<{self.__class__.__name__} name={self.name}>"

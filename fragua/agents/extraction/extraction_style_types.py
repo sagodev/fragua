@@ -251,7 +251,7 @@ class APIExtractionStyle(ExtractionStyle):
         result_data = response.json()
         if isinstance(result_data, list):
             return pd.DataFrame(result_data, **read_kwargs)
-        elif isinstance(result_data, dict):
+        if isinstance(result_data, dict):
             # Try to handle nested structures by normalizing
             return pd.json_normalize(result_data, **read_kwargs)
         else:
