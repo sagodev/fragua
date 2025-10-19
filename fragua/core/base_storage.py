@@ -10,7 +10,7 @@ from typing import Optional, Callable, TypeVar, Generic
 import pandas as pd
 from fragua.utils.metrics import calculate_checksum
 
-T = TypeVar("T", pd.DataFrame, list)
+T = TypeVar("T")
 
 
 class BaseStorage(Generic[T]):

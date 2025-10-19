@@ -5,7 +5,7 @@ Handles metadata, checksums, lazy logging, and reporting with minimal code.
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 import pandas as pd
 from fragua.agents.store.storage import Storage
 from fragua.utils.metrics import calculate_checksum
