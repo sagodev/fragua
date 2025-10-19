@@ -5,17 +5,19 @@ Handles metadata, checksums, lazy logging, and reporting with minimal code.
 """
 
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict, Optional, Literal
 import pandas as pd
 from fragua.agents.store.storage import Storage
 from fragua.utils.metrics import calculate_checksum
 from fragua.utils.logger import get_logger
 
+ObjType = Literal["wagon", "box", "container"]
+
 
 class StorageManager:
     """Ultra-dynamic StorageManager using optimized Storage."""
 
-    TYPE_MAP: Dict[str, str] = {
+    TYPE_MAP: Dict[ObjType, ObjType] = {
         "wagon": "wagon",
         "box": "box",
         "container": "container",
@@ -25,7 +27,6 @@ class StorageManager:
         self.name = name
         self.logger = get_logger(name)
         self.storage = Storage()
-        # Metadata log for all operations
         self.metadata = pd.DataFrame(
             columns=[
                 "object_name",
@@ -40,7 +41,7 @@ class StorageManager:
 
     # ------------------- Internal helpers ------------------- #
     def _record_metadata(
-        self, obj_name: str, obj_type: str, operation: str, obj: object
+        self, obj_name: str, obj_type: ObjType, operation: str, obj: object
     ) -> None:
         """Record metadata about a storage operation."""
         rows: Optional[int] = None
@@ -67,7 +68,7 @@ class StorageManager:
         )
 
     def _verify_on_load(
-        self, obj_type: str, obj_name: str, obj: Optional[object]
+        self, obj_type: ObjType, obj_name: str, obj: Optional[object]
     ) -> None:
         """Verify checksum integrity when loading an object."""
         if obj is None:
@@ -92,13 +93,13 @@ class StorageManager:
 
     # ------------------- Public generic methods ------------------- #
     def save(
-        self, obj_type: str, name: str, obj: object, overwrite: bool = False
+        self, obj_type: ObjType, name: str, obj: object, overwrite: bool = False
     ) -> None:
         """Save an object into storage."""
         if obj_type not in self.TYPE_MAP:
             raise ValueError(f"Unknown object type '{obj_type}'")
 
-        coll_name = self.TYPE_MAP[obj_type]
+        coll_name: ObjType = self.TYPE_MAP[obj_type]
         if self.storage.exists(coll_name, name) and not overwrite:
             self.logger.warning(
                 "[%s] %s '%s' exists. Use overwrite=True to replace.",
@@ -112,16 +113,16 @@ class StorageManager:
         self.storage.add(coll_name, name, obj)
         self._record_metadata(name, obj_type, "save", obj)
 
-    def load(self, obj_type: str, name: str) -> Optional[object]:
+    def load(self, obj_type: ObjType, name: str) -> Optional[object]:
         """Load an object from storage."""
-        coll_name = self.TYPE_MAP[obj_type]
+        coll_name: ObjType = self.TYPE_MAP[obj_type]
         obj = self.storage.get(coll_name, name)
         self._verify_on_load(coll_name, name, obj)
         return obj
 
-    def remove(self, obj_type: str, name: str) -> Optional[object]:
+    def remove(self, obj_type: ObjType, name: str) -> Optional[object]:
         """Remove an object from storage."""
-        coll_name = self.TYPE_MAP[obj_type]
+        coll_name: ObjType = self.TYPE_MAP[obj_type]
         obj = self.storage.remove(coll_name, name)
         if obj:
             self._record_metadata(name, obj_type, "remove", obj)
@@ -131,9 +132,9 @@ class StorageManager:
             )
         return obj
 
-    def has(self, obj_type: str, name: str) -> bool:
+    def has(self, obj_type: ObjType, name: str) -> bool:
         """Check if an object exists in storage."""
-        coll_name = self.TYPE_MAP[obj_type]
+        coll_name: ObjType = self.TYPE_MAP[obj_type]
         return self.storage.exists(coll_name, name)
 
     # ------------------- Reporting ------------------- #
@@ -141,7 +142,7 @@ class StorageManager:
         """Return a copy of the metadata report."""
         return self.metadata.copy()
 
-    def list_all(self) -> Dict[str, list[str]]:
+    def list_all(self) -> Dict[ObjType, list[str]]:
         """List all stored objects by type."""
         return {
             obj_type: self.storage.list_all(coll_name)
