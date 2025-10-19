@@ -3,7 +3,7 @@ Efficient in-memory storage for Fragua ETL objects.
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Dict, Optional, Literal
 from fragua.utils.metrics import calculate_checksum
 
 
@@ -13,12 +13,10 @@ class Storage:
     Prepares for lazy loading and checksum verification.
     """
 
-    # Define the type for the metadata dictionary
-    _Entry = Dict[str, Any]
+    _Entry = Dict[str, object]
     _StoreType = Dict[str, Dict[str, _Entry]]
 
     def __init__(self) -> None:
-        # type -> name -> {obj, saved_at, checksum, data_ref}
         self._store: Storage._StoreType = {
             "wagon": {},
             "box": {},
@@ -26,46 +24,59 @@ class Storage:
         }
 
     def add(
-        self, obj_type: str, name: str, obj: object, compute_checksum: bool = True
+        self,
+        obj_type: Literal["wagon", "box", "container"],
+        name: str,
+        obj: object,
+        compute_checksum: bool = True,
     ) -> None:
         """Add an object with metadata to storage."""
         checksum: Optional[str] = None
         if compute_checksum:
-            # calculate checksum if object has 'data', otherwise use the object itself
             if hasattr(obj, "data"):
                 checksum = calculate_checksum(getattr(obj, "data"))
             else:
                 checksum = calculate_checksum(obj)
+
         self._store[obj_type][name] = {
             "obj": obj,
             "saved_at": datetime.now(timezone.utc),
             "checksum": checksum,
-            "data_ref": None,  # placeholder for lazy loading
+            "data_ref": None,
         }
 
-    def get(self, obj_type: str, name: str) -> Optional[object]:
+    def get(
+        self, obj_type: Literal["wagon", "box", "container"], name: str
+    ) -> Optional[object]:
         """Retrieve an object from storage."""
         entry: Optional[Storage._Entry] = self._store[obj_type].get(name)
         if entry:
             return entry["obj"]
         return None
 
-    def remove(self, obj_type: str, name: str) -> Optional[object]:
+    def remove(
+        self, obj_type: Literal["wagon", "box", "container"], name: str
+    ) -> Optional[object]:
         """Remove an object from storage."""
         entry: Optional[Storage._Entry] = self._store[obj_type].pop(name, None)
         if entry:
-            return entry.get("obj")
+            return entry["obj"]
         return None
 
-    def get_checksum(self, obj_type: str, name: str) -> Optional[str]:
+    def get_checksum(
+        self, obj_type: Literal["wagon", "box", "container"], name: str
+    ) -> Optional[str]:
         """Return the stored checksum for an object, or None if not found."""
         entry: Optional[Storage._Entry] = self._store.get(obj_type, {}).get(name)
         if not entry:
             return None
-        return entry.get("checksum")
+        checksum = entry.get("checksum")
+        return checksum if isinstance(checksum, str) else None
 
-    def exists(self, obj_type: str, name: str) -> bool:
+    def exists(self, obj_type: Literal["wagon", "box", "container"], name: str) -> bool:
+        """Check if an object exists in storage."""
         return name in self._store[obj_type]
 
-    def list_all(self, obj_type: str) -> list[str]:
+    def list_all(self, obj_type: Literal["wagon", "box", "container"]) -> list[str]:
+        """List all object names of a given type in storage."""
         return list(self._store[obj_type].keys())

@@ -13,10 +13,12 @@ from fragua.agents.store.box import Box
 from fragua.core.base_agent import BaseAgent
 
 
-class Blacksmith(BaseAgent[ForgeStyle[Any, Any], Box]):
+class Blacksmith(BaseAgent[ForgeStyle[Any, Any], Box[Any]]):
+    """Agent that applies forge styles to data for transformation."""
+
     style_registry: dict[str, Type[ForgeStyle[Any, Any]]] = FORGESTYLE_REGISTRY
-    result_type: Type[Box] = Box
+    result_type: Type[Box[Any]] = Box[Any]
     metadata_table_name: str = "transformations"
 
-    def work(self, *args: Any, **kwargs: Any) -> Box:
+    def work(self, *args: Any, **kwargs: Any) -> Box[Any]:
         return self.apply_style(*args, **kwargs)

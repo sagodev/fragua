@@ -16,10 +16,14 @@ from fragua.agents.store.wagon import Wagon
 from fragua.core.base_agent import BaseAgent
 
 
-class Miner(BaseAgent[ExtractionStyle, Wagon]):
-    style_registry: dict[str, Type[ExtractionStyle]] = EXTRACTIONSTYLE_REGISTRY
-    result_type: Type[Wagon] = Wagon
+class Miner(BaseAgent[ExtractionStyle[Any, Any], Wagon[Any]]):
+    """Agent that applies extraction styles to data sources for extraction."""
+
+    style_registry: dict[str, Type[ExtractionStyle[Any, Any]]] = (
+        EXTRACTIONSTYLE_REGISTRY
+    )
+    result_type: Type[Wagon[Any]] = Wagon
     metadata_table_name: str = "extractions"
 
-    def work(self, *args: Any, **kwargs: Any) -> Wagon:
+    def work(self, *args: Any, **kwargs: Any) -> Wagon[Any]:
         return self.apply_style(*args, **kwargs)

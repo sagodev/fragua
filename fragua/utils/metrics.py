@@ -23,11 +23,10 @@ def _serialize_dataframe(df: pd.DataFrame) -> bytes:
 
 def _serialize_other(obj: Any) -> bytes:
     """Serialize dictionaries, lists, or generic Python objects into bytes."""
-    serialized: str
     if isinstance(obj, (dict, list)):
-        serialized = json.dumps(obj, sort_keys=True, default=str)
+        serialized: str = json.dumps(obj, sort_keys=True, default=str)
     else:
-        serialized = repr(obj)
+        serialized: str = repr(obj)
     return serialized.encode("utf-8")
 
 

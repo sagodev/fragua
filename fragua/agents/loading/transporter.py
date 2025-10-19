@@ -10,11 +10,13 @@ from fragua.agents.store.container import Container
 from fragua.core.base_agent import BaseAgent
 
 
-class Transporter(BaseAgent[DeliveryStyle[Any], Container]):
-    style_registry: dict[str, Type[DeliveryStyle[Any]]] = DELIVERYSTYLE_REGISTRY
-    result_type: Type[Container] = Container
+class Transporter(BaseAgent[DeliveryStyle[Any, Any], Container[Any]]):
+    """Agent that applies delivery styles to data for final delivery."""
+
+    style_registry: dict[str, Type[DeliveryStyle[Any, Any]]] = DELIVERYSTYLE_REGISTRY
+    result_type: Type[Container[Any]] = Container
     metadata_table_name: str = "deliveries"
 
-    def work(self, *args: Any, **kwargs: Any) -> Container:
+    def work(self, *args: Any, **kwargs: Any) -> Container[Any]:
         """Apply a delivery style to provided data and return a Container result."""
         return self.apply_style(*args, **kwargs)

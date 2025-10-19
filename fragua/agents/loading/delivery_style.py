@@ -41,39 +41,31 @@ class DeliveryStyle(BaseStyle[DataT, ResultT], Generic[DataT, ResultT]):
 
     def __init__(self, style_name: str):
         super().__init__(style_name)
-        self.destination = None
-        self.created_at = datetime.now(timezone.utc)
+        self.destination: Any = None
+        self.created_at: datetime = datetime.now(timezone.utc)
 
     @abstractmethod
     def deliver(self, source_params: DataT) -> ResultT:
-        """
-        Deliver the given data to the target destination.
-        Must be implemented by subclasses.
-        """
+        """Deliver the given data to the target destination."""
 
     def validate(self, data: ResultT) -> ResultT:
-        """
-        Extend basic validation for delivery-specific requirements.
-        """
-        data = super().validate(data)
+        """Extend basic validation for delivery-specific requirements."""
+        if data is None:
+            raise ValueError("No data to deliver")
         if self.destination is None:
-            raise ValueError(
-                f"{self.style_name} requires a destination to deliver data."
-            )
+            raise ValueError(f"{self.style_name} requires a destination")
         return data
 
     def use(self, source_params: DataT) -> ResultT:
-        """
-        Main Delivery method.
-        Executes deliver -> validate -> postprocess pipeline.
-        """
+        """Main Delivery method: deliver -> validate -> postprocess."""
         if source_params is None:
             raise ValueError("Input source_params cannot be None")
 
         logger.debug("Starting DeliveryStyle '%s' loading pipeline.", self.style_name)
 
+        data: ResultT
         try:
-            data: ResultT = self.deliver(source_params)
+            data = self.deliver(source_params)
             logger.debug("%s: deliver() step completed.", self.style_name)
 
             data = self.validate(data)
@@ -82,8 +74,8 @@ class DeliveryStyle(BaseStyle[DataT, ResultT], Generic[DataT, ResultT]):
             data = self.postprocess(data)
             logger.debug("%s: postprocess() step completed.", self.style_name)
 
-            return data
-
         except Exception as e:
             self.log_error(e)
             raise
+
+        return data
