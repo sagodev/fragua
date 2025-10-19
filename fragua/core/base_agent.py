@@ -7,7 +7,7 @@ agents like Miner, Blacksmith, and Transporter.
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Any, Dict, Type, TypeVar, Generic, TYPE_CHECKING, Optional
+from typing import Any, Dict, Type, TypeVar, Generic, TYPE_CHECKING, Optional, cast
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
