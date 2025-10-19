@@ -6,7 +6,7 @@ Contains common utilities for delivery workflows.
 from abc import abstractmethod
 from typing import Any, TypeVar, Generic, Dict, Type
 from datetime import datetime, timezone
-from fragua.core.base_style import Style
+from fragua.core.base_style import BaseStyle
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -29,7 +29,7 @@ def register_delivery_style(name: str):
 T = TypeVar("T")
 
 
-class DeliveryStyle(Style, Generic[T]):
+class DeliveryStyle(BaseStyle, Generic[T]):
     """
     Base class for all delivery styles in Fragua ETL.
     """

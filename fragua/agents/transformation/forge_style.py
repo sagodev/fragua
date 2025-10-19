@@ -11,7 +11,7 @@ from pandas.api.types import is_numeric_dtype
 
 from fragua.utils.metrics import calculate_checksum
 from fragua.utils.logger import get_logger
-from fragua.core import Style
+from fragua.core import BaseStyle
 
 # Type variables for generics
 DataT = TypeVar("DataT", bound=DataFrame)
@@ -46,9 +46,10 @@ def register_forge_style(
     return wrapper
 
 
-class ForgeStyle(Style, Generic[DataT, ResultT]):
+class ForgeStyle(BaseStyle, Generic[DataT, ResultT]):
     """
     Base class for ForgeStyles.
+
     Provides common utilities for transformations.
     Inherits from abstract Style.
     """

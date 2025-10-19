@@ -7,7 +7,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Union, Generator
 from datetime import datetime, timezone
 import pandas as pd
-from fragua.core.base_style import Style
+from fragua.core.base_style import BaseStyle
 from fragua.agents.store.wagon import Wagon
 from fragua.utils.logger import get_logger
 
@@ -33,7 +33,7 @@ def register_extraction_style(name: str):
     return wrapper
 
 
-class ExtractionStyle(Style[Dict[str, Any], Wagon]):
+class ExtractionStyle(BaseStyle[Dict[str, Any], Wagon]):
     """Base class for all extraction styles in Fragua ETL.
 
     Extraction styles implement different methods to extract data from sources like CSV files,
