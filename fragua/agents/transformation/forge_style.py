@@ -78,22 +78,22 @@ class ForgeStyle(Style[DataT, ResultT], Generic[DataT, ResultT]):
             self.log_error(e)
             raise
 
-    def _apply_pipeline(self, source: SourceType) -> ResultT:
+    def _apply_pipeline(self, source_params: SourceType) -> ResultT:
         """Internal method to apply the transformation pipeline."""
-        transformed = self.forge(source)
+        transformed = self.forge(source_params)
         logger.debug("%s: forge() step completed.", self.style_name)
 
         transformed = cast(ResultT, transformed)  # Cast after forge
         validated = cast(DataT, self.validate(transformed))  # Cast for validate
         logger.debug("%s: validate() step completed.", self.style_name)
 
-        result = self.postprocess(validated)  # No cast needed, matches type
+        result = self.postprocess(validated)
         logger.debug("%s: postprocess() step completed.", self.style_name)
 
         return result
 
     @abstractmethod
-    def forge(self, source: SourceType) -> ResultT:
+    def forge(self, source_params: Dict[str, Any]) -> ResultT:
         """Must be implemented by subclasses to transform data."""
 
     # ------------------ Utilities for DataFrames ------------------ #
