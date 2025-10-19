@@ -10,13 +10,13 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Type, TypeVar, Generic, TYPE_CHECKING
 import pandas as pd
 from fragua.utils.logger import get_logger
-from fragua.core.base_style import Style
+from fragua.core.base_style import BaseStyle
 
 if TYPE_CHECKING:
     from fragua.agents.store.storage_manager import StorageManager
 
 # Generic type variables
-StyleT = TypeVar("StyleT", bound=Style)
+StyleT = TypeVar("StyleT", bound=BaseStyle)
 ResultT = TypeVar("ResultT")
 
 logger = get_logger("BaseAgent")
