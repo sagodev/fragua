@@ -80,7 +80,9 @@ class StorageManager:
             )
 
     # ------------------- Public generic methods ------------------- #
-    def save(self, obj_type: str, name: str, obj: object, overwrite: bool = False):
+    def save(
+        self, obj_type: str, name: str, obj: object, overwrite: bool = False
+    ):
         if obj_type not in self.TYPE_MAP:
             raise ValueError(f"Unknown object type '{obj_type}'")
         coll_name = self.TYPE_MAP[obj_type]

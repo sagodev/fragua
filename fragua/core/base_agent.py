@@ -7,7 +7,7 @@ agents like Miner, Blacksmith, and Transporter.
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Any, Dict, Type, TypeVar, Generic, TYPE_CHECKING
+from typing import Any, Dict, Type, TypeVar, Generic, TYPE_CHECKING, Optional
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
@@ -30,7 +30,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
 
     # Subclasses must override these
     style_registry: Dict[str, Type[StyleT]] = {}
-    result_type: Type[ResultT] = object
+    result_type: Optional[Type[ResultT]] = None
     metadata_table_name: str = "operations"
 
     def __init__(self, name: str):
@@ -200,5 +200,5 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             ResultT: The result type specific to this agent subclass
         """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} name={self.name}>"

@@ -10,7 +10,7 @@ class Config:
     Configuration class to store ETL settings.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize default configuration values.
         """
@@ -19,7 +19,7 @@ class Config:
         self.default_logging_name = "FraguaLogger"
         self.default_format = "json"
 
-    def set_storage_path(self, path: str):
+    def set_storage_path(self, path: str) -> None:
         """
         Set the default storage path for all agents.
 
@@ -28,7 +28,7 @@ class Config:
         """
         self.default_storage_path = path
 
-    def set_logging_name(self, name: str):
+    def set_logging_name(self, name: str) -> None:
         """
         Set the default logging name.
 
@@ -37,7 +37,7 @@ class Config:
         """
         self.default_logging_name = name
 
-    def set_format(self, fmt: str):
+    def set_format(self, fmt: str) -> None:
         """
         Set the default data format.
 

@@ -14,7 +14,7 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def register_extraction_style(name: str):
+def register_extraction_style(name: str) -> callable:
     """
     Decorator to register an ExtractionStyle subclass.
 
