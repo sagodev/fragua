@@ -23,10 +23,7 @@ from fragua.agents import (
     ExcelDeliveryStyle,
 )
 
-from fragua.core import (
-    BaseAgent,
-    Style,
-)
+from fragua.core import BaseAgent, BaseStyle, BaseStorage
 
 from fragua.utils import get_logger, Config, calculate_checksum
 
@@ -40,7 +37,8 @@ __all__ = [
     "BaseAgent",
     "StorageManager",
     "Storage",
-    "Style",
+    "BaseStorage",
+    "BaseStyle",
     "get_logger",
     "Config",
     "calculate_checksum",

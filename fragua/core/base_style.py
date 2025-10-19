@@ -15,7 +15,7 @@ ResultT = TypeVar("ResultT")
 DataT = TypeVar("DataT")
 
 
-class Style(ABC, Generic[DataT, ResultT]):
+class BaseStyle(ABC, Generic[DataT, ResultT]):
     """
     Abstract base class for style.
 
