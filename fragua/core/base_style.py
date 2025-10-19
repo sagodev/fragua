@@ -50,7 +50,7 @@ class BaseStyle(ABC, Generic[DataT, ResultT]):
             TypeError: If source_params is of wrong type
         """
 
-    def validate(self, data: DataT) -> DataT:
+    def validate(self, data: ResultT) -> ResultT:
         """
         Basic validation of the data.
 

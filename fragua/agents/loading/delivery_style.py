@@ -4,20 +4,28 @@ Contains common utilities for delivery workflows.
 """
 
 from abc import abstractmethod
-from typing import Any, TypeVar, Generic, Dict, Type, Callable
+from typing import Generic, Type, Callable, Dict
 from datetime import datetime, timezone
-from fragua.core.base_style import BaseStyle
+from fragua.core.base_style import BaseStyle, DataT, ResultT
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+DELIVERYSTYLE_REGISTRY: Dict[str, Type["DeliveryStyle[DataT, ResultT]"]] = {}
 
-def register_delivery_style(name: str) -> Callable[[Type[Any]], Type[Any]]:
+
+def register_delivery_style(
+    name: str,
+) -> Callable[
+    [Type["DeliveryStyle[DataT, ResultT]"]], Type["DeliveryStyle[DataT, ResultT]"]
+]:
     """
     Decorator to register a DeliveryStyle subclass.
     """
 
-    def wrapper(cls: Type[Any]) -> Type[Any]:
+    def wrapper(
+        cls: Type["DeliveryStyle[DataT, ResultT]"],
+    ) -> Type["DeliveryStyle[DataT, ResultT]"]:
         DELIVERYSTYLE_REGISTRY[name] = cls
         logger.debug("Registered DeliveryStyle: %s", name)
         return cls
@@ -25,13 +33,10 @@ def register_delivery_style(name: str) -> Callable[[Type[Any]], Type[Any]]:
     return wrapper
 
 
-# Generic type variable for delivery data
-T = TypeVar("T")
-
-
-class DeliveryStyle(BaseStyle, Generic[T]):
+class DeliveryStyle(BaseStyle[DataT, ResultT], Generic[DataT, ResultT]):
     """
     Base class for all delivery styles in Fragua ETL.
+    Provides the pipeline: deliver -> validate -> postprocess.
     """
 
     def __init__(self, style_name: str):
@@ -40,21 +45,15 @@ class DeliveryStyle(BaseStyle, Generic[T]):
         self.created_at = datetime.now(timezone.utc)
 
     @abstractmethod
-    def deliver(self, source_params: T) -> T:
+    def deliver(self, source_params: DataT) -> ResultT:
         """
         Deliver the given data to the target destination.
         Must be implemented by subclasses.
         """
 
-    def validate(self, data: T) -> T:
+    def validate(self, data: ResultT) -> ResultT:
         """
         Extend basic validation for delivery-specific requirements.
-
-        Args:
-            data: Data to be validated before delivery.
-
-        Returns:
-            The validated data.
         """
         data = super().validate(data)
         if self.destination is None:
@@ -63,13 +62,10 @@ class DeliveryStyle(BaseStyle, Generic[T]):
             )
         return data
 
-    def use(self, source_params: Any) -> Any:
+    def use(self, source_params: DataT) -> ResultT:
         """
         Main Delivery method.
         Executes deliver -> validate -> postprocess pipeline.
-
-        Args:
-            source_params: Input data or configuration for delivery.
         """
         if source_params is None:
             raise ValueError("Input source_params cannot be None")
@@ -77,9 +73,7 @@ class DeliveryStyle(BaseStyle, Generic[T]):
         logger.debug("Starting DeliveryStyle '%s' loading pipeline.", self.style_name)
 
         try:
-            data = source_params
-
-            data = self.deliver(data)
+            data: ResultT = self.deliver(source_params)
             logger.debug("%s: deliver() step completed.", self.style_name)
 
             data = self.validate(data)
@@ -93,7 +87,3 @@ class DeliveryStyle(BaseStyle, Generic[T]):
         except Exception as e:
             self.log_error(e)
             raise
-
-
-# Registry for dynamic DeliveryStyle discovery
-DELIVERYSTYLE_REGISTRY: Dict[str, Type[DeliveryStyle[Any]]] = {}

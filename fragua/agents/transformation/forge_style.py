@@ -4,27 +4,18 @@ Contains common utilities for transformations.
 """
 
 from abc import abstractmethod
-from typing import Any, TypeVar, Generic, Dict, Type, Callable, Literal, cast
+from typing import Any, Generic, Dict, Type, Callable, Literal
 from datetime import datetime, timezone
 from pandas import DataFrame
 from pandas.api.types import is_numeric_dtype
 
 from fragua.utils.metrics import calculate_checksum
+from fragua.core.base_style import BaseStyle, DataT, ResultT
 from fragua.utils.logger import get_logger
-from fragua.core import BaseStyle
 
-# Type variables for generics
-DataT = TypeVar("DataT", bound=DataFrame)
-ResultT = TypeVar("ResultT", bound=DataFrame)
-
-# Type alias for source data
-SourceType = Dict[str, DataT]
-
-# Unified logger for ForgeStyle
 logger = get_logger(__name__)
 
-# Registry for forge styles (single public registry)
-FORGESTYLE_REGISTRY: Dict[str, Type["ForgeStyle[DataFrame, DataFrame]"]] = {}
+FORGESTYLE_REGISTRY: Dict[str, Type["ForgeStyle[DataT, ResultT]"]] = {}
 
 
 def register_forge_style(
@@ -37,21 +28,18 @@ def register_forge_style(
     def wrapper(
         cls: Type["ForgeStyle[DataT, ResultT]"],
     ) -> Type["ForgeStyle[DataT, ResultT]"]:
-        # Register on the public registry so other modules that import
-        # FORGESTYLE_REGISTRY will see the registered styles.
-        FORGESTYLE_REGISTRY[name] = cast(Type["ForgeStyle[DataFrame, DataFrame]"], cls)
+        FORGESTYLE_REGISTRY[name] = cls
         logger.debug("Registered ForgeStyle: %s", name)
         return cls
 
     return wrapper
 
 
-class ForgeStyle(BaseStyle, Generic[DataT, ResultT]):
+class ForgeStyle(BaseStyle[DataT, ResultT], Generic[DataT, ResultT]):
     """
     Base class for ForgeStyles.
 
     Provides common utilities for transformations.
-    Inherits from abstract Style.
     """
 
     def __init__(self, style_name: str) -> None:
@@ -60,32 +48,31 @@ class ForgeStyle(BaseStyle, Generic[DataT, ResultT]):
 
     def use(self, source_params: DataT) -> ResultT:
         """
-        Main transformation method.
-        Executes forge -> validate -> postprocess pipeline.
+        Main transformation pipeline: forge -> validate -> postprocess.
         """
-        if source_params["data"] is None or source_params["data"].empty:
-            raise ValueError("Input data cannot be None or empty")
+        if source_params is None:
+            raise ValueError("Input data cannot be None")
 
         logger.debug(
             "Starting ForgeStyle '%s' transformation pipeline.", self.style_name
         )
 
         try:
-            source = {"data": source_params["data"]}
-            result = self._apply_pipeline(source)
+            result: ResultT = self._apply_pipeline(source_params)
             return result
 
         except Exception as e:
             self.log_error(e)
             raise
 
-    def _apply_pipeline(self, source_params: SourceType) -> ResultT:
-        """Internal method to apply the transformation pipeline."""
+    def _apply_pipeline(self, source_params: DataT) -> ResultT:
+        """
+        Internal method to apply the transformation pipeline generically.
+        """
         transformed = self.forge(source_params)
         logger.debug("%s: forge() step completed.", self.style_name)
 
-        transformed = cast(ResultT, transformed)  # Cast after forge
-        validated = cast(DataT, self.validate(transformed))  # Cast for validate
+        validated = self.validate(transformed)
         logger.debug("%s: validate() step completed.", self.style_name)
 
         result = self.postprocess(validated)
@@ -94,8 +81,17 @@ class ForgeStyle(BaseStyle, Generic[DataT, ResultT]):
         return result
 
     @abstractmethod
-    def forge(self, source_params: Dict[str, Any]) -> ResultT:
-        """Must be implemented by subclasses to transform data."""
+    def forge(self, source_params: DataT) -> ResultT:
+        """
+        Must be implemented by subclasses to transform data.
+
+        Args:
+            source_params (DataT): Input data
+
+        Returns:
+            ResultT: Transformed result
+        """
+        raise NotImplementedError
 
     # ------------------ Utilities for DataFrames ------------------ #
 
@@ -132,6 +128,3 @@ class ForgeStyle(BaseStyle, Generic[DataT, ResultT]):
             "%s: Metadata added with checksum %s.", self.style_name, checksum_value
         )
         return df
-
-
-# Registry for dynamic ForgeStyle discovery is the `FORGESTYLE_REGISTRY` defined above.
