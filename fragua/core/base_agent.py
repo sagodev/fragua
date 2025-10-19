@@ -7,7 +7,17 @@ agents like Miner, Blacksmith, and Transporter.
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Any, Dict, Type, TypeVar, Generic, TYPE_CHECKING, Optional, cast
+from typing import (
+    Any,
+    Dict,
+    Type,
+    TypeVar,
+    Generic,
+    TYPE_CHECKING,
+    Optional,
+    Literal,
+    cast,
+)
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
@@ -16,7 +26,7 @@ if TYPE_CHECKING:
     from fragua.agents.store.storage_manager import StorageManager
 
 # Generic type variables
-StyleT = TypeVar("StyleT", bound=BaseStyle)
+StyleT = TypeVar("StyleT", bound=BaseStyle[Any, Any])
 ResultT = TypeVar("ResultT")
 
 logger = get_logger("BaseAgent")
@@ -167,20 +177,33 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             storage_manager: The StorageManager instance to store the result in
             result: The result object to store (must match ResultT type)
             name: Name to store the result under
+
         Raises:
             AttributeError: If StorageManager doesn't implement required save method
+            TypeError: If result_type is not defined for this agent
+            ValueError: If the result type does not map to a valid storage type
         """
         if self.result_type is None:
             raise TypeError(
                 f"Cannot store result: {self.__class__.__name__} has no result_type defined."
             )
 
-        obj_type = self.result_type.__name__.lower()
+        # Map result type to storage literal
+        obj_type_str = self.result_type.__name__.lower()
+        if obj_type_str not in ["wagon", "box", "container"]:
+            raise ValueError(
+                f"Result type '{self.result_type.__name__}' is not a valid storage type"
+            )
+
+        ObjectType = Literal["wagon", "box", "container"]
+        obj_type: ObjectType = cast(ObjectType, obj_type_str)
+
+        # Save in StorageManager
         try:
             storage_manager.save(obj_type, name, result)
         except AttributeError as exc:
             raise AttributeError(
-                "StorageManager does not implement 'save(obj_type, name, obj)'."
+                "StorageManager does not implement 'save(obj_type, name, obj)'"
             ) from exc
 
         logger.info(
