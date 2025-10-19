@@ -114,18 +114,21 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         style = self.known_styles[style_name]
         result = style.use(data)
 
-        if not isinstance(result, self.result_type):
-            logger.error(
-                "[%s] Style '%s' must return %s, got %s",
-                self.name,
-                style_name,
-                self.result_type.__name__,
-                type(result).__name__,
-            )
-            raise TypeError(
-                f"Style '{style_name}' must return {self.result_type.__name__}, "
-                f"got {type(result).__name__}"
-            )
+        if self.result_type is None:
+            logger.warning("[%s] Result type not defined for agent", self.name)
+        else:
+            if not isinstance(result, self.result_type):
+                logger.error(
+                    "[%s] Style '%s' must return %s, got %s",
+                    self.name,
+                    style_name,
+                    self.result_type.__name__,
+                    type(result).__name__,
+                )
+                raise TypeError(
+                    f"Style '{style_name}' must return {self.result_type.__name__}, "
+                    f"got {type(result).__name__}"
+                )
 
         # Safely extract metadata
         result_name = getattr(result, "name", None)
