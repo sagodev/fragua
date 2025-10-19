@@ -48,7 +48,7 @@ class Storage:
         entry: Optional[Storage._Entry] = self._store[obj_type].get(name)
         if entry:
             return entry["obj"]
-        return Optional[object]
+        return None
 
     def remove(self, obj_type: str, name: str) -> Optional[object]:
         """Remove an object from storage."""
