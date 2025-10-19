@@ -15,7 +15,7 @@ from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-FORGESTYLE_REGISTRY: Dict[str, Type["ForgeStyle[DataT, ResultT]"]] = {}
+FORGESTYLE_REGISTRY: Dict[str, Type["ForgeStyle[Any, Any]"]] = {}
 
 
 def register_forge_style(

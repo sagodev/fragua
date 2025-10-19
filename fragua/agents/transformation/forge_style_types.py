@@ -112,7 +112,7 @@ class MLStyle(ForgeStyle):
             )
         logger.info("%s: Numeric columns scaled.", self.style_name)
 
-    def _treat_outliers(self, df: pd.DataFrame):
+    def _treat_outliers(self, df: pd.DataFrame) -> None:
         num_cols = df.select_dtypes(include="number").columns
         for col in num_cols:
             Q1, Q3 = df[col].quantile([0.25, 0.75])

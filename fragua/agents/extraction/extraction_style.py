@@ -11,7 +11,7 @@ from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-EXTRACTIONSTYLE_REGISTRY: Dict[str, Type["ExtractionStyle[DataT, ResultT]"]] = {}
+EXTRACTIONSTYLE_REGISTRY: Dict[str, Type["ExtractionStyle[Any, Any]"]] = {}
 
 
 def register_extraction_style(

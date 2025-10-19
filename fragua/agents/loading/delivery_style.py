@@ -4,14 +4,14 @@ Contains common utilities for delivery workflows.
 """
 
 from abc import abstractmethod
-from typing import Generic, Type, Callable, Dict
+from typing import Generic, Type, Callable, Dict, Any
 from datetime import datetime, timezone
 from fragua.core.base_style import BaseStyle, DataT, ResultT
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-DELIVERYSTYLE_REGISTRY: Dict[str, Type["DeliveryStyle[DataT, ResultT]"]] = {}
+DELIVERYSTYLE_REGISTRY: Dict[str, Type["DeliveryStyle[Any, Any]"]] = {}
 
 
 def register_delivery_style(
