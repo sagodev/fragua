@@ -23,12 +23,9 @@ logger = get_logger("BaseAgent")
 
 
 class BaseAgent(ABC, Generic[StyleT, ResultT]):
-    """
-    Abstract base class for ETL agents with built-in support
-    for learning and applying registered styles.
-    """
+    """Abstract base class for ETL agents with built-in support
+    for learning and applying registered styles."""
 
-    # Subclasses must override these
     style_registry: Dict[str, Type[StyleT]] = {}
     result_type: Optional[Type[ResultT]] = None
     metadata_table_name: str = "operations"
@@ -118,21 +115,25 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             logger.warning("[%s] Result type not defined for agent", self.name)
         else:
             if not isinstance(result, self.result_type):
+                expected = self.result_type.__name__
+                actual = type(result).__name__
                 logger.error(
                     "[%s] Style '%s' must return %s, got %s",
                     self.name,
                     style_name,
-                    self.result_type.__name__,
-                    type(result).__name__,
+                    expected,
+                    actual,
                 )
                 raise TypeError(
-                    f"Style '{style_name}' must return {self.result_type.__name__}, "
-                    f"got {type(result).__name__}"
+                    f"Style '{style_name}' must return {expected}, got {actual}"
                 )
 
+        # ✅ Type cast to satisfy mypy
+        result_typed = cast(ResultT, result)
+
         # Safely extract metadata
-        result_name = getattr(result, "name", None)
-        result_data = getattr(result, "data", None)
+        result_name = getattr(result_typed, "name", None)
+        result_data = getattr(result_typed, "data", None)
         result_shape = getattr(result_data, "shape", (None, None))
         style_metadata = getattr(style, "metadata", {})
         style_checksum = (
@@ -153,7 +154,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         )
 
         logger.info("[%s] Applied style '%s'", self.name, style_name)
-        return result
+        return result_typed
 
     # ---------------- Storage Interaction ---------------- #
     def store_result(
@@ -166,12 +167,14 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             storage_manager: The StorageManager instance to store the result in
             result: The result object to store (must match ResultT type)
             name: Name to store the result under
-
         Raises:
             AttributeError: If StorageManager doesn't implement required save method
         """
-        # Use the generic StorageManager.save(obj_type, name, obj) method
-        # to avoid relying on dynamically-named save_* methods.
+        if self.result_type is None:
+            raise TypeError(
+                f"Cannot store result: {self.__class__.__name__} has no result_type defined."
+            )
+
         obj_type = self.result_type.__name__.lower()
         try:
             storage_manager.save(obj_type, name, result)
