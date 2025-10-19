@@ -4,7 +4,7 @@ Contains common utilities for extraction workflows.
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, Union, Generator
+from typing import Any, Dict, Union, Generator, Callable, Type
 from datetime import datetime, timezone
 import pandas as pd
 from fragua.core.base_style import BaseStyle
@@ -14,7 +14,9 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-def register_extraction_style(name: str) -> callable:
+def register_extraction_style(
+    name: str,
+) -> Callable[[Type["ExtractionStyle"]], Type["ExtractionStyle"]]:
     """
     Decorator to register an ExtractionStyle subclass.
 
@@ -40,13 +42,6 @@ class ExtractionStyle(BaseStyle[Dict[str, Any], Wagon]):
     Excel files, databases, APIs etc. Each style takes its configuration parameters as a
     dictionary in the extract method, allowing more flexibility in how the configuration
     is provided.
-
-    Example:
-        class CSVExtractionStyle(ExtractionStyle):
-            def extract(self, source_params: Dict[str, Any]) -> pd.DataFrame:
-                path = source_params.get("path")
-                read_kwargs = source_params.get("read_kwargs", {})
-                return pd.read_csv(path, **read_kwargs)
     """
 
     def __init__(self, style_name: str):
@@ -73,9 +68,7 @@ class ExtractionStyle(BaseStyle[Dict[str, Any], Wagon]):
         """
         raise NotImplementedError
 
-    def use(
-        self, source_params: Dict[str, Any]
-    ) -> Wagon[Union[pd.DataFrame, list[Any]]]:
+    def use(self, source_params: Dict[str, Any]) -> Wagon:
         """Main extraction pipeline method, overriding Style.use.
 
         This method replaces the 'data' parameter from the base Style class
