@@ -46,7 +46,7 @@ def register_forge_style(
     return wrapper
 
 
-class ForgeStyle(Style[DataT, ResultT], Generic[DataT, ResultT]):
+class ForgeStyle(Style, Generic[DataT, ResultT]):
     """
     Base class for ForgeStyles.
     Provides common utilities for transformations.
@@ -57,12 +57,12 @@ class ForgeStyle(Style[DataT, ResultT], Generic[DataT, ResultT]):
         super().__init__(style_name)
         self.metadata: Dict[str, Any] = {}
 
-    def use(self, data: DataT) -> ResultT:
+    def use(self, source_params: DataT) -> ResultT:
         """
         Main transformation method.
         Executes forge -> validate -> postprocess pipeline.
         """
-        if data is None or data.empty:
+        if source_params["data"] is None or source_params["data"].empty:
             raise ValueError("Input data cannot be None or empty")
 
         logger.debug(
@@ -70,7 +70,7 @@ class ForgeStyle(Style[DataT, ResultT], Generic[DataT, ResultT]):
         )
 
         try:
-            source = {"data": data}
+            source = {"data": source_params["data"]}
             result = self._apply_pipeline(source)
             return result
 
