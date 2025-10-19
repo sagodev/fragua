@@ -40,7 +40,7 @@ class DeliveryStyle(Style, Generic[T]):
         self.created_at = datetime.now(timezone.utc)
 
     @abstractmethod
-    def deliver(self, data: T) -> T:
+    def deliver(self, source_params: T) -> T:
         """
         Deliver the given data to the target destination.
         Must be implemented by subclasses.
@@ -77,7 +77,6 @@ class DeliveryStyle(Style, Generic[T]):
         logger.debug("Starting DeliveryStyle '%s' loading pipeline.", self.style_name)
 
         try:
-            # Alias interno para compatibilidad con Style.use()
             data = source_params
 
             data = self.deliver(data)
@@ -89,7 +88,7 @@ class DeliveryStyle(Style, Generic[T]):
             data = self.postprocess(data)
             logger.debug("%s: postprocess() step completed.", self.style_name)
 
-            return data
+            return source_params
 
         except Exception as e:
             self.log_error(e)

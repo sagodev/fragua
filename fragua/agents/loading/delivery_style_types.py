@@ -86,7 +86,7 @@ class ExcelDeliveryStyle(DeliveryStyle):
 
         # Export to Excel
         data.to_excel(destination, sheet_name=sheet_name, index=index, engine=engine)
-        logger.info(f"{self.style_name} delivered data to {destination}")
+        logger.info("%s delivered data to %s", self.style_name, destination)
         return data
 
 
@@ -143,7 +143,7 @@ class SQLDeliveryStyle(DeliveryStyle):
                 index=index,
                 chunksize=chunksize,
             )
-            logger.info(f"{self.style_name} delivered data to table '{table_name}'")
+            logger.info("%s delivered data to table '%s'", self.style_name, table_name)
             return data
         finally:
             engine.dispose()
@@ -196,5 +196,5 @@ class APIDeliveryStyle(DeliveryStyle):
         )
         response.raise_for_status()
 
-        logger.info(f"{self.style_name} delivered data to API {endpoint}")
+        logger.info("%s delivered data to API %s", self.style_name, endpoint)
         return data
