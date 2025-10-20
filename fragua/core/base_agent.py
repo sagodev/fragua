@@ -21,6 +21,10 @@ from typing import (
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
+from fragua.core.base_storage import BaseStorage
+from fragua.agents.store.wagon import Wagon
+from fragua.agents.store.box import Box
+from fragua.agents.store.container import Container
 
 if TYPE_CHECKING:
     from fragua.agents.store.storage_manager import StorageManager
@@ -113,21 +117,34 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         type_name = self.result_type.__name__.lower()
 
         if type_name == "wagon":
-            from fragua.agents.store.wagon import Wagon
 
             return cast(ResultT, Wagon(data=result, name=f"wagon_{self.name}"))
-        elif type_name == "box":
-            from fragua.agents.store.box import Box
+        if type_name == "box":
 
             return cast(ResultT, Box(data=result, name=f"box_{self.name}"))
-        elif type_name == "container":
-            from fragua.agents.store.container import Container
+        if type_name == "container":
 
             return cast(ResultT, Container(data=result, name=f"container_{self.name}"))
-        else:
-            raise TypeError(
-                f"Result type '{self.result_type.__name__}' is not a valid storage type"
-            )
+
+        raise TypeError(
+            f"Result type '{self.result_type.__name__}' is not a valid storage type"
+        )
+
+    # ---------------- Normalization ---------------- #
+    def _normalize_input(self, input_data: Any) -> pd.DataFrame:
+        """
+        Convert a BaseStorage object or DataFrame into a DataFrame for styles.
+        """
+        if isinstance(input_data, BaseStorage):
+            if input_data.data is None:
+                raise ValueError(f"{input_data.name} has no data to process")
+            return input_data.data
+        if isinstance(input_data, pd.DataFrame):
+            return input_data
+
+        raise TypeError(
+            f"{self.__class__.__name__} cannot process input of type {type(input_data)}"
+        )
 
     # ---------------- Working ---------------- #
     def apply_style(self, style_name: str, data: Any) -> ResultT:
@@ -136,7 +153,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
 
         Args:
             style_name: Name of the style to apply
-            data: Input data for the style
+            data: Input data for the style (BaseStorage or DataFrame)
 
         Returns:
             ResultT: Wrapped storage object (Wagon, Box, Container)
@@ -150,9 +167,11 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             raise ValueError(f"Style '{style_name}' not learned")
 
         style = self.known_styles[style_name]
-        raw_result = style.use(data)
 
-        # Wrap in Wagon/Box/Container
+        normalized_data = self._normalize_input(data)
+
+        raw_result = style.use(normalized_data)
+
         result_typed = self._wrap_storage(raw_result)
 
         result_name = getattr(result_typed, "name", None)
