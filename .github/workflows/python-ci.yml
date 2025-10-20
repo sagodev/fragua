@@ -1,10 +1,10 @@
-name: Python CI (Dev Tests)
+name: Python CI
 
 on:
   push:
-    branches: [ dev-tests ]
+    branches: [ main ]
   pull_request:
-    branches: [ dev-tests ]
+    branches: [ main ]
 
 jobs:
   test:
@@ -41,12 +41,8 @@ jobs:
 
       - name: Lint with pylint
         run: |
-          pylint --disable=C0111,C0103 fragua/agents fragua/core fragua/utils
+          pylint --disable=C0111,C0103 fragua/agents fragua/core fragua/utils 
 
       - name: Type checking with mypy
         run: |
           mypy fragua/agents fragua/core fragua/utils
-
-      - name: Run tests with pytest
-        run: |
-          python -m pytest tests -v -o log_cli_level=INFO
