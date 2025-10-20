@@ -48,5 +48,6 @@ jobs:
           mypy fragua/agents fragua/core fragua/utils
 
       - name: Run tests with pytest
+        working-directory: ${{ github.workspace }}
         run: |
-          python -m pytest tests -v -o log_cli_level=INFO
+          python -m pytest tests -v
