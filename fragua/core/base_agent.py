@@ -22,12 +22,12 @@ import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
 from fragua.core.base_storage import BaseStorage
-from fragua.agents.store.wagon import Wagon
-from fragua.agents.store.box import Box
-from fragua.agents.store.container import Container
+from fragua.store.wagon import Wagon
+from fragua.store.box import Box
+from fragua.store.container import Container
 
 if TYPE_CHECKING:
-    from fragua.agents.store.storage_manager import StorageManager
+    from fragua.agents.storage_manager import StorageManager
 
 # Generic type variables
 StyleT = TypeVar("StyleT", bound=BaseStyle[Any, Any])
