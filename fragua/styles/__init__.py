@@ -6,37 +6,23 @@ from .delivery_style import DeliveryStyle
 from .extraction_style import ExtractionStyle
 from .forge_style import ForgeStyle
 
-from .style_types import (
-    CSVExtractionStyle,
-    ExcelExtractionStyle,
-    SQLExtractionStyle,
-    APIExtractionStyle,
-    MLForgeStyle,
-    ReportForgeStyle,
-    AnalysisForgeStyle,
+from .style_types.delivery_style_types import (
     SQLDeliveryStyle,
     APIDeliveryStyle,
     ExcelDeliveryStyle,
 )
+from .style_types.extraction_style_types import (
+    CSVExtractionStyle,
+    ExcelExtractionStyle,
+    SQLExtractionStyle,
+    APIExtractionStyle,
+)
 
-__extraction__ = [
-    "CSVExtractionStyle",
-    "ExcelExtractionStyle",
-    "SQLExtractionStyle",
-    "APIExtractionStyle",
-]
-
-__forge__ = [
-    "MLForgeStyle",
-    "ReportForgeStyle",
-    "AnalysisForgeStyle",
-]
-
-__delivery__ = [
-    "ExcelDeliveryStyle",
-    "SQLDeliveryStyle",
-    "APIDeliveryStyle",
-]
+from .style_types.forge_style_types import (
+    MLForgeStyle,
+    ReportForgeStyle,
+    AnalysisForgeStyle,
+)
 
 
 __all__ = [
