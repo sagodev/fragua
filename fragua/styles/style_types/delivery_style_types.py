@@ -8,7 +8,7 @@ import requests
 from sqlalchemy import create_engine
 from pandas import DataFrame
 
-from fragua.agents.loading.delivery_style import DeliveryStyle, register_delivery_style
+from fragua.styles.delivery_style import DeliveryStyle, register_delivery_style
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -47,7 +47,7 @@ class APIDeliveryParams(TypedDict, total=False):
 
 
 @register_delivery_style("excel")
-class ExcelDeliveryStyle(DeliveryStyle):
+class ExcelDeliveryStyle(DeliveryStyle[Any, Any]):
     """DeliveryStyle for exporting data to Excel files."""
 
     def __init__(self, style_name: str) -> None:
@@ -91,7 +91,7 @@ class ExcelDeliveryStyle(DeliveryStyle):
 
 
 @register_delivery_style("sql")
-class SQLDeliveryStyle(DeliveryStyle):
+class SQLDeliveryStyle(DeliveryStyle[Any, Any]):
     """DeliveryStyle for delivering data to SQL databases."""
 
     def __init__(self, style_name: str) -> None:
@@ -150,7 +150,7 @@ class SQLDeliveryStyle(DeliveryStyle):
 
 
 @register_delivery_style("api")
-class APIDeliveryStyle(DeliveryStyle):
+class APIDeliveryStyle(DeliveryStyle[Any, Any]):
     """DeliveryStyle for delivering data to external APIs."""
 
     def __init__(self, style_name: str) -> None:
