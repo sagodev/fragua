@@ -98,17 +98,48 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         instance = style_cls(style_name=name)
         self.learn_style(instance)
 
+    # ---------------- Storage Wrapping ---------------- #
+    def _wrap_storage(self, result: Any) -> ResultT:
+        """
+        Convert raw style output (e.g., DataFrame) into the appropriate
+        storage object (Wagon, Box, Container) based on this agent's result_type.
+        """
+        if self.result_type is None:
+            raise TypeError(
+                f"Cannot wrap result: {self.__class__.__name__} has no result_type defined."
+            )
+
+        # Lazy import to avoid circular dependencies
+        type_name = self.result_type.__name__.lower()
+
+        if type_name == "wagon":
+            from fragua.agents.store.wagon import Wagon
+
+            return cast(ResultT, Wagon(data=result, name=f"wagon_{self.name}"))
+        elif type_name == "box":
+            from fragua.agents.store.box import Box
+
+            return cast(ResultT, Box(data=result, name=f"box_{self.name}"))
+        elif type_name == "container":
+            from fragua.agents.store.container import Container
+
+            return cast(ResultT, Container(data=result, name=f"container_{self.name}"))
+        else:
+            raise TypeError(
+                f"Result type '{self.result_type.__name__}' is not a valid storage type"
+            )
+
     # ---------------- Working ---------------- #
     def apply_style(self, style_name: str, data: Any) -> ResultT:
         """
-        Apply a learned style and record operation metadata.
+        Apply a learned style, wrap in storage object, and record operation metadata.
 
         Args:
             style_name: Name of the style to apply
             data: Input data for the style
 
         Returns:
-            ResultT: Result of applying the style
+            ResultT: Wrapped storage object (Wagon, Box, Container)
 
         Raises:
             ValueError: If style is not learned
@@ -119,29 +150,11 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             raise ValueError(f"Style '{style_name}' not learned")
 
         style = self.known_styles[style_name]
-        result = style.use(data)
+        raw_result = style.use(data)
 
-        if self.result_type is None:
-            logger.warning("[%s] Result type not defined for agent", self.name)
-        else:
-            if not isinstance(result, self.result_type):
-                expected = self.result_type.__name__
-                actual = type(result).__name__
-                logger.error(
-                    "[%s] Style '%s' must return %s, got %s",
-                    self.name,
-                    style_name,
-                    expected,
-                    actual,
-                )
-                raise TypeError(
-                    f"Style '{style_name}' must return {expected}, got {actual}"
-                )
+        # Wrap in Wagon/Box/Container
+        result_typed = self._wrap_storage(raw_result)
 
-        # ✅ Type cast to satisfy mypy
-        result_typed = cast(ResultT, result)
-
-        # Safely extract metadata
         result_name = getattr(result_typed, "name", None)
         result_data = getattr(result_typed, "data", None)
         result_shape = getattr(result_data, "shape", (None, None))
@@ -214,7 +227,6 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         )
 
     # ---------------- Abstract Work ---------------- #
-
     @abstractmethod
     def work(self, *args: Any, **kwargs: Any) -> ResultT:
         """
