@@ -8,8 +8,8 @@ and stores results in Boxes via StorageManager.
 from __future__ import annotations
 
 from typing import Type, Any
-from fragua.agents.transformation.forge_style import ForgeStyle, FORGESTYLE_REGISTRY
-from fragua.agents.store.box import Box
+from fragua.styles.forge_style import ForgeStyle, FORGESTYLE_REGISTRY
+from fragua.store.box import Box
 from fragua.core.base_agent import BaseAgent
 
 

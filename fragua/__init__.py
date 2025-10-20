@@ -2,26 +2,28 @@
 
 from fragua.agents import (
     Miner,
-    Wagon,
     Blacksmith,
-    Box,
     Transporter,
-    Container,
     StorageManager,
-    Storage,
+)
+
+from fragua.styles import (
+    ForgeStyle,
+    DeliveryStyle,
+    ExtractionStyle,
     CSVExtractionStyle,
     APIExtractionStyle,
     SQLExtractionStyle,
     ExcelExtractionStyle,
-    ForgeStyle,
-    ReportStyle,
-    AnalysisStyle,
-    MLStyle,
-    DeliveryStyle,
+    MLForgeStyle,
+    ReportForgeStyle,
+    AnalysisForgeStyle,
     SQLDeliveryStyle,
     APIDeliveryStyle,
     ExcelDeliveryStyle,
 )
+
+from fragua.store import Storage, Wagon, Box, Container
 
 from fragua.core import BaseAgent, BaseStyle, BaseStorage
 
@@ -46,12 +48,13 @@ __all__ = [
     "APIExtractionStyle",
     "SQLExtractionStyle",
     "ExcelExtractionStyle",
-    "ReportStyle",
-    "AnalysisStyle",
-    "MLStyle",
+    "MLForgeStyle",
+    "ReportForgeStyle",
+    "AnalysisForgeStyle",
     "SQLDeliveryStyle",
     "APIDeliveryStyle",
     "ExcelDeliveryStyle",
     "ForgeStyle",
     "DeliveryStyle",
+    "ExtractionStyle",
 ]

@@ -2,6 +2,7 @@
 Concrete ExtractionStyle classes with dynamic registration for Fragua ETL.
 """
 
+from re import A
 from typing import Any, Dict, Union, TypedDict
 from pathlib import Path
 from sqlalchemy import create_engine
@@ -10,7 +11,7 @@ import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
 
-from fragua.agents.extraction.extraction_style import (
+from fragua.styles.extraction_style import (
     ExtractionStyle,
     register_extraction_style,
 )
@@ -54,7 +55,7 @@ class APISourceParams(TypedDict, total=False):
 
 
 @register_extraction_style("csv")
-class CSVExtractionStyle(ExtractionStyle):
+class CSVExtractionStyle(ExtractionStyle[Any, Any]):
     """Extracts data from CSV files.
 
     Source parameters:
@@ -96,7 +97,7 @@ class CSVExtractionStyle(ExtractionStyle):
 
 
 @register_extraction_style("excel")
-class ExcelExtractionStyle(ExtractionStyle):
+class ExcelExtractionStyle(ExtractionStyle[Any, Any]):
     """Extracts data from Excel files.
 
     Source parameters:
@@ -140,7 +141,7 @@ class ExcelExtractionStyle(ExtractionStyle):
 
 
 @register_extraction_style("sql")
-class SQLExtractionStyle(ExtractionStyle):
+class SQLExtractionStyle(ExtractionStyle[Any, Any]):
     """Extracts data from SQL databases.
 
     Source parameters:
@@ -188,7 +189,7 @@ class SQLExtractionStyle(ExtractionStyle):
 
 
 @register_extraction_style("api")
-class APIExtractionStyle(ExtractionStyle):
+class APIExtractionStyle(ExtractionStyle[Any, Any]):
     """Extracts data from REST APIs.
 
     Source parameters:

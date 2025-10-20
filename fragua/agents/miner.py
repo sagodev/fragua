@@ -8,11 +8,11 @@ and stores results in Wagons via StorageManager.
 from __future__ import annotations
 
 from typing import Type, Any
-from fragua.agents.extraction.extraction_style import (
+from fragua.styles.extraction_style import (
     ExtractionStyle,
     EXTRACTIONSTYLE_REGISTRY,
 )
-from fragua.agents.store.wagon import Wagon
+from fragua.store.wagon import Wagon
 from fragua.core.base_agent import BaseAgent
 
 

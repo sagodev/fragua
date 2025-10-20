@@ -10,7 +10,7 @@ import pandas as pd
 from pandas import DataFrame
 from sklearn.preprocessing import MinMaxScaler
 
-from fragua.agents.transformation.forge_style import ForgeStyle, register_forge_style
+from fragua.styles.forge_style import ForgeStyle, register_forge_style
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -46,7 +46,7 @@ class AnalysisSourceParams(TypedDict, total=False):
 
 # ---------------- MLForge ----------------
 @register_forge_style("ml")
-class MLStyle(ForgeStyle):
+class MLForgeStyle(ForgeStyle[Any, Any]):
     """Forge style for machine learning preprocessing."""
 
     def __init__(self, style_name: str) -> None:
@@ -123,7 +123,7 @@ class MLStyle(ForgeStyle):
 
 # ---------------- ReportForge ----------------
 @register_forge_style("report")
-class ReportStyle(ForgeStyle):
+class ReportForgeStyle(ForgeStyle[Any, Any]):
     """Forge style for reporting transformations."""
 
     def __init__(self, style_name: str) -> None:
@@ -185,7 +185,7 @@ class ReportStyle(ForgeStyle):
 
 # ---------------- AnalysisForge ----------------
 @register_forge_style("analysis")
-class AnalysisStyle(ForgeStyle):
+class AnalysisForgeStyle(ForgeStyle[Any, Any]):
     """Forge style for data analysis transformations."""
 
     def __init__(self, style_name: str) -> None:
