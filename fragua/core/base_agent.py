@@ -22,6 +22,7 @@ import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
 from fragua.core.base_storage import BaseStorage
+from fragua.core.base_params import BaseParams
 from fragua.store.wagon import Wagon
 from fragua.store.box import Box
 from fragua.store.container import Container
@@ -131,15 +132,18 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         )
 
     # ---------------- Normalization ---------------- #
-    def _normalize_input(self, input_data: Any) -> pd.DataFrame:
+    def _normalize_input(self, input_data: Any) -> Any:
         """
-        Convert a BaseStorage object or DataFrame into a DataFrame for styles.
+        Convert input data into a format compatible with MineStyle.
+        Accepts BaseStorage, DataFrame, or any BaseParams object.
         """
         if isinstance(input_data, BaseStorage):
             if input_data.data is None:
                 raise ValueError(f"{input_data.name} has no data to process")
             return input_data.data
         if isinstance(input_data, pd.DataFrame):
+            return input_data
+        if isinstance(input_data, BaseParams):
             return input_data
 
         raise TypeError(
