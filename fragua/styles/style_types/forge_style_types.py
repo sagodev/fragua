@@ -23,9 +23,6 @@ logger = get_logger(__name__)
 class MLForgeStyle(ForgeStyle[MLForgeParams, DataFrame]):
     """Forge style for machine learning preprocessing."""
 
-    def __init__(self, style_name: str) -> None:
-        super().__init__(style_name=style_name)
-
     def forge(self, source_params: MLForgeParams) -> DataFrame:
         """
         Transform data for machine learning preprocessing.
@@ -93,9 +90,6 @@ class MLForgeStyle(ForgeStyle[MLForgeParams, DataFrame]):
 @register_forge_style("report")
 class ReportForgeStyle(ForgeStyle[ReportForgeParams, DataFrame]):
     """Forge style for reporting transformations."""
-
-    def __init__(self, style_name: str) -> None:
-        super().__init__(style_name=style_name)
 
     def forge(self, source_params: ReportForgeParams) -> DataFrame:
         """
@@ -165,9 +159,6 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParams, DataFrame]):
 @register_forge_style("analysis")
 class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParams, DataFrame]):
     """Forge style for data analysis transformations."""
-
-    def __init__(self, style_name: str) -> None:
-        super().__init__(style_name=style_name)
 
     def forge(self, source_params: AnalysisForgeParams) -> DataFrame:
         """

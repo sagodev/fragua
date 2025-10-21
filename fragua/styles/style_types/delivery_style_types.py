@@ -22,9 +22,6 @@ logger = get_logger(__name__)
 class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParams, DataFrame]):
     """DeliveryStyle for exporting data to Excel files."""
 
-    def __init__(self, style_name: str) -> None:
-        super().__init__(style_name=style_name)
-
     def deliver(self, source_params: ExcelDeliveryParams) -> DataFrame:
         """Export data to Excel file.
 
@@ -66,9 +63,6 @@ class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParams, DataFrame]):
 @register_delivery_style("sql")
 class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParams, DataFrame]):
     """DeliveryStyle for delivering data to SQL databases."""
-
-    def __init__(self, style_name: str) -> None:
-        super().__init__(style_name=style_name)
 
     def deliver(self, source_params: SQLDeliveryParams) -> DataFrame:
         """Deliver data to SQL database.
@@ -120,9 +114,6 @@ class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParams, DataFrame]):
 @register_delivery_style("api")
 class APIDeliveryStyle(DeliveryStyle[APIDeliveryParams, Any]):
     """DeliveryStyle for delivering data to external APIs."""
-
-    def __init__(self, style_name: str) -> None:
-        super().__init__(style_name=style_name)
 
     def deliver(self, source_params: APIDeliveryParams) -> Any:
         """Deliver data to REST API endpoint.
