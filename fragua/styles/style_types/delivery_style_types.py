@@ -14,38 +14,6 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ExcelDeliveryParams(TypedDict, total=False):
-    """Excel delivery configuration parameters."""
-
-    data: DataFrame
-    destination: str
-    sheet_name: NotRequired[str]
-    index: NotRequired[bool]
-    engine: NotRequired[Literal["openpyxl", "xlsxwriter"]]
-
-
-class SQLDeliveryParams(TypedDict, total=False):
-    """SQL delivery configuration parameters."""
-
-    data: DataFrame
-    connection_string: str
-    table_name: str
-    if_exists: NotRequired[Literal["fail", "replace", "append"]]
-    index: NotRequired[bool]
-    chunksize: NotRequired[int]
-
-
-class APIDeliveryParams(TypedDict, total=False):
-    """API delivery configuration parameters."""
-
-    data: Any
-    endpoint: str
-    method: NotRequired[Literal["GET", "POST", "PUT", "DELETE", "PATCH"]]
-    headers: NotRequired[Dict[str, str]]
-    auth: NotRequired[Dict[str, str]]
-    timeout: NotRequired[float]
-
-
 @register_delivery_style("excel")
 class ExcelDeliveryStyle(DeliveryStyle[Any, Any]):
     """DeliveryStyle for exporting data to Excel files."""

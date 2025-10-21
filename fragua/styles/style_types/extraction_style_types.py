@@ -2,7 +2,7 @@
 Concrete ExtractionStyle classes with dynamic registration for Fragua ETL.
 """
 
-from typing import Any, Dict, Union, TypedDict
+from typing import Any, Dict
 from pathlib import Path
 from sqlalchemy import create_engine
 from pandas import DataFrame
@@ -16,51 +16,9 @@ from fragua.styles.extraction_style import (
 )
 
 
-class CSVSourceParams(TypedDict, total=False):
-    """CSV source configuration parameters."""
-
-    path: Union[str, Path]
-    read_kwargs: Dict[str, Any]
-
-
-class ExcelSourceParams(TypedDict, total=False):
-    """Excel source configuration parameters."""
-
-    path: Union[str, Path]
-    sheet_name: Union[str, int]
-    read_kwargs: Dict[str, Any]
-
-
-class SQLSourceParams(TypedDict, total=False):
-    """SQL source configuration parameters."""
-
-    connection_string: str
-    query: str
-    read_kwargs: Dict[str, Any]
-
-
-class APISourceParams(TypedDict, total=False):
-    """API source configuration parameters."""
-
-    url: str
-    method: str
-    headers: Dict[str, str]
-    params: Dict[str, Any]
-    data: Dict[str, Any]
-    auth: Dict[str, str]
-    proxy: Dict[str, str]
-    timeout: float
-    read_kwargs: Dict[str, Any]
-
-
 @register_extraction_style("csv")
 class CSVExtractionStyle(ExtractionStyle[Any, Any]):
-    """Extracts data from CSV files.
-
-    Source parameters:
-        path (str): Path to the CSV file
-        read_kwargs (dict, optional): Parameters for pd.read_csv
-    """
+    """Extracts data from CSV files."""
 
     def __init__(self, style_name: str) -> None:
         super().__init__(style_name=style_name)
@@ -97,13 +55,7 @@ class CSVExtractionStyle(ExtractionStyle[Any, Any]):
 
 @register_extraction_style("excel")
 class ExcelExtractionStyle(ExtractionStyle[Any, Any]):
-    """Extracts data from Excel files.
-
-    Source parameters:
-        path (str): Path to the Excel file
-        sheet_name (str|int, optional): Name or index of sheet to read. Defaults to 0
-        read_kwargs (dict, optional): Parameters for pd.read_excel
-    """
+    """Extracts data from Excel files."""
 
     def __init__(self, style_name: str) -> None:
         super().__init__(style_name=style_name)
@@ -141,13 +93,7 @@ class ExcelExtractionStyle(ExtractionStyle[Any, Any]):
 
 @register_extraction_style("sql")
 class SQLExtractionStyle(ExtractionStyle[Any, Any]):
-    """Extracts data from SQL databases.
-
-    Source parameters:
-        connection_string (str): SQLAlchemy connection URL
-        query (str): SQL query to execute
-        read_kwargs (dict, optional): Parameters for pd.read_sql
-    """
+    """Extracts data from SQL databases."""
 
     def __init__(self, style_name: str) -> None:
         super().__init__(style_name=style_name)
@@ -189,19 +135,7 @@ class SQLExtractionStyle(ExtractionStyle[Any, Any]):
 
 @register_extraction_style("api")
 class APIExtractionStyle(ExtractionStyle[Any, Any]):
-    """Extracts data from REST APIs.
-
-    Source parameters:
-        url (str): API endpoint URL
-        method (str, optional): HTTP method. Defaults to GET
-        headers (dict, optional): Request headers
-        params (dict, optional): URL parameters
-        data (dict, optional): Request body data
-        auth (dict, optional): HTTP Basic auth credentials
-        proxy (dict, optional): Proxy configuration
-        timeout (float, optional): Request timeout in seconds
-        read_kwargs (dict, optional): Parameters for pd.DataFrame constructor
-    """
+    """Extracts data from REST APIs."""
 
     def __init__(self, style_name: str) -> None:
         super().__init__(style_name=style_name)

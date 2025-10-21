@@ -16,34 +16,6 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class MLSourceParams(TypedDict, total=False):
-    """ML transformation source parameters."""
-
-    data: DataFrame
-    target_column: NotRequired[str]
-    categorical_cols: NotRequired[list[str]]
-    numeric_cols: NotRequired[list[str]]
-    outlier_threshold: NotRequired[float]
-
-
-class ReportSourceParams(TypedDict, total=False):
-    """Report transformation source parameters."""
-
-    data: DataFrame
-    format_config: NotRequired[Dict[str, Any]]
-    derived_columns: NotRequired[Dict[str, str]]
-    rounding_precision: NotRequired[int]
-
-
-class AnalysisSourceParams(TypedDict, total=False):
-    """Analysis transformation source parameters."""
-
-    data: DataFrame
-    groupby_cols: NotRequired[list[str]]
-    agg_functions: NotRequired[Dict[str, str]]
-    sort_by: NotRequired[list[str]]
-
-
 # ---------------- MLForge ----------------
 @register_forge_style("ml")
 class MLForgeStyle(ForgeStyle[Any, Any]):
