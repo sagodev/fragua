@@ -27,6 +27,19 @@ from fragua.store import Storage, Wagon, Box, Container
 
 from fragua.core import BaseAgent, BaseStyle, BaseStorage
 
+from fragua.params import (
+    ExcelMineParams,
+    CSVMineParams,
+    SQLMineParams,
+    APIMineParams,
+    MLForgeParams,
+    ReportForgeParams,
+    AnalysisForgeParams,
+    SQLDeliveryParams,
+    APIDeliveryParams,
+    ExcelDeliveryParams,
+)
+
 from fragua.utils import get_logger, Config, calculate_checksum
 
 __all__ = [
@@ -57,4 +70,14 @@ __all__ = [
     "ExcelMineStyle",
     "SQLMineStyle",
     "APIMineStyle",
+    "ExcelMineParams",
+    "CSVMineParams",
+    "SQLMineParams",
+    "APIMineParams",
+    "MLForgeParams",
+    "ReportForgeParams",
+    "AnalysisForgeParams",
+    "SQLDeliveryParams",
+    "APIDeliveryParams",
+    "ExcelDeliveryParams",
 ]
