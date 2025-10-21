@@ -31,6 +31,7 @@ jobs:
           pip install -r requirements.txt
           pip install mypy pytest pylint black
 
+      # --- Black ---
       - name: Autoformat code with Black
         run: |
           black .
@@ -39,10 +40,29 @@ jobs:
         run: |
           black --check .
 
+      # --- Pylint ---
       - name: Lint with pylint
         run: |
-          pylint --disable=C0111,C0103 fragua/agents fragua/core fragua/utils fragua/store fragua/styles 
+          pylint \
+            --extension-pkg-whitelist=pydantic \
+            --disable=C0103 \
+            fragua/agents \
+            fragua/core \
+            fragua/utils \
+            fragua/store \
+            fragua/styles \
+            fragua/params
 
+      # --- Mypy ---
       - name: Type checking with mypy
         run: |
-          mypy fragua/agents fragua/core fragua/utils fragua/store fragua/styles 
+          mypy \
+            --strict \
+            --ignore-missing-imports \
+            --disallow-untyped-defs \
+            fragua/agents \
+            fragua/core \
+            fragua/utils \
+            fragua/store \
+            fragua/styles \
+            fragua/params
