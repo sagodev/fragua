@@ -43,6 +43,7 @@ jobs:
       # --- Pylint ---
       - name: Lint with pylint
         run: |
+          # Ignorar R0903 solo en base_params.py
           pylint \
             --extension-pkg-whitelist=pydantic \
             --disable=C0103 \
@@ -51,7 +52,8 @@ jobs:
             fragua/utils \
             fragua/store \
             fragua/styles \
-            fragua/params
+            fragua/params \
+            fragua/core/base_params.py --disable=R0903
 
       # --- Mypy ---
       - name: Type checking with mypy
