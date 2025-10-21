@@ -59,14 +59,17 @@ class BaseStorage(Generic[T]):
 
     @property
     def checksum(self) -> Optional[str]:
+        """Get the checksum of the stored data."""
         return self._checksum
 
     @property
     def stored_at(self) -> Optional[datetime]:
+        """Get the timestamp when the data was stored."""
         return self._stored_at
 
     @property
     def metadata(self) -> dict[str, object]:
+        """Get metadata about the storage object."""
         return {
             "name": self.name,
             "checksum": self._checksum,

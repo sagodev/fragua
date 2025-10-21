@@ -10,11 +10,11 @@ from fragua.agents import (
 from fragua.styles import (
     ForgeStyle,
     DeliveryStyle,
-    ExtractionStyle,
-    CSVExtractionStyle,
-    APIExtractionStyle,
-    SQLExtractionStyle,
-    ExcelExtractionStyle,
+    MineStyle,
+    CSVMineStyle,
+    ExcelMineStyle,
+    SQLMineStyle,
+    APIMineStyle,
     MLForgeStyle,
     ReportForgeStyle,
     AnalysisForgeStyle,
@@ -26,6 +26,19 @@ from fragua.styles import (
 from fragua.store import Storage, Wagon, Box, Container
 
 from fragua.core import BaseAgent, BaseStyle, BaseStorage
+
+from fragua.params import (
+    ExcelMineParams,
+    CSVMineParams,
+    SQLMineParams,
+    APIMineParams,
+    MLForgeParams,
+    ReportForgeParams,
+    AnalysisForgeParams,
+    SQLDeliveryParams,
+    APIDeliveryParams,
+    ExcelDeliveryParams,
+)
 
 from fragua.utils import get_logger, Config, calculate_checksum
 
@@ -44,17 +57,27 @@ __all__ = [
     "get_logger",
     "Config",
     "calculate_checksum",
-    "CSVExtractionStyle",
-    "APIExtractionStyle",
-    "SQLExtractionStyle",
-    "ExcelExtractionStyle",
-    "MLForgeStyle",
+    "ForgeStyle",
     "ReportForgeStyle",
+    "MLForgeStyle",
     "AnalysisForgeStyle",
+    "DeliveryStyle",
     "SQLDeliveryStyle",
     "APIDeliveryStyle",
     "ExcelDeliveryStyle",
-    "ForgeStyle",
-    "DeliveryStyle",
-    "ExtractionStyle",
+    "MineStyle",
+    "CSVMineStyle",
+    "ExcelMineStyle",
+    "SQLMineStyle",
+    "APIMineStyle",
+    "ExcelMineParams",
+    "CSVMineParams",
+    "SQLMineParams",
+    "APIMineParams",
+    "MLForgeParams",
+    "ReportForgeParams",
+    "AnalysisForgeParams",
+    "SQLDeliveryParams",
+    "APIDeliveryParams",
+    "ExcelDeliveryParams",
 ]
