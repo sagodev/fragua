@@ -9,10 +9,10 @@ from .delivery_params import (
 
 from .mine_params import (
     MineParams,
-    CSVMiningParams,
-    ExcelMiningParams,
-    SQLMiningParams,
-    APIMiningParams,
+    CSVMineParams,
+    ExcelMineParams,
+    SQLMineParams,
+    APIMineParams,
 )
 
 from .forge_params import (
@@ -28,10 +28,10 @@ __all__ = [
     "SQLDeliveryParams",
     "APIDeliveryParams",
     "MineParams",
-    "CSVMiningParams",
-    "ExcelMiningParams",
-    "SQLMiningParams",
-    "APIMiningParams",
+    "CSVMineParams",
+    "ExcelMineParams",
+    "SQLMineParams",
+    "APIMineParams",
     "ForgeParams",
     "MLForgeParams",
     "ReportForgeParams",
