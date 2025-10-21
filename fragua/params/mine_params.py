@@ -1,5 +1,5 @@
 """
-Miner parameters classes for different types of data sources.
+Mine parameters classes for different types of data sources.
 """
 
 from typing import Any, Dict, Union
@@ -14,27 +14,27 @@ class MineParams(BaseParams):
     read_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
 
-class CSVMiningParams(MineParams):
+class CSVMineParams(MineParams):
     """Mining parameters for CSV files."""
 
     path: Union[str, Path]
 
 
-class ExcelMiningParams(MineParams):
+class ExcelMineParams(MineParams):
     """Mining parameters for Excel files."""
 
     path: Union[str, Path]
     sheet_name: Union[str, int] = 0
 
 
-class SQLMiningParams(MineParams):
+class SQLMineParams(MineParams):
     """Mining parameters for SQL databases."""
 
     connection_string: str
     query: str
 
 
-class APIMiningParams(MineParams):
+class APIMineParams(MineParams):
     """Mining parameters for APIs."""
 
     url: str

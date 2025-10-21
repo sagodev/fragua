@@ -11,29 +11,27 @@ from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-EXTRACTIONSTYLE_REGISTRY: Dict[str, Type["ExtractionStyle[Any, Any]"]] = {}
+MINESTYLE_REGISTRY: Dict[str, Type["MineStyle[Any, Any]"]] = {}
 
 
-def register_extraction_style(
+def register_mine_style(
     name: str,
-) -> Callable[
-    [Type["ExtractionStyle[DataT, ResultT]"]], Type["ExtractionStyle[DataT, ResultT]"]
-]:
+) -> Callable[[Type["MineStyle[DataT, ResultT]"]], Type["MineStyle[DataT, ResultT]"]]:
     """
-    Decorator to register an ExtractionStyle subclass.
+    Decorator to register a MineStyle subclass.
     """
 
     def wrapper(
-        cls: Type["ExtractionStyle[DataT, ResultT]"],
-    ) -> Type["ExtractionStyle[DataT, ResultT]"]:
-        EXTRACTIONSTYLE_REGISTRY[name] = cls
-        logger.debug("Registered ExtractionStyle: %s", name)
+        cls: Type["MineStyle[DataT, ResultT]"],
+    ) -> Type["MineStyle[DataT, ResultT]"]:
+        MINESTYLE_REGISTRY[name] = cls
+        logger.debug("Registered MineStyle: %s", name)
         return cls
 
     return wrapper
 
 
-class ExtractionStyle(BaseStyle[DataT, ResultT], Generic[DataT, ResultT]):
+class MineStyle(BaseStyle[DataT, ResultT], Generic[DataT, ResultT]):
     """Base class for all extraction styles in Fragua ETL."""
 
     def __init__(self, style_name: str):
@@ -59,9 +57,7 @@ class ExtractionStyle(BaseStyle[DataT, ResultT], Generic[DataT, ResultT]):
         if source_params is None:
             raise ValueError("Source parameters cannot be None")
 
-        logger.debug(
-            "Starting ExtractionStyle '%s' extraction pipeline.", self.style_name
-        )
+        logger.debug("Starting MineStyle '%s' extraction pipeline.", self.style_name)
 
         try:
             result: ResultT = self.extract(source_params)

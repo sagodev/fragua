@@ -3,7 +3,7 @@ Styles package for Fragua.
 """
 
 from .delivery_style import DeliveryStyle
-from .extraction_style import ExtractionStyle
+from .mine_style import MineStyle
 from .forge_style import ForgeStyle
 
 from .style_types.delivery_style_types import (
@@ -11,11 +11,11 @@ from .style_types.delivery_style_types import (
     APIDeliveryStyle,
     ExcelDeliveryStyle,
 )
-from .style_types.extraction_style_types import (
-    CSVExtractionStyle,
-    ExcelExtractionStyle,
-    SQLExtractionStyle,
-    APIExtractionStyle,
+from .style_types.mine_style_types import (
+    CSVMineStyle,
+    ExcelMineStyle,
+    SQLMineStyle,
+    APIMineStyle,
 )
 
 from .style_types.forge_style_types import (
@@ -27,12 +27,12 @@ from .style_types.forge_style_types import (
 
 __all__ = [
     "DeliveryStyle",
-    "ExtractionStyle",
+    "MineStyle",
     "ForgeStyle",
-    "CSVExtractionStyle",
-    "ExcelExtractionStyle",
-    "SQLExtractionStyle",
-    "APIExtractionStyle",
+    "CSVMineStyle",
+    "ExcelMineStyle",
+    "SQLMineStyle",
+    "APIMineStyle",
     "MLForgeStyle",
     "ReportForgeStyle",
     "AnalysisForgeStyle",
