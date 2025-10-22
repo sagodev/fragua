@@ -1,91 +1,94 @@
 """
 Base class for all styles used by ETL agents in Fragua.
-
-Examples of styles include Forge Styles, Extraction Styles, and Delivery Styles.
 """
 
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar, Generic, Dict
 from fragua.utils.logger import get_logger
+from fragua.core.base_params import BaseParams
 
 logger = get_logger(__name__)
 
-# Generic type variable for the result of style operations
-ResultT = TypeVar("ResultT")
-DataT = TypeVar("DataT")
+# ---------------------------------------------------------------------- #
+# Type Variables
+# ---------------------------------------------------------------------- #
+ResultT = TypeVar("ResultT")  # Output type (e.g., DataFrame, str, etc.)
+ParamsT = TypeVar("ParamsT", bound=BaseParams)  # Must inherit from BaseParams
 
 
-class BaseStyle(ABC, Generic[DataT, ResultT]):
+class BaseStyle(ABC, Generic[ParamsT, ResultT]):
     """
-    Abstract base class for style.
+    Abstract base class for all styles in Fragua.
+    Defines a standard interface for style operations.
 
-    Type Parameters:
-        DataT: Type of input data the style accepts
-        ResultT: Type of result the style produces
+    Each concrete Style defines its own Params subclass,
+    e.g. DeliveryStyle uses DeliveryParams, ExtractionStyle uses ExtractionParams, etc.
     """
 
     def __init__(self, style_name: str):
-        """
-        Initialize the style with a given name.
-
-        Args:
-            style_name (str): Name of the style.
-        """
+        """Initialize the style with a given name."""
         self.style_name = style_name
         self.metadata: Dict[str, Any] = {}
 
+    # ---------------------------------------------------------------------- #
+    # Abstract Core
+    # ---------------------------------------------------------------------- #
+
     @abstractmethod
-    def use(self, source_params: DataT) -> ResultT:
+    def use(self, params: ParamsT) -> ResultT:
         """
         Apply the style to the given input parameters.
 
         Args:
-            source_params (DataT): Input configuration or data to be processed or transformed.
-
+            params (ParamsT): Configuration or data to process.
         Returns:
-            ResultT: The processed/transformed result.
-
-        Raises:
-            ValueError: If source_params is None or invalid
-            TypeError: If source_params is of wrong type
+            ResultT: The processed or delivered result.
         """
 
-    def validate(self, data: ResultT) -> ResultT:
+    # ---------------------------------------------------------------------- #
+    # Validation hooks
+    # ---------------------------------------------------------------------- #
+
+    def validate_params(self, params: ParamsT) -> ParamsT:
         """
-        Basic validation of the data.
+        Validate input parameters before execution.
 
         Args:
-            data (DataT): Data to validate
-
+            params (ParamsT): Input configuration or data.
         Returns:
-            DataT: The validated data
-
+            ParamsT: Validated parameters.
         Raises:
-            ValueError: If data is None
+            ValueError: If params is None or invalid.
         """
-        if data is None:
-            raise ValueError("No data extracted")
-        return data
+        if params is None:
+            raise ValueError(f"{self.style_name}: Parameters cannot be None.")
+        return params
 
-    def postprocess(self, data: ResultT) -> ResultT:
+    def validate_result(self, result: ResultT) -> ResultT:
         """
-        Optional step for cleaning or formatting data.
+        Validate the result after execution.
 
         Args:
-            data (ResultT): Data to postprocess
-
+            result (ResultT): The result object.
         Returns:
-            ResultT: The postprocessed data
+            ResultT: Validated result.
+        Raises:
+            ValueError: If result is None or invalid.
         """
-        return data
+        if result is None:
+            raise ValueError(f"{self.style_name}: Result cannot be None.")
+        return result
+
+    # ---------------------------------------------------------------------- #
+    # Optional hooks
+    # ---------------------------------------------------------------------- #
+
+    def postprocess(self, result: ResultT) -> ResultT:
+        """Optional postprocessing step after validation."""
+        return result
 
     def log_error(self, error: Exception) -> None:
-        """
-        Basic error logging.
-
-        Args:
-            error (Exception): The error to log
-        """
+        """Log an error with the style context."""
         logger.error(
             "[%s ERROR] %s: %s", self.__class__.__name__, type(error).__name__, error
         )
