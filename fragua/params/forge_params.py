@@ -2,7 +2,7 @@
 Forge parameters classes for different types of data transformations.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, TypeVar
 from pandas import DataFrame
 from fragua.core.base_params import BaseParams
 
@@ -36,3 +36,9 @@ class AnalysisForgeParams(ForgeParams):
     groupby_cols: list[str] | None = None
     agg_functions: Dict[str, str] | None = None
     sort_by: list[str] | None = None
+
+
+ForgeParamsT = TypeVar("ForgeParamsT", bound=ForgeParams)
+MLForgeParamsT = TypeVar("MLForgeParamsT", bound=MLForgeParams)
+ReportForgeParamsT = TypeVar("ReportForgeParamsT", bound=ReportForgeParams)
+AnalysisForgeParamsT = TypeVar("AnalysisForgeParamsT", bound=AnalysisForgeParams)

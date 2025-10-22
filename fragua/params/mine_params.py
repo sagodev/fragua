@@ -2,7 +2,7 @@
 Mine parameters classes for different types of data sources.
 """
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, TypeVar
 from pathlib import Path
 from pydantic import Field
 from fragua.core.base_params import BaseParams
@@ -45,3 +45,10 @@ class APIMineParams(MineParams):
     auth: Dict[str, str] = Field(default_factory=dict)
     proxy: Dict[str, str] = Field(default_factory=dict)
     timeout: float = 30.0
+
+
+MineParamsT = TypeVar("MineParamsT", bound=MineParams)
+CSVMineParamsT = TypeVar("CSVMineParamsT", bound=CSVMineParams)
+ExcelMineParamsT = TypeVar("ExcelMineParamsT", bound=ExcelMineParams)
+SQLMineParamsT = TypeVar("SQLMineParamsT", bound=SQLMineParams)
+APIMineParamsT = TypeVar("APIMineParamsT", bound=APIMineParams)
