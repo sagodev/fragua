@@ -6,6 +6,7 @@ agents like Miner, Blacksmith, and Transporter.
 """
 
 from abc import ABC, abstractmethod
+import hashlib
 from datetime import datetime, timezone
 from typing import (
     Any,
@@ -18,6 +19,7 @@ from typing import (
     Literal,
     cast,
 )
+
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
@@ -43,72 +45,19 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
 
     style_registry: Dict[str, Type[StyleT]] = {}
     result_type: Optional[Type[ResultT]] = None
-    metadata_table_name: str = "operations"
 
     def __init__(self, name: str):
-        """
-        Initialize the agent with a given name.
-
-        Args:
-            name (str): The name of the agent.
-        """
-        self.name = name
+        self.name: str = name
         self.known_styles: Dict[str, StyleT] = {}
-        self.metadata: Dict[str, Any] = {
-            "name": name,
-            "learned_styles": {},
-            self.metadata_table_name: pd.DataFrame(
-                columns=[
-                    "style_name",
-                    "timestamp",
-                    "output_name",
-                    "rows",
-                    "columns",
-                    "checksum",
-                ]
-            ),
-        }
+        self.learned_styles: Dict[str, dict[Any, Any]] = {}
+        self._operations_rows: list[dict[Any, Any]] = []
 
-    # ---------------- Learning ---------------- #
-    def learn_style(self, style_instance: StyleT) -> None:
-        """
-        Register a style instance and record its metadata.
-
-        Args:
-            style_instance (StyleT): Instance of a Style subclass to register
-        """
-        self.known_styles[style_instance.style_name] = style_instance
-        self.metadata["learned_styles"][style_instance.style_name] = {
-            "class": style_instance.__class__.__name__,
-            "learned_at": datetime.now(timezone.utc),
-        }
-        logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
-
-    def learn_style_by_name(self, name: str) -> None:
-        """
-        Create and learn a style dynamically from the registry.
-        The style is registered with the same name used to look it up.
-
-        Args:
-            name (str): Name of the style to create and register
-
-        Raises:
-            ValueError: If style name is not in registry
-        """
-        if name not in self.style_registry:
-            logger.error("[%s] No style registered under '%s'", self.name, name)
-            raise ValueError(f"No style registered under name '{name}'")
-
-        style_cls = self.style_registry[name]
-        instance = style_cls(style_name=name)
-        self.learn_style(instance)
-
-    # ---------------- Storage Wrapping ---------------- #
     def _wrap_storage(self, result: Any) -> ResultT:
         """
         Convert raw style output (e.g., DataFrame) into the appropriate
         storage object (Wagon, Box, Container) based on this agent's result_type.
         """
+
         if self.result_type is None:
             raise TypeError(
                 f"Cannot wrap result: {self.__class__.__name__} has no result_type defined."
@@ -131,12 +80,12 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             f"Result type '{self.result_type.__name__}' is not a valid storage type"
         )
 
-    # ---------------- Normalization ---------------- #
     def _normalize_input(self, input_data: Any) -> Any:
         """
         Convert input data into a format compatible with MineStyle.
         Accepts BaseStorage, DataFrame, or any BaseParams object.
         """
+
         if isinstance(input_data, BaseStorage):
             if input_data.data is None:
                 raise ValueError(f"{input_data.name} has no data to process")
@@ -150,54 +99,134 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             f"{self.__class__.__name__} cannot process input of type {type(input_data)}"
         )
 
-    # ---------------- Working ---------------- #
-    def apply_style(self, style_name: str, data: Any) -> ResultT:
+    def _calculate_checksum(self, data: Any) -> Optional[str]:
         """
-        Apply a learned style, wrap in storage object, and record operation metadata.
+        Calculate a checksum for the given data.
 
         Args:
-            style_name: Name of the style to apply
-            data: Input data for the style (BaseStorage or DataFrame)
+            data: The data to generate a checksum for (DataFrame or BaseStorage).
 
         Returns:
-            ResultT: Wrapped storage object (Wagon, Box, Container)
+            str: Hexadecimal checksum string or None if data is not hashable.
+        """
+        if isinstance(data, pd.DataFrame):
+            # Hash pandas DataFrame efficiently
+            return hashlib.md5(
+                pd.util.hash_pandas_object(data, index=True).values
+            ).hexdigest()
+        elif hasattr(data, "data"):  # BaseStorage object
+            if isinstance(data.data, pd.DataFrame):
+                return hashlib.md5(
+                    pd.util.hash_pandas_object(data.data, index=True).values
+                ).hexdigest()
+        return None
+
+    def record_operation(
+        self,
+        style_name: str,
+        result_obj: Any,
+    ) -> None:
+        """
+        Record an operation in the internal metadata,
+        including checksum, local time and timezone offset.
+
+        Args:
+            style_name (str): Name of the style applied.
+            result_obj: Output object of the style (Wagon/Box/Container).
+            style_metadata (Optional[dict]): Optional metadata from the style.
+        """
+        result_name = getattr(result_obj, "name", None)
+        result_data = getattr(result_obj, "data", None)
+        result_shape = getattr(result_data, "shape", (None, None))
+
+        # Calculate checksum automatically
+        style_checksum = self._calculate_checksum(result_obj)
+
+        # Get local time and offset
+        now_utc = datetime.now(timezone.utc)
+        local_tz = datetime.now().astimezone().tzinfo
+        now_local = now_utc.astimezone(local_tz)
+
+        local_time_str = now_local.strftime("%H:%M:%S.%f")[
+            :-3
+        ]  # microseconds precision trimmed
+        timezone_offset = now_local.strftime("%z")
+        timezone_offset = (
+            timezone_offset[:3] + ":" + timezone_offset[3:]
+            if len(timezone_offset) == 5
+            else timezone_offset
+        )
+
+        self._operations_rows.append(
+            {
+                "style_name": style_name,
+                "local_time": local_time_str,
+                "timezone_offset": timezone_offset,
+                "output_name": result_name,
+                "rows": result_shape[0],
+                "columns": result_shape[1],
+                "checksum": style_checksum,
+            }
+        )
+
+    def get_operations_df(self) -> pd.DataFrame:
+        """Devuelve un DataFrame con todas las operaciones registradas."""
+        return pd.DataFrame(self._operations_rows)
+
+    # ---------------- Learning ---------------- #
+    def learn_style(self, style_instance: StyleT) -> None:
+        """Register a style instance with this agent."""
+
+        self.known_styles[style_instance.style_name] = style_instance
+        self.learned_styles[style_instance.style_name] = {
+            "class": style_instance.__class__.__name__,
+            "learned_at": datetime.now(timezone.utc),
+        }
+        logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
+
+    def learn_style_by_name(self, name: str) -> None:
+        """
+        Create and learn a style dynamically from the registry.
+        The style is registered with the same name used to look it up.
+
+        Args:
+            name (str): Name of the style to create and register
 
         Raises:
-            ValueError: If style is not learned
-            TypeError: If style returns wrong type
+            ValueError: If style name is not in registry
+        """
+
+        if name not in self.style_registry:
+            raise ValueError(f"No style registered under name '{name}'")
+        style_cls = self.style_registry[name]
+        instance = style_cls(style_name=name)
+        self.learn_style(instance)
+
+    # ---------------- Apply Style ---------------- #
+    def apply_style(self, style_name: str, data: Any) -> ResultT:
+        """
+        Apply a learned style, wrap the result in a storage object,
+        and record metadata with checksum.
+
+        Args:
+            style_name (str): Name of the style to apply.
+            data: Input data for the style (DataFrame or BaseStorage).
+
+        Returns:
+            ResultT: Wrapped storage object (Wagon, Box, Container).
+
+        Raises:
+            ValueError: If style is not learned.
         """
         if style_name not in self.known_styles:
-            logger.error("[%s] Style '%s' not learned", self.name, style_name)
             raise ValueError(f"Style '{style_name}' not learned")
 
         style = self.known_styles[style_name]
-
         normalized_data = self._normalize_input(data)
-
         raw_result = style.use(normalized_data)
-
         result_typed = self._wrap_storage(raw_result)
 
-        result_name = getattr(result_typed, "name", None)
-        result_data = getattr(result_typed, "data", None)
-        result_shape = getattr(result_data, "shape", (None, None))
-        style_metadata = getattr(style, "metadata", {})
-        style_checksum = (
-            style_metadata.get("checksum") if isinstance(style_metadata, dict) else None
-        )
-
-        new_row = {
-            "style_name": style_name,
-            "timestamp": datetime.now(timezone.utc),
-            "output_name": result_name,
-            "rows": result_shape[0],
-            "columns": result_shape[1],
-            "checksum": style_checksum,
-        }
-        self.metadata[self.metadata_table_name] = pd.concat(
-            [self.metadata[self.metadata_table_name], pd.DataFrame([new_row])],
-            ignore_index=True,
-        )
+        self.record_operation(style_name, result_typed)
 
         logger.info("[%s] Applied style '%s'", self.name, style_name)
         return result_typed
