@@ -11,58 +11,66 @@ from requests.auth import HTTPBasicAuth
 
 from fragua.styles.mine_style import MineStyle, register_mine_style
 from fragua.params.mine_params import (
-    CSVMineParams,
-    ExcelMineParams,
-    SQLMineParams,
-    APIMineParams,
+    CSVMineParamsT,
+    ExcelMineParamsT,
+    SQLMineParamsT,
+    APIMineParamsT,
 )
 
 
+# ---------------------------------------------------------------------- #
+# CSV Extraction
+# ---------------------------------------------------------------------- #
 @register_mine_style("csv")
-class CSVMineStyle(MineStyle[CSVMineParams, DataFrame]):
+class CSVMineStyle(MineStyle[CSVMineParamsT, DataFrame]):
     """Extracts data from CSV files."""
 
-    def extract(self, source_params: CSVMineParams) -> DataFrame:
-        path = source_params.path
+    def extract(self, params: CSVMineParamsT) -> DataFrame:
+        path = params.path
         if not path:
-            raise ValueError("path is required in source_params")
+            raise ValueError(f"{self.style_name}: 'path' is required in params")
 
-        read_kwargs = source_params.read_kwargs
+        read_kwargs = params.read_kwargs or {}
 
         path_str = str(path) if isinstance(path, Path) else path
         return pd.read_csv(path_str, **read_kwargs)
 
 
+# ---------------------------------------------------------------------- #
+# Excel Extraction
+# ---------------------------------------------------------------------- #
 @register_mine_style("excel")
-class ExcelMineStyle(MineStyle[ExcelMineParams, DataFrame]):
+class ExcelMineStyle(MineStyle[ExcelMineParamsT, DataFrame]):
     """Extracts data from Excel files."""
 
-    def extract(self, source_params: ExcelMineParams) -> DataFrame:
-        path = source_params.path
+    def extract(self, params: ExcelMineParamsT) -> DataFrame:
+        path = params.path
         if not path:
-            raise ValueError("path is required in source_params")
+            raise ValueError(f"{self.style_name}: 'path' is required in params")
 
-        sheet_name = source_params.sheet_name
-        read_kwargs = source_params.read_kwargs
+        sheet_name = params.sheet_name
+        read_kwargs = params.read_kwargs or {}
 
         path_str = str(path) if isinstance(path, Path) else path
         return pd.read_excel(path_str, sheet_name=sheet_name, **read_kwargs)
 
 
+# ---------------------------------------------------------------------- #
+# SQL Extraction
+# ---------------------------------------------------------------------- #
 @register_mine_style("sql")
-class SQLMineStyle(MineStyle[SQLMineParams, DataFrame]):
+class SQLMineStyle(MineStyle[SQLMineParamsT, DataFrame]):
     """Extracts data from SQL databases."""
 
-    def extract(self, source_params: SQLMineParams) -> DataFrame:
-        """Extract data from a SQL database."""
-        connection_string = source_params.connection_string
-        query = source_params.query
+    def extract(self, params: SQLMineParamsT) -> DataFrame:
+        connection_string = params.connection_string
+        query = params.query
         if not connection_string or not query:
             raise ValueError(
-                "connection_string and query are required in source_params"
+                f"{self.style_name}: 'connection_string' and 'query' are required in params"
             )
 
-        read_kwargs = source_params.read_kwargs
+        read_kwargs = params.read_kwargs or {}
 
         engine = create_engine(connection_string)
         try:
@@ -72,33 +80,37 @@ class SQLMineStyle(MineStyle[SQLMineParams, DataFrame]):
             engine.dispose()
 
 
+# ---------------------------------------------------------------------- #
+# API Extraction
+# ---------------------------------------------------------------------- #
 @register_mine_style("api")
-class APIMineStyle(MineStyle[APIMineParams, DataFrame]):
+class APIMineStyle(MineStyle[APIMineParamsT, DataFrame]):
     """Extracts data from REST APIs."""
 
-    def extract(self, source_params: APIMineParams) -> DataFrame:
-        """Extract data from a REST API endpoint."""
-        url = source_params.url
+    def extract(self, params: APIMineParamsT) -> DataFrame:
+        url = params.url
         if not url:
-            raise ValueError("url is required in source_params")
+            raise ValueError(f"{self.style_name}: 'url' is required in params")
 
         response = requests.request(
-            method=source_params.method.upper(),
+            method=params.method.upper(),
             url=url,
-            headers=source_params.headers,
-            params=source_params.params,
-            data=source_params.data,
-            auth=HTTPBasicAuth(**source_params.auth) if source_params.auth else None,
-            proxies=source_params.proxy,
-            timeout=source_params.timeout,
+            headers=params.headers,
+            params=params.params,
+            data=params.data,
+            auth=HTTPBasicAuth(**params.auth) if params.auth else None,
+            proxies=params.proxy,
+            timeout=params.timeout,
         )
         response.raise_for_status()
         result_data = response.json()
 
-        read_kwargs = source_params.read_kwargs
+        read_kwargs = params.read_kwargs or {}
         if isinstance(result_data, list):
             return pd.DataFrame(result_data, **read_kwargs)
         if isinstance(result_data, dict):
             return pd.json_normalize(result_data, **read_kwargs)
 
-        raise ValueError(f"Unexpected API response type: {type(result_data)}")
+        raise ValueError(
+            f"{self.style_name}: Unexpected API response type: {type(result_data)}"
+        )

@@ -9,9 +9,9 @@ from sklearn.preprocessing import MinMaxScaler
 
 from fragua.styles.forge_style import ForgeStyle, register_forge_style
 from fragua.params.forge_params import (
-    MLForgeParams,
-    ReportForgeParams,
-    AnalysisForgeParams,
+    MLForgeParamsT,
+    ReportForgeParamsT,
+    AnalysisForgeParamsT,
 )
 from fragua.utils.logger import get_logger
 
@@ -20,30 +20,20 @@ logger = get_logger(__name__)
 
 # ---------------- MLForge ----------------
 @register_forge_style("ml")
-class MLForgeStyle(ForgeStyle[MLForgeParams, DataFrame]):
+class MLForgeStyle(ForgeStyle[MLForgeParamsT, DataFrame]):
     """Forge style for machine learning preprocessing."""
 
-    def forge(self, source_params: MLForgeParams) -> DataFrame:
-        """
-        Transform data for machine learning preprocessing.
-
-        Args:
-            source_params (MLForgeParams): ML transformation configuration.
-
-        Returns:
-            DataFrame: Transformed data ready for ML.
-        """
-        df = source_params.data
+    def forge(self, params: MLForgeParamsT) -> DataFrame:
+        df = params.data
         if not isinstance(df, DataFrame):
             raise TypeError("MLForgeStyle requires a pandas DataFrame")
 
         df = df.copy()
 
-        # Apply transformations
         self._fill_missing(df, numeric_fill="mean")
         self._standardize(df)
         self._encode_categoricals(df)
-        self._treat_outliers(df, source_params.outlier_threshold)
+        self._treat_outliers(df, params.outlier_threshold)
         self._scale_numeric(df)
         self._add_metadata(df)
 
@@ -88,20 +78,11 @@ class MLForgeStyle(ForgeStyle[MLForgeParams, DataFrame]):
 
 # ---------------- ReportForge ----------------
 @register_forge_style("report")
-class ReportForgeStyle(ForgeStyle[ReportForgeParams, DataFrame]):
+class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, DataFrame]):
     """Forge style for reporting transformations."""
 
-    def forge(self, source_params: ReportForgeParams) -> DataFrame:
-        """
-        Transform data for reporting.
-
-        Args:
-            source_params (ReportForgeParams): Reporting configuration parameters.
-
-        Returns:
-            DataFrame: Transformed data ready for reporting.
-        """
-        df = source_params.data
+    def forge(self, params: ReportForgeParamsT) -> DataFrame:
+        df = params.data
         if not isinstance(df, DataFrame):
             raise TypeError("ReportForgeStyle requires a pandas DataFrame")
 
@@ -109,8 +90,8 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParams, DataFrame]):
 
         self._fill_missing(df, numeric_fill="zero")
         self._standardize(df)
-        self._add_derived_columns(df, source_params.derived_columns)
-        self._format_for_report(df, source_params.rounding_precision)
+        self._add_derived_columns(df, params.derived_columns)
+        self._format_for_report(df, params.rounding_precision)
         self._add_metadata(df)
 
         logger.info(
@@ -157,27 +138,18 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParams, DataFrame]):
 
 # ---------------- AnalysisForge ----------------
 @register_forge_style("analysis")
-class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParams, DataFrame]):
+class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParamsT, DataFrame]):
     """Forge style for data analysis transformations."""
 
-    def forge(self, source_params: AnalysisForgeParams) -> DataFrame:
-        """
-        Transform data for analysis.
-
-        Args:
-            source_params (AnalysisForgeParams): Analysis configuration parameters.
-
-        Returns:
-            DataFrame: Transformed data ready for analysis.
-        """
-        df = source_params.data
+    def forge(self, params: AnalysisForgeParamsT) -> DataFrame:
+        df = params.data
         if not isinstance(df, DataFrame):
             raise TypeError("AnalysisForgeStyle requires a pandas DataFrame")
 
         df = df.copy()
-        groupby_cols = source_params.groupby_cols or []
-        agg_functions = source_params.agg_functions or {}
-        sort_by = source_params.sort_by or []
+        groupby_cols = params.groupby_cols or []
+        agg_functions = params.agg_functions or {}
+        sort_by = params.sort_by or []
 
         self._fill_missing(df, numeric_fill="mean")
         self._standardize(df)

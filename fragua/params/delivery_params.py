@@ -2,7 +2,7 @@
 Delivery parameters classes for different types of data destinations.
 """
 
-from typing import Dict
+from typing import Dict, TypeVar
 
 from pandas import DataFrame
 from fragua.core.base_params import BaseParams
@@ -40,3 +40,9 @@ class APIDeliveryParams(DeliveryParams):
     headers: Dict[str, str] | None = None
     auth: Dict[str, str] | None = None
     timeout: float = 30.0
+
+
+DeliveryParamsT = TypeVar("DeliveryParamsT", bound=DeliveryParams)
+ExcelDeliveryParamsT = TypeVar("ExcelDeliveryParamsT", bound=ExcelDeliveryParams)
+SQLDeliveryParamsT = TypeVar("SQLDeliveryParamsT", bound=SQLDeliveryParams)
+APIDeliveryParamsT = TypeVar("APIDeliveryParamsT", bound=APIDeliveryParams)

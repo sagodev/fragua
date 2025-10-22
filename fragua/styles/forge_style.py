@@ -4,30 +4,30 @@ Contains common utilities for transformations.
 """
 
 from abc import abstractmethod
-from typing import Any, Generic, Dict, Type, Callable, Literal
+from typing import Any, Generic, Dict, Type, Callable
 from datetime import datetime, timezone
 from pandas import DataFrame
 from pandas.api.types import is_numeric_dtype
 
 from fragua.utils.metrics import calculate_checksum
-from fragua.core.base_style import BaseStyle, DataT, ResultT
+from fragua.core.base_style import BaseStyle, ResultT
+from fragua.params.forge_params import ForgeParamsT
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
 
 FORGESTYLE_REGISTRY: Dict[str, Type["ForgeStyle[Any, Any]"]] = {}
 
 
 def register_forge_style(
     name: str,
-) -> Callable[[Type["ForgeStyle[DataT, ResultT]"]], Type["ForgeStyle[DataT, ResultT]"]]:
-    """
-    Decorator to register a ForgeStyle subclass dynamically.
-    """
+) -> Callable[[Type["ForgeStyle[Any, Any]"]], Type["ForgeStyle[Any, Any]"]]:
+    """Decorator to register a ForgeStyle subclass dynamically."""
 
     def wrapper(
-        cls: Type["ForgeStyle[DataT, ResultT]"],
-    ) -> Type["ForgeStyle[DataT, ResultT]"]:
+        cls: Type["ForgeStyle[ForgeParamsT, ResultT]"],
+    ) -> Type["ForgeStyle[ForgeParamsT, ResultT]"]:
         FORGESTYLE_REGISTRY[name] = cls
         logger.debug("Registered ForgeStyle: %s", name)
         return cls
@@ -35,70 +35,73 @@ def register_forge_style(
     return wrapper
 
 
-class ForgeStyle(BaseStyle[DataT, ResultT], Generic[DataT, ResultT]):
+class ForgeStyle(BaseStyle[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT]):
     """
     Base class for ForgeStyles.
 
-    Provides common utilities for transformations.
+    Provides a pipeline: validate_params -> forge -> validate_result -> postprocess.
     """
 
     def __init__(self, style_name: str) -> None:
         super().__init__(style_name)
         self.metadata: Dict[str, Any] = {}
 
-    def use(self, source_params: DataT) -> ResultT:
-        """
-        Main transformation pipeline: forge -> validate -> postprocess.
-        """
-        if source_params is None:
-            raise ValueError("Input data cannot be None")
+    # ---------------------------------------------------------------------- #
+    # Abstract transformation
+    # ---------------------------------------------------------------------- #
+    @abstractmethod
+    def forge(self, params: ForgeParamsT) -> ResultT:
+        """Transform the input data according to params."""
+        raise NotImplementedError
 
-        logger.debug(
-            "Starting ForgeStyle '%s' transformation pipeline.", self.style_name
-        )
+    # ---------------------------------------------------------------------- #
+    # Validation hooks
+    # ---------------------------------------------------------------------- #
+    def validate_params(self, params: ForgeParamsT) -> ForgeParamsT:
+        """Validate input parameters before forging."""
+        super().validate_params(params)
+        return params
+
+    # ---------------------------------------------------------------------- #
+    # Main pipeline
+    # ---------------------------------------------------------------------- #
+    def use(self, params: ForgeParamsT) -> ResultT:
+        """Main Forge pipeline: validate_params -> forge -> validate_result -> postprocess."""
+        if params is None:
+            raise ValueError("Input params cannot be None")
+
+        logger.debug("Starting ForgeStyle '%s' pipeline.", self.style_name)
 
         try:
-            result: ResultT = self._apply_pipeline(source_params)
-            return result
+            # Validate input parameters
+            params = self.validate_params(params)
+            logger.debug("%s: validate_params() step completed.", self.style_name)
+
+            # Transform / forge
+            result = self.forge(params)
+            logger.debug("%s: forge() step completed.", self.style_name)
+
+            # Validate result
+            result = self.validate_result(result)
+            logger.debug("%s: validate_result() step completed.", self.style_name)
+
+            # Optional postprocess
+            result = self.postprocess(result)
+            logger.debug("%s: postprocess() step completed.", self.style_name)
 
         except Exception as e:
             self.log_error(e)
             raise
 
-    def _apply_pipeline(self, source_params: DataT) -> ResultT:
-        """
-        Internal method to apply the transformation pipeline generically.
-        """
-        transformed = self.forge(source_params)
-        logger.debug("%s: forge() step completed.", self.style_name)
-
-        validated = self.validate(transformed)
-        logger.debug("%s: validate() step completed.", self.style_name)
-
-        result = self.postprocess(validated)
-        logger.debug("%s: postprocess() step completed.", self.style_name)
-
         return result
 
-    @abstractmethod
-    def forge(self, source_params: DataT) -> ResultT:
-        """
-        Must be implemented by subclasses to transform data.
-
-        Args:
-            source_params (DataT): Input data
-
-        Returns:
-            ResultT: Transformed result
-        """
-        raise NotImplementedError
-
-    # ------------------ Utilities for DataFrames ------------------ #
-
+    # ---------------------------------------------------------------------- #
+    # Utilities for DataFrames
+    # ---------------------------------------------------------------------- #
     def _fill_missing(
         self,
         df: DataFrame,
-        numeric_fill: Literal["mean", "zero"] = "mean",
+        numeric_fill: str = "mean",
         categorical_fill: str = "unknown",
     ) -> None:
         """Fill missing values in DataFrame."""
