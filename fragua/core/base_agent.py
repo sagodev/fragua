@@ -110,15 +110,15 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             str: Hexadecimal checksum string or None if data is not hashable.
         """
         if isinstance(data, pd.DataFrame):
-            # Hash pandas DataFrame efficiently
             return hashlib.md5(
                 pd.util.hash_pandas_object(data, index=True).values
             ).hexdigest()
-        elif hasattr(data, "data"):  # BaseStorage object
+        if hasattr(data, "data"):
             if isinstance(data.data, pd.DataFrame):
                 return hashlib.md5(
                     pd.util.hash_pandas_object(data.data, index=True).values
                 ).hexdigest()
+
         return None
 
     def record_operation(
