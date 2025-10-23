@@ -169,7 +169,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             }
         )
 
-    def get_operations_df(self) -> pd.DataFrame:
+    def get_operations(self) -> pd.DataFrame:
         """Devuelve un DataFrame con todas las operaciones registradas."""
         return pd.DataFrame(self._operations_rows)
 

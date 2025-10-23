@@ -18,7 +18,6 @@ class Blacksmith(BaseAgent[ForgeStyle[Any, Any], Box[Any]]):
 
     style_registry: dict[str, Type[ForgeStyle[Any, Any]]] = FORGESTYLE_REGISTRY
     result_type: Type[Box[Any]] = Box[Any]
-    metadata_table_name: str = "transformations"
 
     def work(self, *args: Any, **kwargs: Any) -> Box[Any]:
         return self.apply_style(*args, **kwargs)

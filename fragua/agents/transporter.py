@@ -15,7 +15,6 @@ class Transporter(BaseAgent[DeliveryStyle[Any, Any], Container[Any]]):
 
     style_registry: dict[str, Type[DeliveryStyle[Any, Any]]] = DELIVERYSTYLE_REGISTRY
     result_type: Type[Container[Any]] = Container
-    metadata_table_name: str = "deliveries"
 
     def work(self, *args: Any, **kwargs: Any) -> Container[Any]:
         """Apply a delivery style to provided data and return a Container result."""
