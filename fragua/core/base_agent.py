@@ -7,6 +7,7 @@ agents like Miner, Blacksmith, and Transporter.
 
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import (
     Any,
     Dict,
@@ -27,7 +28,6 @@ from fragua.core.base_params import BaseParams
 from fragua.store.wagon import Wagon
 from fragua.store.box import Box
 from fragua.store.container import Container
-from fragua.utils.metrics import calculate_checksum
 
 if TYPE_CHECKING:
     from fragua.agents.storage_manager import StorageManager
@@ -52,126 +52,112 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         self.learned_styles: Dict[str, dict[Any, Any]] = {}
         self._operations_rows: list[dict[Any, Any]] = []
 
-    def _wrap_storage(
-        self,
-        result: Any,
-        name_prefix: str = "result",
-        operation_metadata: Optional[dict[str, Any]] = None,
-    ) -> ResultT:
-        """
-        Convert raw style output into the appropriate storage object.
-        Attach operation metadata automatically.
-
-        Args:
-            result: Raw output from style (DataFrame or list).
-            name_prefix: Prefix for the storage object name.
-            operation_metadata: Optional metadata dictionary to attach.
-
-        Returns:
-            ResultT: Storage object (Wagon, Box, Container) with metadata attached.
-        """
-        if self.result_type is None:
-            raise TypeError(
-                f"Cannot wrap result: {self.__class__.__name__} has no result_type defined."
-            )
-
-        type_name = self.result_type.__name__.lower()
-        storage_name = f"{name_prefix}_{self.name}"
-
-        if type_name == "wagon":
-            storage_obj = Wagon(data=result, name=storage_name)
-        elif type_name == "box":
-            storage_obj = Box(data=result, name=storage_name)
-        elif type_name == "container":
-            storage_obj = Container(data=result, name=storage_name)
-        else:
-            raise TypeError(
-                f"Result type '{self.result_type.__name__}' is not a valid storage type"
-            )
-
-        # Attach metadata if provided
-        if operation_metadata is not None:
-            storage_obj.attach_metadata(operation_metadata)
-
-        return cast(ResultT, storage_obj)
-
-    def _normalize_input(self, input_data: Any) -> Any:
-        """
-        Convert input data into a format compatible with MineStyle.
-        Accepts BaseStorage, DataFrame, or any BaseParams object.
-        """
-        if isinstance(input_data, BaseStorage):
-            if input_data.data is None:
-                raise ValueError(f"{input_data.name} has no data to process")
-            return input_data.data
-        if isinstance(input_data, pd.DataFrame):
-            return input_data
-        if isinstance(input_data, BaseParams):
-            return input_data
-
-        raise TypeError(
-            f"{self.__class__.__name__} cannot process input of type {type(input_data)}"
-        )
-
-    def record_operation(
-        self,
-        style_name: str,
-        result_obj: BaseStorage[Any],
-    ) -> dict[str, Any]:
-        """
-        Record an operation in the internal metadata and return the metadata dictionary.
-        Includes checksum, local time, and timezone offset.
-
-        Args:
-            style_name: Name of the style applied.
-            result_obj: Output object of the style (Wagon/Box/Container).
-
-        Returns:
-            dict: Metadata dictionary for this operation.
-        """
-        result_name = getattr(result_obj, "name", None)
-        result_data = getattr(result_obj, "data", None)
-        result_shape = getattr(result_data, "shape", (None, None))
-
-        # Use global calculate_checksum function to ensure deterministic checksum
-        style_checksum = calculate_checksum(result_data)
-
-        # Local time and timezone
+    # ----------------- Helpers ----------------- #
+    def _get_local_time_and_offset(self) -> tuple[str, str]:
+        """Return local time string and timezone offset."""
         now_utc = datetime.now(timezone.utc)
         local_tz = datetime.now().astimezone().tzinfo
         now_local = now_utc.astimezone(local_tz)
-
         local_time_str = now_local.strftime("%H:%M:%S.%f")[:-3]
         timezone_offset = now_local.strftime("%z")
-        timezone_offset = (
-            timezone_offset[:3] + ":" + timezone_offset[3:]
-            if len(timezone_offset) == 5
-            else timezone_offset
-        )
+        if len(timezone_offset) == 5:
+            timezone_offset = timezone_offset[:3] + ":" + timezone_offset[3:]
+        return local_time_str, timezone_offset
 
-        operation_meta: dict[str, Any] = {
+    def _determine_input_name(self, input_obj: Any) -> str | None:
+        """Extract a meaningful input name for the operation metadata."""
+        # If BaseStorage (Wagon, Box, Container)
+        if isinstance(input_obj, BaseStorage):
+            return input_obj.name
+
+        # If string or Path (file)
+        if isinstance(input_obj, (str, Path)):
+            return Path(input_obj).name
+
+        # If params with a path attribute
+        if hasattr(input_obj, "path") and isinstance(input_obj.path, (str, Path)):
+            return Path(input_obj.path).name
+
+        # If params with a data attribute that is BaseStorage
+        if hasattr(input_obj, "data") and isinstance(input_obj.data, BaseStorage):
+            return input_obj.data.name
+
+        # If params with a data attribute that is DataFrame, return generic name
+        if hasattr(input_obj, "data") and isinstance(input_obj.data, pd.DataFrame):
+            return "data"
+
+        # If object has 'name'
+        if hasattr(input_obj, "name"):
+            return str(input_obj.name)
+
+        return None
+
+    def _determine_output_type(self, output_obj: Any) -> str | None:
+        """Extract a meaningful output type for the operation metadata."""
+        if isinstance(output_obj, Wagon):
+            return "wagon"
+        if isinstance(output_obj, Box):
+            return "box"
+        if isinstance(output_obj, Container):
+            return "container"
+
+        return None
+
+    def _generate_operation_metadata(
+        self, style_name: str, output_obj: BaseStorage[Any], input_obj: Any
+    ) -> dict[str, Any]:
+        """
+        Generate a metadata dictionary for an operation.
+
+        Args:
+            style_name: Name of the style applied.
+            result_obj: Wrapped storage object (Wagon/Box/Container).
+            input_data: Original input to the style.
+
+        Returns:
+            dict: Metadata dictionary.
+        """
+        # Determine input name
+        input_name = self._determine_input_name(input_obj)
+
+        # Determine storage type
+        output_type = self._determine_output_type(output_obj)
+
+        # Extract rows and columns
+        rows, columns = getattr(output_obj.data, "shape", (None, None))
+
+        # Checksum from storage
+        checksum = output_obj.checksum
+
+        # Local time and timezone
+        local_time_str, timezone_offset = self._get_local_time_and_offset()
+
+        return {
+            "input_name": input_name,
+            "style_name": style_name,
             "local_time": local_time_str,
             "timezone_offset": timezone_offset,
-            "ouput_name": result_name,
-            "rows": result_shape[0],
-            "columns": result_shape[1],
-            "style_name": style_name,
-            "checksum": style_checksum,
+            "output_name": output_obj.name,
+            "output_type": output_type,
+            "rows": rows,
+            "columns": columns,
+            "checksum": checksum,
         }
 
-        # Attach metadata to storage
-        result_obj.attach_metadata(operation_meta)
-
-        # Record internally
-        self._operations_rows.append(operation_meta)
-
-        return operation_meta
+    # ----------------- Operations ----------------- #
+    def record_operation(
+        self, style_name: str, result_obj: Any, input_data: Any = None
+    ) -> dict[str, Any]:
+        """Record an operation and return its metadata."""
+        metadata = self._generate_operation_metadata(style_name, result_obj, input_data)
+        self._operations_rows.append(metadata)
+        return metadata
 
     def get_operations(self) -> pd.DataFrame:
         """Return a DataFrame with all recorded operations."""
         return pd.DataFrame(self._operations_rows)
 
-    # ---------------- Learning ---------------- #
+    # ----------------- Learning ----------------- #
     def learn_style(self, style_instance: StyleT) -> None:
         """Register a style instance with this agent."""
         self.known_styles[style_instance.style_name] = style_instance
@@ -182,31 +168,62 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
 
     def learn_style_by_name(self, name: str) -> None:
-        """
-        Create and learn a style dynamically from the registry.
-        The style is registered with the same name used to look it up.
-
-        Args:
-            name: Name of the style to create and register
-
-        Raises:
-            ValueError: If style name is not in registry
-        """
+        """Create and learn a style dynamically from the registry."""
         if name not in self.style_registry:
             raise ValueError(f"No style registered under name '{name}'")
         style_cls = self.style_registry[name]
         instance = style_cls(style_name=name)
         self.learn_style(instance)
 
-    # ---------------- Apply Style ---------------- #
+    # ----------------- Apply Style ----------------- #
+    def _wrap_storage(
+        self, result: Any, operation_metadata: Optional[dict[str, Any]] = None
+    ) -> ResultT:
+        """Convert raw style output into the appropriate storage object and attach metadata."""
+        if self.result_type is None:
+            raise TypeError(
+                f"Cannot wrap result: {self.__class__.__name__} has no result_type defined."
+            )
+
+        type_name = self.result_type.__name__.lower()
+        storage_obj: BaseStorage[Any] = None
+
+        if type_name == "wagon":
+            storage_obj = Wagon(data=result, name=f"wagon_{self.name}")
+        elif type_name == "box":
+            storage_obj = Box(data=result, name=f"box_{self.name}")
+        elif type_name == "container":
+            storage_obj = Container(data=result, name=f"container_{self.name}")
+        else:
+            raise TypeError(
+                f"Result type '{self.result_type.__name__}' is not a valid storage type"
+            )
+
+        if operation_metadata is not None:
+            storage_obj.attach_metadata(operation_metadata)
+
+        return cast(ResultT, storage_obj)
+
+    def _normalize_input(self, input_data: Any) -> Any:
+        """Convert input data into a format compatible with MineStyle."""
+        if isinstance(input_data, BaseStorage):
+            if input_data.data is None:
+                raise ValueError(f"{input_data.name} has no data to process")
+            return input_data.data
+        if isinstance(input_data, pd.DataFrame):
+            return input_data
+        if isinstance(input_data, BaseParams):
+            return input_data
+        return input_data
+
     def apply_style(self, style_name: str, data: Any) -> ResultT:
         """
         Apply a learned style, wrap the result in a storage object,
-        and attach metadata automatically.
+        attach operation metadata including input name, type, rows, columns, checksum.
 
         Args:
             style_name: Name of the style to apply.
-            data: Input data for the style (DataFrame or BaseStorage).
+            data: Input data for the style (DataFrame, BaseStorage, or BaseParams).
 
         Returns:
             ResultT: Wrapped storage object with metadata.
@@ -214,39 +231,36 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         if style_name not in self.known_styles:
             raise ValueError(f"Style '{style_name}' not learned")
 
+        original_input = data
+
         style = self.known_styles[style_name]
         normalized_data = self._normalize_input(data)
+
+        # Apply the style
         raw_result = style.use(normalized_data)
 
-        # 1. Wrap in Storage first
-        result_storage = self._wrap_storage(raw_result, name_prefix=style_name)
+        # Wrap result in storage
+        wrapped_result = self._wrap_storage(raw_result)
 
-        # 2. Record operation using the Storage (checksum will match Storage)
-        operation_metadata = self.record_operation(style_name, result_storage)
+        # Generate operation metadata
+        operation_metadata = self._generate_operation_metadata(
+            style_name=style_name, output_obj=wrapped_result, input_obj=original_input
+        )
 
-        # 3. Attach the operation metadata to the storage object
-        result_storage.attach_metadata(operation_metadata)
+        # Attach metadata to the storage
+        wrapped_result.attach_metadata(operation_metadata)
+
+        # Record internally in the agent
+        self._operations_rows.append(operation_metadata)
 
         logger.info("[%s] Applied style '%s'", self.name, style_name)
-        return result_storage
+        return wrapped_result
 
-    # ---------------- Storage Interaction ---------------- #
+    # ----------------- Storage Interaction ----------------- #
     def store_result(
         self, storage_manager: "StorageManager", result: ResultT, name: str
     ) -> None:
-        """
-        Store a result object in the StorageManager using the appropriate save method.
-
-        Args:
-            storage_manager: The StorageManager instance to store the result in
-            result: The result object to store (must match ResultT type)
-            name: Name to store the result under
-
-        Raises:
-            AttributeError: If StorageManager doesn't implement required save method
-            TypeError: If result_type is not defined for this agent
-            ValueError: If the result type does not map to a valid storage type
-        """
+        """Store a result object in the StorageManager."""
         if self.result_type is None:
             raise TypeError(
                 f"Cannot store result: {self.__class__.__name__} has no result_type defined."
@@ -275,20 +289,11 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             name,
         )
 
-    # ---------------- Abstract Work ---------------- #
+    # ----------------- Abstract Work ----------------- #
     @abstractmethod
     def work(self, *args: Any, **kwargs: Any) -> ResultT:
-        """
-        Abstract method that defines how the agent performs its task.
-        Should typically call apply_style().
-
-        Args:
-            *args: Variable positional arguments
-            **kwargs: Variable keyword arguments
-
-        Returns:
-            ResultT: The result type specific to this agent subclass
-        """
+        """Abstract method that defines how the agent performs its task."""
+        pass
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} name={self.name}>"
