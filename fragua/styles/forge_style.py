@@ -5,18 +5,17 @@ Contains common utilities for transformations.
 
 from abc import abstractmethod
 from typing import Any, Generic, Dict, Type, Callable
-from datetime import datetime, timezone
 from pandas import DataFrame
 from pandas.api.types import is_numeric_dtype
-
-from fragua.utils.metrics import calculate_checksum
 from fragua.core.base_style import BaseStyle, ResultT
 from fragua.params.forge_params import ForgeParamsT
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-
+# ---------------------------------------------------------------------- #
+# Registry for dynamic loading
+# ---------------------------------------------------------------------- #
 FORGESTYLE_REGISTRY: Dict[str, Type["ForgeStyle[Any, Any]"]] = {}
 
 
@@ -35,27 +34,30 @@ def register_forge_style(
     return wrapper
 
 
+# ---------------------------------------------------------------------- #
+# Base ForgeStyle
+# ---------------------------------------------------------------------- #
 class ForgeStyle(BaseStyle[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT]):
     """
     Base class for ForgeStyles.
 
-    Provides a pipeline: validate_params -> forge -> validate_result -> postprocess.
+    Standard pipeline provided by BaseStyle:
+        validate_params -> _run -> validate_result -> postprocess
     """
 
-    def __init__(self, style_name: str) -> None:
-        super().__init__(style_name)
-        self.metadata: Dict[str, Any] = {}
-
     # ---------------------------------------------------------------------- #
-    # Abstract transformation
+    # Abstract forge method (subclasses implement this)
     # ---------------------------------------------------------------------- #
     @abstractmethod
     def forge(self, params: ForgeParamsT) -> ResultT:
-        """Transform the input data according to params."""
+        """
+        Transform the input data according to params.
+        Must be implemented by subclasses.
+        """
         raise NotImplementedError
 
     # ---------------------------------------------------------------------- #
-    # Validation hooks
+    # Optional parameter validation hook
     # ---------------------------------------------------------------------- #
     def validate_params(self, params: ForgeParamsT) -> ForgeParamsT:
         """Validate input parameters before forging."""
@@ -63,36 +65,17 @@ class ForgeStyle(BaseStyle[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT
         return params
 
     # ---------------------------------------------------------------------- #
-    # Main pipeline
+    # Internal _run implementation for BaseStyle
     # ---------------------------------------------------------------------- #
-    def use(self, params: ForgeParamsT) -> ResultT:
-        """Main Forge pipeline: validate_params -> forge -> validate_result -> postprocess."""
-        if params is None:
-            raise ValueError("Input params cannot be None")
+    def _run(self, params: ForgeParamsT) -> ResultT:
+        """
+        Executes the ForgeStyle transformation step.
 
-        logger.debug("Starting ForgeStyle '%s' pipeline.", self.style_name)
-
-        try:
-            # Validate input parameters
-            params = self.validate_params(params)
-            logger.debug("%s: validate_params() step completed.", self.style_name)
-
-            # Transform / forge
-            result = self.forge(params)
-            logger.debug("%s: forge() step completed.", self.style_name)
-
-            # Validate result
-            result = self.validate_result(result)
-            logger.debug("%s: validate_result() step completed.", self.style_name)
-
-            # Optional postprocess
-            result = self.postprocess(result)
-            logger.debug("%s: postprocess() step completed.", self.style_name)
-
-        except Exception as e:
-            self.log_error(e)
-            raise
-
+        This method is called by BaseStyle.use().
+        """
+        logger.debug("Starting ForgeStyle '%s' transformation.", self.style_name)
+        result = self.forge(params)
+        logger.debug("ForgeStyle '%s' transformation completed.", self.style_name)
         return result
 
     # ---------------------------------------------------------------------- #
@@ -118,16 +101,3 @@ class ForgeStyle(BaseStyle[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT
         for col in df.select_dtypes(include="object").columns:
             df[col] = df[col].astype(str).str.strip().str.lower()
         logger.info("%s: String columns standardized.", self.style_name)
-
-    def _add_metadata(self, df: DataFrame) -> DataFrame:
-        """Add metadata columns to the transformed dataframe."""
-        checksum_value = calculate_checksum(df)
-        df["_forge_name"] = self.style_name
-        df["_transform_timestamp"] = datetime.now(timezone.utc)
-        df["_checksum"] = checksum_value
-
-        self.metadata["checksum"] = checksum_value
-        logger.debug(
-            "%s: Metadata added with checksum %s.", self.style_name, checksum_value
-        )
-        return df

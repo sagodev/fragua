@@ -25,8 +25,6 @@ class MLForgeStyle(ForgeStyle[MLForgeParamsT, DataFrame]):
 
     def forge(self, params: MLForgeParamsT) -> DataFrame:
         df = params.data
-        if not isinstance(df, DataFrame):
-            raise TypeError("MLForgeStyle requires a pandas DataFrame")
 
         df = df.copy()
 
@@ -35,7 +33,6 @@ class MLForgeStyle(ForgeStyle[MLForgeParamsT, DataFrame]):
         self._encode_categoricals(df)
         self._treat_outliers(df, params.outlier_threshold)
         self._scale_numeric(df)
-        self._add_metadata(df)
 
         logger.info(
             "%s: forge process completed with %d columns.",
@@ -83,8 +80,6 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, DataFrame]):
 
     def forge(self, params: ReportForgeParamsT) -> DataFrame:
         df = params.data
-        if not isinstance(df, DataFrame):
-            raise TypeError("ReportForgeStyle requires a pandas DataFrame")
 
         df = df.copy()
 
@@ -92,7 +87,6 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, DataFrame]):
         self._standardize(df)
         self._add_derived_columns(df, params.derived_columns)
         self._format_for_report(df, params.rounding_precision)
-        self._add_metadata(df)
 
         logger.info(
             "%s: forge process completed with %d rows.", self.style_name, len(df)
@@ -143,8 +137,6 @@ class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParamsT, DataFrame]):
 
     def forge(self, params: AnalysisForgeParamsT) -> DataFrame:
         df = params.data
-        if not isinstance(df, DataFrame):
-            raise TypeError("AnalysisForgeStyle requires a pandas DataFrame")
 
         df = df.copy()
         groupby_cols = params.groupby_cols or []
@@ -164,6 +156,5 @@ class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParamsT, DataFrame]):
         if sort_by:
             df = df.sort_values(by=sort_by)
 
-        self._add_metadata(df)
         logger.info("%s: analysis completed with %d rows.", self.style_name, len(df))
         return df
