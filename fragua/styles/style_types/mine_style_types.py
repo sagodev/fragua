@@ -25,7 +25,7 @@ from fragua.params.mine_params import (
 class CSVMineStyle(MineStyle[CSVMineParamsT, DataFrame]):
     """Extracts data from CSV files."""
 
-    def extract(self, params: CSVMineParamsT) -> DataFrame:
+    def mine(self, params: CSVMineParamsT) -> DataFrame:
         path = params.path
         if not path:
             raise ValueError(f"{self.style_name}: 'path' is required in params")
@@ -43,7 +43,7 @@ class CSVMineStyle(MineStyle[CSVMineParamsT, DataFrame]):
 class ExcelMineStyle(MineStyle[ExcelMineParamsT, DataFrame]):
     """Extracts data from Excel files."""
 
-    def extract(self, params: ExcelMineParamsT) -> DataFrame:
+    def mine(self, params: ExcelMineParamsT) -> DataFrame:
         path = params.path
         if not path:
             raise ValueError(f"{self.style_name}: 'path' is required in params")
@@ -62,7 +62,7 @@ class ExcelMineStyle(MineStyle[ExcelMineParamsT, DataFrame]):
 class SQLMineStyle(MineStyle[SQLMineParamsT, DataFrame]):
     """Extracts data from SQL databases."""
 
-    def extract(self, params: SQLMineParamsT) -> DataFrame:
+    def mine(self, params: SQLMineParamsT) -> DataFrame:
         connection_string = params.connection_string
         query = params.query
         if not connection_string or not query:
@@ -87,7 +87,7 @@ class SQLMineStyle(MineStyle[SQLMineParamsT, DataFrame]):
 class APIMineStyle(MineStyle[APIMineParamsT, DataFrame]):
     """Extracts data from REST APIs."""
 
-    def extract(self, params: APIMineParamsT) -> DataFrame:
+    def mine(self, params: APIMineParamsT) -> DataFrame:
         url = params.url
         if not url:
             raise ValueError(f"{self.style_name}: 'url' is required in params")

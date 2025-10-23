@@ -49,7 +49,7 @@ class MineStyle(BaseStyle[MineParamsT, ResultT], Generic[MineParamsT, ResultT]):
     # Abstract extraction method (subclasses implement this)
     # ---------------------------------------------------------------------- #
     @abstractmethod
-    def extract(self, params: MineParamsT) -> ResultT:
+    def mine(self, params: MineParamsT) -> ResultT:
         """
         Extract data according to source parameters.
         Must be implemented by subclasses.
@@ -75,6 +75,6 @@ class MineStyle(BaseStyle[MineParamsT, ResultT], Generic[MineParamsT, ResultT]):
         This method is called by BaseStyle.use().
         """
         logger.debug("Starting MineStyle '%s' extraction.", self.style_name)
-        result = self.extract(params)
+        result = self.mine(params)
         logger.debug("MineStyle '%s' extraction completed.", self.style_name)
         return result
