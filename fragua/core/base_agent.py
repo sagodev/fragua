@@ -34,17 +34,17 @@ if TYPE_CHECKING:
 
 # Generic type variables
 StyleT = TypeVar("StyleT", bound=BaseStyle[Any, Any])
-ResultT = TypeVar("ResultT")
+StorageT = TypeVar("StorageT", bound=BaseStorage[Any])
 
 logger = get_logger("BaseAgent")
 
 
-class BaseAgent(ABC, Generic[StyleT, ResultT]):
+class BaseAgent(ABC, Generic[StyleT, StorageT]):
     """Abstract base class for ETL agents with built-in support
     for learning and applying registered styles."""
 
     style_registry: Dict[str, Type[StyleT]] = {}
-    result_type: Optional[Type[ResultT]] = None
+    result_type: Optional[Type[StorageT]] = None
 
     def __init__(self, name: str):
         self.name: str = name
@@ -181,7 +181,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
     # ----------------- Apply Style ----------------- #
     def _wrap_storage(
         self, result: Any, operation_metadata: Optional[dict[str, Any]] = None
-    ) -> ResultT:
+    ) -> StorageT:
         """Convert raw style output into the appropriate storage object and attach metadata."""
         if self.result_type is None:
             raise TypeError(
@@ -189,7 +189,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             )
 
         type_name = self.result_type.__name__.lower()
-        storage_obj: BaseStorage[Any] = None
+        storage_obj: Optional[BaseStorage[Any]] = None
 
         match type_name:
             case "wagon":
@@ -207,7 +207,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             storage_obj.attach_metadata(operation_metadata)
             logger.debug("[%s] Attached metadata to %s", self.name, storage_obj.name)
 
-        return cast(ResultT, storage_obj)
+        return cast(StorageT, storage_obj)
 
     def _normalize_input(self, input_data: Any) -> Any:
         """Convert input data into a format compatible with MineStyle."""
@@ -225,7 +225,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         logger.debug("[%s] Input normalization returned original data", self.name)
         return input_data
 
-    def apply_style(self, style_name: str, data: Any) -> ResultT:
+    def apply_style(self, style_name: str, data: Any) -> StorageT:
         """Apply a learned style and record operation metadata."""
         if style_name not in self.known_styles:
             raise ValueError(f"Style '{style_name}' not learned")
@@ -251,7 +251,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
 
     # ----------------- Storage Interaction ----------------- #
     def store_result(
-        self, storage_manager: "StorageManager", result: ResultT, name: str
+        self, storage_manager: "StorageManager", result: StorageT, name: str
     ) -> None:
         """Store a result object in the StorageManager."""
         if self.result_type is None:
@@ -283,7 +283,7 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
 
     # ----------------- Abstract Work ----------------- #
     @abstractmethod
-    def work(self, *args: Any, **kwargs: Any) -> ResultT:
+    def work(self, *args: Any, **kwargs: Any) -> StorageT:
         """Abstract method that defines how the agent performs its task."""
         raise NotImplementedError
 
