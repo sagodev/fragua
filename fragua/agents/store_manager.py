@@ -4,7 +4,7 @@ Manages Wagons, Boxes, and Containers using in-memory Store.
 Handles metadata, checksums, logging, and unified reporting.
 """
 
-from typing import Optional, Mapping, Dict, Any, Union, Literal, Generic
+from typing import Optional, Mapping, cast, Any, Union, Literal, Generic
 
 from fragua.store.store import Store, StorageT, ObjType
 from fragua.utils.metrics import (
@@ -37,40 +37,38 @@ class StoreManager(Generic[StorageT]):
         self,
         obj_type: ObjType,
         obj: StorageT,
-        name: str,
+        name: Optional[str] = None,
         agent_name: Optional[str] = None,
         overwrite: bool = False,
     ) -> None:
         """
         Save a single object into the store, enriching its metadata
         with store manager info and agent name.
-
-        Args:
-            obj_type: Type of the object ('wagon', 'box', or 'container').
-            name: Name of the object in the store.
-            obj: Storage object to save.
-            agent_name: Name of the agent performing the save.
-            overwrite: Whether to overwrite if object already exists.
         """
-        if obj_type not in self.store._store:
-            raise ValueError(f"Object type '{obj_type}' is not managed by this Store.")
+        store_name = name or getattr(obj, "name", None)
+        if store_name is None:
+            raise ValueError("Object must have a name or provide 'name' argument.")
 
-        # Check overwrite
-        if self.store.exists(obj_type, name) and not overwrite:
+        if self.store.exists(obj_type, store_name) and not overwrite:
             logger.warning(
                 "[%s] %s '%s' exists. Use overwrite=True to replace.",
                 self.name,
                 obj_type,
-                name,
+                store_name,
             )
             return
 
         self._generate_save_metadata(obj, agent_name)
 
-        self.store.add(obj_type, name, obj)
+        # Corregido: obj va en segundo lugar
+        self.store.add(obj_type, obj, store_name, overwrite=overwrite)
 
         logger.info(
-            "[%s] Saved %s '%s' by agent '%s'", self.name, obj_type, name, agent_name
+            "[%s] Saved %s '%s' by agent '%s'",
+            self.name,
+            obj_type,
+            store_name,
+            agent_name,
         )
 
     def get(
@@ -109,12 +107,19 @@ class StoreManager(Generic[StorageT]):
         """Check existence of a specific object."""
         return self.store.exists(obj_type, name)
 
-    def list_all(self) -> Dict[str, Mapping[str, Dict[str, Any]]]:
-        """List all objects in the store and their metadata."""
-        result: Dict[str, Mapping[str, Dict[str, Any]]] = {}
-        for obj_type in self.store._store:
-            result[obj_type] = self.store.list_all(obj_type)[obj_type]
-        return result
+    def list_all(
+        self, obj_type: Optional[ObjType] = None
+    ) -> Mapping[ObjType, Mapping[str, dict[str, object]]]:
+        """
+        Return metadata for all stored objects, optionally filtered by type.
+
+        Args:
+            obj_type: Filter by object type. If None, return all types.
+
+        Returns:
+            Dictionary of type -> object name -> metadata.
+        """
+        return self.store.list_all(obj_type)
 
     def __repr__(self) -> str:
         """String representation of the StoreManager."""

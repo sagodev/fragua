@@ -65,6 +65,7 @@ class Store(Generic[StorageT]):
         self._store: Dict[str, Dict[str, StorageT]] = {t: {} for t in types_to_store}
 
     # ------------------- Store Operations ------------------- #
+
     def add(
         self,
         obj_type: ObjType,
@@ -74,6 +75,7 @@ class Store(Generic[StorageT]):
     ) -> None:
         """
         Add a BaseStorage object to the store without modifying its metadata.
+        Ensures the store key is always a string.
 
         Args:
             obj_type (ObjType): Type of the object ('wagon', 'box', 'container').
@@ -84,12 +86,18 @@ class Store(Generic[StorageT]):
         if obj_type not in self._store:
             raise ValueError(f"Object type '{obj_type}' is not allowed in this store.")
 
+        # Determine the key name
         store_name = name or getattr(obj, "name", None)
         if store_name is None:
             raise ValueError(
-                "Storage object must have a name or provide 'name' argument."
+                "Storage object must have a 'name' attribute or provide 'name' argument."
             )
 
+        # Ensure it's a string
+        if not isinstance(store_name, str):
+            store_name = str(store_name)
+
+        # Check for existing object
         if self.exists(obj_type, store_name) and not overwrite:
             logger.warning(
                 "[%s] %s '%s' already exists. Use overwrite=True to replace.",
@@ -99,6 +107,7 @@ class Store(Generic[StorageT]):
             )
             return
 
+        # Add the object
         self._store[obj_type][store_name] = obj
         logger.debug(
             "[%s] Added %s '%s' to store", self.store_name, obj_type, store_name
@@ -161,12 +170,6 @@ class Store(Generic[StorageT]):
     ) -> Mapping[ObjType, Mapping[str, dict[Any, Any]]]:
         """
         Return metadata of all stored BaseStorage objects.
-
-        Args:
-            obj_type (ObjType, optional): Filter by object type. Defaults to all types.
-
-        Returns:
-            Mapping of type -> object name -> metadata dictionary.
         """
         types_to_list = [obj_type] if obj_type else self._store.keys()
         result: dict[str, dict[str, dict[Any, Any]]] = {}
@@ -174,7 +177,7 @@ class Store(Generic[StorageT]):
         for t in types_to_list:
             objs_metadata: dict[str, dict[Any, Any]] = {}
             for name, obj in self._store[t].items():
-                # Solo devolver metadata si existe
+                # name ya es str
                 if hasattr(obj, "metadata") and isinstance(obj.metadata, dict):
                     objs_metadata[name] = obj.metadata
                 else:
