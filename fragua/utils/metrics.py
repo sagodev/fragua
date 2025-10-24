@@ -12,6 +12,8 @@ import json
 from datetime import datetime, timezone
 from typing import Any, cast, Optional
 import pandas as pd
+from fragua.core.base_agent import BaseAgent
+from fragua.core.base_params import BaseParams
 from fragua.core.base_storage import BaseStorage
 from fragua.utils.logger import get_logger
 
@@ -64,6 +66,23 @@ def get_local_time_and_offset() -> tuple[str, str]:
     if len(timezone_offset) == 5:
         timezone_offset = timezone_offset[:3] + ":" + timezone_offset[3:]
     return local_time_str, timezone_offset
+
+
+def normalize_input(agent: BaseAgent[Any, Any], input_data: Any) -> Any:
+    """Convert input data into a format compatible with a BaseStyle."""
+    if isinstance(input_data, BaseStorage):
+        if input_data.data is None:
+            raise ValueError(f"{input_data.name} has no data to process")
+        logger.debug("[%s] Normalized input from BaseStorage", agent.name)
+        return input_data.data
+    if isinstance(input_data, pd.DataFrame):
+        logger.debug("[%s] Normalized input as DataFrame", agent.name)
+        return input_data
+    if isinstance(input_data, BaseParams):
+        logger.debug("[%s] Normalized input as BaseParams", agent.name)
+        return input_data
+    logger.debug("[%s] Input normalization returned original data", agent.name)
+    return input_data
 
 
 def add_metadata_to_storage(
