@@ -8,6 +8,7 @@ with type validation, checksum calculation, and metadata tracking.
 from typing import Optional, Callable, TypeVar, Generic
 import pandas as pd
 from fragua.utils.metrics import calculate_checksum
+from fragua.utils.logger import get_logger
 
 T = TypeVar("T")
 
@@ -27,6 +28,9 @@ class BaseStorage(Generic[T]):
         self._operation_metadata: dict[str, object] = (
             {}
         )  # Metadata from agent operation
+
+        self.logger = get_logger(self.__class__.__name__)
+        self.logger.info("Creating BaseStorage '%s'", self.name)
 
         if data is not None:
             self.store(data)
@@ -53,9 +57,14 @@ class BaseStorage(Generic[T]):
                 )
 
         self.data = data
-
         # Calculate checksum
         self._checksum = calculate_checksum(self.data)
+        self.logger.info(
+            "[%s] Stored data with checksum: %s, shape: %s",
+            self.name,
+            self._checksum,
+            getattr(self.data, "shape", None),
+        )
 
     def retrieve(self) -> Optional[T]:
         """Retrieve stored data."""
@@ -74,6 +83,9 @@ class BaseStorage(Generic[T]):
             metadata (dict): Dictionary containing metadata from the agent operation.
         """
         self._operation_metadata.update(metadata)
+        self.logger.info(
+            "[%s] Attached operation metadata: %s", self.name, self.metadata
+        )
 
     @property
     def metadata(self) -> dict[str, object]:
