@@ -12,7 +12,6 @@ import json
 from datetime import datetime, timezone
 from typing import Any, cast, Optional, Dict
 import pandas as pd
-from fragua.core.base_params import BaseParams
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -67,27 +66,35 @@ def get_local_time_and_offset() -> tuple[str, str]:
 
 
 def normalize_input(agent: Any, input_data: Any) -> Any:
-    """Convert input data into a format compatible with a BaseStyle."""
-    if hasattr(input_data, "data") and input_data.data is not None:
-        logger.debug(
-            "[%s] Normalized input from BaseStorage-like object",
-            getattr(agent, "name", "agent"),
-        )
+    """
+    Convert input data into a format compatible with BaseStyle.
+
+    - If input is BaseStorage, return its `.data`.
+    - If input is DataFrame or BaseParams, return as is.
+    - Otherwise, return the original object.
+    """
+    from fragua.core.base_storage import BaseStorage
+    from fragua.core.base_params import BaseParams
+
+    if isinstance(input_data, BaseStorage):
+        if input_data.data is None:
+            raise ValueError(f"{input_data.name} has no data to process")
+        agent_name = getattr(agent, "name", "unknown")
+        logger.debug("[%s] Normalized input from BaseStorage", agent_name)
         return input_data.data
+
     if isinstance(input_data, pd.DataFrame):
-        logger.debug(
-            "[%s] Normalized input as DataFrame", getattr(agent, "name", "agent")
-        )
+        agent_name = getattr(agent, "name", "unknown")
+        logger.debug("[%s] Input is already a DataFrame", agent_name)
         return input_data
-    if hasattr(input_data, "__dict__") and isinstance(input_data, BaseParams):
-        logger.debug(
-            "[%s] Normalized input as BaseParams", getattr(agent, "name", "agent")
-        )
+
+    if isinstance(input_data, BaseParams):
+        agent_name = getattr(agent, "name", "unknown")
+        logger.debug("[%s] Input is BaseParams", agent_name)
         return input_data
-    logger.debug(
-        "[%s] Input normalization returned original data",
-        getattr(agent, "name", "agent"),
-    )
+
+    agent_name = getattr(agent, "name", "unknown")
+    logger.debug("[%s] Input normalization returned original data", agent_name)
     return input_data
 
 
