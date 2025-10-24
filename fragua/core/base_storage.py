@@ -5,7 +5,6 @@ Provides a robust foundation for Box, Container, and Wagon classes
 with type validation, checksum calculation, and metadata tracking.
 """
 
-from datetime import datetime, timezone
 from typing import Optional, Callable, TypeVar, Generic
 import pandas as pd
 from fragua.utils.metrics import calculate_checksum
@@ -25,7 +24,6 @@ class BaseStorage(Generic[T]):
         self.name = name
         self.data: Optional[T] = None
         self._checksum: Optional[str] = None
-        self._stored_at: Optional[datetime] = None
         self._operation_metadata: dict[str, object] = (
             {}
         )  # Metadata from agent operation
@@ -55,7 +53,6 @@ class BaseStorage(Generic[T]):
                 )
 
         self.data = data
-        self._stored_at = datetime.now(timezone.utc)
 
         # Calculate checksum
         self._checksum = calculate_checksum(self.data)
@@ -68,13 +65,6 @@ class BaseStorage(Generic[T]):
     def checksum(self) -> Optional[str]:
         """Get the checksum of the stored data."""
         return self._checksum
-
-    @property
-    def stored_at(self) -> Optional[str]:
-        """Get the timestamp when the data was stored as a readable string."""
-        if self._stored_at is None:
-            return None
-        return self._stored_at.strftime("%Y-%m-%d %H:%M:%S UTC")
 
     def attach_metadata(self, metadata: dict[str, object]) -> None:
         """
@@ -96,7 +86,6 @@ class BaseStorage(Generic[T]):
         base_meta = {
             "storage_name": self.name,
             "type": self.__class__.__name__.lower(),
-            "UTC_time": self.stored_at,
             "rows": getattr(self.data, "shape", (None, None))[0],
             "columns": getattr(self.data, "shape", (None, None))[1],
             "checksum": self._checksum,
