@@ -158,19 +158,27 @@ class Store(Generic[StorageT]):
 
     def list_all(
         self, obj_type: Optional[ObjType] = None
-    ) -> Mapping[ObjType, Mapping[str, Dict[Any, Any]]]:
+    ) -> Mapping[ObjType, Mapping[str, dict[Any, Any]]]:
         """
-        List metadata of all stored BaseStorage objects.
+        Return metadata of all stored BaseStorage objects.
 
         Args:
             obj_type (ObjType, optional): Filter by object type. Defaults to all types.
 
         Returns:
-            Mapping of type -> object name -> metadata Dictionary.
+            Mapping of type -> object name -> metadata dictionary.
         """
         types_to_list = [obj_type] if obj_type else self._store.keys()
-        result = {
-            t: {name: obj.metadata for name, obj in self._store[t].items()}
-            for t in types_to_list
-        }
-        return cast(Mapping[ObjType, Mapping[str, Dict[Any, Any]]], result)
+        result: dict[str, dict[str, dict[Any, Any]]] = {}
+
+        for t in types_to_list:
+            objs_metadata: dict[str, dict[Any, Any]] = {}
+            for name, obj in self._store[t].items():
+                # Solo devolver metadata si existe
+                if hasattr(obj, "metadata") and isinstance(obj.metadata, dict):
+                    objs_metadata[name] = obj.metadata
+                else:
+                    objs_metadata[name] = {}
+            result[t] = objs_metadata
+
+        return cast(Mapping[ObjType, Mapping[str, dict[Any, Any]]], result)
