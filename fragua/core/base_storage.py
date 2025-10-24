@@ -1,117 +1,53 @@
 """
-Base storage module for Fragua ETL.
-
-Provides a robust foundation for Box, Container, and Wagon classes
-with type validation, checksum calculation, and metadata tracking.
+Base storage class for all storage objects in Fragua (Wagon, Box, Container).
 """
 
-from typing import Optional, Callable, TypeVar, Generic
-import pandas as pd
-from fragua.utils.metrics import calculate_checksum
+from typing import Generic, Optional, TypeVar
 from fragua.utils.logger import get_logger
+from fragua.utils.metrics import (
+    add_metadata_to_storage,
+    generate_metadata,
+)
 
 T = TypeVar("T")
 
+logger = get_logger(__name__)
+
 
 class BaseStorage(Generic[T]):
-    """
-    Base class for storage objects like Box, Container, and Wagon.
-
-    Stores data with optional postprocessing, maintains checksum
-    and metadata for auditing and validation.
-    """
+    """Core storage unit containing data and unified metadata handling."""
 
     def __init__(self, name: str, data: Optional[T] = None):
-        self.name = name
-        self.data: Optional[T] = None
-        self._checksum: Optional[str] = None
-        self._operation_metadata: dict[str, object] = (
-            {}
-        )  # Metadata from agent operation
-
-        self.logger = get_logger(self.__class__.__name__)
-        self.logger.info("Creating BaseStorage '%s'", self.name)
-
-        if data is not None:
-            self.store(data)
-
-    def store(self, data: T, postprocess: Optional[Callable[[T], T]] = None) -> None:
         """
-        Store data with optional postprocessing and update checksum.
-        """
-        if data is None:
-            raise ValueError(f"{self.__class__.__name__}: Cannot store None data")
-
-        if isinstance(data, list):
-            data = pd.DataFrame(data)
-        elif not isinstance(data, pd.DataFrame):
-            raise TypeError(
-                f"{self.__class__.__name__}: data must be a list or DataFrame"
-            )
-
-        if postprocess:
-            data = postprocess(data)
-            if data is None:
-                raise ValueError(
-                    f"{self.__class__.__name__}: Postprocess returned None"
-                )
-
-        self.data = data
-        # Calculate checksum
-        self._checksum = calculate_checksum(self.data)
-        self.logger.info(
-            "[%s] Stored data with checksum: %s, shape: %s",
-            self.name,
-            self._checksum,
-            getattr(self.data, "shape", None),
-        )
-
-    def retrieve(self) -> Optional[T]:
-        """Retrieve stored data."""
-        return self.data
-
-    @property
-    def checksum(self) -> Optional[str]:
-        """Get the checksum of the stored data."""
-        return self._checksum
-
-    def attach_metadata(self, metadata: dict[str, object]) -> None:
-        """
-        Attach operation-related metadata to this storage object.
+        Initialize a BaseStorage instance.
 
         Args:
-            metadata (dict): Dictionary containing metadata from the agent operation.
+            name: Name of the storage object.
+            data: Optional data payload.
         """
-        self._operation_metadata.update(metadata)
-        self.logger.info(
-            "[%s] Attached operation metadata: %s", self.name, self.metadata
-        )
+        self.name = name
+        self.data: Optional[T] = data
+        self._metadata: dict[str, object] = {}
 
+        if data is not None:
+            self._generate_base_metadata()
+
+    def _generate_base_metadata(self) -> None:
+        """Generate and attach base metadata."""
+        metadata = generate_metadata(self, metadata_type="base")
+        add_metadata_to_storage(self, metadata)
+
+    # -------------------- METADATA HANDLING -------------------- #
     @property
     def metadata(self) -> dict[str, object]:
-        """
-        Return combined metadata, separated into 'base' and 'operation'.
+        """Return the current metadata of the storage."""
+        return self._metadata
 
-        Returns:
-            dict: Dictionary with 'base' and 'operation' keys.
-        """
-        base_meta = {
-            "storage_name": self.name,
-            "type": self.__class__.__name__.lower(),
-            "rows": getattr(self.data, "shape", (None, None))[0],
-            "columns": getattr(self.data, "shape", (None, None))[1],
-            "checksum": self._checksum,
-        }
+    @metadata.setter
+    def metadata(self, value: dict[str, object]) -> None:
+        self._metadata = value
 
-        return {"base": base_meta, "operation": self._operation_metadata}
-
+    # -------------------- REPRESENTATION -------------------- #
     def __repr__(self) -> str:
-        """Return a concise, informative string representation of the storage object."""
-        rows = getattr(self.data, "shape", (None, None))[0]
-        cols = getattr(self.data, "shape", (None, None))[1]
-        return (
-            f"<{self.__class__.__name__} name={self.name!r}, "
-            f"type={type(self.data).__name__}, "
-            f"rows={rows}, cols={cols}, "
-            f"checksum={self._checksum}>"
-        )
+        """String representation showing the name and type."""
+        return f"<{self.__class__.__name__} name={self.name}>"
