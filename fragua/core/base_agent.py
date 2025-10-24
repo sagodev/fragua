@@ -66,53 +66,45 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
 
     def _determine_input_name(self, input_obj: Any) -> str | None:
         """Extract a meaningful input name for the operation metadata with lazy logging."""
+        result = None  # Store the determined name
+
         match input_obj:
+            # Direct BaseStorage (Wagon, Box, Container)
             case BaseStorage():
-                logger.debug(
-                    "[%s] Input detected as BaseStorage: %s", self.name, input_obj.name
-                )
-                return input_obj.name
+                result = input_obj.name
+                logger.debug("Detected BaseStorage input: %s", result)
 
+            # Path or string path
             case str() | Path():
-                file_name = Path(input_obj).name
-                logger.debug(
-                    "[%s] Input detected as file path: %s", self.name, file_name
-                )
-                return file_name
+                result = Path(input_obj).name
+                logger.debug("Detected file path input: %s", result)
 
-            case _ if hasattr(input_obj, "path") and isinstance(
-                input_obj.path, (str, Path)
-            ):
-                file_name = Path(input_obj.path).name
-                logger.debug("[%s] Input has .path attribute: %s", self.name, file_name)
-                return file_name
-
-            case _ if hasattr(input_obj, "data") and isinstance(
-                input_obj.data, BaseStorage
-            ):
-                logger.debug(
-                    "[%s] Input .data is BaseStorage: %s",
-                    self.name,
-                    input_obj.data.name,
-                )
-                return input_obj.data.name
-
-            case _ if hasattr(input_obj, "data") and isinstance(
-                input_obj.data, pd.DataFrame
-            ):
-                logger.debug("[%s] Input .data is DataFrame", self.name)
-                return "data"
-
-            case _ if hasattr(input_obj, "name"):
-                name = str(input_obj.name)
-                logger.debug("[%s] Input has .name attribute: %s", self.name, name)
-                return name
-
+            # Fallback cases
             case _:
-                logger.debug(
-                    "[%s] Input type not recognized; returning None", self.name
-                )
-                return None
+                if hasattr(input_obj, "path") and isinstance(
+                    input_obj.path, (str, Path)
+                ):
+                    result = Path(input_obj.path).name
+                    logger.debug("Detected object with .path attribute: %s", result)
+                elif hasattr(input_obj, "data") and isinstance(
+                    input_obj.data, BaseStorage
+                ):
+                    result = input_obj.data.name
+                    logger.debug(
+                        "Detected object with .data as BaseStorage: %s", result
+                    )
+                elif hasattr(input_obj, "data") and isinstance(
+                    input_obj.data, pd.DataFrame
+                ):
+                    result = "data"
+                    logger.debug("Detected object with .data as DataFrame")
+                elif hasattr(input_obj, "name"):
+                    result = str(input_obj.name)
+                    logger.debug("Detected object with .name attribute: %s", result)
+                else:
+                    logger.debug("Input type not recognized; returning None")
+
+        return result
 
     def _determine_output_type(self, output_obj: Any) -> str | None:
         """Extract a meaningful output type for the operation metadata."""
