@@ -10,11 +10,9 @@ by serializing the data in a consistent way.
 import hashlib
 import json
 from datetime import datetime, timezone
-from typing import Any, cast, Optional
+from typing import Any, cast, Optional, Dict
 import pandas as pd
-from fragua.core.base_agent import BaseAgent
 from fragua.core.base_params import BaseParams
-from fragua.core.base_storage import BaseStorage
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -68,25 +66,89 @@ def get_local_time_and_offset() -> tuple[str, str]:
     return local_time_str, timezone_offset
 
 
-def normalize_input(agent: BaseAgent[Any, Any], input_data: Any) -> Any:
+def normalize_input(agent: Any, input_data: Any) -> Any:
     """Convert input data into a format compatible with a BaseStyle."""
-    if isinstance(input_data, BaseStorage):
-        if input_data.data is None:
-            raise ValueError(f"{input_data.name} has no data to process")
-        logger.debug("[%s] Normalized input from BaseStorage", agent.name)
+    if hasattr(input_data, "data") and input_data.data is not None:
+        logger.debug(
+            "[%s] Normalized input from BaseStorage-like object",
+            getattr(agent, "name", "agent"),
+        )
         return input_data.data
     if isinstance(input_data, pd.DataFrame):
-        logger.debug("[%s] Normalized input as DataFrame", agent.name)
+        logger.debug(
+            "[%s] Normalized input as DataFrame", getattr(agent, "name", "agent")
+        )
         return input_data
-    if isinstance(input_data, BaseParams):
-        logger.debug("[%s] Normalized input as BaseParams", agent.name)
+    if hasattr(input_data, "__dict__") and isinstance(input_data, BaseParams):
+        logger.debug(
+            "[%s] Normalized input as BaseParams", getattr(agent, "name", "agent")
+        )
         return input_data
-    logger.debug("[%s] Input normalization returned original data", agent.name)
+    logger.debug(
+        "[%s] Input normalization returned original data",
+        getattr(agent, "name", "agent"),
+    )
     return input_data
 
 
+def generate_metadata(
+    obj: Any,
+    *,
+    metadata_type: str,
+    input_name: Optional[str] = None,
+    style_name: Optional[str] = None,
+    agent_name: Optional[str] = None,
+    store_manager_name: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Generate metadata dictionary for objects with .data and .name.
+
+    metadata_type: 'base', 'operation', or 'save'
+    """
+    data_attr = getattr(obj, "data", obj)
+    rows, columns = getattr(data_attr, "shape", (None, None))
+    checksum = calculate_checksum(data_attr)
+    local_time, timezone_offset = get_local_time_and_offset()
+
+    base_metadata: dict[str, Any] = {
+        "local_time": local_time,
+        "timezone_offset": timezone_offset,
+        "rows": rows,
+        "columns": columns,
+        "checksum": checksum,
+    }
+
+    name_attr = getattr(obj, "name", None)
+    class_type = obj.__class__.__name__.lower()
+
+    if metadata_type == "base":
+        base_metadata.update({"name": name_attr, "type": class_type})
+    elif metadata_type == "operation":
+        base_metadata.update(
+            {
+                "input_name": input_name,
+                "style_name": style_name,
+                "output_name": name_attr,
+                "output_type": class_type,
+                "operation_checksum": checksum,
+            }
+        )
+    elif metadata_type == "save":
+        base_metadata.update(
+            {
+                "store_manager": store_manager_name,
+                "agent_name": agent_name,
+                "save_checksum": checksum,
+            }
+        )
+    else:
+        raise ValueError(f"Unknown metadata_type '{metadata_type}'")
+
+    return base_metadata
+
+
 def add_metadata_to_storage(
-    storage: BaseStorage[Any],
+    storage: Any,
     metadata: Optional[dict[str, object]] = None,
 ) -> None:
     """
