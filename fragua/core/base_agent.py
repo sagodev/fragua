@@ -65,32 +65,54 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         return local_time_str, timezone_offset
 
     def _determine_input_name(self, input_obj: Any) -> str | None:
-        """Extract a meaningful input name for the operation metadata."""
-        # If BaseStorage (Wagon, Box, Container)
-        if isinstance(input_obj, BaseStorage):
-            return input_obj.name
+        """Extract a meaningful input name for the operation metadata with lazy logging."""
+        match input_obj:
+            case BaseStorage():
+                logger.debug(
+                    "[%s] Input detected as BaseStorage: %s", self.name, input_obj.name
+                )
+                return input_obj.name
 
-        # If string or Path (file)
-        if isinstance(input_obj, (str, Path)):
-            return Path(input_obj).name
+            case str() | Path():
+                file_name = Path(input_obj).name
+                logger.debug(
+                    "[%s] Input detected as file path: %s", self.name, file_name
+                )
+                return file_name
 
-        # If params with a path attribute
-        if hasattr(input_obj, "path") and isinstance(input_obj.path, (str, Path)):
-            return Path(input_obj.path).name
+            case _ if hasattr(input_obj, "path") and isinstance(
+                input_obj.path, (str, Path)
+            ):
+                file_name = Path(input_obj.path).name
+                logger.debug("[%s] Input has .path attribute: %s", self.name, file_name)
+                return file_name
 
-        # If params with a data attribute that is BaseStorage
-        if hasattr(input_obj, "data") and isinstance(input_obj.data, BaseStorage):
-            return input_obj.data.name
+            case _ if hasattr(input_obj, "data") and isinstance(
+                input_obj.data, BaseStorage
+            ):
+                logger.debug(
+                    "[%s] Input .data is BaseStorage: %s",
+                    self.name,
+                    input_obj.data.name,
+                )
+                return input_obj.data.name
 
-        # If params with a data attribute that is DataFrame, return generic name
-        if hasattr(input_obj, "data") and isinstance(input_obj.data, pd.DataFrame):
-            return "data"
+            case _ if hasattr(input_obj, "data") and isinstance(
+                input_obj.data, pd.DataFrame
+            ):
+                logger.debug("[%s] Input .data is DataFrame", self.name)
+                return "data"
 
-        # If object has 'name'
-        if hasattr(input_obj, "name"):
-            return str(input_obj.name)
+            case _ if hasattr(input_obj, "name"):
+                name = str(input_obj.name)
+                logger.debug("[%s] Input has .name attribute: %s", self.name, name)
+                return name
 
-        return None
+            case _:
+                logger.debug(
+                    "[%s] Input type not recognized; returning None", self.name
+                )
+                return None
 
     def _determine_output_type(self, output_obj: Any) -> str | None:
         """Extract a meaningful output type for the operation metadata."""
@@ -100,39 +122,19 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             return "box"
         if isinstance(output_obj, Container):
             return "container"
-
         return None
 
     def _generate_operation_metadata(
         self, style_name: str, output_obj: BaseStorage[Any], input_obj: Any
     ) -> dict[str, Any]:
-        """
-        Generate a metadata dictionary for an operation.
-
-        Args:
-            style_name: Name of the style applied.
-            result_obj: Wrapped storage object (Wagon/Box/Container).
-            input_data: Original input to the style.
-
-        Returns:
-            dict: Metadata dictionary.
-        """
-        # Determine input name
+        """Generate a metadata dictionary for an operation."""
         input_name = self._determine_input_name(input_obj)
-
-        # Determine storage type
         output_type = self._determine_output_type(output_obj)
-
-        # Extract rows and columns
         rows, columns = getattr(output_obj.data, "shape", (None, None))
-
-        # Checksum from storage
         checksum = output_obj.checksum
-
-        # Local time and timezone
         local_time_str, timezone_offset = self._get_local_time_and_offset()
 
-        return {
+        metadata = {
             "input_name": input_name,
             "style_name": style_name,
             "local_time": local_time_str,
@@ -144,6 +146,9 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
             "checksum": checksum,
         }
 
+        logger.debug("[%s] Generated operation metadata: %s", self.name, metadata)
+        return metadata
+
     # ----------------- Operations ----------------- #
     def record_operation(
         self, style_name: str, result_obj: Any, input_data: Any = None
@@ -151,10 +156,16 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         """Record an operation and return its metadata."""
         metadata = self._generate_operation_metadata(style_name, result_obj, input_data)
         self._operations_rows.append(metadata)
+        logger.debug("[%s] Recorded operation for style '%s'", self.name, style_name)
         return metadata
 
     def get_operations(self) -> pd.DataFrame:
         """Return a DataFrame with all recorded operations."""
+        logger.debug(
+            "[%s] Returning %d recorded operations",
+            self.name,
+            len(self._operations_rows),
+        )
         return pd.DataFrame(self._operations_rows)
 
     # ----------------- Learning ----------------- #
@@ -188,19 +199,21 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         type_name = self.result_type.__name__.lower()
         storage_obj: BaseStorage[Any] = None
 
-        if type_name == "wagon":
-            storage_obj = Wagon(data=result, name=f"wagon_{self.name}")
-        elif type_name == "box":
-            storage_obj = Box(data=result, name=f"box_{self.name}")
-        elif type_name == "container":
-            storage_obj = Container(data=result, name=f"container_{self.name}")
-        else:
-            raise TypeError(
-                f"Result type '{self.result_type.__name__}' is not a valid storage type"
-            )
+        match type_name:
+            case "wagon":
+                storage_obj = Wagon(data=result, name=f"wagon_{self.name}")
+            case "box":
+                storage_obj = Box(data=result, name=f"box_{self.name}")
+            case "container":
+                storage_obj = Container(data=result, name=f"container_{self.name}")
+            case _:
+                raise TypeError(
+                    f"Result type '{self.result_type.__name__}' is not a valid storage type"
+                )
 
         if operation_metadata is not None:
             storage_obj.attach_metadata(operation_metadata)
+            logger.debug("[%s] Attached metadata to %s", self.name, storage_obj.name)
 
         return cast(ResultT, storage_obj)
 
@@ -209,48 +222,36 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
         if isinstance(input_data, BaseStorage):
             if input_data.data is None:
                 raise ValueError(f"{input_data.name} has no data to process")
+            logger.debug("[%s] Normalized input from BaseStorage", self.name)
             return input_data.data
         if isinstance(input_data, pd.DataFrame):
+            logger.debug("[%s] Normalized input as DataFrame", self.name)
             return input_data
         if isinstance(input_data, BaseParams):
+            logger.debug("[%s] Normalized input as BaseParams", self.name)
             return input_data
+        logger.debug("[%s] Input normalization returned original data", self.name)
         return input_data
 
     def apply_style(self, style_name: str, data: Any) -> ResultT:
-        """
-        Apply a learned style, wrap the result in a storage object,
-        attach operation metadata including input name, type, rows, columns, checksum.
-
-        Args:
-            style_name: Name of the style to apply.
-            data: Input data for the style (DataFrame, BaseStorage, or BaseParams).
-
-        Returns:
-            ResultT: Wrapped storage object with metadata.
-        """
+        """Apply a learned style and record operation metadata."""
         if style_name not in self.known_styles:
             raise ValueError(f"Style '{style_name}' not learned")
 
         original_input = data
-
         style = self.known_styles[style_name]
         normalized_data = self._normalize_input(data)
 
-        # Apply the style
+        logger.debug(
+            "[%s] Applying style '%s' with normalized input", self.name, style_name
+        )
         raw_result = style.use(normalized_data)
-
-        # Wrap result in storage
         wrapped_result = self._wrap_storage(raw_result)
 
-        # Generate operation metadata
         operation_metadata = self._generate_operation_metadata(
             style_name=style_name, output_obj=wrapped_result, input_obj=original_input
         )
-
-        # Attach metadata to the storage
         wrapped_result.attach_metadata(operation_metadata)
-
-        # Record internally in the agent
         self._operations_rows.append(operation_metadata)
 
         logger.info("[%s] Applied style '%s'", self.name, style_name)
@@ -277,23 +278,22 @@ class BaseAgent(ABC, Generic[StyleT, ResultT]):
 
         try:
             storage_manager.save(obj_type, name, result)
+            logger.info(
+                "[%s] Stored %s '%s' in StorageManager",
+                self.name,
+                self.result_type.__name__,
+                name,
+            )
         except AttributeError as exc:
             raise AttributeError(
                 "StorageManager does not implement 'save(obj_type, name, obj)'"
             ) from exc
 
-        logger.info(
-            "[%s] Stored %s '%s' in StorageManager",
-            self.name,
-            self.result_type.__name__,
-            name,
-        )
-
     # ----------------- Abstract Work ----------------- #
     @abstractmethod
     def work(self, *args: Any, **kwargs: Any) -> ResultT:
         """Abstract method that defines how the agent performs its task."""
-        pass
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} name={self.name}>"
