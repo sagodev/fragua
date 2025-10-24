@@ -4,7 +4,7 @@ from fragua.agents import (
     Miner,
     Blacksmith,
     Transporter,
-    StorageManager,
+    StoreManager,
 )
 
 from fragua.styles import (
@@ -23,7 +23,7 @@ from fragua.styles import (
     ExcelDeliveryStyle,
 )
 
-from fragua.store import Storage, Wagon, Box, Container
+from fragua.store import Store, Wagon, Box, Container
 
 from fragua.core import BaseAgent, BaseStyle, BaseStorage
 
@@ -66,8 +66,8 @@ __all__ = [
     "Transporter",
     "Container",
     "BaseAgent",
-    "StorageManager",
-    "Storage",
+    "StoreManager",
+    "Store",
     "BaseStorage",
     "BaseStyle",
     "get_logger",

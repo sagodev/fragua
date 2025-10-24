@@ -2,7 +2,7 @@
 Blacksmith agent responsible for transforming data.
 
 The Blacksmith uses ForgeStyles to process data from Wagons
-and stores results in Boxes via StorageManager.
+and stores results in Boxes via StoreManager.
 """
 
 from __future__ import annotations

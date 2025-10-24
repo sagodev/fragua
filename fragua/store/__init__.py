@@ -2,13 +2,13 @@
 Store  package.
 """
 
-from .storage import Storage
+from .store import Store
 from .wagon import Wagon
 from .box import Box
 from .container import Container
 
 __all__ = [
-    "Storage",
+    "Store",
     "Wagon",
     "Box",
     "Container",

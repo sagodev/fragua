@@ -2,7 +2,7 @@
 Miner agent responsible for extracting data using ExtractionStyles.
 
 The Miner now uses ExtractionStyles to process data from sources
-and stores results in Wagons via StorageManager.
+and stores results in Wagons via StoreManager.
 """
 
 from __future__ import annotations

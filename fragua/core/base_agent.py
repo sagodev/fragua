@@ -30,7 +30,7 @@ from fragua.store.box import Box
 from fragua.store.container import Container
 
 if TYPE_CHECKING:
-    from fragua.agents.storage_manager import StorageManager
+    from fragua.agents.store_manager import StoreManager
 
 # Generic type variables
 StyleT = TypeVar("StyleT", bound=BaseStyle[Any, Any])
@@ -251,9 +251,9 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
 
     # ----------------- Storage Interaction ----------------- #
     def store_result(
-        self, storage_manager: "StorageManager", result: StorageT, name: str
+        self, storage_manager: "StoreManager", result: StorageT, name: str
     ) -> None:
-        """Store a result object in the StorageManager."""
+        """Store a result object in the StoreManager."""
         if self.result_type is None:
             raise TypeError(
                 f"Cannot store result: {self.__class__.__name__} has no result_type defined."
@@ -271,14 +271,14 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         try:
             storage_manager.save(obj_type, name, result)
             logger.info(
-                "[%s] Stored %s '%s' in StorageManager",
+                "[%s] Stored %s '%s' in StoreManager",
                 self.name,
                 self.result_type.__name__,
                 name,
             )
         except AttributeError as exc:
             raise AttributeError(
-                "StorageManager does not implement 'save(obj_type, name, obj)'"
+                "StoreManager does not implement 'save(obj_type, name, obj)'"
             ) from exc
 
     # ----------------- Abstract Work ----------------- #
