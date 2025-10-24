@@ -9,6 +9,7 @@ by serializing the data in a consistent way.
 
 import hashlib
 import json
+from datetime import datetime, timezone
 from typing import Any, cast, Optional
 import pandas as pd
 from fragua.core.base_storage import BaseStorage
@@ -51,6 +52,18 @@ def calculate_checksum(data: Any, algorithm: str = "sha256") -> str:
     h = hashlib.new(algorithm)
     h.update(content)
     return h.hexdigest()
+
+
+def get_local_time_and_offset() -> tuple[str, str]:
+    """Return local time string and timezone offset."""
+    now_utc = datetime.now(timezone.utc)
+    local_tz = datetime.now().astimezone().tzinfo
+    now_local = now_utc.astimezone(local_tz)
+    local_time_str = now_local.strftime("%H:%M:%S.%f")[:-3]
+    timezone_offset = now_local.strftime("%z")
+    if len(timezone_offset) == 5:
+        timezone_offset = timezone_offset[:3] + ":" + timezone_offset[3:]
+    return local_time_str, timezone_offset
 
 
 def add_metadata_to_storage(
