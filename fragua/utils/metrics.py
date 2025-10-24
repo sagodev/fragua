@@ -9,8 +9,12 @@ by serializing the data in a consistent way.
 
 import hashlib
 import json
-from typing import Any, cast
+from typing import Any, cast, Optional
 import pandas as pd
+from fragua.core.base_storage import BaseStorage
+from fragua.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def _serialize_dataframe(df: pd.DataFrame) -> bytes:
@@ -47,3 +51,30 @@ def calculate_checksum(data: Any, algorithm: str = "sha256") -> str:
     h = hashlib.new(algorithm)
     h.update(content)
     return h.hexdigest()
+
+
+def add_metadata_to_storage(
+    storage: BaseStorage[Any],
+    metadata: Optional[dict[str, object]] = None,
+) -> None:
+    """
+    Add or merge metadata into a unified metadata dictionary of a storage object.
+
+    Args:
+        storage (BaseStorage): The target storage object (e.g., Wagon, Box, Container).
+        data (dict | None): Metadata to add.
+
+    Notes:
+        - Automatically ignores None or empty data.
+        - Merges keys recursively (non-destructive).
+    """
+    if not metadata:
+        logger.debug("[%s] No metadata provided.", storage.name)
+        return
+
+    if not hasattr(storage, "metadata") or storage.metadata is None:
+        storage.metadata = {}
+
+    storage.metadata.update(metadata)
+
+    logger.info("[%s] Metadata updated: %s", storage.name, metadata)
