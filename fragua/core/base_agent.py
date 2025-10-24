@@ -2,7 +2,7 @@
 Base class for all ETL agents in Fragua.
 
 Defines the common interface and shared behavior for
-agents like Miner, Blacksmith, and Transporter.
+agents Miner, Blacksmith, and Transporter.
 """
 
 from abc import ABC, abstractmethod
@@ -14,7 +14,6 @@ from typing import (
     Type,
     TypeVar,
     Generic,
-    TYPE_CHECKING,
     Optional,
     Literal,
     cast,
@@ -24,19 +23,23 @@ import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
 from fragua.core.base_storage import BaseStorage
-from fragua.core.base_params import BaseParams
 from fragua.store.wagon import Wagon
 from fragua.store.box import Box
 from fragua.store.container import Container
+from fragua.agents.store_manager import StoreManager
+from fragua.utils.metrics import (
+    add_metadata_to_storage,
+    generate_metadata,
+    normalize_input,
+)
 
-if TYPE_CHECKING:
-    from fragua.agents.store_manager import StoreManager
 
 # Generic type variables
 StyleT = TypeVar("StyleT", bound=BaseStyle[Any, Any])
 StorageT = TypeVar("StorageT", bound=BaseStorage[Any])
 
-logger = get_logger("BaseAgent")
+
+logger = get_logger(__name__)
 
 
 class BaseAgent(ABC, Generic[StyleT, StorageT]):
@@ -50,20 +53,9 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         self.name: str = name
         self.known_styles: Dict[str, StyleT] = {}
         self.learned_styles: Dict[str, dict[Any, Any]] = {}
-        self._operations_rows: list[dict[Any, Any]] = []
+        self._operations: list[dict[Any, Any]] = []
 
     # ----------------- Helpers ----------------- #
-    def _get_local_time_and_offset(self) -> tuple[str, str]:
-        """Return local time string and timezone offset."""
-        now_utc = datetime.now(timezone.utc)
-        local_tz = datetime.now().astimezone().tzinfo
-        now_local = now_utc.astimezone(local_tz)
-        local_time_str = now_local.strftime("%H:%M:%S.%f")[:-3]
-        timezone_offset = now_local.strftime("%z")
-        if len(timezone_offset) == 5:
-            timezone_offset = timezone_offset[:3] + ":" + timezone_offset[3:]
-        return local_time_str, timezone_offset
-
     def _determine_input_name(self, input_obj: Any) -> str | None:
         """Extract a meaningful input name for the operation metadata with lazy logging."""
         result = None  # Store the determined name
@@ -117,70 +109,19 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         return None
 
     def _generate_operation_metadata(
-        self, style_name: str, output_obj: BaseStorage[Any], input_obj: Any
-    ) -> dict[str, Any]:
-        """Generate a metadata dictionary for an operation."""
+        self, style_name: str, output_obj: StorageT, input_obj: Any
+    ):
         input_name = self._determine_input_name(input_obj)
-        output_type = self._determine_output_type(output_obj)
-        rows, columns = getattr(output_obj.data, "shape", (None, None))
-        checksum = output_obj.checksum
-        local_time_str, timezone_offset = self._get_local_time_and_offset()
-
-        metadata = {
-            "input_name": input_name,
-            "style_name": style_name,
-            "local_time": local_time_str,
-            "timezone_offset": timezone_offset,
-            "output_name": output_obj.name,
-            "output_type": output_type,
-            "rows": rows,
-            "columns": columns,
-            "checksum": checksum,
-        }
-
-        logger.debug("[%s] Generated operation metadata: %s", self.name, metadata)
-        return metadata
-
-    # ----------------- Operations ----------------- #
-    def record_operation(
-        self, style_name: str, result_obj: Any, input_data: Any = None
-    ) -> dict[str, Any]:
-        """Record an operation and return its metadata."""
-        metadata = self._generate_operation_metadata(style_name, result_obj, input_data)
-        self._operations_rows.append(metadata)
-        logger.debug("[%s] Recorded operation for style '%s'", self.name, style_name)
-        return metadata
-
-    def get_operations(self) -> pd.DataFrame:
-        """Return a DataFrame with all recorded operations."""
-        logger.debug(
-            "[%s] Returning %d recorded operations",
-            self.name,
-            len(self._operations_rows),
+        metadata = generate_metadata(
+            output_obj,
+            metadata_type="operation",
+            input_name=input_name,
+            style_name=style_name,
         )
-        return pd.DataFrame(self._operations_rows)
+        add_metadata_to_storage(output_obj, metadata)
 
-    # ----------------- Learning ----------------- #
-    def learn_style(self, style_instance: StyleT) -> None:
-        """Register a style instance with this agent."""
-        self.known_styles[style_instance.style_name] = style_instance
-        self.learned_styles[style_instance.style_name] = {
-            "class": style_instance.__class__.__name__,
-            "learned_at": datetime.now(timezone.utc),
-        }
-        logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
-
-    def learn_style_by_name(self, name: str) -> None:
-        """Create and learn a style dynamically from the registry."""
-        if name not in self.style_registry:
-            raise ValueError(f"No style registered under name '{name}'")
-        style_cls = self.style_registry[name]
-        instance = style_cls(style_name=name)
-        self.learn_style(instance)
-
-    # ----------------- Apply Style ----------------- #
     def _wrap_storage(
-        self, result: Any, operation_metadata: Optional[dict[str, Any]] = None
+        self, result: StorageT, operation_metadata: Optional[dict[str, Any]] = None
     ) -> StorageT:
         """Convert raw style output into the appropriate storage object and attach metadata."""
         if self.result_type is None:
@@ -203,27 +144,42 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
                     f"Result type '{self.result_type.__name__}' is not a valid storage type"
                 )
 
+        # Attach operation metadata using add_metadata_to_storage
         if operation_metadata is not None:
-            storage_obj.attach_metadata(operation_metadata)
+            add_metadata_to_storage(storage_obj, operation_metadata)
             logger.debug("[%s] Attached metadata to %s", self.name, storage_obj.name)
 
         return cast(StorageT, storage_obj)
 
-    def _normalize_input(self, input_data: Any) -> Any:
-        """Convert input data into a format compatible with MineStyle."""
-        if isinstance(input_data, BaseStorage):
-            if input_data.data is None:
-                raise ValueError(f"{input_data.name} has no data to process")
-            logger.debug("[%s] Normalized input from BaseStorage", self.name)
-            return input_data.data
-        if isinstance(input_data, pd.DataFrame):
-            logger.debug("[%s] Normalized input as DataFrame", self.name)
-            return input_data
-        if isinstance(input_data, BaseParams):
-            logger.debug("[%s] Normalized input as BaseParams", self.name)
-            return input_data
-        logger.debug("[%s] Input normalization returned original data", self.name)
-        return input_data
+    # ----------------- Operations ----------------- #
+    def get_operations(self) -> pd.DataFrame:
+        """Return a DataFrame with all recorded operations."""
+        logger.debug(
+            "[%s] Returning %d recorded operations",
+            self.name,
+            len(self._operations),
+        )
+        return pd.DataFrame(self._operations)
+
+    # ----------------- Learning ----------------- #
+    def learn_style(self, style_instance: StyleT) -> None:
+        """Register a style instance with this agent."""
+        self.known_styles[style_instance.style_name] = style_instance
+        self.learned_styles[style_instance.style_name] = {
+            "class": style_instance.__class__.__name__,
+            "learned_at": datetime.now(timezone.utc),
+        }
+        logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
+
+    def learn_style_by_name(self, name: str) -> None:
+        """Create and learn a style dynamically from the registry."""
+        if name not in self.style_registry:
+            raise ValueError(f"No style registered under name '{name}'")
+        style_cls = self.style_registry[name]
+        instance = style_cls(style_name=name)
+        self.learn_style(instance)
+
+    # ----------------- Apply Style ----------------- #
 
     def apply_style(self, style_name: str, data: Any) -> StorageT:
         """Apply a learned style and record operation metadata."""
@@ -232,7 +188,7 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
 
         original_input = data
         style = self.known_styles[style_name]
-        normalized_data = self._normalize_input(data)
+        normalized_data = normalize_input(self, data)
 
         logger.debug(
             "[%s] Applying style '%s' with normalized input", self.name, style_name
@@ -240,18 +196,17 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         raw_result = style.use(normalized_data)
         wrapped_result = self._wrap_storage(raw_result)
 
-        operation_metadata = self._generate_operation_metadata(
+        # Generate and attach operation metadata
+        self._generate_operation_metadata(
             style_name=style_name, output_obj=wrapped_result, input_obj=original_input
         )
-        wrapped_result.attach_metadata(operation_metadata)
-        self._operations_rows.append(operation_metadata)
 
         logger.info("[%s] Applied style '%s'", self.name, style_name)
         return wrapped_result
 
     # ----------------- Storage Interaction ----------------- #
     def store_result(
-        self, storage_manager: "StoreManager", result: StorageT, name: str
+        self, storage_manager: StoreManager[Any], result: StorageT, name: str
     ) -> None:
         """Store a result object in the StoreManager."""
         if self.result_type is None:
@@ -268,18 +223,7 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         ObjectType = Literal["wagon", "box", "container"]
         obj_type: ObjectType = cast(ObjectType, obj_type_str)
 
-        try:
-            storage_manager.save(obj_type, name, result)
-            logger.info(
-                "[%s] Stored %s '%s' in StoreManager",
-                self.name,
-                self.result_type.__name__,
-                name,
-            )
-        except AttributeError as exc:
-            raise AttributeError(
-                "StoreManager does not implement 'save(obj_type, name, obj)'"
-            ) from exc
+        storage_manager.save(obj_type, result, name, agent_name=self.name)
 
     # ----------------- Abstract Work ----------------- #
     @abstractmethod

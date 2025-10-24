@@ -1,20 +1,33 @@
 """
-Flexible in-memory store for Fragua ETL objects.
+In-memory store for Fragua ETL objects.
 """
 
-from datetime import datetime, timezone
-from typing import Dict, Optional, Literal, Union, List
-from fragua.utils.metrics import calculate_checksum
+from typing import (
+    Dict,
+    Optional,
+    Literal,
+    Union,
+    List,
+    TypeVar,
+    Generic,
+    Mapping,
+    Any,
+    cast,
+)
+from fragua.core.base_storage import BaseStorage
+from fragua.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+ObjType = Literal["wagon", "box", "container"]
+StorageT = TypeVar("StorageT", bound=BaseStorage[Any])
 
 
-class Store:
+class Store(Generic[StorageT]):
     """
-    Generic store that holds ETL objects (wagon, box, container) with metadata.
-    It can be configured to handle one, several, or all object types.
+    Minimal in-memory store for BaseStorage objects (wagon, box, container).
+    Handles storage of one or more object types, without touching metadata.
     """
-
-    _Entry = Dict[str, object]
-    _StoreType = Dict[str, Dict[str, _Entry]]
 
     VALID_TYPES = ("wagon", "box", "container")
 
@@ -26,83 +39,138 @@ class Store:
         ] = "all",
     ) -> None:
         """
-        Initialize the store with a given name and the object types it can manage.
+        Initialize the store with a name and allowed object types.
 
         Args:
-            store_name: Identifier name for the store instance.
-            store_types: One or multiple object types to handle.
-                        Use 'all' to include all supported types.
+            store_name (str): Identifier for this store instance.
+            store_types (str | List[str]): Object types this store can manage.
+                'all' includes all valid types.
         """
         self.store_name = store_name
 
-        # Normalize the types to a list
         if store_types == "all":
             types_to_store = list(self.VALID_TYPES)
         elif isinstance(store_types, str):
-            types_to_store = [store_types]
+            types_to_store = [store_types] if store_types in self.VALID_TYPES else []
         else:
-            # Ensure only valid types are included
             types_to_store = [t for t in store_types if t in self.VALID_TYPES]
+            invalid = [t for t in store_types if t not in self.VALID_TYPES]
+            if invalid:
+                logger.warning(
+                    "[%s] Ignoring invalid store types: %s",
+                    self.store_name,
+                    invalid,
+                )
 
-        # Build the internal store dynamically
-        self._store: Store._StoreType = {t: {} for t in types_to_store}
+        self._store: Dict[str, Dict[str, StorageT]] = {t: {} for t in types_to_store}
 
+    # ------------------- Store Operations ------------------- #
     def add(
         self,
-        obj_type: Literal["wagon", "box", "container"],
-        name: str,
-        obj: object,
-        compute_checksum: bool = True,
+        obj_type: ObjType,
+        obj: StorageT,
+        name: Optional[str] = None,
+        overwrite: bool = False,
     ) -> None:
-        """Add an object with metadata to the store."""
+        """
+        Add a BaseStorage object to the store without modifying its metadata.
+
+        Args:
+            obj_type (ObjType): Type of the object ('wagon', 'box', 'container').
+            obj (BaseStorage): The object to store.
+            name (str, optional): Name under which to store the object. Defaults to obj.name.
+            overwrite (bool): If True, overwrite existing object with same name.
+        """
         if obj_type not in self._store:
-            raise ValueError(f"Object type '{obj_type}' not allowed in this store.")
+            raise ValueError(f"Object type '{obj_type}' is not allowed in this store.")
 
-        checksum: Optional[str] = None
-        if compute_checksum:
-            if hasattr(obj, "data"):
-                checksum = calculate_checksum(getattr(obj, "data"))
-            else:
-                checksum = calculate_checksum(obj)
+        store_name = name or getattr(obj, "name", None)
+        if store_name is None:
+            raise ValueError(
+                "Storage object must have a name or provide 'name' argument."
+            )
 
-        self._store[obj_type][name] = {
-            "obj": obj,
-            "saved_at": datetime.now(timezone.utc),
-            "checksum": checksum,
-            "data_ref": None,
-        }
+        if self.exists(obj_type, store_name) and not overwrite:
+            logger.warning(
+                "[%s] %s '%s' already exists. Use overwrite=True to replace.",
+                self.store_name,
+                obj_type,
+                store_name,
+            )
+            return
 
-    def get(self, obj_type: str, name: str) -> Optional[object]:
-        """Retrieve an object from the store."""
-        entry: Optional[Store._Entry] = self._store.get(obj_type, {}).get(name)
-        return entry["obj"] if entry else None
+        self._store[obj_type][store_name] = obj
+        logger.debug(
+            "[%s] Added %s '%s' to store", self.store_name, obj_type, store_name
+        )
 
-    def remove(self, obj_type: str, name: str) -> Optional[object]:
-        """Remove an object from the store."""
-        entry: Optional[Store._Entry] = self._store.get(obj_type, {}).pop(name, None)
-        return entry["obj"] if entry else None
+    def get(
+        self, obj_type: Union[ObjType, Literal["all"]] = "all", name: str = "all"
+    ) -> Union[
+        Optional[StorageT],
+        Mapping[str, StorageT],
+        Mapping[ObjType, Mapping[str, StorageT]],
+    ]:
+        """Retrieve objects from the store."""
+        if obj_type == "all":
+            if name != "all":
+                raise ValueError("Cannot specify a single name when obj_type='all'")
+            return cast(
+                Mapping[ObjType, Mapping[str, StorageT]],
+                {t: dict(objs) for t, objs in self._store.items()},
+            )
 
-    def get_checksum(self, obj_type: str, name: str) -> Optional[str]:
-        """Return the stored checksum for an object, or None if not found."""
-        entry: Optional[Store._Entry] = self._store.get(obj_type, {}).get(name)
-        checksum = entry.get("checksum") if entry else None
-        return checksum if isinstance(checksum, str) else None
+        if name == "all":
+            return cast(Mapping[str, StorageT], dict(self._store[obj_type]))
 
-    def exists(self, obj_type: str, name: str) -> bool:
+        return self._store.get(obj_type, {}).get(name)
+
+    def remove(
+        self, obj_type: Union[ObjType, Literal["all"]] = "all", name: str = "all"
+    ) -> Union[
+        Optional[StorageT],
+        Mapping[str, StorageT],
+        Mapping[ObjType, Mapping[str, StorageT]],
+    ]:
+        """Remove objects from the store."""
+        if obj_type == "all":
+            if name != "all":
+                raise ValueError("Cannot specify a single name when obj_type='all'")
+            all_objs = {t: dict(objs) for t, objs in self._store.items()}
+            for t in self._store.keys():
+                self._store[t].clear()
+            return cast(Mapping[ObjType, Mapping[str, StorageT]], all_objs)
+
+        if name == "all":
+            objs = dict(self._store[obj_type])
+            self._store[obj_type].clear()
+            return cast(Mapping[str, StorageT], objs)
+
+        return self._store.get(obj_type, {}).pop(name, None)
+
+    def remove_all(self) -> Mapping[ObjType, Mapping[str, StorageT]]:
+        """Remove all objects from the store."""
+        return self.remove("all", "all")  # type: ignore
+
+    def exists(self, obj_type: ObjType, name: str) -> bool:
         """Check if an object exists in the store."""
         return name in self._store.get(obj_type, {})
 
-    def list_all(self, obj_type: Optional[str] = None) -> List[str]:
+    def list_all(
+        self, obj_type: Optional[ObjType] = None
+    ) -> Mapping[ObjType, Mapping[str, Dict[Any, Any]]]:
         """
-        List all object names of a given type or all types in the store.
+        List metadata of all stored BaseStorage objects.
 
         Args:
-            obj_type: Optional type to list. If None, list all stored objects.
+            obj_type (ObjType, optional): Filter by object type. Defaults to all types.
+
+        Returns:
+            Mapping of type -> object name -> metadata Dictionary.
         """
-        if obj_type:
-            return list(self._store.get(obj_type, {}).keys())
-        # List all objects across all stored types
-        all_names: list[str] = []
-        for t, entries in self._store.items():
-            all_names.extend(entries.keys())
-        return all_names
+        types_to_list = [obj_type] if obj_type else self._store.keys()
+        result = {
+            t: {name: obj.metadata for name, obj in self._store[t].items()}
+            for t in types_to_list
+        }
+        return cast(Mapping[ObjType, Mapping[str, Dict[Any, Any]]], result)

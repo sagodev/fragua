@@ -1,104 +1,63 @@
 """
 StoreManager agent for Fragua ETL.
 Manages Wagons, Boxes, and Containers using in-memory Store.
-Handles metadata, checksums, lazy logging, and reporting with minimal code.
+Handles metadata, checksums, logging, and unified reporting.
 """
 
-from datetime import datetime, timezone
-from typing import Dict, Optional, Literal
-import pandas as pd
-from fragua.store.store import Store
-from fragua.utils.metrics import calculate_checksum
+from typing import Optional, Mapping, Dict, Any, Union, Literal, Generic
+
+from fragua.store.store import Store, StorageT, ObjType
+from fragua.utils.metrics import (
+    add_metadata_to_storage,
+    generate_metadata,
+)
 from fragua.utils.logger import get_logger
 
-ObjType = Literal["wagon", "box", "container"]
+logger = get_logger(__name__)
 
 
-class StoreManager:
-    """Dynamic StoreManager that works only with types defined in the Store."""
+class StoreManager(Generic[StorageT]):
+    """Dynamic StoreManager that works with types defined in the Store."""
 
-    def __init__(self, store: Store, name: str = "StoreManager") -> None:
+    def __init__(self, store: Store[StorageT], name: str = "StoreManager") -> None:
         self.name = name
-        self.logger = get_logger(name)
-        self.store = store  # External Store instance
-        self.metadata = pd.DataFrame(
-            columns=[
-                "object_name",
-                "object_type",
-                "timestamp",
-                "rows",
-                "columns",
-                "checksum",
-                "operation",
-            ]
+        self.store = store
+
+    def _generate_save_metadata(self, obj: StorageT, agent_name: Optional[str]) -> None:
+        metadata = generate_metadata(
+            obj,
+            metadata_type="save",
+            agent_name=agent_name,
+            store_manager_name=self.name,
         )
+        add_metadata_to_storage(obj, metadata)
 
-    # ------------------- Internal helpers ------------------- #
-    def _record_metadata(
-        self, obj_name: str, obj_type: str, operation: str, obj: object
+    # ------------------- Store Operations ------------------- #
+    def save(
+        self,
+        obj_type: ObjType,
+        obj: StorageT,
+        name: str,
+        agent_name: Optional[str] = None,
+        overwrite: bool = False,
     ) -> None:
-        """Record metadata about a store operation."""
-        rows: Optional[int] = None
-        cols: Optional[int] = None
-        checksum: Optional[str] = None
+        """
+        Save a single object into the store, enriching its metadata
+        with store manager info and agent name.
 
-        if hasattr(obj, "data") and hasattr(obj.data, "shape"):
-            rows, cols = obj.data.shape
-            checksum = calculate_checksum(obj.data)
-        else:
-            checksum = calculate_checksum(obj)
-
-        new_row = {
-            "object_name": obj_name,
-            "object_type": obj_type,
-            "timestamp": datetime.now(timezone.utc),
-            "rows": rows,
-            "columns": cols,
-            "checksum": checksum,
-            "operation": operation,
-        }
-        self.metadata = pd.concat(
-            [self.metadata, pd.DataFrame([new_row])], ignore_index=True
-        )
-
-    def _verify_on_load(
-        self, obj_type: str, obj_name: str, obj: Optional[object]
-    ) -> None:
-        """Verify checksum integrity when loading an object."""
-        if obj is None:
-            return
-
-        stored_checksum = self.store.get_checksum(obj_type, obj_name)
-        if stored_checksum is None:
-            self.logger.warning(
-                "[%s] No checksum recorded for '%s' (%s)", self.name, obj_name, obj_type
-            )
-            return
-
-        current_checksum = calculate_checksum(obj.data if hasattr(obj, "data") else obj)
-        if stored_checksum != current_checksum:
-            self.logger.error(
-                "[%s] Checksum mismatch for '%s' (%s)", self.name, obj_name, obj_type
-            )
-        else:
-            self.logger.info(
-                "[%s] Checksum verified for '%s' (%s)", self.name, obj_name, obj_type
-            )
-
-    # ------------------- Public generic methods ------------------- #
-    def _validate_type(self, obj_type: str) -> None:
-        """Ensure the object type is allowed by the Store."""
+        Args:
+            obj_type: Type of the object ('wagon', 'box', or 'container').
+            name: Name of the object in the store.
+            obj: Storage object to save.
+            agent_name: Name of the agent performing the save.
+            overwrite: Whether to overwrite if object already exists.
+        """
         if obj_type not in self.store._store:
             raise ValueError(f"Object type '{obj_type}' is not managed by this Store.")
 
-    def save(
-        self, obj_type: str, name: str, obj: object, overwrite: bool = False
-    ) -> None:
-        """Save an object into the store."""
-        self._validate_type(obj_type)
-
+        # Check overwrite
         if self.store.exists(obj_type, name) and not overwrite:
-            self.logger.warning(
+            logger.warning(
                 "[%s] %s '%s' exists. Use overwrite=True to replace.",
                 self.name,
                 obj_type,
@@ -106,44 +65,56 @@ class StoreManager:
             )
             return
 
-        self.logger.info("[%s] Saving %s: %s", self.name, obj_type, name)
+        self._generate_save_metadata(obj, agent_name)
+
         self.store.add(obj_type, name, obj)
-        self._record_metadata(name, obj_type, "save", obj)
 
-    def load(self, obj_type: str, name: str) -> Optional[object]:
-        """Load an object from the store."""
-        self._validate_type(obj_type)
-        obj = self.store.get(obj_type, name)
-        self._verify_on_load(obj_type, name, obj)
-        return obj
+        logger.info(
+            "[%s] Saved %s '%s' by agent '%s'", self.name, obj_type, name, agent_name
+        )
 
-    def remove(self, obj_type: str, name: str) -> Optional[object]:
-        """Remove an object from the store."""
-        self._validate_type(obj_type)
-        obj = self.store.remove(obj_type, name)
-        if obj:
-            self._record_metadata(name, obj_type, "remove", obj)
-        else:
-            self.logger.warning(
-                "[%s] %s '%s' does not exist.", self.name, obj_type, name
+    def get(
+        self, obj_type: Union[ObjType, Literal["all"]] = "all", name: str = "all"
+    ) -> Union[
+        Optional[StorageT],
+        Mapping[str, StorageT],
+        Mapping[ObjType, Mapping[str, StorageT]],
+    ]:
+        """Retrieve objects from the store (single, all of type, or all types)."""
+        return self.store.get(obj_type, name)
+
+    def remove(
+        self, obj_type: Union[ObjType, Literal["all"]] = "all", name: str = "all"
+    ) -> Union[
+        Optional[StorageT],
+        Mapping[str, StorageT],
+        Mapping[ObjType, Mapping[str, StorageT]],
+    ]:
+        """Remove objects from the store, supporting single, all of a type, or all types."""
+        removed = self.store.remove(obj_type, name)
+        if isinstance(removed, dict):
+            count = sum(len(v) if isinstance(v, dict) else 1 for v in removed.values())
+            logger.info("[%s] Removed %d object(s)", self.name, count)
+        elif removed:
+            logger.info(
+                "[%s] Removed object '%s' of type '%s'", self.name, name, obj_type
             )
-        return obj
+        else:
+            logger.warning(
+                "[%s] Nothing removed for '%s' (%s)", self.name, name, obj_type
+            )
+        return removed
 
-    def has(self, obj_type: str, name: str) -> bool:
-        """Check if an object exists in the store."""
-        self._validate_type(obj_type)
+    def exists(self, obj_type: ObjType, name: str) -> bool:
+        """Check existence of a specific object."""
         return self.store.exists(obj_type, name)
 
-    # ------------------- Reporting ------------------- #
-    def report(self) -> pd.DataFrame:
-        """Return a copy of the metadata report."""
-        return self.metadata.copy()
-
-    def list_all(self) -> Dict[str, list[str]]:
-        """List all stored objects by type."""
-        return {
-            obj_type: self.store.list_all(obj_type) for obj_type in self.store._store
-        }
+    def list_all(self) -> Dict[str, Mapping[str, Dict[str, Any]]]:
+        """List all objects in the store and their metadata."""
+        result: Dict[str, Mapping[str, Dict[str, Any]]] = {}
+        for obj_type in self.store._store:
+            result[obj_type] = self.store.list_all(obj_type)[obj_type]
+        return result
 
     def __repr__(self) -> str:
         """String representation of the StoreManager."""
