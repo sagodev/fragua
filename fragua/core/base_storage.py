@@ -26,12 +26,17 @@ class BaseStorage(Generic[T]):
         self.data: Optional[T] = None
         self._checksum: Optional[str] = None
         self._stored_at: Optional[datetime] = None
+        self._operation_metadata: dict[str, object] = (
+            {}
+        )  # Metadata from agent operation
 
         if data is not None:
             self.store(data)
 
     def store(self, data: T, postprocess: Optional[Callable[[T], T]] = None) -> None:
-        """Store data with optional postprocessing and update checksum."""
+        """
+        Store data with optional postprocessing and update checksum.
+        """
         if data is None:
             raise ValueError(f"{self.__class__.__name__}: Cannot store None data")
 
@@ -50,8 +55,10 @@ class BaseStorage(Generic[T]):
                 )
 
         self.data = data
-        self._checksum = calculate_checksum(self.data)
         self._stored_at = datetime.now(timezone.utc)
+
+        # Calculate checksum
+        self._checksum = calculate_checksum(self.data)
 
     def retrieve(self) -> Optional[T]:
         """Retrieve stored data."""
@@ -63,18 +70,47 @@ class BaseStorage(Generic[T]):
         return self._checksum
 
     @property
-    def stored_at(self) -> Optional[datetime]:
-        """Get the timestamp when the data was stored."""
-        return self._stored_at
+    def stored_at(self) -> Optional[str]:
+        """Get the timestamp when the data was stored as a readable string."""
+        if self._stored_at is None:
+            return None
+        return self._stored_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    def attach_metadata(self, metadata: dict[str, object]) -> None:
+        """
+        Attach operation-related metadata to this storage object.
+
+        Args:
+            metadata (dict): Dictionary containing metadata from the agent operation.
+        """
+        self._operation_metadata.update(metadata)
 
     @property
     def metadata(self) -> dict[str, object]:
-        """Get metadata about the storage object."""
-        return {
-            "name": self.name,
-            "checksum": self._checksum,
-            "stored_at": self._stored_at,
+        """
+        Return combined metadata, separated into 'base' and 'operation'.
+
+        Returns:
+            dict: Dictionary with 'base' and 'operation' keys.
+        """
+        base_meta = {
+            "storage_name": self.name,
+            "type": self.__class__.__name__.lower(),
+            "UTC_time": self.stored_at,
             "rows": getattr(self.data, "shape", (None, None))[0],
             "columns": getattr(self.data, "shape", (None, None))[1],
-            "type": type(self.data).__name__ if self.data is not None else None,
+            "checksum": self._checksum,
         }
+
+        return {"base": base_meta, "operation": self._operation_metadata}
+
+    def __repr__(self) -> str:
+        """Return a concise, informative string representation of the storage object."""
+        rows = getattr(self.data, "shape", (None, None))[0]
+        cols = getattr(self.data, "shape", (None, None))[1]
+        return (
+            f"<{self.__class__.__name__} name={self.name!r}, "
+            f"type={type(self.data).__name__}, "
+            f"rows={rows}, cols={cols}, "
+            f"checksum={self._checksum}>"
+        )
