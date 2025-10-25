@@ -4,7 +4,7 @@ Manages Wagons, Boxes, and Containers using in-memory Store.
 Handles metadata, checksums, logging, and unified reporting.
 """
 
-from typing import Optional, Mapping, Union, Literal, Generic
+from typing import Optional, Mapping, Union, Literal, Generic, Any, Dict
 from fragua.store.store import Store, StorageT
 from fragua.utils.metrics import (
     add_metadata_to_storage,
@@ -25,16 +25,14 @@ class StoreManager(Generic[StorageT]):
     def _generate_save_metadata(
         self, storage: StorageT, storage_name: str, agent_name: Optional[str]
     ) -> None:
-        """
-        Generate and attach metadata to a storage object before saving.
-        """
-        metadata = generate_metadata(
-            storage,
-            metadata_type="save",
-            storage_name=storage_name,
-            agent_name=agent_name,
-            store_manager_name=self.name,
-        )
+        """Generate and attach metadata to a storage object before saving."""
+        metadata_kwargs: Dict[str, Any] = {
+            "metadata_type": "save",
+            "storage_name": storage_name,
+            "agent_name": agent_name,
+            "store_manager_name": self.name,
+        }
+        metadata = generate_metadata(storage, **metadata_kwargs)
         add_metadata_to_storage(storage, metadata)
 
     # ------------------- Store Operations ------------------- #
@@ -57,7 +55,7 @@ class StoreManager(Generic[StorageT]):
             agent_name: Name of the agent performing the save.
             overwrite: Whether to overwrite if object already exists.
         """
-        if storage_type not in self.store._store:
+        if storage_type not in self.store.store:
             raise ValueError(
                 f"Storage type '{storage_type}' is not managed by this Store."
             )
