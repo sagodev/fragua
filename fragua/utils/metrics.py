@@ -65,37 +65,17 @@ def get_local_time_and_offset() -> tuple[str, str]:
     return local_time_str, timezone_offset
 
 
-def normalize_input(agent: Any, input_data: Any) -> Any:
-    """
-    Convert input data into a format compatible with BaseStyle.
+def determine_storage_type(storage: Any) -> str | None:
+    """Extract a meaningful output type for the operation metadata."""
+    from fragua.store import Wagon, Box, Container
 
-    - If input is BaseStorage, return its `.data`.
-    - If input is DataFrame or BaseParams, return as is.
-    - Otherwise, return the original object.
-    """
-    from fragua.core.base_storage import BaseStorage
-    from fragua.core.base_params import BaseParams
-
-    if isinstance(input_data, BaseStorage):
-        if input_data.data is None:
-            raise ValueError(f"{input_data.name} has no data to process")
-        agent_name = getattr(agent, "name", "unknown")
-        logger.debug("[%s] Normalized input from BaseStorage", agent_name)
-        return input_data.data
-
-    if isinstance(input_data, pd.DataFrame):
-        agent_name = getattr(agent, "name", "unknown")
-        logger.debug("[%s] Input is already a DataFrame", agent_name)
-        return input_data
-
-    if isinstance(input_data, BaseParams):
-        agent_name = getattr(agent, "name", "unknown")
-        logger.debug("[%s] Input is BaseParams", agent_name)
-        return input_data
-
-    agent_name = getattr(agent, "name", "unknown")
-    logger.debug("[%s] Input normalization returned original data", agent_name)
-    return input_data
+    if isinstance(storage, Wagon):
+        return "wagon"
+    if isinstance(storage, Box):
+        return "box"
+    if isinstance(storage, Container):
+        return "container"
+    return None
 
 
 def generate_metadata(
@@ -177,4 +157,4 @@ def add_metadata_to_storage(
 
     storage.metadata.update(metadata)
 
-    logger.info("[%s] Metadata updated: %s", storage.name, metadata)
+    logger.info("[%s] Metadata updated: %s", storage, metadata)
