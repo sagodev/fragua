@@ -143,7 +143,9 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
 
         if isinstance(origin, BaseStorage):
             if origin.data is None:
-                raise ValueError(f"{origin.name} has no data to process")
+                raise ValueError(
+                    f"the {str(determine_storage_type(origin))} has no data to process"
+                )
             agent_name = getattr(self, "name", "unknown")
             logger.debug("[%s] Normalized origin from BaseStorage", agent_name)
             return origin.data
@@ -174,8 +176,6 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         type_name = self.storage_type.__name__.lower()
         storage_obj: Optional[BaseStorage[Any]] = None
 
-        storage_obj: Optional[BaseStorage[Any]] = None
-
         match type_name:
             case "wagon":
                 storage_obj = Wagon(data=data)
@@ -191,7 +191,7 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         return cast(StorageT, storage_obj)
 
     # ----------------- Apply Style ----------------- #
-    def apply_style(self, style_name: str, data: Any) -> StorageT:
+    def apply_style(self, style_name: str, data: Any) -> Any:
         """Apply a learned style to data."""
         if style_name not in self.known_styles:
             raise ValueError(f"Style '{style_name}' not learned")
@@ -213,7 +213,11 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         if storage_type not in ["wagon", "box", "container"]:
             raise ValueError("Result type is not a valid storage type")
 
-        storage_manager.save(storage_type, storage, storage_name, agent_name=self.name)
+        storage_manager.save(
+            storage=storage,
+            storage_name=storage_name,
+            agent_name=self.name,
+        )
 
     # ----------------- Work Pipeline ----------------- #
     def work(self, style_name: str, data: Any) -> StorageT:
