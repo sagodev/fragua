@@ -4,9 +4,10 @@ Manages Wagons, Boxes, and Containers using in-memory Store.
 Handles metadata, checksums, logging, and unified reporting.
 """
 
-from typing import Optional, Mapping, Union, Literal, Generic, Any, Dict
+from typing import Optional, Mapping, Union, Literal, Generic, Any, Dict, List
 from fragua.store.store import Store, StorageT
 from fragua.utils.metrics import (
+    StorageType,
     add_metadata_to_storage,
     determine_storage_type,
     generate_metadata,
@@ -15,7 +16,10 @@ from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# -------------------- Type Aliases -------------------- #
 
+
+# -------------------- StoreManager -------------------- #
 class StoreManager(Generic[StorageT]):
     """Dynamic StoreManager that works with types defined in the Store."""
 
@@ -23,6 +27,7 @@ class StoreManager(Generic[StorageT]):
         self.name = name
         self.store = store
 
+    # ------------------- Metadata ------------------- #
     def _generate_save_metadata(
         self, storage: StorageT, storage_name: str, agent_name: Optional[str]
     ) -> None:
@@ -46,24 +51,23 @@ class StoreManager(Generic[StorageT]):
         Save a single object into the store, enriching its metadata
         with store manager info and agent name.
 
-        Args:
-            storage: Storage object to save.
-            kwargs:
-                storage_name: Key name under which to store the object (required).
-                agent_name: Name of the agent performing the save (optional).
-                overwrite: Whether to overwrite if object already exists (optional, default False).
+        kwargs:
+            storage_name: Key name under which to store the object (required).
+            agent_name: Name of the agent performing the save (optional).
+            overwrite: Whether to overwrite if object already exists (optional, default False).
         """
 
-        storage_type: str | None = determine_storage_type(storage=storage)
+        storage_type: StorageType = determine_storage_type(storage=storage)
+
         if storage_type is None:
-            raise ValueError(f"Storage type '{storage_type}' is not a valid type.")
+            raise ValueError(f"Storage type '{storage_type}' is not a válid type.")
 
         if storage_type not in self.store.store:
             raise ValueError(
                 f"Storage type '{storage_type}' is not managed by this Store."
             )
 
-        storage_name: str = kwargs.get("storage_name")
+        storage_name = kwargs.get("storage_name")
         if not storage_name:
             raise ValueError("Missing required argument: 'storage_name'")
 
@@ -80,7 +84,6 @@ class StoreManager(Generic[StorageT]):
             return
 
         self._generate_save_metadata(storage, storage_name, agent_name)
-
         self.store.add(storage_type, storage, name=storage_name, overwrite=overwrite)
 
         logger.info(
@@ -93,24 +96,24 @@ class StoreManager(Generic[StorageT]):
 
     def get(
         self,
-        storage_type: Union[str, Literal["all"]] = "all",
+        storage_type: StorageType | Literal["all"] = "all",
         storage_name: str = "all",
     ) -> Union[
         Optional[StorageT],
         Mapping[str, StorageT],
-        Mapping[str, Mapping[str, StorageT]],
+        Mapping[StorageType, Mapping[str, StorageT]],
     ]:
         """Retrieve objects from the store (single, all of type, or all types)."""
         return self.store.get(storage_type, storage_name)
 
     def remove(
         self,
-        storage_type: Union[str, Literal["all"]] = "all",
+        storage_type: StorageType | Literal["all"] = "all",
         storage_name: str = "all",
     ) -> Union[
         Optional[StorageT],
         Mapping[str, StorageT],
-        Mapping[str, Mapping[str, StorageT]],
+        Mapping[StorageType, Mapping[str, StorageT]],
     ]:
         """Remove storages from the store, supporting single, all of a type, or all types."""
         removed = self.store.remove(storage_type, storage_name)
@@ -133,32 +136,24 @@ class StoreManager(Generic[StorageT]):
             )
         return removed
 
-    def exists(self, storage_type: str, storage_name: str) -> bool:
+    def exists(self, storage_type: StorageType, storage_name: str) -> bool:
         """Check existence of a specific object."""
         return self.store.exists(storage_type, storage_name)
 
     def list_all(
         self,
-        storage_type: Optional[str] = None,
-        fields: Optional[list[str]] = None,
+        storage_type: Optional[StorageType] = None,
+        fields: Optional[List[str]] = None,
         all_fields: bool = False,
-    ) -> Mapping[str, Mapping[str, dict[str, object]]]:
+    ) -> Mapping[StorageType, Mapping[str, dict[str, object]]]:
         """
         Return filtered metadata for stored objects, optionally filtered by type.
-
-        Args:
-            storage_type: Filter by storage type. If None, return all types.
-            fields: Specific metadata keys to include. Ignored if all_fields=True.
-            all_fields: If True, include the full metadata of each object.
-
-        Returns:
-            Dictionary of type -> storage name -> metadata.
         """
         default_fields = ["storage_name", "type", "rows", "columns", "checksum"]
         selected_fields = None if all_fields else (fields or default_fields)
 
         full_metadata = self.store.list_all(storage_type)
-        filtered_list: dict[str, dict[str, dict[str, object]]] = {}
+        filtered_list: dict[StorageType, dict[str, dict[str, object]]] = {}
 
         for t, storages in full_metadata.items():
             filtered_storages: dict[str, dict[str, object]] = {}
