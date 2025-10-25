@@ -55,60 +55,56 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         self._operations: list[dict[Any, Any]] = []
 
     # ----------------- Helpers ----------------- #
-    def _determine_input_name(self, input_obj: Any) -> str | None:
-        """Extract a meaningful input name for the operation metadata with lazy logging."""
+    def _determine_origin_name(self, origin: Any) -> str | None:
+        """Extract a meaningful origin name for the operation metadata with lazy logging."""
         result = None  # Store the determined name
 
-        match input_obj:
+        match origin:
             # Direct BaseStorage (Wagon, Box, Container)
             case BaseStorage():
-                result = determine_storage_type(input_obj)
-                logger.debug("Detected BaseStorage input: %s", result)
+                result = determine_storage_type(origin)
+                logger.debug("Detected BaseStorage origin: %s", result)
 
             # Path or string path
             case str() | Path():
-                result = Path(input_obj).name
-                logger.debug("Detected file path input: %s", result)
+                result = Path(origin).name
+                logger.debug("Detected file path origin: %s", result)
 
             # Fallback cases
             case _:
-                if hasattr(input_obj, "path") and isinstance(
-                    input_obj.path, (str, Path)
-                ):
-                    result = Path(input_obj.path).name
+                if hasattr(origin, "path") and isinstance(origin.path, (str, Path)):
+                    result = Path(origin).name
                     logger.debug("Detected object with .path attribute: %s", result)
-                elif hasattr(input_obj, "data") and isinstance(
-                    input_obj.data, BaseStorage
-                ):
-                    result = input_obj.data.name
+                elif hasattr(origin, "data") and isinstance(origin.data, BaseStorage):
+                    result = origin.data.name
                     logger.debug(
                         "Detected object with .data as BaseStorage: %s", result
                     )
-                elif hasattr(input_obj, "data") and isinstance(
-                    input_obj.data, pd.DataFrame
-                ):
+                elif hasattr(origin, "data") and isinstance(origin.data, pd.DataFrame):
                     result = "data"
                     logger.debug("Detected object with .data as DataFrame")
-                elif hasattr(input_obj, "name"):
-                    result = str(input_obj.name)
+                elif hasattr(origin, "name"):
+                    result = str(origin.name)
                     logger.debug("Detected object with .name attribute: %s", result)
                 else:
-                    logger.debug("Input type not recognized; returning None")
+                    logger.debug("Origin type not recognized; returning None")
 
         return result
 
     def _generate_operation_metadata(
-        self, style_name: str, output_obj: StorageT, input_obj: Any
+        self, style_name: str, storage: StorageT, origin: Any
     ):
         """Generate metadata from operation"""
-        input_name = self._determine_input_name(input_obj)
+
+        origin_name = self._determine_origin_name(origin)
+
         metadata = generate_metadata(
-            output_obj,
+            storage=storage,
             metadata_type="operation",
-            input_name=input_name,
+            origin_name=origin_name,
             style_name=style_name,
         )
-        add_metadata_to_storage(output_obj, metadata)
+        add_metadata_to_storage(storage, metadata)
 
     # ----------------- Operations ----------------- #
     def get_operations(self) -> pd.DataFrame:
@@ -121,53 +117,53 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         return pd.DataFrame(self._operations)
 
     # ----------------- Learning ----------------- #
-    def learn_style(self, style_instance: StyleT) -> None:
+    def learn_style(self, style: StyleT) -> None:
         """Register a style instance with this agent."""
-        self.known_styles[style_instance.style_name] = style_instance
-        self.learned_styles[style_instance.style_name] = {
-            "class": style_instance.__class__.__name__,
+        self.known_styles[style.style_name] = style
+        self.learned_styles[style.style_name] = {
+            "class": style.__class__.__name__,
             "learned_at": datetime.now(timezone.utc),
         }
-        logger.info("[%s] Learned style '%s'", self.name, style_instance.style_name)
+        logger.info("[%s] Learned style '%s'", self.name, style.style_name)
 
-    def learn_style_by_name(self, name: str) -> None:
+    def learn_style_by_name(self, style_name: str) -> None:
         """Create and learn a style dynamically from the registry."""
-        if name not in self.style_registry:
-            raise ValueError(f"No style registered under name '{name}'")
-        style_cls = self.style_registry[name]
-        instance = style_cls(style_name=name)
-        self.learn_style(instance)
+        if style_name not in self.style_registry:
+            raise ValueError(f"No style registered under name '{style_name}'")
+        style_cls = self.style_registry[style_name]
+        style = style_cls(style_name=style_name)
+        self.learn_style(style)
 
     # ----------------- Normalize Data ----------------- #
-    def normalize_input_data(self, input_data: Any) -> Any:
+    def normalize_origin_data(self, origin: Any) -> Any:
         """
-        Convert input data into a format compatible with BaseStyle.
+        Convert origin data into a format compatible with BaseStyle.
 
-        - If input is BaseStorage, return its `.data`.
-        - If input is DataFrame or BaseParams, return as is.
+        - If origin is BaseStorage, return its `.data`.
+        - If origin is DataFrame or BaseParams, return as is.
         - Otherwise, return the original object.
         """
 
-        if isinstance(input_data, BaseStorage):
-            if input_data.data is None:
-                raise ValueError(f"{input_data.name} has no data to process")
+        if isinstance(origin, BaseStorage):
+            if origin.data is None:
+                raise ValueError(f"{origin.name} has no data to process")
             agent_name = getattr(self, "name", "unknown")
-            logger.debug("[%s] Normalized input from BaseStorage", agent_name)
-            return input_data.data
+            logger.debug("[%s] Normalized origin from BaseStorage", agent_name)
+            return origin.data
 
-        if isinstance(input_data, pd.DataFrame):
+        if isinstance(origin, pd.DataFrame):
             agent_name = getattr(self, "name", "unknown")
-            logger.debug("[%s] Input is already a DataFrame", agent_name)
-            return input_data
+            logger.debug("[%s] Origin is already a DataFrame", agent_name)
+            return origin
 
-        if isinstance(input_data, BaseParams):
+        if isinstance(origin, BaseParams):
             agent_name = getattr(self, "name", "unknown")
-            logger.debug("[%s] Input is BaseParams", agent_name)
-            return input_data
+            logger.debug("[%s] Origin is BaseParams", agent_name)
+            return origin
 
         agent_name = getattr(self, "name", "unknown")
-        logger.debug("[%s] Input normalization returned original data", agent_name)
-        return input_data
+        logger.debug("[%s] Origin normalization returned original data", agent_name)
+        return origin
 
     # ----------------- Create Storage ----------------- #
     def create_storage(self, data: Any) -> StorageT:
@@ -226,12 +222,12 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
     def work(self, style_name: str, data: Any) -> StorageT:
         """Method that defines how the agent performs its task."""
 
-        normalized_data = self.normalize_input_data(data)
+        normalized_data = self.normalize_origin_data(data)
         stylized_data = self.apply_style(style_name, normalized_data)
         storage = self.create_storage(stylized_data)
 
         self._generate_operation_metadata(
-            style_name=style_name, output_obj=storage, input_obj=data
+            style_name=style_name, storage=storage, origin=data
         )
 
         return storage
