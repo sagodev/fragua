@@ -64,6 +64,11 @@ class Store(Generic[StorageT]):
 
         self._store: Dict[str, Dict[str, StorageT]] = {t: {} for t in types_to_store}
 
+    @property
+    def store(self):
+        """Get store."""
+        return self._store
+
     # ------------------- Store Operations ------------------- #
 
     def add(
