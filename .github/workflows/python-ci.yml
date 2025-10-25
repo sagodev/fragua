@@ -49,9 +49,7 @@ jobs:
         run: |
           echo "Detecting modified files..."
           git fetch origin main --depth=1 || true
-          CHANGED=$(git diff --name-only origin/main...HEAD || true)
-
-          # Excluir __init__.py de los cambios
+          CHANGED=$(git diff --name-only --diff-filter=ACM origin/main...HEAD || true)
           PY_FILES=$(echo "$CHANGED" | grep '\.py$' | grep -v '__init__\.py$' | tr '\n' ' ')
           MD_FILES=$(echo "$CHANGED" | grep '\.md$' | tr '\n' ' ')
 
@@ -97,7 +95,7 @@ jobs:
       - name: Check code formatting with Black
         if: steps.changed-files.outputs.python_files != ''
         run: |
-          echo "🧹 Running Black on changed Python files..."
+          echo "Running Black on changed Python files..."
           FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
           black --check $FILES
 
