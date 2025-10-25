@@ -10,12 +10,9 @@ by serializing the data in a consistent way.
 import hashlib
 import json
 from datetime import datetime, timezone
-from typing import Any, cast, Optional, Dict, TYPE_CHECKING
+from typing import Any, cast, Optional, Dict
 import pandas as pd
 from fragua.utils.logger import get_logger
-
-if TYPE_CHECKING:
-    from fragua.store import Wagon, Box, Container
 
 logger = get_logger(__name__)
 
@@ -70,10 +67,11 @@ def get_local_time_and_offset() -> tuple[str, str]:
 
 def determine_storage_type(storage: Any) -> str | None:
     """Extract a meaningful output type for the operation metadata."""
-    if TYPE_CHECKING:
-        Wagon: type
-        Box: type
-        Container: type
+    from fragua.store import (
+        Wagon,
+        Box,
+        Container,
+    )  # pylint: disable=import-outside-toplevel
 
     if isinstance(storage, Wagon):
         return "wagon"
