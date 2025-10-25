@@ -57,43 +57,40 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> str | None:
         """Extract a meaningful origin name for the operation metadata with lazy logging."""
-        result = None  # Store the determined name
+
+        origin_name = None
 
         match origin:
             # Direct BaseStorage (Wagon, Box, Container)
             case BaseStorage():
-                result = determine_storage_type(origin)
-                logger.debug("Detected BaseStorage origin: %s", result)
+                origin_name = str(determine_storage_type(origin))
+                logger.debug("Detected BaseStorage origin: %s", origin_name)
 
             # Path or string path
             case str() | Path():
-                result = Path(origin).name
-                logger.debug("Detected file path origin: %s", result)
+                origin_name = Path(origin).name
+                logger.debug("Detected file path origin: %s", origin_name)
 
             # Fallback cases
             case _:
+                # BaseParams type
                 if hasattr(origin, "path") and isinstance(origin.path, (str, Path)):
-                    result = Path(origin).name
-                    logger.debug("Detected object with .path attribute: %s", result)
-                elif hasattr(origin, "data") and isinstance(origin.data, BaseStorage):
-                    result = origin.data.name
+                    origin_name = Path(origin.path).name
                     logger.debug(
-                        "Detected object with .data as BaseStorage: %s", result
+                        "Detected object with .path attribute: %s", origin_name
                     )
+                # Dataframe
                 elif hasattr(origin, "data") and isinstance(origin.data, pd.DataFrame):
-                    result = "data"
+                    origin_name = "dataframe"
                     logger.debug("Detected object with .data as DataFrame")
-                elif hasattr(origin, "name"):
-                    result = str(origin.name)
-                    logger.debug("Detected object with .name attribute: %s", result)
                 else:
                     logger.debug("Origin type not recognized; returning None")
 
-        return result
+        return origin_name
 
     def _generate_operation_metadata(
         self, style_name: str, storage: StorageT, origin: Any
-    ):
+    ) -> None:
         """Generate metadata from operation"""
 
         origin_name = self._determine_origin_name(origin)
