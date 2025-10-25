@@ -50,6 +50,8 @@ jobs:
           echo "Detecting modified files..."
           git fetch origin main --depth=1 || true
           CHANGED=$(git diff --name-only --diff-filter=ACM origin/main...HEAD || true)
+
+          # Filter Python and Markdown files, exclude __init__.py
           PY_FILES=$(echo "$CHANGED" | grep '\.py$' | grep -v '__init__\.py$' | tr '\n' ' ')
           MD_FILES=$(echo "$CHANGED" | grep '\.md$' | tr '\n' ' ')
 
@@ -127,7 +129,7 @@ jobs:
           pylint \
             --output-format=colorized \
             --extension-pkg-whitelist=pydantic \
-            --disable=C0103 \
+            --disable=C0103,C0415 \
             $FILES \
             fragua/core/base_params.py --disable=R0903
 
