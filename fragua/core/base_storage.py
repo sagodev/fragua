@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 class BaseStorage(Generic[T]):
     """Core storage unit containing data and unified metadata handling."""
 
-    def __init__(self, name: str, data: Optional[T] = None):
+    def __init__(self, data: Optional[T] = None):
         """
         Initialize a BaseStorage instance.
 
@@ -25,7 +25,6 @@ class BaseStorage(Generic[T]):
             name: Name of the storage object.
             data: Optional data payload.
         """
-        self.name = name
         self.data: Optional[T] = data
         self._metadata: dict[str, object] = {}
 
@@ -50,4 +49,4 @@ class BaseStorage(Generic[T]):
     # -------------------- REPRESENTATION -------------------- #
     def __repr__(self) -> str:
         """String representation showing the name and type."""
-        return f"<{self.__class__.__name__} name={self.name}>"
+        return f"<{self.__class__.__name__}>"
