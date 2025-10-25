@@ -67,7 +67,11 @@ def get_local_time_and_offset() -> tuple[str, str]:
 
 def determine_storage_type(storage: Any) -> str | None:
     """Extract a meaningful output type for the operation metadata."""
-    from fragua.store import Wagon, Box, Container
+    from fragua.store import (
+        Wagon,
+        Box,
+        Container,
+    )  # pylint: disable=import-outside-toplevel
 
     if isinstance(storage, Wagon):
         return "wagon"
@@ -79,21 +83,18 @@ def determine_storage_type(storage: Any) -> str | None:
 
 
 def generate_metadata(
-    obj: Any,
-    *,
-    metadata_type: str,
-    storage_name: Optional[str] = None,
-    input_name: Optional[str] = None,
-    style_name: Optional[str] = None,
-    agent_name: Optional[str] = None,
-    store_manager_name: Optional[str] = None,
+    storage: Any,
+    **metadata_kwargs: Any,
 ) -> Dict[str, Any]:
     """
     Generate metadata dictionary for objects with .data and .name.
 
-    metadata_type: 'base', 'operation', or 'save'
+    Args:
+        storage: Storage object that holds data (e.g., Wagon, Box, Container).
+        **kwargs: Additional metadata fields
+            (e.g.,metadata_type, storage_name, agent_name, style_name, etc.).
     """
-    data_attr = getattr(obj, "data", obj)
+    data_attr = getattr(storage, "data", storage)
     rows, columns = getattr(data_attr, "shape", (None, None))
     checksum = calculate_checksum(data_attr)
     local_time, timezone_offset = get_local_time_and_offset()
@@ -106,29 +107,31 @@ def generate_metadata(
         "base_checksum": checksum,
     }
 
-    class_type = obj.__class__.__name__.lower()
+    class_type = storage.__class__.__name__.lower()
 
-    if metadata_type == "base":
+    if metadata_kwargs.get("metadata_type") == "base":
         base_metadata.update({"type": class_type})
-    elif metadata_type == "operation":
+    elif metadata_kwargs.get("metadata_type") == "operation":
         base_metadata.update(
             {
-                "origin": input_name,
-                "style_name": style_name,
+                "origin": metadata_kwargs.get("origin_name"),
+                "style_name": metadata_kwargs.get("style_name"),
                 "operation_checksum": checksum,
             }
         )
-    elif metadata_type == "save":
+    elif metadata_kwargs.get("metadata_type") == "save":
         base_metadata.update(
             {
-                "storage_name": storage_name,
-                "store_manager": store_manager_name,
-                "agent_name": agent_name,
+                "storage_name": metadata_kwargs.get("storage_name"),
+                "store_manager": metadata_kwargs.get("store_manager_name"),
+                "agent_name": metadata_kwargs.get("agent_name"),
                 "save_checksum": checksum,
             }
         )
     else:
-        raise ValueError(f"Unknown metadata_type '{metadata_type}'")
+        raise ValueError(
+            f"Unknown metadata_type '{metadata_kwargs.get("metadata_type")}'"
+        )
 
     return base_metadata
 
