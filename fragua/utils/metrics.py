@@ -130,7 +130,7 @@ def generate_metadata(
         )
     else:
         raise ValueError(
-            f"Unknown metadata_type '{metadata_kwargs.get("metadata_type")}'"
+            f"Unknown metadata_type '{metadata_kwargs.get('metadata_type')}'"
         )
 
     return base_metadata
