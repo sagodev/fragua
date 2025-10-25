@@ -1,4 +1,4 @@
-name: Python CI
+name: Python CI (Smart Auto Formatter)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  lint_and_typecheck:
+  smart-checks:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,13 +19,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      # --- Cache pip dependencies ---
       - name: Cache pip dependencies
         uses: actions/cache@v4
         with:
@@ -39,39 +41,107 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install mypy pylint black
+          pip install mdformat mdformat-gfm
 
-      # --- Black (format checking only) ---
-      - name: Check code formatting with Black
+      # --- Detect changed files ---
+      - name: Detect changed files
+        id: changed-files
         run: |
-          black --check .
+          echo "📄 Detectando archivos modificados..."
+          git fetch origin main --depth=1 || true
+          CHANGED=$(git diff --name-only origin/main...HEAD || true)
+          echo "changed_files=$CHANGED" >> $GITHUB_OUTPUT
+          echo "$CHANGED"
+
+      # --- Determine file types ---
+      - name: Determine file types
+        id: file-types
+        run: |
+          CHANGED="${{ steps.changed-files.outputs.changed_files }}"
+          PY_FILES=$(echo "$CHANGED" | grep '\.py$' || true)
+          MD_FILES=$(echo "$CHANGED" | grep '\.md$' || true)
+          echo "python_files=$PY_FILES" >> $GITHUB_OUTPUT
+          echo "markdown_files=$MD_FILES" >> $GITHUB_OUTPUT
+          echo "Python files:"
+          echo "$PY_FILES"
+          echo "Markdown files:"
+          echo "$MD_FILES"
+
+      # --- Skip if no Python or Markdown files changed ---
+      - name: Skip if no relevant files
+        if: steps.file-types.outputs.python_files == '' && steps.file-types.outputs.markdown_files == ''
+        run: |
+          echo "🪶 No Python or Markdown files changed. Skipping CI."
+          exit 0
+
+      # --- Markdown validation ---
+      - name: Validate Markdown files
+        if: steps.file-types.outputs.markdown_files != ''
+        run: |
+          echo "📝 Validating Markdown formatting..."
+          mdformat --check ${{ steps.file-types.outputs.markdown_files }}
+
+      # --- Auto-format Markdown files on main with docs: commit ---
+      - name: Auto-format Markdown on main
+        if: github.ref == 'refs/heads/main' && steps.file-types.outputs.markdown_files != ''
+        run: |
+          echo "🛠️ Auto-formatting Markdown files..."
+          mdformat ${{ steps.file-types.outputs.markdown_files }}
+          if ! git diff --quiet; then
+            echo "🪶 Changes detected after formatting. Committing with 'docs:' prefix..."
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add ${{ steps.file-types.outputs.markdown_files }}
+            git commit -m "docs: auto-format Markdown files"
+            git push
+          else
+            echo "✅ Markdown already formatted correctly."
+          fi
+
+      # --- Black check ---
+      - name: Check code formatting with Black
+        if: steps.file-types.outputs.python_files != ''
+        run: |
+          echo "🧹 Running Black on changed Python files..."
+          black --check ${{ steps.file-types.outputs.python_files }}
+
+      # --- Auto-format Python files on main with style: commit ---
+      - name: Auto-format Python files on main
+        if: github.ref == 'refs/heads/main' && steps.file-types.outputs.python_files != ''
+        run: |
+          echo "🛠️ Auto-formatting Python files..."
+          black ${{ steps.file-types.outputs.python_files }}
+          if ! git diff --quiet; then
+            echo "🪶 Changes detected after Black. Committing with 'style:' prefix..."
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add ${{ steps.file-types.outputs.python_files }}
+            git commit -m "style: auto-format Python files"
+            git push
+          else
+            echo "✅ Python already formatted correctly."
 
       # --- Pylint ---
       - name: Lint with pylint
+        if: steps.file-types.outputs.python_files != ''
         run: |
+          echo "🔍 Running Pylint on changed Python files..."
           pylint \
             --output-format=colorized \
             --extension-pkg-whitelist=pydantic \
             --disable=C0103 \
-            fragua/agents \
-            fragua/core \
-            fragua/utils \
-            fragua/store \
-            fragua/styles \
-            fragua/params \
+            ${{ steps.file-types.outputs.python_files }} \
             fragua/core/base_params.py --disable=R0903
 
       # --- Mypy ---
       - name: Type checking with mypy
+        if: steps.file-types.outputs.python_files != ''
         run: |
+          echo "🧠 Running Mypy on changed Python files..."
           mypy \
             --strict \
             --pretty \
             --ignore-missing-imports \
             --disallow-untyped-defs \
             --python-version 3.10 \
-            fragua/agents \
-            fragua/core \
-            fragua/utils \
-            fragua/store \
-            fragua/styles \
-            fragua/params
+            ${{ steps.file-types.outputs.python_files }}
