@@ -50,42 +50,38 @@ jobs:
           echo "Detecting modified files..."
           git fetch origin main --depth=1 || true
           CHANGED=$(git diff --name-only origin/main...HEAD || true)
-          echo "changed_files=$CHANGED" >> $GITHUB_OUTPUT
-          echo "$CHANGED"
 
-      # --- Determine file types ---
-      - name: Determine file types
-        id: file-types
-        run: |
-          CHANGED="${{ steps.changed-files.outputs.changed_files }}"
-          PY_FILES=$(echo "$CHANGED" | grep '\.py$' | xargs -r)
-          MD_FILES=$(echo "$CHANGED" | grep '\.md$' | xargs -r)
+          # Excluir __init__.py de los cambios
+          PY_FILES=$(echo "$CHANGED" | grep '\.py$' | grep -v '__init__\.py$' | tr '\n' ' ')
+          MD_FILES=$(echo "$CHANGED" | grep '\.md$' | tr '\n' ' ')
+
           echo "python_files=$PY_FILES" >> $GITHUB_OUTPUT
           echo "markdown_files=$MD_FILES" >> $GITHUB_OUTPUT
+
           echo "Python files: $PY_FILES"
           echo "Markdown files: $MD_FILES"
 
       # --- Skip if no relevant files ---
       - name: Skip if no relevant files
-        if: steps.file-types.outputs.python_files == '' && steps.file-types.outputs.markdown_files == ''
+        if: steps.changed-files.outputs.python_files == '' && steps.changed-files.outputs.markdown_files == ''
         run: |
           echo "No Python or Markdown files changed. Skipping CI."
           exit 0
 
       # --- Validate Markdown files ---
       - name: Validate Markdown files
-        if: steps.file-types.outputs.markdown_files != ''
+        if: steps.changed-files.outputs.markdown_files != ''
         run: |
           echo "Validating Markdown formatting..."
-          FILES=$(echo "${{ steps.file-types.outputs.markdown_files }}" | tr '\n' ' ')
+          FILES=$(echo "${{ steps.changed-files.outputs.markdown_files }}" | tr ' ' '\n')
           mdformat --check $FILES
 
       # --- Auto-format Markdown on main ---
       - name: Auto-format Markdown on main
-        if: github.ref == 'refs/heads/main' && steps.file-types.outputs.markdown_files != ''
+        if: github.ref == 'refs/heads/main' && steps.changed-files.outputs.markdown_files != ''
         run: |
           echo "Auto-formatting Markdown files..."
-          FILES=$(echo "${{ steps.file-types.outputs.markdown_files }}" | tr '\n' ' ')
+          FILES=$(echo "${{ steps.changed-files.outputs.markdown_files }}" | tr ' ' '\n')
           mdformat $FILES
           if ! git diff --quiet; then
             echo "Changes detected after formatting. Committing with 'docs:' prefix..."
@@ -99,18 +95,18 @@ jobs:
 
       # --- Check Python code formatting with Black ---
       - name: Check code formatting with Black
-        if: steps.file-types.outputs.python_files != ''
+        if: steps.changed-files.outputs.python_files != ''
         run: |
           echo "🧹 Running Black on changed Python files..."
-          FILES=$(echo "${{ steps.file-types.outputs.python_files }}" | tr '\n' ' ')
+          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
           black --check $FILES
 
       # --- Auto-format Python files on main ---
       - name: Auto-format Python files on main
-        if: github.ref == 'refs/heads/main' && steps.file-types.outputs.python_files != ''
+        if: github.ref == 'refs/heads/main' && steps.changed-files.outputs.python_files != ''
         run: |
           echo "Auto-formatting Python files..."
-          FILES=$(echo "${{ steps.file-types.outputs.python_files }}" | tr '\n' ' ')
+          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
           for file in $FILES; do
             [ -f "$file" ] && black "$file"
           done
@@ -126,10 +122,10 @@ jobs:
 
       # --- Lint with Pylint ---
       - name: Lint with pylint
-        if: steps.file-types.outputs.python_files != ''
+        if: steps.changed-files.outputs.python_files != ''
         run: |
           echo "Running Pylint on changed Python files..."
-          FILES=$(echo "${{ steps.file-types.outputs.python_files }}" | tr '\n' ' ')
+          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
           pylint \
             --output-format=colorized \
             --extension-pkg-whitelist=pydantic \
@@ -139,10 +135,10 @@ jobs:
 
       # --- Type check with Mypy ---
       - name: Type checking with mypy
-        if: steps.file-types.outputs.python_files != ''
+        if: steps.changed-files.outputs.python_files != ''
         run: |
           echo "Running Mypy on changed Python files..."
-          FILES=$(echo "${{ steps.file-types.outputs.python_files }}" | tr '\n' ' ')
+          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
           mypy \
             --strict \
             --pretty \
