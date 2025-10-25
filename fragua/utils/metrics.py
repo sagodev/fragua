@@ -102,6 +102,7 @@ def generate_metadata(
     obj: Any,
     *,
     metadata_type: str,
+    storage_name: Optional[str] = None,
     input_name: Optional[str] = None,
     style_name: Optional[str] = None,
     agent_name: Optional[str] = None,
@@ -122,27 +123,25 @@ def generate_metadata(
         "timezone_offset": timezone_offset,
         "rows": rows,
         "columns": columns,
-        "checksum": checksum,
+        "base_checksum": checksum,
     }
 
-    name_attr = getattr(obj, "name", None)
     class_type = obj.__class__.__name__.lower()
 
     if metadata_type == "base":
-        base_metadata.update({"name": name_attr, "type": class_type})
+        base_metadata.update({"type": class_type})
     elif metadata_type == "operation":
         base_metadata.update(
             {
-                "input_name": input_name,
+                "origin": input_name,
                 "style_name": style_name,
-                "output_name": name_attr,
-                "output_type": class_type,
                 "operation_checksum": checksum,
             }
         )
     elif metadata_type == "save":
         base_metadata.update(
             {
+                "storage_name": storage_name,
                 "store_manager": store_manager_name,
                 "agent_name": agent_name,
                 "save_checksum": checksum,
