@@ -8,6 +8,7 @@ from typing import Optional, Mapping, Union, Literal, Generic, Any, Dict
 from fragua.store.store import Store, StorageT
 from fragua.utils.metrics import (
     add_metadata_to_storage,
+    determine_storage_type,
     generate_metadata,
 )
 from fragua.utils.logger import get_logger
@@ -38,27 +39,36 @@ class StoreManager(Generic[StorageT]):
     # ------------------- Store Operations ------------------- #
     def save(
         self,
-        storage_type: str,
         storage: StorageT,
-        storage_name: str,
-        agent_name: Optional[str] = None,
-        overwrite: bool = False,
+        **kwargs: Any,
     ) -> None:
         """
         Save a single object into the store, enriching its metadata
         with store manager info and agent name.
 
         Args:
-            storage_type: Type of the storage ('wagon', 'box', or 'container').
             storage: Storage object to save.
-            name: Key name under which to store the object.
-            agent_name: Name of the agent performing the save.
-            overwrite: Whether to overwrite if object already exists.
+            kwargs:
+                storage_name: Key name under which to store the object (required).
+                agent_name: Name of the agent performing the save (optional).
+                overwrite: Whether to overwrite if object already exists (optional, default False).
         """
+
+        storage_type: str | None = determine_storage_type(storage=storage)
+        if storage_type is None:
+            raise ValueError(f"Storage type '{storage_type}' is not a valid type.")
+
         if storage_type not in self.store.store:
             raise ValueError(
                 f"Storage type '{storage_type}' is not managed by this Store."
             )
+
+        storage_name: str = kwargs.get("storage_name")
+        if not storage_name:
+            raise ValueError("Missing required argument: 'storage_name'")
+
+        agent_name: Optional[str] = kwargs.get("agent_name")
+        overwrite: bool = kwargs.get("overwrite", False)
 
         if self.store.exists(storage_type, storage_name) and not overwrite:
             logger.warning(
