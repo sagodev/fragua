@@ -57,7 +57,7 @@ class StoreManager(Generic[StorageT]):
             overwrite: Whether to overwrite if object already exists (optional, default False).
         """
 
-        storage_type: StorageType = determine_storage_type(storage=storage)
+        storage_type: StorageType | None = determine_storage_type(storage=storage)
 
         if storage_type is None:
             raise ValueError(f"Storage type '{storage_type}' is not a válid type.")
@@ -150,7 +150,7 @@ class StoreManager(Generic[StorageT]):
         Return filtered metadata for stored objects, optionally filtered by type.
         """
         default_fields = ["storage_name", "type", "rows", "columns", "checksum"]
-        selected_fields = None if all_fields else (fields or default_fields)
+        selected_fields = [] if all_fields else (fields or default_fields)
 
         full_metadata = self.store.list_all(storage_type)
         filtered_list: dict[StorageType, dict[str, dict[str, object]]] = {}
