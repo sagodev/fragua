@@ -1,5 +1,6 @@
-"""Params module for Fragua."""
+"""Fragua ETL Params module."""
 
+# ------------------- Delivery Params ------------------- #
 from .delivery_params import (
     DeliveryParams,
     ExcelDeliveryParams,
@@ -11,6 +12,7 @@ from .delivery_params import (
     APIDeliveryParamsT,
 )
 
+# ------------------- Mine Params ------------------- #
 from .mine_params import (
     MineParams,
     CSVMineParams,
@@ -24,6 +26,7 @@ from .mine_params import (
     APIMineParamsT,
 )
 
+# ------------------- Forge Params ------------------- #
 from .forge_params import (
     ForgeParams,
     MLForgeParams,
@@ -35,7 +38,9 @@ from .forge_params import (
     AnalysisForgeParamsT,
 )
 
+# ------------------- __all__ ------------------- #
 __all__ = [
+    # Mine Params
     "MineParams",
     "CSVMineParams",
     "ExcelMineParams",
@@ -46,6 +51,7 @@ __all__ = [
     "ExcelMineParamsT",
     "SQLMineParamsT",
     "APIMineParamsT",
+    # Delivery Params
     "DeliveryParams",
     "ExcelDeliveryParams",
     "SQLDeliveryParams",
@@ -54,6 +60,7 @@ __all__ = [
     "ExcelDeliveryParamsT",
     "SQLDeliveryParamsT",
     "APIDeliveryParamsT",
+    # Forge Params
     "ForgeParams",
     "MLForgeParams",
     "ReportForgeParams",
