@@ -14,8 +14,4 @@ class Transporter(BaseAgent[DeliveryStyle[Any, Any], Container[Any]]):
     """Agent that applies delivery styles to data for final delivery."""
 
     style_registry: dict[str, Type[DeliveryStyle[Any, Any]]] = DELIVERYSTYLE_REGISTRY
-    result_type: Type[Container[Any]] = Container
-
-    def work(self, *args: Any, **kwargs: Any) -> Container[Any]:
-        """Apply a delivery style to provided data and return a Container result."""
-        return self.apply_style(*args, **kwargs)
+    storage_type: Type[Container[Any]] = Container

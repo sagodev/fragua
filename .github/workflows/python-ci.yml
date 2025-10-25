@@ -1,4 +1,4 @@
-name: Python CI
+name: Python CI (Smart Auto Formatter)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  smart-checks:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,53 +19,130 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install mypy pytest pylint black
+          pip install mypy pylint black
+          pip install mdformat mdformat-gfm
 
-      # --- Black ---
-      - name: Autoformat code with Black
+      # --- Detect changed files ---
+      - name: Detect changed files
+        id: changed-files
         run: |
-          black .
+          echo "Detecting modified files..."
+          git fetch origin main --depth=1 || true
+          CHANGED=$(git diff --name-only --diff-filter=ACM origin/main...HEAD || true)
 
+          # Filter Python and Markdown files, exclude __init__.py
+          PY_FILES=$(echo "$CHANGED" | grep '\.py$' | grep -v '__init__\.py$' | tr '\n' ' ')
+          MD_FILES=$(echo "$CHANGED" | grep '\.md$' | tr '\n' ' ')
+
+          echo "python_files=$PY_FILES" >> $GITHUB_OUTPUT
+          echo "markdown_files=$MD_FILES" >> $GITHUB_OUTPUT
+
+          echo "Python files: $PY_FILES"
+          echo "Markdown files: $MD_FILES"
+
+      # --- Skip if no relevant files ---
+      - name: Skip if no relevant files
+        if: steps.changed-files.outputs.python_files == '' && steps.changed-files.outputs.markdown_files == ''
+        run: |
+          echo "No Python or Markdown files changed. Skipping CI."
+          exit 0
+
+      # --- Validate Markdown files ---
+      - name: Validate Markdown files
+        if: steps.changed-files.outputs.markdown_files != ''
+        run: |
+          echo "Validating Markdown formatting..."
+          FILES=$(echo "${{ steps.changed-files.outputs.markdown_files }}" | tr ' ' '\n')
+          mdformat --check $FILES
+
+      # --- Auto-format Markdown on main ---
+      - name: Auto-format Markdown on main
+        if: github.ref == 'refs/heads/main' && steps.changed-files.outputs.markdown_files != ''
+        run: |
+          echo "Auto-formatting Markdown files..."
+          FILES=$(echo "${{ steps.changed-files.outputs.markdown_files }}" | tr ' ' '\n')
+          mdformat $FILES
+          if ! git diff --quiet; then
+            echo "Changes detected after formatting. Committing with 'docs:' prefix..."
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add $FILES
+            git commit -m "docs: auto-format Markdown files"
+            git push
+          else
+            echo "Markdown already formatted correctly."
+
+      # --- Check Python code formatting with Black ---
       - name: Check code formatting with Black
+        if: steps.changed-files.outputs.python_files != ''
         run: |
-          black --check .
+          echo "Running Black on changed Python files..."
+          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
+          black --check $FILES
 
-      # --- Pylint ---
-      - name: Lint with pylint
+      # --- Auto-format Python files on main ---
+      - name: Auto-format Python files on main
+        if: github.ref == 'refs/heads/main' && steps.changed-files.outputs.python_files != ''
         run: |
-          # Ignorar R0903 solo en base_params.py
+          echo "Auto-formatting Python files..."
+          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
+          for file in $FILES; do
+            [ -f "$file" ] && black "$file"
+          done
+          if ! git diff --quiet; then
+            echo "Changes detected after Black. Committing with 'style:' prefix..."
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add $FILES
+            git commit -m "style: auto-format Python files"
+            git push
+          else
+            echo "Python already formatted correctly."
+
+      # --- Lint with Pylint ---
+      - name: Lint with pylint
+        if: steps.changed-files.outputs.python_files != ''
+        run: |
+          echo "Running Pylint on changed Python files..."
+          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
           pylint \
+            --output-format=colorized \
             --extension-pkg-whitelist=pydantic \
-            --disable=C0103 \
-            fragua/agents \
-            fragua/core \
-            fragua/utils \
-            fragua/store \
-            fragua/styles \
-            fragua/params \
+            --disable=C0103,C0415 \
+            $FILES \
             fragua/core/base_params.py --disable=R0903
 
-      # --- Mypy ---
+      # --- Type check with Mypy ---
       - name: Type checking with mypy
+        if: steps.changed-files.outputs.python_files != ''
         run: |
+          echo "Running Mypy on changed Python files..."
+          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
           mypy \
             --strict \
+            --pretty \
             --ignore-missing-imports \
             --disallow-untyped-defs \
             --python-version 3.10 \
-            fragua/agents \
-            fragua/core \
-            fragua/utils \
-            fragua/store \
-            fragua/styles \
-            fragua/params
+            $FILES

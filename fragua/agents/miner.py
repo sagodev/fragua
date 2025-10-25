@@ -2,7 +2,7 @@
 Miner agent responsible for extracting data using ExtractionStyles.
 
 The Miner now uses ExtractionStyles to process data from sources
-and stores results in Wagons via StorageManager.
+and stores results in Wagons via StoreManager.
 """
 
 from __future__ import annotations
@@ -20,7 +20,4 @@ class Miner(BaseAgent[MineStyle[Any, Any], Wagon[Any]]):
     """Agent that applies extraction styles to data sources for extraction."""
 
     style_registry: dict[str, Type[MineStyle[Any, Any]]] = MINESTYLE_REGISTRY
-    result_type: Type[Wagon[Any]] = Wagon
-
-    def work(self, *args: Any, **kwargs: Any) -> Wagon[Any]:
-        return self.apply_style(*args, **kwargs)
+    storage_type: Type[Wagon[Any]] = Wagon
