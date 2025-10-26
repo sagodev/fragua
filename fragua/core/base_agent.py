@@ -15,10 +15,11 @@ from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
 from fragua.core.base_storage import BaseStorage
 from fragua.core.base_params import BaseParams
+from fragua.store.store import AllowedStorage
 from fragua.store.wagon import Wagon
 from fragua.store.box import Box
 from fragua.store.container import Container
-from fragua.agents.store_manager import StoreManager, AllowedStorage
+from fragua.agents.store_manager import StoreManager
 from fragua.utils.metrics import (
     add_metadata_to_storage,
     generate_metadata,
