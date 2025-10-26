@@ -76,7 +76,7 @@ class StoreManager(Generic[StorageT]):
             entry["timezone"],
         )
 
-    def see_movements_log(
+    def movements_log(
         self,
         storage_type: Optional[StorageType] = None,
         storage_name: Optional[str] = None,
