@@ -108,14 +108,17 @@ class StoreManager(Generic[StorageT]):
         storage_name = kwargs.get("storage_name")
         agent_name: Optional[str] = kwargs.get("agent_name")
         overwrite: bool = kwargs.get("overwrite", False)
+        log: Dict[str, Any] = {}
 
         try:
             if storage_type is None or storage_type not in self.store.store:
                 raise ValueError(
                     f"Storage type '{storage_type}' not managed by this Store."
                 )
+
             if not storage_name:
                 raise ValueError("Missing required argument: 'storage_name'")
+
             if self.store.exists(storage_type, storage_name) and not overwrite:
                 logger.warning(
                     "[%s] %s '%s' exists. Use overwrite=True to replace.",
@@ -123,20 +126,25 @@ class StoreManager(Generic[StorageT]):
                     storage_type,
                     storage_name,
                 )
-                self._log_movement(
-                    operation="save",
-                    storage_type=storage_type,
-                    storage_name=storage_name,
-                    agent_name=agent_name,
-                    success=False,
-                    details={"reason": "exists"},
-                )
+
+                log = {
+                    "operation": "save",
+                    "storage_type": storage_type,
+                    "storage_name": storage_name,
+                    "agent_name": agent_name,
+                    "success": False,
+                    " details": {"reason": "exists"},
+                }
+
+                self._log_movement(**log)
                 return
 
             self._generate_save_metadata(storage, storage_name, agent_name)
+
             self.store.add(
                 storage_type, storage, name=storage_name, overwrite=overwrite
             )
+
             logger.info(
                 "[%s] Saved %s '%s' by agent '%s'",
                 self.name,
@@ -144,22 +152,28 @@ class StoreManager(Generic[StorageT]):
                 storage_name,
                 agent_name,
             )
-            self._log_movement(
-                operation="save",
-                storage_type=storage_type,
-                storage_name=storage_name,
-                agent_name=agent_name,
-                success=True,
-            )
+
+            log = {
+                "operation": "save",
+                "storage_type": storage_type,
+                "storage_name": storage_name,
+                "agent_name": agent_name,
+                "success": True,
+            }
+
+            self._log_movement(**log)
+
         except Exception as e:
-            self._log_movement(
-                operation="save",
-                storage_type=storage_type,
-                storage_name=storage_name or "unknown",
-                agent_name=agent_name,
-                success=False,
-                details={"error": str(e)},
-            )
+            log = {
+                "operation": "save",
+                "storage_type": storage_type,
+                "storage_name": storage_name or "unknown",
+                "agent_name": agent_name,
+                "success": False,
+                " details": {"error": str(e)},
+            }
+
+            self._log_movement(**log)
             raise
 
     def get(
