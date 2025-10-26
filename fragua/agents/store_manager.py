@@ -30,7 +30,7 @@ class StoreManager(Generic[StorageT]):
     # ------------------- Movement Logging ------------------- #
     def _log_movement(
         self,
-        **kwargs: Any,
+        **movement_log: Any,
     ) -> None:
         """Records a movement in the internal log."""
 
@@ -49,13 +49,13 @@ class StoreManager(Generic[StorageT]):
             "date": date_str,
             "time": time_str,
             "timezone": tz_offset,
-            "operation": kwargs.get("operation"),
-            "storage_type": kwargs.get("storage_type"),
-            "storage_name": kwargs.get("storage_name"),
-            "agent_name": kwargs.get("agent_name"),
+            "operation": movement_log.get("operation"),
+            "storage_type": movement_log.get("storage_type"),
+            "storage_name": movement_log.get("storage_name"),
+            "agent_name": movement_log.get("agent_name"),
             "store_manager": self.name,
-            "success": kwargs.get("success"),
-            "details": kwargs.get("details") or {},
+            "success": movement_log.get("success"),
+            "details": movement_log.get("details") or {},
         }
 
         self._movement_log.append(entry)
@@ -63,9 +63,9 @@ class StoreManager(Generic[StorageT]):
             "[%s] Movement logged by '%s': %s '%s' by agent '%s' at %s %s %s",
             self.name,
             self.name,
-            kwargs.get("operation"),
-            kwargs.get("storage_name"),
-            kwargs.get("agent_name"),
+            movement_log.get("operation"),
+            movement_log.get("storage_name"),
+            movement_log.get("agent_name"),
             entry["date"],
             entry["time"],
             entry["timezone"],
@@ -108,7 +108,7 @@ class StoreManager(Generic[StorageT]):
         storage_name = kwargs.get("storage_name")
         agent_name: Optional[str] = kwargs.get("agent_name")
         overwrite: bool = kwargs.get("overwrite", False)
-        log: Dict[str, Any] = {}
+        movement_log: Dict[str, Any] = {}
 
         try:
             if storage_type is None or storage_type not in self.store.store:
@@ -127,7 +127,7 @@ class StoreManager(Generic[StorageT]):
                     storage_name,
                 )
 
-                log = {
+                movement_log = {
                     "operation": "save",
                     "storage_type": storage_type,
                     "storage_name": storage_name,
@@ -135,8 +135,7 @@ class StoreManager(Generic[StorageT]):
                     "success": False,
                     " details": {"reason": "exists"},
                 }
-
-                self._log_movement(**log)
+                self._log_movement(**movement_log)
                 return
 
             self._generate_save_metadata(storage, storage_name, agent_name)
@@ -153,18 +152,17 @@ class StoreManager(Generic[StorageT]):
                 agent_name,
             )
 
-            log = {
+            movement_log = {
                 "operation": "save",
                 "storage_type": storage_type,
                 "storage_name": storage_name,
                 "agent_name": agent_name,
                 "success": True,
             }
-
-            self._log_movement(**log)
+            self._log_movement(**movement_log)
 
         except Exception as e:
-            log = {
+            movement_log = {
                 "operation": "save",
                 "storage_type": storage_type,
                 "storage_name": storage_name or "unknown",
@@ -172,8 +170,7 @@ class StoreManager(Generic[StorageT]):
                 "success": False,
                 " details": {"error": str(e)},
             }
-
-            self._log_movement(**log)
+            self._log_movement(**movement_log)
             raise
 
     def get(
@@ -186,26 +183,29 @@ class StoreManager(Generic[StorageT]):
         Mapping[StorageType, Mapping[str, StorageT]],
     ]:
         """Retrieve objects from the store and log the operation."""
+        movement_log: Dict[str, Any] = {}
         try:
             result = self.store.get(storage_type, storage_name)
-            self._log_movement(
-                "get",
-                storage_type if storage_type != "all" else "all",
-                storage_name,
-                agent_name=None,
-                success=True,
-                details={"result_type": type(result).__name__},
-            )
+            movement_log = {
+                "operation": "get",
+                "storage_type": storage_type if storage_type != "all" else "all",
+                "storage_name": storage_name,
+                "agent_name": None,
+                "success": True,
+                " details": {"result_type": type(result).__name__},
+            }
+            self._log_movement(**movement_log)
             return result
         except Exception as e:
-            self._log_movement(
-                "get",
-                storage_type if storage_type != "all" else "all",
-                storage_name,
-                agent_name=None,
-                success=False,
-                details={"error": str(e)},
-            )
+            movement_log = {
+                "operation": "get",
+                "storage_type": storage_type if storage_type != "all" else "all",
+                "storage_name": storage_name,
+                "agent_name": None,
+                "success": False,
+                " details": {"error": str(e)},
+            }
+            self._log_movement(**movement_log)
             raise
 
     def remove(
@@ -222,6 +222,8 @@ class StoreManager(Generic[StorageT]):
             removed = self.store.remove(storage_type, storage_name)
             success = bool(removed)
             details: dict[str, object] = {}
+            movement_log: Dict[str, Any] = {}
+
             if isinstance(removed, dict):
                 count = sum(
                     len(v) if isinstance(v, dict) else 1 for v in removed.values()
@@ -232,14 +234,15 @@ class StoreManager(Generic[StorageT]):
             else:
                 details["removed_count"] = 0
 
-            self._log_movement(
-                "remove",
-                storage_type,
-                storage_name,
-                agent_name=None,
-                success=success,
-                details=details,
-            )
+            movement_log = {
+                "operation": "remove",
+                "storage_type": storage_type,
+                "storage_name": storage_name,
+                "agent_name": None,
+                "success": success,
+                " details": details,
+            }
+            self._log_movement(**movement_log)
 
             if success:
                 logger.info(
@@ -257,14 +260,15 @@ class StoreManager(Generic[StorageT]):
                 )
             return removed
         except Exception as e:
-            self._log_movement(
-                "remove",
-                storage_type,
-                storage_name,
-                agent_name=None,
-                success=False,
-                details={"error": str(e)},
-            )
+            movement_log = {
+                "operation": "remove",
+                "storage_type": storage_type,
+                "storage_name": storage_name,
+                "agent_name": None,
+                "success": False,
+                " details": {"error": str(e)},
+            }
+            self._log_movement(**movement_log)
             raise
 
     def exists(self, storage_type: StorageType, storage_name: str) -> bool:
