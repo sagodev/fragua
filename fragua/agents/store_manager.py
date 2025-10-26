@@ -5,8 +5,8 @@ Handles metadata, checksums, logging, and unified reporting.
 """
 
 from datetime import datetime
-from typing import Optional, Mapping, Union, Literal, Generic, Any, Dict, List
-from fragua.store.store import Store, StorageT
+from typing import Optional, Mapping, Union, Literal, Any, Dict, List
+from fragua.store.store import Store, AllowedStorage
 from fragua.utils.metrics import (
     StorageType,
     add_metadata_to_storage,
@@ -19,10 +19,10 @@ logger = get_logger(__name__)
 
 
 # -------------------- StoreManager -------------------- #
-class StoreManager(Generic[StorageT]):
+class StoreManager:
     """Dynamic StoreManager that works with types defined in the Store."""
 
-    def __init__(self, store: Store[StorageT], name: str = "StoreManager") -> None:
+    def __init__(self, store: Store, name: str = "StoreManager") -> None:
         self.name = name
         self.store = store
         self._movement_log: List[dict[str, object]] = []
@@ -54,6 +54,7 @@ class StoreManager(Generic[StorageT]):
             "storage_name": movement_log.get("storage_name"),
             "agent_name": movement_log.get("agent_name"),
             "store_manager": self.name,
+            "store_name": self.store.store_name,
             "success": movement_log.get("success"),
             "details": movement_log.get("details") or {},
         }
@@ -89,7 +90,7 @@ class StoreManager(Generic[StorageT]):
 
     # ------------------- Metadata ------------------- #
     def _generate_save_metadata(
-        self, storage: StorageT, storage_name: str, agent_name: Optional[str]
+        self, storage: AllowedStorage, storage_name: str, agent_name: Optional[str]
     ) -> None:
         """Generate and attach metadata to a storage object before saving."""
         metadata_kwargs: Dict[str, Any] = {
@@ -102,7 +103,7 @@ class StoreManager(Generic[StorageT]):
         add_metadata_to_storage(storage, metadata)
 
     # ------------------- Store Operations ------------------- #
-    def save(self, storage: StorageT, **kwargs: Any) -> None:
+    def save(self, storage: AllowedStorage, **kwargs: Any) -> None:
         """Save a storage object in the store and update movement log."""
         storage_type: StorageType | None = determine_storage_type(storage=storage)
         storage_name = kwargs.get("storage_name")
@@ -178,9 +179,9 @@ class StoreManager(Generic[StorageT]):
         storage_type: StorageType | Literal["all"] = "all",
         storage_name: str = "all",
     ) -> Union[
-        Optional[StorageT],
-        Mapping[str, StorageT],
-        Mapping[StorageType, Mapping[str, StorageT]],
+        Optional[AllowedStorage],
+        Mapping[str, AllowedStorage],
+        Mapping[StorageType, Mapping[str, AllowedStorage]],
     ]:
         """Retrieve objects from the store and log the operation."""
         movement_log: Dict[str, Any] = {}
@@ -213,9 +214,9 @@ class StoreManager(Generic[StorageT]):
         storage_type: StorageType | Literal["all"] = "all",
         storage_name: str = "all",
     ) -> Union[
-        Optional[StorageT],
-        Mapping[str, StorageT],
-        Mapping[StorageType, Mapping[str, StorageT]],
+        Optional[AllowedStorage],
+        Mapping[str, AllowedStorage],
+        Mapping[StorageType, Mapping[str, AllowedStorage]],
     ]:
         """Remove storages from the store and log the operation."""
         try:
