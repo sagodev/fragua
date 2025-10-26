@@ -4,6 +4,7 @@ Manages Wagons, Boxes, and Containers using in-memory Store.
 Handles metadata, checksums, logging, and unified reporting.
 """
 
+from datetime import datetime, timezone
 from typing import Optional, Mapping, Union, Literal, Generic, Any, Dict, List
 from fragua.store.store import Store, StorageT
 from fragua.utils.metrics import (
@@ -26,6 +27,52 @@ class StoreManager(Generic[StorageT]):
     def __init__(self, store: Store[StorageT], name: str = "StoreManager") -> None:
         self.name = name
         self.store = store
+        self._movement_log: List[dict[str, object]] = []
+
+    # ------------------- Movement Logging ------------------- #
+    def _log_movement(
+        self,
+        operation: str,
+        storage_type: StorageType | None,
+        storage_name: str,
+        agent_name: Optional[str],
+        success: bool = True,
+        details: Optional[dict[str, object]] = None,
+    ) -> None:
+        """Records a movement in the internal log."""
+        entry: dict[str, object] = {
+            "timestamp": datetime.now(timezone.utc),
+            "operation": operation,
+            "storage_type": storage_type,
+            "storage_name": storage_name,
+            "agent_name": agent_name,
+            "success": success,
+            "details": details or {},
+        }
+        self._movement_log.append(entry)
+        logger.info(
+            "[%s] Movement logged: %s '%s' by agent '%s'",
+            self.name,
+            operation,
+            storage_name,
+            agent_name,
+        )
+
+    def see_movements_log(
+        self,
+        storage_type: Optional[StorageType] = None,
+        storage_name: Optional[str] = None,
+        agent_name: Optional[str] = None,
+    ) -> List[dict[str, object]]:
+        """Returns movements filtered by type, object name or agent."""
+        result = self._movement_log
+        if storage_type:
+            result = [m for m in result if m["storage_type"] == storage_type]
+        if storage_name:
+            result = [m for m in result if m["storage_name"] == storage_name]
+        if agent_name:
+            result = [m for m in result if m["agent_name"] == agent_name]
+        return result
 
     # ------------------- Metadata ------------------- #
     def _generate_save_metadata(
