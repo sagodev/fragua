@@ -20,6 +20,7 @@ from fragua.store.wagon import Wagon
 from fragua.store.box import Box
 from fragua.store.container import Container
 from fragua.agents.store_manager import StoreManager
+from fragua.params.params_registry import PARAMS_REGISTRY
 from fragua.utils.metrics import (
     add_metadata_to_storage,
     generate_metadata,
@@ -219,15 +220,30 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         )
 
     # ----------------- Work Pipeline ----------------- #
-    def work(self, style_name: str, data: Any) -> StorageT:
-        """Method that defines how the agent performs its task."""
+    def work(self, style_name: str, **kwargs: Any) -> StorageT:
+        """
+        Execute the agent's task using the specified style and automatic parameter instantiation.
 
-        normalized_data = self.normalize_origin_data(data)
+        Kwargs are used to create the correct Params class based on the agent type and style.
+        """
+        agent_type = self.__class__.__name__.lower()
+
+        params_cls = PARAMS_REGISTRY.get((agent_type, style_name))
+        if not params_cls:
+            raise ValueError(
+                f"No Params class registered for ({agent_type}, {style_name})"
+            )
+
+        params_instance = params_cls(**kwargs)
+
+        normalized_data = self.normalize_origin_data(params_instance)
+
         stylized_data = self.apply_style(style_name, normalized_data)
+
         storage = self.create_storage(stylized_data)
 
         self._generate_operation_metadata(
-            style_name=style_name, storage=storage, origin=data
+            style_name=style_name, storage=storage, origin=params_instance
         )
 
         return storage
