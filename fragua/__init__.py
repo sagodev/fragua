@@ -28,6 +28,7 @@ from fragua.core import BaseAgent, BaseStyle, BaseStorage
 
 # ------------------- Params ------------------- #
 from fragua.params import (
+    register_params,
     ForgeParams,
     ForgeParamsT,
     DeliveryParams,
@@ -97,6 +98,7 @@ __all__ = [
     "SQLMineStyle",
     "APIMineStyle",
     # Params
+    "register_params",
     "ForgeParams",
     "ForgeParamsT",
     "DeliveryParams",
