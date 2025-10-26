@@ -8,15 +8,7 @@ agents Miner, Blacksmith, and Transporter.
 from abc import ABC
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Type,
-    TypeVar,
-    Generic,
-    Optional,
-    cast,
-)
+from typing import Any, Dict, Type, TypeVar, Generic, Optional, cast
 
 import pandas as pd
 from fragua.utils.logger import get_logger
@@ -114,22 +106,25 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
         return pd.DataFrame(self._operations)
 
     # ----------------- Learning ----------------- #
-    def learn_style(self, style: StyleT) -> None:
-        """Register a style instance with this agent."""
-        self.known_styles[style.style_name] = style
-        self.learned_styles[style.style_name] = {
-            "class": style.__class__.__name__,
-            "learned_at": datetime.now(timezone.utc),
-        }
-        logger.info("[%s] Learned style '%s'", self.name, style.style_name)
+    def learn_style(self, *styles: StyleT) -> None:
+        """Register one or multiple style instances with this agent."""
+        for style in styles:
+            self.known_styles[style.style_name] = style
+            self.learned_styles[style.style_name] = {
+                "class": style.__class__.__name__,
+                "learned_at": datetime.now(timezone.utc),
+            }
+            logger.info("[%s] Learned style '%s'", self.name, style.style_name)
 
-    def learn_style_by_name(self, style_name: str) -> None:
-        """Create and learn a style dynamically from the registry."""
-        if style_name not in self.style_registry:
-            raise ValueError(f"No style registered under name '{style_name}'")
-        style_cls = self.style_registry[style_name]
-        style = style_cls(style_name=style_name)
-        self.learn_style(style)
+    def learn_style_by_name(self, *style_names: str) -> None:
+        """Create and learn one or multiple styles dynamically from the registry."""
+        for name in style_names:
+            if name not in self.style_registry:
+                raise ValueError(f"No style registered under name '{name}'")
+
+            style_cls = self.style_registry[name]
+            style = style_cls(style_name=name)
+            self.learn_style(style)
 
     # ----------------- Normalize Data ----------------- #
     def normalize_origin_data(self, origin: Any) -> Any:
@@ -204,7 +199,10 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
 
     # ----------------- Store Manager Interaction ----------------- #
     def store_result(
-        self, storage_manager: StoreManager[Any], storage: StorageT, storage_name: str
+        self,
+        storage_manager: StoreManager[Any],
+        storage: StorageT,
+        storage_name: str,
     ) -> None:
         """Store a storage(Wagon, Box, Container) via an store manager."""
 
