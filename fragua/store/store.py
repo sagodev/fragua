@@ -64,7 +64,9 @@ class Store:
                     invalid,
                 )
 
-        self._store = {cast(StorageType, t): {} for t in types_to_store}
+        self._store: Dict[StorageType, Dict[str, AllowedStorage]] = {
+            cast(StorageType, t): {} for t in types_to_store
+        }
 
     @property
     def store(self) -> Dict[StorageType, Dict[str, AllowedStorage]]:
