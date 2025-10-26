@@ -53,7 +53,6 @@ class StoreManager:
             "storage_type": movement_log.get("storage_type"),
             "storage_name": movement_log.get("storage_name"),
             "agent_name": movement_log.get("agent_name"),
-            "store_manager": self.name,
             "store_name": self.store.store_name,
             "success": movement_log.get("success"),
             "details": movement_log.get("details") or {},
