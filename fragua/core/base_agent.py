@@ -14,7 +14,6 @@ import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
 from fragua.core.base_storage import BaseStorage
-from fragua.core.base_params import BaseParams
 from fragua.store.store import AllowedStorage
 from fragua.store.wagon import Wagon
 from fragua.store.box import Box
@@ -128,39 +127,6 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
             style = style_cls(style_name=name)
             self.learn_style(style)
 
-    # ----------------- Normalize Data ----------------- #
-    def normalize_origin_data(self, origin: Any) -> Any:
-        """
-        Convert origin data into a format compatible with BaseStyle.
-
-        - If origin is BaseStorage, return its `.data`.
-        - If origin is DataFrame or BaseParams, return as is.
-        - Otherwise, return the original object.
-        """
-
-        if isinstance(origin, BaseStorage):
-            if origin.data is None:
-                raise ValueError(
-                    f"the {str(determine_storage_type(origin))} has no data to process"
-                )
-            agent_name = getattr(self, "name", "unknown")
-            logger.debug("[%s] Normalized origin from BaseStorage", agent_name)
-            return origin.data
-
-        if isinstance(origin, pd.DataFrame):
-            agent_name = getattr(self, "name", "unknown")
-            logger.debug("[%s] Origin is already a DataFrame", agent_name)
-            return origin
-
-        if isinstance(origin, BaseParams):
-            agent_name = getattr(self, "name", "unknown")
-            logger.debug("[%s] Origin is BaseParams", agent_name)
-            return origin
-
-        agent_name = getattr(self, "name", "unknown")
-        logger.debug("[%s] Origin normalization returned original data", agent_name)
-        return origin
-
     # ----------------- Create Storage ----------------- #
     def create_storage(self, data: Any) -> StorageT:
         """Convert raw style output into the appropriate storage object."""
@@ -236,9 +202,7 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
 
         params_instance = params_cls(**kwargs)
 
-        normalized_data = self.normalize_origin_data(params_instance)
-
-        stylized_data = self.apply_style(style_name, normalized_data)
+        stylized_data = self.apply_style(style_name, params_instance)
 
         storage = self.create_storage(stylized_data)
 
