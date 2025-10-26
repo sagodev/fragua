@@ -18,7 +18,7 @@ def register_params(agent: str, style: str) -> Any:
             ...
     """
 
-    def decorator(cls: Type[BaseParams]):
+    def decorator(cls: Type[BaseParams]) -> Any:
         PARAMS_REGISTRY[(agent, style)] = cls
         return cls
 
