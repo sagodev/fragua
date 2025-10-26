@@ -3,9 +3,11 @@ Delivery parameters classes for different types of data destinations.
 """
 
 from typing import Dict, TypeVar
-
 from pandas import DataFrame
 from fragua.core.base_params import BaseParams
+from fragua.params.params_registry import register_params
+
+agent: str = "transporter"
 
 
 class DeliveryParams(BaseParams):
@@ -15,6 +17,7 @@ class DeliveryParams(BaseParams):
     destination: str
 
 
+@register_params(agent, style="excel")
 class ExcelDeliveryParams(DeliveryParams):
     """Parameters for Excel delivery."""
 
@@ -23,6 +26,7 @@ class ExcelDeliveryParams(DeliveryParams):
     engine: str | None = None
 
 
+@register_params(agent, style="sql")
 class SQLDeliveryParams(DeliveryParams):
     """Parameters for SQL delivery."""
 
@@ -32,6 +36,7 @@ class SQLDeliveryParams(DeliveryParams):
     chunksize: int | None = None
 
 
+@register_params(agent, style="api")
 class APIDeliveryParams(DeliveryParams):
     """Parameters for API delivery."""
 

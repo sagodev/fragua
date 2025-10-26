@@ -5,6 +5,7 @@ Forge parameters classes for different types of data transformations.
 from typing import Any, Dict, TypeVar
 from pandas import DataFrame
 from fragua.core.base_params import BaseParams
+from fragua.params.params_registry import register_params
 
 
 class ForgeParams(BaseParams):
@@ -13,6 +14,10 @@ class ForgeParams(BaseParams):
     data: DataFrame
 
 
+agent: str = "blacksmith"
+
+
+@register_params(agent, style="ml")
 class MLForgeParams(ForgeParams):
     """Parameters for machine learning transformations."""
 
@@ -22,6 +27,7 @@ class MLForgeParams(ForgeParams):
     outlier_threshold: float | None = None
 
 
+@register_params(agent, style="report")
 class ReportForgeParams(ForgeParams):
     """Parameters for report generation transformations."""
 
@@ -30,6 +36,7 @@ class ReportForgeParams(ForgeParams):
     rounding_precision: int | None = None
 
 
+@register_params(agent, style="analysis")
 class AnalysisForgeParams(ForgeParams):
     """Parameters for data analysis transformations."""
 
