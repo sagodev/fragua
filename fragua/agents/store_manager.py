@@ -4,6 +4,7 @@ Manages Wagons, Boxes, and Containers using in-memory Store.
 Handles metadata, checksums, logging, and unified reporting.
 """
 
+from datetime import datetime
 from typing import Optional, Mapping, Union, Literal, Generic, Any, Dict, List
 from fragua.store.store import Store, StorageT
 from fragua.utils.metrics import (
@@ -16,8 +17,6 @@ from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# -------------------- Type Aliases -------------------- #
-
 
 # -------------------- StoreManager -------------------- #
 class StoreManager(Generic[StorageT]):
@@ -26,6 +25,67 @@ class StoreManager(Generic[StorageT]):
     def __init__(self, store: Store[StorageT], name: str = "StoreManager") -> None:
         self.name = name
         self.store = store
+        self._movement_log: List[dict[str, object]] = []
+
+    # ------------------- Movement Logging ------------------- #
+    def _log_movement(
+        self,
+        **movement_log: Any,
+    ) -> None:
+        """Records a movement in the internal log."""
+
+        now = datetime.now().astimezone()
+
+        date_str = now.date().isoformat()
+        time_str = now.time().strftime("%H:%M:%S")
+
+        raw_offset = now.strftime("%z")
+        if raw_offset and len(raw_offset) == 5:
+            tz_offset = f"{raw_offset[:3]}:{raw_offset[3:]}"
+        else:
+            tz_offset = raw_offset or ""
+
+        entry: dict[str, object] = {
+            "date": date_str,
+            "time": time_str,
+            "timezone": tz_offset,
+            "operation": movement_log.get("operation"),
+            "storage_type": movement_log.get("storage_type"),
+            "storage_name": movement_log.get("storage_name"),
+            "agent_name": movement_log.get("agent_name"),
+            "store_manager": self.name,
+            "success": movement_log.get("success"),
+            "details": movement_log.get("details") or {},
+        }
+
+        self._movement_log.append(entry)
+        logger.info(
+            "[%s] Movement logged by '%s': %s '%s' by agent '%s' at %s %s %s",
+            self.name,
+            self.name,
+            movement_log.get("operation"),
+            movement_log.get("storage_name"),
+            movement_log.get("agent_name"),
+            entry["date"],
+            entry["time"],
+            entry["timezone"],
+        )
+
+    def movements_log(
+        self,
+        storage_type: Optional[StorageType] = None,
+        storage_name: Optional[str] = None,
+        agent_name: Optional[str] = None,
+    ) -> List[dict[str, object]]:
+        """Returns movements filtered by type, object name or agent."""
+        result = self._movement_log
+        if storage_type:
+            result = [m for m in result if m["storage_type"] == storage_type]
+        if storage_name:
+            result = [m for m in result if m["storage_name"] == storage_name]
+        if agent_name:
+            result = [m for m in result if m["agent_name"] == agent_name]
+        return result
 
     # ------------------- Metadata ------------------- #
     def _generate_save_metadata(
@@ -42,57 +102,76 @@ class StoreManager(Generic[StorageT]):
         add_metadata_to_storage(storage, metadata)
 
     # ------------------- Store Operations ------------------- #
-    def save(
-        self,
-        storage: StorageT,
-        **kwargs: Any,
-    ) -> None:
-        """
-        Save a single object into the store, enriching its metadata
-        with store manager info and agent name.
-
-        kwargs:
-            storage_name: Key name under which to store the object (required).
-            agent_name: Name of the agent performing the save (optional).
-            overwrite: Whether to overwrite if object already exists (optional, default False).
-        """
-
+    def save(self, storage: StorageT, **kwargs: Any) -> None:
+        """Save a storage object in the store and update movement log."""
         storage_type: StorageType | None = determine_storage_type(storage=storage)
-
-        if storage_type is None:
-            raise ValueError(f"Storage type '{storage_type}' is not a válid type.")
-
-        if storage_type not in self.store.store:
-            raise ValueError(
-                f"Storage type '{storage_type}' is not managed by this Store."
-            )
-
         storage_name = kwargs.get("storage_name")
-        if not storage_name:
-            raise ValueError("Missing required argument: 'storage_name'")
-
         agent_name: Optional[str] = kwargs.get("agent_name")
         overwrite: bool = kwargs.get("overwrite", False)
+        movement_log: Dict[str, Any] = {}
 
-        if self.store.exists(storage_type, storage_name) and not overwrite:
-            logger.warning(
-                "[%s] %s '%s' exists. Use overwrite=True to replace.",
+        try:
+            if storage_type is None or storage_type not in self.store.store:
+                raise ValueError(
+                    f"Storage type '{storage_type}' not managed by this Store."
+                )
+
+            if not storage_name:
+                raise ValueError("Missing required argument: 'storage_name'")
+
+            if self.store.exists(storage_type, storage_name) and not overwrite:
+                logger.warning(
+                    "[%s] %s '%s' exists. Use overwrite=True to replace.",
+                    self.name,
+                    storage_type,
+                    storage_name,
+                )
+
+                movement_log = {
+                    "operation": "save",
+                    "storage_type": storage_type,
+                    "storage_name": storage_name,
+                    "agent_name": agent_name,
+                    "success": False,
+                    " details": {"reason": "exists"},
+                }
+                self._log_movement(**movement_log)
+                return
+
+            self._generate_save_metadata(storage, storage_name, agent_name)
+
+            self.store.add(
+                storage_type, storage, name=storage_name, overwrite=overwrite
+            )
+
+            logger.info(
+                "[%s] Saved %s '%s' by agent '%s'",
                 self.name,
                 storage_type,
                 storage_name,
+                agent_name,
             )
-            return
 
-        self._generate_save_metadata(storage, storage_name, agent_name)
-        self.store.add(storage_type, storage, name=storage_name, overwrite=overwrite)
+            movement_log = {
+                "operation": "save",
+                "storage_type": storage_type,
+                "storage_name": storage_name,
+                "agent_name": agent_name,
+                "success": True,
+            }
+            self._log_movement(**movement_log)
 
-        logger.info(
-            "[%s] Saved %s '%s' by agent '%s'",
-            self.name,
-            storage_type,
-            storage_name,
-            agent_name,
-        )
+        except Exception as e:
+            movement_log = {
+                "operation": "save",
+                "storage_type": storage_type,
+                "storage_name": storage_name or "unknown",
+                "agent_name": agent_name,
+                "success": False,
+                " details": {"error": str(e)},
+            }
+            self._log_movement(**movement_log)
+            raise
 
     def get(
         self,
@@ -103,8 +182,31 @@ class StoreManager(Generic[StorageT]):
         Mapping[str, StorageT],
         Mapping[StorageType, Mapping[str, StorageT]],
     ]:
-        """Retrieve objects from the store (single, all of type, or all types)."""
-        return self.store.get(storage_type, storage_name)
+        """Retrieve objects from the store and log the operation."""
+        movement_log: Dict[str, Any] = {}
+        try:
+            result = self.store.get(storage_type, storage_name)
+            movement_log = {
+                "operation": "get",
+                "storage_type": storage_type if storage_type != "all" else "all",
+                "storage_name": storage_name,
+                "agent_name": None,
+                "success": True,
+                " details": {"result_type": type(result).__name__},
+            }
+            self._log_movement(**movement_log)
+            return result
+        except Exception as e:
+            movement_log = {
+                "operation": "get",
+                "storage_type": storage_type if storage_type != "all" else "all",
+                "storage_name": storage_name,
+                "agent_name": None,
+                "success": False,
+                " details": {"error": str(e)},
+            }
+            self._log_movement(**movement_log)
+            raise
 
     def remove(
         self,
@@ -115,26 +217,59 @@ class StoreManager(Generic[StorageT]):
         Mapping[str, StorageT],
         Mapping[StorageType, Mapping[str, StorageT]],
     ]:
-        """Remove storages from the store, supporting single, all of a type, or all types."""
-        removed = self.store.remove(storage_type, storage_name)
-        if isinstance(removed, dict):
-            count = sum(len(v) if isinstance(v, dict) else 1 for v in removed.values())
-            logger.info("[%s] Removed %d object(s)", self.name, count)
-        elif removed:
-            logger.info(
-                "[%s] Removed object '%s' of type '%s'",
-                self.name,
-                storage_name,
-                storage_type,
-            )
-        else:
-            logger.warning(
-                "[%s] Nothing removed for '%s' (%s)",
-                self.name,
-                storage_name,
-                storage_type,
-            )
-        return removed
+        """Remove storages from the store and log the operation."""
+        try:
+            removed = self.store.remove(storage_type, storage_name)
+            success = bool(removed)
+            details: dict[str, object] = {}
+            movement_log: Dict[str, Any] = {}
+
+            if isinstance(removed, dict):
+                count = sum(
+                    len(v) if isinstance(v, dict) else 1 for v in removed.values()
+                )
+                details["removed_count"] = count
+            elif removed:
+                details["removed_count"] = 1
+            else:
+                details["removed_count"] = 0
+
+            movement_log = {
+                "operation": "remove",
+                "storage_type": storage_type,
+                "storage_name": storage_name,
+                "agent_name": None,
+                "success": success,
+                " details": details,
+            }
+            self._log_movement(**movement_log)
+
+            if success:
+                logger.info(
+                    "[%s] Removed object(s) '%s' of type '%s'",
+                    self.name,
+                    storage_name,
+                    storage_type,
+                )
+            else:
+                logger.warning(
+                    "[%s] Nothing removed for '%s' (%s)",
+                    self.name,
+                    storage_name,
+                    storage_type,
+                )
+            return removed
+        except Exception as e:
+            movement_log = {
+                "operation": "remove",
+                "storage_type": storage_type,
+                "storage_name": storage_name,
+                "agent_name": None,
+                "success": False,
+                " details": {"error": str(e)},
+            }
+            self._log_movement(**movement_log)
+            raise
 
     def exists(self, storage_type: StorageType, storage_name: str) -> bool:
         """Check existence of a specific object."""
