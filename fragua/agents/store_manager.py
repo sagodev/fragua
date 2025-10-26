@@ -30,12 +30,7 @@ class StoreManager(Generic[StorageT]):
     # ------------------- Movement Logging ------------------- #
     def _log_movement(
         self,
-        operation: str,
-        storage_type: StorageType | Literal["all"],
-        storage_name: str,
-        agent_name: Optional[str],
-        success: bool = True,
-        details: Optional[dict[str, object]] = None,
+        **kwargs: Any,
     ) -> None:
         """Records a movement in the internal log."""
 
@@ -54,13 +49,13 @@ class StoreManager(Generic[StorageT]):
             "date": date_str,
             "time": time_str,
             "timezone": tz_offset,
-            "operation": operation,
-            "storage_type": storage_type,
-            "storage_name": storage_name,
-            "agent_name": agent_name,
+            "operation": kwargs.get("operation"),
+            "storage_type": kwargs.get("storage_type"),
+            "storage_name": kwargs.get("storage_name"),
+            "agent_name": kwargs.get("agent_name"),
             "store_manager": self.name,
-            "success": success,
-            "details": details or {},
+            "success": kwargs.get("success"),
+            "details": kwargs.get("details") or {},
         }
 
         self._movement_log.append(entry)
@@ -68,9 +63,9 @@ class StoreManager(Generic[StorageT]):
             "[%s] Movement logged by '%s': %s '%s' by agent '%s' at %s %s %s",
             self.name,
             self.name,
-            operation,
-            storage_name,
-            agent_name,
+            kwargs.get("operation"),
+            kwargs.get("storage_name"),
+            kwargs.get("agent_name"),
             entry["date"],
             entry["time"],
             entry["timezone"],
@@ -129,10 +124,10 @@ class StoreManager(Generic[StorageT]):
                     storage_name,
                 )
                 self._log_movement(
-                    "save",
-                    storage_type,
-                    storage_name,
-                    agent_name,
+                    operation="save",
+                    storage_type=storage_type,
+                    storage_name=storage_name,
+                    agent_name=agent_name,
                     success=False,
                     details={"reason": "exists"},
                 )
@@ -150,14 +145,18 @@ class StoreManager(Generic[StorageT]):
                 agent_name,
             )
             self._log_movement(
-                "save", storage_type, storage_name, agent_name, success=True
+                operation="save",
+                storage_type=storage_type,
+                storage_name=storage_name,
+                agent_name=agent_name,
+                success=True,
             )
         except Exception as e:
             self._log_movement(
-                "save",
-                storage_type,
-                storage_name or "unknown",
-                agent_name,
+                operation="save",
+                storage_type=storage_type,
+                storage_name=storage_name or "unknown",
+                agent_name=agent_name,
                 success=False,
                 details={"error": str(e)},
             )
