@@ -15,6 +15,7 @@ from fragua.utils.logger import get_logger
 from fragua.core.base_style import BaseStyle
 from fragua.core.base_storage import BaseStorage
 from fragua.core.base_params import BaseParams
+from fragua.store.store import AllowedStorage
 from fragua.store.wagon import Wagon
 from fragua.store.box import Box
 from fragua.store.container import Container
@@ -27,7 +28,7 @@ from fragua.utils.metrics import (
 
 
 StyleT = TypeVar("StyleT", bound=BaseStyle[Any, Any])
-StorageT = TypeVar("StorageT", bound=BaseStorage[Any])
+StorageT = TypeVar("StorageT", bound=AllowedStorage)
 
 
 logger = get_logger(__name__)
@@ -200,7 +201,7 @@ class BaseAgent(ABC, Generic[StyleT, StorageT]):
     # ----------------- Store Manager Interaction ----------------- #
     def store_result(
         self,
-        storage_manager: StoreManager[Any],
+        storage_manager: StoreManager,
         storage: StorageT,
         storage_name: str,
     ) -> None:
