@@ -43,7 +43,7 @@ from .forge_params import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    # Registry Params
+    # Params Registry
     "register_params",
     # Mine Params
     "MineParams",

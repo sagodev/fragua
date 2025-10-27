@@ -40,7 +40,6 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
             "style_type": self.__class__.__name__,
             "created_at": datetime.now(timezone.utc),
             "created_by": created_by,
-            "last_execution": None,
             "params_type": None,
             "result_type": None,
         }
@@ -63,7 +62,7 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
     # ---------------------------------------------------------------------- #
     # Validation hooks
     # ---------------------------------------------------------------------- #
-    def validate_params(self, params: ParamsT) -> ParamsT:
+    def validate_params(self, params: ParamsT | None) -> ParamsT:
         """Validate input parameters before execution."""
         if params is None:
             raise ValueError(f"{self.style_name}: Parameters cannot be None.")

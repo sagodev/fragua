@@ -1,19 +1,19 @@
 """Fragua Styles package."""
 
-# ------------------- Base Styles ------------------- #
-from .delivery_style import DeliveryStyle
-from .mine_style import MineStyle
-from .forge_style import ForgeStyle
+# ------------------- Params Registry ------------------- #
+from .styles_registry import register_style
 
 # ------------------- Delivery Style Types ------------------- #
-from .style_types.delivery_style_types import (
+from .delivery_styles import (
+    DeliveryStyle,
     SQLDeliveryStyle,
     APIDeliveryStyle,
     ExcelDeliveryStyle,
 )
 
 # ------------------- Mine Style Types ------------------- #
-from .style_types.mine_style_types import (
+from .mine_styles import (
+    MineStyle,
     CSVMineStyle,
     ExcelMineStyle,
     SQLMineStyle,
@@ -21,14 +21,18 @@ from .style_types.mine_style_types import (
 )
 
 # ------------------- Forge Style Types ------------------- #
-from .style_types.forge_style_types import (
+from .forge_styles import (
+    ForgeStyle,
     MLForgeStyle,
     ReportForgeStyle,
     AnalysisForgeStyle,
 )
 
+
 # ------------------- __all__ ------------------- #
 __all__ = [
+    # Styles Registry
+    "register_style",
     # Base Styles
     "DeliveryStyle",
     "MineStyle",
