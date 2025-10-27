@@ -27,7 +27,6 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
         - style_type: Actual class name (e.g., 'ExcelMineStyle').
         - created_at: datetime, when the style instance was created
         - created_by: Optional[str], creator of the style
-        - last_execution: Optional[datetime], last time the style was executed
         - params_type: Optional[str], type of parameters passed
         - result_type: Optional[str], type of result returned
     """

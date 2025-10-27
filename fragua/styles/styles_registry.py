@@ -2,20 +2,22 @@
 Global registry for all style classes used by Fragua agents.
 """
 
-from typing import Dict, Tuple, Type, Any
+from typing import Dict, Tuple, Type, Optional, Any
+
+from fragua.core.base_params import BaseParams
 from fragua.core.base_style import BaseStyle
 from fragua.utils.logger import get_logger
 
-
 logger = get_logger(__name__)
 
+
 # (action, style) -> StyleClass
-STYLE_REGISTRY: Dict[Tuple[str, str], Type[BaseStyle[Any, Any]]] = {}
+STYLE_REGISTRY: Dict[Tuple[str, str], Type[BaseStyle[BaseParams, object]]] = {}
 
 
 def register_style(action: str, style: str) -> Any:
     """
-    Decorator to register a Style class for a given action and style.
+    Decorator to register a Style class for a given (action, style).
 
     Example:
         @register_style(action="forge", style="ml")
@@ -23,7 +25,9 @@ def register_style(action: str, style: str) -> Any:
             ...
     """
 
-    def decorator(cls: Type[BaseStyle[Any, Any]]) -> Any:
+    def decorator(
+        cls: Type[BaseStyle[BaseParams, object]],
+    ) -> Any:
         key = (action, style)
         if key in STYLE_REGISTRY:
             logger.warning("Overwriting existing style registration for %s", key)
@@ -34,18 +38,20 @@ def register_style(action: str, style: str) -> Any:
     return decorator
 
 
-def get_style(action: str, style: str) -> Type[BaseStyle[Any, Any]]:
+def get_style(action: str, style: str) -> Type[BaseStyle[BaseParams, object]]:
     """Retrieve a registered Style class by (action, style)."""
     key = (action, style)
-    if key not in STYLE_REGISTRY:
+    try:
+        return STYLE_REGISTRY[key]
+    except KeyError:
+        logger.error("Style not found for action='%s', style='%s'", action, style)
         raise KeyError(f"Style not found for action='{action}', style='{style}'")
-    return STYLE_REGISTRY[key]
 
 
 def list_styles(
-    action: str | None = None,
-) -> Dict[Tuple[str, str], Type[BaseStyle[Any, Any]]]:
+    action: Optional[str] = None,
+) -> Dict[Tuple[str, str], Type[BaseStyle[BaseParams, object]]]:
     """List all registered styles, optionally filtered by action."""
-    if action:
+    if action is not None:
         return {k: v for k, v in STYLE_REGISTRY.items() if k[0] == action}
     return dict(STYLE_REGISTRY)
