@@ -5,6 +5,7 @@ from fragua.agents import Miner, Blacksmith, Transporter, StoreManager
 
 # ------------------- Styles ------------------- #
 from fragua.styles import (
+    register_style,
     ForgeStyle,
     ReportForgeStyle,
     MLForgeStyle,
@@ -98,7 +99,6 @@ __all__ = [
     "SQLMineStyle",
     "APIMineStyle",
     # Params
-    "register_params",
     "ForgeParams",
     "ForgeParamsT",
     "DeliveryParams",
@@ -125,6 +125,9 @@ __all__ = [
     "APIDeliveryParamsT",
     "ExcelDeliveryParams",
     "ExcelDeliveryParamsT",
+    # Registers
+    "register_params",
+    "register_style",
     # Utilities
     "get_logger",
     "Config",
