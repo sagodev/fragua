@@ -6,7 +6,7 @@ Agents can take a role to work like a Miner, Blacksmith, Transporter, or Master.
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, Optional, TypeVar
 
 import pandas as pd
 from fragua.utils.logger import get_logger
