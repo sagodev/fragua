@@ -162,7 +162,7 @@ class Agent:
             (self.action, style_name)
         )
         if not style_cls and self.role == "master":
-            for (_, s), cls in STYLE_REGISTRY.items():
+            for (a, s), cls in STYLE_REGISTRY.items():
                 if s == style_name:
                     style_cls = cast(type[Style[Any, Any]], cls)
                     break
