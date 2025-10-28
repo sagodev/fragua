@@ -49,15 +49,6 @@ class MineStyle(Style[MineParamsT, ResultT], Generic[MineParamsT, ResultT]):
         raise NotImplementedError
 
     # ---------------------------------------------------------------------- #
-    # Optional parameter validation hook
-    # ---------------------------------------------------------------------- #
-
-    def validate_params(self, params: MineParamsT) -> MineParamsT:
-        """Validate extraction-specific input parameters."""
-        super().validate_params(params)
-        return params
-
-    # ---------------------------------------------------------------------- #
     # Internal _run implementation for Style
     # ---------------------------------------------------------------------- #
     def _run(self, params: MineParamsT) -> ResultT:

@@ -47,18 +47,6 @@ class DeliveryStyle(Style[DeliveryParamsT, ResultT], Generic[DeliveryParamsT, Re
         raise NotImplementedError("Subclasses must implement deliver()")
 
     # ---------------------------------------------------------------------- #
-    # Optional parameter validation hook
-    # ---------------------------------------------------------------------- #
-    def validate_params(self, params: DeliveryParamsT) -> DeliveryParamsT:
-        """Validate delivery-specific input parameters."""
-        super().validate_params(params)
-
-        if not getattr(params, "destination", None):
-            raise ValueError(f"{self.style_name}: 'destination' is required.")
-
-        return params
-
-    # ---------------------------------------------------------------------- #
     # Internal _run implementation for Style
     # ---------------------------------------------------------------------- #
     def _run(self, params: DeliveryParamsT) -> ResultT:

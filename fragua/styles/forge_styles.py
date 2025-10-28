@@ -48,14 +48,6 @@ class ForgeStyle(Style[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT]):
         raise NotImplementedError
 
     # ---------------------------------------------------------------------- #
-    # Optional parameter validation hook
-    # ---------------------------------------------------------------------- #
-    def validate_params(self, params: ForgeParamsT) -> ForgeParamsT:
-        """Validate input parameters before forging."""
-        super().validate_params(params)
-        return params
-
-    # ---------------------------------------------------------------------- #
     # Internal _run implementation for Style
     # ---------------------------------------------------------------------- #
     def _run(self, params: ForgeParamsT) -> ResultT:
@@ -224,7 +216,6 @@ class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParamsT, pd.DataFrame]):
         self.fill_missing(df, numeric_fill="mean")
         self.standardize(df)
 
-        # Group and aggregate if specified
         if groupby_cols:
             if agg_functions:
                 df = df.groupby(groupby_cols).agg(agg_functions).reset_index()
