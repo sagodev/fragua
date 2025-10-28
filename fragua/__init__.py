@@ -27,7 +27,7 @@ from fragua.store import Store, Wagon, Box, Container
 from fragua.core import (
     Agent,
     Style,
-    BaseStorage,
+    Storage,
     Params,
     register_params,
     get_style,
@@ -89,7 +89,7 @@ __all__ = [
     "Agent",
     "Style",
     "Params",
-    "BaseStorage",
+    "Storage",
     # Styles
     "ForgeStyle",
     "ReportForgeStyle",
