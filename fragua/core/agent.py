@@ -6,13 +6,13 @@ Agents can take a role to work like a Miner, Blacksmith, Transporter, or Master.
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, cast
 
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.style import Style, STYLE_REGISTRY
 from fragua.core.storage import Storage, get_storage, list_storages
-from fragua.core.params import PARAMS_REGISTRY
+from fragua.core.params import PARAMS_REGISTRY, Params
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.agents.agent_roles import get_role, MasterRole
 
@@ -142,7 +142,7 @@ class Agent:
             self.storage_type = MasterRole.style_prefix_to_storage.get(prefix, "Wagon")
 
         # ----------------- PARAMS fallback -----------------
-        params_cls = PARAMS_REGISTRY.get((self.role, style_name))
+        params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style_name))
         if not params_cls and self.role == "master":
             for (_, s), cls in PARAMS_REGISTRY.items():
                 if s == style_name:
@@ -158,7 +158,9 @@ class Agent:
 
         # ----------------- STYLE fallback -----------------
         style_key = (self.action, style_name)
-        style_cls = STYLE_REGISTRY.get(style_key)
+        style_cls: type[Style[Any, Any]] | None = STYLE_REGISTRY.get(
+            (self.action, style_name)
+        )
         if not style_cls and self.role == "master":
             for (_, s), cls in STYLE_REGISTRY.items():
                 if s == style_name:
