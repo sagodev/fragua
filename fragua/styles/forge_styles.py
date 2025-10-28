@@ -2,34 +2,102 @@
 Forge style types for various data transformation scenarios.
 """
 
+from abc import abstractmethod
+from typing import Generic, Any
+
+from pandas.api.types import is_numeric_dtype
+from pandas.errors import UndefinedVariableError
 import numpy as np
 import pandas as pd
-from pandas import DataFrame
 from sklearn.preprocessing import MinMaxScaler
 
-from fragua.styles.forge_style import ForgeStyle, register_forge_style
+from fragua.core.style import Style, ResultT, register_style
+from fragua.utils.logger import get_logger
 from fragua.params.forge_params import (
+    ForgeParamsT,
     MLForgeParamsT,
     ReportForgeParamsT,
     AnalysisForgeParamsT,
 )
-from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+action: str = "forge"
+
+
+# ---------------------------------------------------------------------- #
+# Base ForgeStyle
+# ---------------------------------------------------------------------- #
+class ForgeStyle(Style[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT]):
+    """
+    Base class for ForgeStyles.
+
+    Standard pipeline provided by Style:
+        validate_params -> _run -> validate_result -> postprocess
+    """
+
+    # ---------------------------------------------------------------------- #
+    # Abstract forge method (subclasses implement this)
+    # ---------------------------------------------------------------------- #
+    @abstractmethod
+    def forge(self, params: ForgeParamsT) -> ResultT:
+        """
+        Transform the input data according to params.
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError
+
+    # ---------------------------------------------------------------------- #
+    # Internal _run implementation for Style
+    # ---------------------------------------------------------------------- #
+    def _run(self, params: ForgeParamsT) -> ResultT:
+        """
+        Executes the ForgeStyle transformation step.
+
+        This method is called by Style.use().
+        """
+        logger.debug("Starting ForgeStyle '%s' transformation.", self.style_name)
+        result = self.forge(params)
+        logger.debug("ForgeStyle '%s' transformation completed.", self.style_name)
+        return result
+
+    # ---------------------------------------------------------------------- #
+    # Utilities for DataFrames
+    # ---------------------------------------------------------------------- #
+    def fill_missing(
+        self,
+        df: pd.DataFrame,
+        numeric_fill: str = "mean",
+        categorical_fill: str = "unknown",
+    ) -> None:
+        """Fill missing values in DataFrame."""
+        for col in df.columns:
+            if is_numeric_dtype(df[col]):
+                fill_value = df[col].mean() if numeric_fill == "mean" else 0
+                df[col] = df[col].fillna(fill_value)
+            else:
+                df[col] = df[col].fillna(categorical_fill)
+        logger.info("%s: Missing values filled.", self.style_name)
+
+    def standardize(self, df: pd.DataFrame) -> None:
+        """Standardize string columns (strip spaces and lowercase)."""
+        for col in df.select_dtypes(include="object").columns:
+            df[col] = df[col].astype(str).str.strip().str.lower()
+        logger.info("%s: String columns standardized.", self.style_name)
+
 
 # ---------------- MLForge ----------------
-@register_forge_style("ml")
-class MLForgeStyle(ForgeStyle[MLForgeParamsT, DataFrame]):
+@register_style(action, "ml")
+class MLForgeStyle(ForgeStyle[MLForgeParamsT, pd.DataFrame]):
     """Forge style for machine learning preprocessing."""
 
-    def forge(self, params: MLForgeParamsT) -> DataFrame:
+    def forge(self, params: MLForgeParamsT) -> pd.DataFrame:
         df = params.data
 
         df = df.copy()
 
-        self._fill_missing(df, numeric_fill="mean")
-        self._standardize(df)
+        self.fill_missing(df, numeric_fill="mean")
+        self.standardize(df)
         self._encode_categoricals(df)
         self._treat_outliers(df, params.outlier_threshold)
         self._scale_numeric(df)
@@ -41,7 +109,7 @@ class MLForgeStyle(ForgeStyle[MLForgeParamsT, DataFrame]):
         )
         return df
 
-    def _encode_categoricals(self, df: DataFrame) -> None:
+    def _encode_categoricals(self, df: pd.DataFrame) -> None:
         cat_cols = df.select_dtypes(include="object").columns
         if len(cat_cols) > 0:
             df_dummies = pd.get_dummies(df[cat_cols], dummy_na=False)
@@ -53,7 +121,7 @@ class MLForgeStyle(ForgeStyle[MLForgeParamsT, DataFrame]):
             )
         logger.info("%s: Categoricals encoded.", self.style_name)
 
-    def _scale_numeric(self, df: DataFrame) -> None:
+    def _scale_numeric(self, df: pd.DataFrame) -> None:
         num_cols = df.select_dtypes(include="number").columns
         if len(num_cols) > 0:
             scaler = MinMaxScaler()
@@ -63,7 +131,7 @@ class MLForgeStyle(ForgeStyle[MLForgeParamsT, DataFrame]):
             )
         logger.info("%s: Numeric columns scaled.", self.style_name)
 
-    def _treat_outliers(self, df: DataFrame, threshold: float | None = None) -> None:
+    def _treat_outliers(self, df: pd.DataFrame, threshold: float | None = None) -> None:
         num_cols = df.select_dtypes(include="number").columns
         factor = threshold if threshold is not None else 1.5
         for col in num_cols:
@@ -74,17 +142,17 @@ class MLForgeStyle(ForgeStyle[MLForgeParamsT, DataFrame]):
 
 
 # ---------------- ReportForge ----------------
-@register_forge_style("report")
-class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, DataFrame]):
+@register_style(action, "report")
+class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, pd.DataFrame]):
     """Forge style for reporting transformations."""
 
-    def forge(self, params: ReportForgeParamsT) -> DataFrame:
+    def forge(self, params: ReportForgeParamsT) -> pd.DataFrame:
         df = params.data
 
         df = df.copy()
 
-        self._fill_missing(df, numeric_fill="zero")
-        self._standardize(df)
+        self.fill_missing(df, numeric_fill="zero")
+        self.standardize(df)
         self._add_derived_columns(df, params.derived_columns)
         self._format_for_report(df, params.rounding_precision)
 
@@ -94,7 +162,7 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, DataFrame]):
         return df
 
     def _add_derived_columns(
-        self, df: DataFrame, derived_columns: dict[str, str] | None
+        self, df: pd.DataFrame, derived_columns: dict[str, str] | None
     ) -> None:
         if derived_columns:
             for new_col, expr in derived_columns.items():
@@ -106,7 +174,7 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, DataFrame]):
                         new_col,
                         expr,
                     )
-                except Exception as e:
+                except (UndefinedVariableError, SyntaxError, TypeError) as e:
                     logger.warning(
                         "%s: Could not compute derived column '%s': %s",
                         self.style_name,
@@ -117,7 +185,9 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, DataFrame]):
             df["total"] = df["quantity"] * df["price"]
             logger.debug("%s: Added derived column 'total'.", self.style_name)
 
-    def _format_for_report(self, df: DataFrame, rounding_precision: int | None) -> None:
+    def _format_for_report(
+        self, df: pd.DataFrame, rounding_precision: int | None
+    ) -> None:
         obj_cols = df.select_dtypes(include="object").columns
         for col in obj_cols:
             df[col] = df[col].astype(str).str.strip()
@@ -131,22 +201,21 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, DataFrame]):
 
 
 # ---------------- AnalysisForge ----------------
-@register_forge_style("analysis")
-class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParamsT, DataFrame]):
+@register_style(action, "analysis")
+class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParamsT, pd.DataFrame]):
     """Forge style for data analysis transformations."""
 
-    def forge(self, params: AnalysisForgeParamsT) -> DataFrame:
+    def forge(self, params: AnalysisForgeParamsT) -> pd.DataFrame:
         df = params.data
 
         df = df.copy()
-        groupby_cols = params.groupby_cols or []
-        agg_functions = params.agg_functions or {}
-        sort_by = params.sort_by or []
+        groupby_cols: list[Any] = params.groupby_cols or []
+        agg_functions: dict[Any, Any] = params.agg_functions or {}
+        sort_by: list[Any] = params.sort_by or []
 
-        self._fill_missing(df, numeric_fill="mean")
-        self._standardize(df)
+        self.fill_missing(df, numeric_fill="mean")
+        self.standardize(df)
 
-        # Group and aggregate if specified
         if groupby_cols:
             if agg_functions:
                 df = df.groupby(groupby_cols).agg(agg_functions).reset_index()

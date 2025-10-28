@@ -1,15 +1,29 @@
 """Fragua Core module"""
 
-# ------------------- Base Classes ------------------- #
-from .base_agent import BaseAgent
-from .base_style import BaseStyle
+# ------------------- Agent ------------------- #
+from .agent import Agent
+
+# ------------------- Style ------------------- #
+from .style import Style, register_style, get_style, list_styles
+
+# ------------------- Storage ------------------- #
 from .base_storage import BaseStorage
-from .base_params import BaseParams
+
+# ------------------- Params ------------------- #
+from .params import Params, register_params
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    "BaseAgent",
-    "BaseStyle",
+    # Agent
+    "Agent",
+    # Style
+    "Style",
+    "register_style",
+    "get_style",
+    "list_styles",
+    # Storage
     "BaseStorage",
-    "BaseParams",
+    # Params
+    "Params",
+    "register_params",
 ]

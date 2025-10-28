@@ -3,10 +3,10 @@ Base class for all styles used by ETL agents in Fragua.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, TypeVar, Generic, Dict
+from typing import Any, TypeVar, Generic, Dict, Optional, Type, Tuple
 from datetime import datetime, timezone
 from fragua.utils.logger import get_logger
-from fragua.core.base_params import BaseParams
+from fragua.core.params import Params
 
 logger = get_logger(__name__)
 
@@ -14,10 +14,10 @@ logger = get_logger(__name__)
 # Type Variables
 # ---------------------------------------------------------------------- #
 ResultT = TypeVar("ResultT")  # Output type (e.g., DataFrame, str, etc.)
-ParamsT = TypeVar("ParamsT", bound=BaseParams)  # Must inherit from BaseParams
+ParamsT = TypeVar("ParamsT", bound=Params)  # Must inherit from Params
 
 
-class BaseStyle(ABC, Generic[ParamsT, ResultT]):
+class Style(ABC, Generic[ParamsT, ResultT]):
     """
     Abstract base class for all styles in Fragua.
     Defines a standard interface for style operations.
@@ -27,7 +27,6 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
         - style_type: Actual class name (e.g., 'ExcelMineStyle').
         - created_at: datetime, when the style instance was created
         - created_by: Optional[str], creator of the style
-        - last_execution: Optional[datetime], last time the style was executed
         - params_type: Optional[str], type of parameters passed
         - result_type: Optional[str], type of result returned
     """
@@ -40,7 +39,6 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
             "style_type": self.__class__.__name__,
             "created_at": datetime.now(timezone.utc),
             "created_by": created_by,
-            "last_execution": None,
             "params_type": None,
             "result_type": None,
         }
@@ -63,7 +61,7 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
     # ---------------------------------------------------------------------- #
     # Validation hooks
     # ---------------------------------------------------------------------- #
-    def validate_params(self, params: ParamsT) -> ParamsT:
+    def validate_params(self, params: ParamsT | None) -> ParamsT:
         """Validate input parameters before execution."""
         if params is None:
             raise ValueError(f"{self.style_name}: Parameters cannot be None.")
@@ -129,3 +127,50 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} style_name={self.style_name}>"
+
+
+STYLE_REGISTRY: Dict[Tuple[str, str], Type[Style[Params, Any]]] = {}
+
+
+def register_style(action: str, style: str) -> Any:
+    """
+    Decorator to register a Style class for a given (action, style).
+
+    Example:
+        @register_style(action="forge", style="ml")
+        class MLForgeStyle(ForgeStyle):
+            ...
+    """
+
+    def decorator(
+        cls: Type[Style[Params, Any]],
+    ) -> Type[Style[Params, Any]]:
+        key = (action, style)
+        if key in STYLE_REGISTRY:
+            logger.warning("Overwriting existing style registration for %s", key)
+        STYLE_REGISTRY[key] = cls
+        logger.debug("Registered style: %s -> %s", key, cls.__name__)
+        return cls
+
+    return decorator
+
+
+def get_style(action: str, style: str) -> Type[Style[Params, Any]]:
+    """Retrieve a registered Style class by (action, style)."""
+    key = (action, style)
+    try:
+        return STYLE_REGISTRY[key]
+    except KeyError as exc:
+        logger.error("Style not found for action='%s', style='%s'", action, style)
+        raise KeyError(
+            f"Style not found for action='{action}', style='{style}'"
+        ) from exc
+
+
+def list_styles(
+    action: Optional[str] = None,
+) -> Dict[Tuple[str, str], Type[Style[Params, Any]]]:
+    """List all registered styles, optionally filtered by action."""
+    if action is not None:
+        return {k: v for k, v in STYLE_REGISTRY.items() if k[0] == action}
+    return dict(STYLE_REGISTRY)

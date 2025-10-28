@@ -5,13 +5,12 @@ Mine parameters classes for different types of data sources.
 from typing import Any, Dict, Union, TypeVar
 from pathlib import Path
 from pydantic import Field
-from fragua.core.base_params import BaseParams
-from .params_registry import register_params
+from fragua.core.params import Params, register_params
 
 agent: str = "miner"
 
 
-class MineParams(BaseParams):
+class MineParams(Params):
     """Common parameters for mining agents."""
 
     read_kwargs: Dict[str, Any] = Field(default_factory=dict)

@@ -2,34 +2,77 @@
 DeliveryStyle types for various data delivery methods.
 """
 
-from typing import Any
-import requests
-from sqlalchemy import create_engine
-from pandas import DataFrame
+from abc import abstractmethod
+from typing import Any, Generic
 
-from fragua.styles.delivery_style import DeliveryStyle, register_delivery_style
+from sqlalchemy import create_engine
+import pandas as pd
+import requests
+
+from fragua.core.style import Style, ResultT, register_style
+from fragua.params.delivery_params import DeliveryParamsT
+from fragua.utils.logger import get_logger
 from fragua.params.delivery_params import (
     ExcelDeliveryParamsT,
     SQLDeliveryParamsT,
     APIDeliveryParamsT,
 )
-from fragua.utils.logger import get_logger
+
 
 logger = get_logger(__name__)
+
+action: str = "deliver"
+
+
+# ---------------------------------------------------------------------- #
+# Base DeliveryStyle
+# ---------------------------------------------------------------------- #
+class DeliveryStyle(Style[DeliveryParamsT, ResultT], Generic[DeliveryParamsT, ResultT]):
+    """
+    Base class for all delivery styles in Fragua ETL.
+
+    Standard pipeline provided by Style:
+        validate_params -> _run -> validate_result -> postprocess
+    """
+
+    # ---------------------------------------------------------------------- #
+    # Abstract delivery method
+    # ---------------------------------------------------------------------- #
+    @abstractmethod
+    def deliver(self, params: DeliveryParamsT) -> ResultT:
+        """
+        Deliver the given data to the target destination.
+        Must be overridden by subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement deliver()")
+
+    # ---------------------------------------------------------------------- #
+    # Internal _run implementation for Style
+    # ---------------------------------------------------------------------- #
+    def _run(self, params: DeliveryParamsT) -> ResultT:
+        """
+        Executes the DeliveryStyle delivery step.
+
+        This method is called by Style.use().
+        """
+        logger.debug("Starting DeliveryStyle '%s' delivery.", self.style_name)
+        result = self.deliver(params)
+        logger.debug("DeliveryStyle '%s' delivery completed.", self.style_name)
+        return result
 
 
 # ---------------------------------------------------------------------- #
 # Excel Delivery Style
 # ---------------------------------------------------------------------- #
-@register_delivery_style("excel")
-class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParamsT, DataFrame]):
+@register_style(action, "excel")
+class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParamsT, pd.DataFrame]):
     """DeliveryStyle for exporting data to Excel files."""
 
-    def deliver(self, params: ExcelDeliveryParamsT) -> DataFrame:
+    def deliver(self, params: ExcelDeliveryParamsT) -> pd.DataFrame:
         """Export data to an Excel file."""
         data = params.data
 
-        if not isinstance(data, DataFrame):
+        if not isinstance(data, pd.DataFrame):
             raise TypeError("ExcelDeliveryStyle requires a pandas DataFrame")
 
         destination = params.destination
@@ -60,14 +103,14 @@ class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParamsT, DataFrame]):
 # ---------------------------------------------------------------------- #
 # SQL Delivery Style
 # ---------------------------------------------------------------------- #
-@register_delivery_style("sql")
-class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParamsT, DataFrame]):
+@register_style(action, "sql")
+class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParamsT, pd.DataFrame]):
     """DeliveryStyle for delivering data to SQL databases."""
 
-    def deliver(self, params: SQLDeliveryParamsT) -> DataFrame:
+    def deliver(self, params: SQLDeliveryParamsT) -> pd.DataFrame:
         """Deliver data to SQL database."""
         data = params.data
-        if not isinstance(data, DataFrame):
+        if not isinstance(data, pd.DataFrame):
             raise TypeError("SQLDeliveryStyle requires a pandas DataFrame")
 
         connection_string = params.destination
@@ -97,7 +140,7 @@ class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParamsT, DataFrame]):
 # ---------------------------------------------------------------------- #
 # API Delivery Style
 # ---------------------------------------------------------------------- #
-@register_delivery_style("api")
+@register_style(action, "api")
 class APIDeliveryStyle(DeliveryStyle[APIDeliveryParamsT, Any]):
     """DeliveryStyle for delivering data to external APIs."""
 
@@ -109,7 +152,7 @@ class APIDeliveryStyle(DeliveryStyle[APIDeliveryParamsT, Any]):
             raise ValueError("endpoint is required")
 
         # Prepare headers
-        headers = params.headers or {}
+        headers: dict[Any, Any] = params.headers or {}
         if params.auth:
             token = params.auth.get("token")
             if token:
