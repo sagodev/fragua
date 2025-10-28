@@ -1,10 +1,9 @@
 """
 Agent class in Fragua.
-Agents can take a rol to work like a Miner, Blacksmith or Transporter.
+Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 """
 
 from __future__ import annotations
-
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any, Optional, TypeVar
@@ -18,39 +17,42 @@ from fragua.utils.metrics import (
     add_metadata_to_storage,
     generate_metadata,
 )
+from fragua.agents.agent_roles import get_role
 
 StyleT = TypeVar("StyleT", bound=Style[Any, Any])
-
-AGENT_ROLES: dict[str, dict[str, str]] = {
-    "miner": {"action": "mine", "storage": "Wagon"},
-    "blacksmith": {"action": "forge", "storage": "Box"},
-    "transporter": {"action": "deliver", "storage": "Container"},
-}
 
 logger = get_logger(__name__)
 
 
-# -----------------Agent Class----------------- #
 class Agent:
     """Agent class for ETL agents."""
 
-    def __init__(self, rol: str, name: str):
-        self.rol: str = rol.lower()
+    def __init__(self, role: str, name: str):
+        self.role: str = role.lower()
         self.name: str = name
         self._operations: list[dict[str, Any]] = []
 
-        if self.rol not in AGENT_ROLES:
-            raise ValueError(f"No role registered with name '{rol}'")
+        try:
+            role_cfg = get_role(self.role)
+        except KeyError as exc:
+            raise ValueError(f"No role registered with name '{role}'") from exc
 
-        self.action: str = AGENT_ROLES[self.rol]["action"]
-        self.storage_type: str = AGENT_ROLES[self.rol]["storage"]
+        self.action: str = role_cfg["action"]
+        self.storage_type: str = role_cfg["storage_type"]
+        self.allowed_functions: tuple[str, ...] = role_cfg.get("allowed_functions", ())
+
+        logger.debug(
+            "Initialized Agent '%s' with role '%s' (action=%s, storage=%s)",
+            self.name,
+            self.role,
+            self.action,
+            self.storage_type,
+        )
 
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
         """Extract a meaningful origin name for operation metadata."""
-
         origin_name = None
-
         match origin:
             case Storage():
                 origin_name = origin.__class__.__name__
@@ -69,7 +71,6 @@ class Agent:
                     logger.debug("Detected object with .data as DataFrame")
                 else:
                     logger.debug("Origin type not recognized; returning None")
-
         return origin_name
 
     def _generate_operation_metadata(
@@ -77,7 +78,6 @@ class Agent:
     ) -> None:
         """Generate metadata from operation"""
         origin_name = self._determine_origin_name(origin)
-
         metadata = generate_metadata(
             storage=storage,
             metadata_type="operation",
@@ -116,10 +116,8 @@ class Agent:
     ) -> None:
         """Store a storage (Wagon, Box, Container) via a store manager."""
         storage_type = storage.__class__.__name__
-
         if storage_type not in list_storages():
             raise ValueError(f"'{storage_type}' is not a valid registered storage type")
-
         storage_manager.save(
             storage=storage,
             storage_name=storage_name,
@@ -132,10 +130,10 @@ class Agent:
         Execute the agent's task using the action and style defined by the agent's role.
         Resolves Params and Style classes from PARAMS_REGISTRY and STYLE_REGISTRY.
         """
-        params_cls = PARAMS_REGISTRY.get((self.rol, style_name))
+        params_cls = PARAMS_REGISTRY.get((self.role, style_name))
         if not params_cls:
             raise ValueError(
-                f"No Params class registered for ({self.rol}, {style_name})"
+                f"No Params class registered for ({self.role}, {style_name})"
             )
         params_instance = params_cls(**kwargs)
 
@@ -146,7 +144,6 @@ class Agent:
         style_instance = style_cls(style_name=style_name)
 
         stylized_data = style_instance.use(params_instance)
-
         storage = self.create_storage(stylized_data)
 
         self._generate_operation_metadata(
@@ -173,42 +170,4 @@ class Agent:
         return storage
 
     def __repr__(self) -> str:
-        return f"<Agent name={self.name} rol={self.rol}>"
-
-
-# -----------------Agent Roles Registry ----------------- #
-
-ROLE_REGISTRY: dict[str, dict[str, str | tuple[str, ...]]] = {}
-
-
-def register_role(
-    role_name: str,
-    action: str,
-    storage_type: str,
-    allowed_functions: tuple[str, ...] = (),
-) -> Any:
-    """
-    Decorator to register an Agent role in the global registry.
-    """
-
-    def decorator(cls: type) -> type:
-        ROLE_REGISTRY[role_name.lower()] = {
-            "action": action,
-            "storage_type": storage_type,
-            "allowed_functions": allowed_functions,
-        }
-        return cls
-
-    return decorator
-
-
-def get_role(role_name: str) -> dict[str, str | tuple[str, ...]]:
-    """Retrieve a agent role by name."""
-    if role_name.lower() not in ROLE_REGISTRY:
-        raise KeyError(f"Role '{role_name}' not registered.")
-    return ROLE_REGISTRY[role_name.lower()]
-
-
-def list_roles() -> list[str]:
-    """list all agent roles."""
-    return list(ROLE_REGISTRY.keys())
+        return f"<Agent name={self.name} role={self.role}>"

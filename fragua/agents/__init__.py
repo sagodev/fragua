@@ -2,7 +2,14 @@
 
 # ------------------- Agents ------------------- #
 from .store_manager import StoreManager
-from .agents_roles import MinerRole, BlacksmithRole, TransporterRole
+from .agent_roles import (
+    MinerRole,
+    BlacksmithRole,
+    TransporterRole,
+    get_role,
+    list_roles,
+    register_role,
+)
 
 # ------------------- __all__ ------------------- #
 __all__ = [
@@ -10,4 +17,7 @@ __all__ = [
     "MinerRole",
     "BlacksmithRole",
     "TransporterRole",
+    "get_role",
+    "list_roles",
+    "register_role",
 ]
