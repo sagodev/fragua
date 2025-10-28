@@ -6,7 +6,21 @@ Agents can take a role to work like a Miner, Blacksmith, Transporter, or Master.
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any, Optional, TypeVar, Dict, List, Literal, Mapping, Union
+from types import FunctionType
+from typing import (
+    Any,
+    Optional,
+    TypeVar,
+    Dict,
+    List,
+    Literal,
+    Mapping,
+    Union,
+    Callable,
+    Concatenate,
+    ParamSpec,
+)
+from functools import wraps
 
 import pandas as pd
 from fragua.utils.logger import get_logger
@@ -23,8 +37,45 @@ from fragua.utils.metrics import (
 from fragua.agent.agent_roles import get_role, MasterRole
 
 StyleT = TypeVar("StyleT", bound=Style[Any, Any])
+P = ParamSpec("P")
+R = TypeVar("R")
 
 logger = get_logger(__name__)
+
+
+def restricted_to_role(
+    func: Callable[Concatenate[Any, P], R],
+) -> Callable[Concatenate[Any, P], R]:
+    """
+    Decorator to restrict access to certain methods depending on the Agent's role.
+    Masters bypass restrictions.
+    """
+    setattr(func, "_is_restricted", True)
+
+    @wraps(func)
+    def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> R:
+        func_name = func.__name__
+        role = getattr(self, "role", "unknown")
+        name = getattr(self, "name", "unknown")
+
+        # Skip restrictions for master
+        if role != "master":
+            allowed = getattr(self, "allowed_functions", ())
+            if allowed and func_name not in allowed:
+                logger.debug(
+                    "Blocked call to '%s' on Agent '%s' (role=%s). Allowed: %s",
+                    func_name,
+                    name,
+                    role,
+                    allowed,
+                )
+                raise PermissionError(
+                    f"Agent '{name}' with role '{role}' is not allowed to execute '{func_name}'"
+                )
+
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class Agent:
@@ -56,6 +107,44 @@ class Agent:
             self.storage_type,
         )
 
+    def __dir__(self) -> list[str]:
+        """
+        Personaliza dir() para ocultar métodos marcados con _is_restricted
+        cuando no estén permitidos por el rol actual.
+        """
+        all_attrs = super().__dir__()
+        allowed = getattr(self, "allowed_functions", ())
+
+        core_attrs = {
+            "role",
+            "name",
+            "allowed_functions",
+            "_store",
+            "_movement_log",
+            "get_operations",
+            "__repr__",
+        }
+
+        visible: list[str] = []
+        for attr in all_attrs:
+            if attr.startswith("_") or attr in core_attrs:
+                visible.append(attr)
+                continue
+
+            obj = getattr(self.__class__, attr, None)
+            is_restricted = False
+
+            if isinstance(obj, FunctionType):
+                is_restricted = getattr(obj, "_is_restricted", False)
+
+            if is_restricted:
+                if allowed and attr in allowed:
+                    visible.append(attr)
+            else:
+                visible.append(attr)
+
+        return sorted(set(visible))
+
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
         """Extract a meaningful origin name for operation metadata."""
@@ -81,12 +170,12 @@ class Agent:
         return origin_name
 
     # ------------------- Movement Logging ------------------- #
+    @restricted_to_role
     def _log_movement(
         self,
         **movement_log: Any,
     ) -> None:
         """Records a movement in the internal log."""
-
         now = datetime.now().astimezone()
 
         date_str = now.date().isoformat()
@@ -106,7 +195,7 @@ class Agent:
             "storage_type": movement_log.get("storage_type"),
             "storage_name": movement_log.get("storage_name"),
             "agent_name": movement_log.get("agent_name"),
-            "store_name": self._store.store_name,
+            "store_name": getattr(self._store, "store_name", None),
             "success": movement_log.get("success"),
             "details": movement_log.get("details") or {},
         }
@@ -124,6 +213,7 @@ class Agent:
             entry["timezone"],
         )
 
+    @restricted_to_role
     def movements_log(
         self,
         storage_type: Optional[StorageType] = None,
@@ -141,6 +231,7 @@ class Agent:
         return result
 
     # ----------------- Metadata----------------- #
+    @restricted_to_role
     def _generate_operation_metadata(
         self, style_name: str, storage: Storage[Any], origin: Any
     ) -> None:
@@ -154,6 +245,7 @@ class Agent:
         )
         add_metadata_to_storage(storage, metadata)
 
+    @restricted_to_role
     def _generate_save_metadata(
         self, storage: Storage[Any], storage_name: str, agent_name: Optional[str]
     ) -> None:
@@ -168,6 +260,7 @@ class Agent:
         add_metadata_to_storage(storage, metadata)
 
     # ----------------- Operations ----------------- #
+    @restricted_to_role
     def get_operations(self) -> pd.DataFrame:
         """Return a DataFrame with all recorded operations."""
         logger.debug(
@@ -178,6 +271,7 @@ class Agent:
         return pd.DataFrame(self._operations)
 
     # ----------------- Create Storage ----------------- #
+    @restricted_to_role
     def create_storage(self, data: Any, style_name: str) -> Storage[Any]:
         """
         Convert raw style output into the appropriate storage object using registry.
@@ -199,6 +293,7 @@ class Agent:
         return storage_cls(data=data)
 
     # ----------------- Store Manager Role Functions ----------------- #
+    @restricted_to_role
     def save(self, storage: Storage[Any], **kwargs: Any) -> None:
         """Save a storage object in the store and update movement log."""
 
@@ -274,6 +369,7 @@ class Agent:
             self._log_movement(**movement_log)
             raise
 
+    @restricted_to_role
     def get(
         self,
         storage_type: StorageType | Literal["all"] = "all",
@@ -314,6 +410,7 @@ class Agent:
             self._log_movement(**movement_log)
             raise
 
+    @restricted_to_role
     def remove(
         self,
         storage_type: StorageType | Literal["all"] = "all",
@@ -381,12 +478,14 @@ class Agent:
             self._log_movement(**movement_log)
             raise
 
+    @restricted_to_role
     def exists(self, storage_type: StorageType, storage_name: str) -> bool:
         """Check existence of a specific object."""
         if self._store is None:
             raise ValueError("Missing required argument: 'store'")
         return self._store.exists(storage_type, storage_name)
 
+    @restricted_to_role
     def list_all(
         self,
         storage_type: Optional[StorageType] = None,
@@ -419,6 +518,7 @@ class Agent:
         return filtered_list
 
     # ----------------- Store Manager Interaction ----------------- #
+    @restricted_to_role
     def store_result(
         self,
         storage_manager: Any,
@@ -436,6 +536,7 @@ class Agent:
         )
 
     # ----------------- Work Pipeline ----------------- #
+    @restricted_to_role
     def work(self, style_name: str, **kwargs: Any) -> Storage[Any]:
         """Execute the agent's task using the action and style defined by its role."""
 
