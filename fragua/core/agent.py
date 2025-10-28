@@ -6,7 +6,7 @@ Agents can take a role to work like a Miner, Blacksmith, Transporter, or Master.
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, cast
 
 import pandas as pd
 from fragua.utils.logger import get_logger
@@ -164,7 +164,7 @@ class Agent:
         if not style_cls and self.role == "master":
             for (_, s), cls in STYLE_REGISTRY.items():
                 if s == style_name:
-                    style_cls = cls
+                    style_cls = cast(type[Style[Any, Any]], cls)
                     break
 
         if not style_cls:
