@@ -144,11 +144,10 @@ class Agent:
         # ----------------- PARAMS fallback -----------------
         params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style_name))
         if not params_cls and self.role == "master":
-            for (_, s), cls in PARAMS_REGISTRY.items():
+            for (_, s), params_class in PARAMS_REGISTRY.items():
                 if s == style_name:
-                    params_cls = cls
+                    params_cls = params_class
                     break
-
         if not params_cls:
             raise ValueError(
                 f"No Params class registered for ({self.role}, {style_name})"
@@ -162,11 +161,10 @@ class Agent:
             (self.action, style_name)
         )
         if not style_cls and self.role == "master":
-            for (_a, s), cls in STYLE_REGISTRY.items():
+            for (_, s), style_class in STYLE_REGISTRY.items():
                 if s == style_name:
-                    style_cls = cast(type[Style[Any, Any]], cls)
+                    style_cls = style_class
                     break
-
         if not style_cls:
             raise ValueError(f"No Style class registered for {style_key}")
 
