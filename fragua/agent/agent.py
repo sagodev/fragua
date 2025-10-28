@@ -39,39 +39,31 @@ from fragua.agent.agent_roles import get_role, MasterRole
 StyleT = TypeVar("StyleT", bound=Style[Any, Any])
 P = ParamSpec("P")
 R = TypeVar("R")
+SelfT = TypeVar("SelfT")
 
 logger = get_logger(__name__)
 
 
 def restricted_to_role(
-    func: Callable[Concatenate[Any, P], R],
-) -> Callable[Concatenate[Any, P], R]:
+    func: Callable[Concatenate[SelfT, P], R],
+) -> Callable[Concatenate[SelfT, P], R]:
     """
     Decorator to restrict access to certain methods depending on the Agent's role.
-    Masters bypass restrictions.
+    Methods marked as restricted will raise PermissionError if not allowed.
     """
     setattr(func, "_is_restricted", True)
 
     @wraps(func)
-    def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> R:
-        func_name = func.__name__
+    def wrapper(self: SelfT, *args: P.args, **kwargs: P.kwargs) -> R:
         role = getattr(self, "role", "unknown")
-        name = getattr(self, "name", "unknown")
+        func_name = func.__name__
+        allowed = getattr(self, "allowed_functions", ())
 
-        # Skip restrictions for master
-        if role != "master":
-            allowed = getattr(self, "allowed_functions", ())
-            if allowed and func_name not in allowed:
-                logger.debug(
-                    "Blocked call to '%s' on Agent '%s' (role=%s). Allowed: %s",
-                    func_name,
-                    name,
-                    role,
-                    allowed,
-                )
-                raise PermissionError(
-                    f"Agent '{name}' with role '{role}' is not allowed to execute '{func_name}'"
-                )
+        if role != "master" and allowed and func_name not in allowed:
+            raise PermissionError(
+                f"Agent '{getattr(self, 'name', 'unknown')}' with role '{role}' "
+                f"is not allowed to execute '{func_name}'"
+            )
 
         return func(self, *args, **kwargs)
 
