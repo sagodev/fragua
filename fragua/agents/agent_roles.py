@@ -4,7 +4,7 @@ Agent role classes with different behavior configurations.
 
 from typing import Any
 
-ROLE_REGISTRY: dict[str, dict[str, str | tuple[str, ...]]] = {}
+ROLE_REGISTRY: dict[str, dict[str, Any]] = {}
 
 
 def register_role(
@@ -19,7 +19,7 @@ def register_role(
 
     def decorator(cls: type) -> type:
         ROLE_REGISTRY[role_name.lower()] = {
-            "action": action,
+            "action": action,  # Always str
             "storage_type": storage_type,
             "allowed_functions": allowed_functions,
         }
@@ -28,16 +28,20 @@ def register_role(
     return decorator
 
 
-def get_role(role_name: str) -> dict[str, str | tuple[str, ...]]:
-    """Retrieve a agent role by name."""
-    if role_name.lower() not in ROLE_REGISTRY:
+def get_role(role_name: str) -> dict[str, Any]:
+    """Retrieve a registered agent role by name."""
+    role_name_lower = role_name.lower()
+    if role_name_lower not in ROLE_REGISTRY:
         raise KeyError(f"Role '{role_name}' not registered.")
-    return ROLE_REGISTRY[role_name.lower()]
+    return ROLE_REGISTRY[role_name_lower]
 
 
 def list_roles() -> list[str]:
-    """list all agent roles."""
+    """List all registered agent roles."""
     return list(ROLE_REGISTRY.keys())
+
+
+# ---------------------- Roles Definition ---------------------- #
 
 
 @register_role(
