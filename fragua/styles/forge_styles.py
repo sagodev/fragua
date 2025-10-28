@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
-from fragua.core.base_style import BaseStyle, ResultT
+from fragua.core.base_style import BaseStyle, ResultT, register_style
 from fragua.utils.logger import get_logger
 from fragua.params.forge_params import (
     ForgeParamsT,
@@ -18,7 +18,6 @@ from fragua.params.forge_params import (
     ReportForgeParamsT,
     AnalysisForgeParamsT,
 )
-from .styles_registry import register_style
 
 logger = get_logger(__name__)
 
