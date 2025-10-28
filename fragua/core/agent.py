@@ -99,10 +99,10 @@ class Agent:
         """Convert raw style output into the appropriate storage object using registry."""
         try:
             storage_cls = get_storage(self.storage_type)
-        except KeyError:
+        except KeyError as exc:
             raise TypeError(
                 f"Result type '{self.storage_type}' is not a valid registered storage"
-            )
+            ) from exc
         return storage_cls(data=data)
 
     # ----------------- Store Manager Interaction ----------------- #
