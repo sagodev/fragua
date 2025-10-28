@@ -28,6 +28,7 @@ from fragua.core import (
     Agent,
     Style,
     BaseStorage,
+    Params,
     register_params,
     get_style,
     list_styles,
@@ -87,6 +88,7 @@ __all__ = [
     # Base Classes
     "Agent",
     "Style",
+    "Params",
     "BaseStorage",
     # Styles
     "ForgeStyle",
