@@ -1,11 +1,10 @@
 """Fragua package."""
 
 # ------------------- Agents ------------------- #
-from fragua.agents import Miner, Blacksmith, Transporter, StoreManager
+from fragua.agents import StoreManager
 
 # ------------------- Styles ------------------- #
 from fragua.styles import (
-    register_style,
     ForgeStyle,
     ReportForgeStyle,
     MLForgeStyle,
@@ -25,11 +24,19 @@ from fragua.styles import (
 from fragua.store import Store, Wagon, Box, Container
 
 # ------------------- Base Classes ------------------- #
-from fragua.core import BaseAgent, BaseStyle, BaseStorage
+from fragua.core import (
+    Agent,
+    BaseStyle,
+    BaseStorage,
+    register_params,
+    get_style,
+    list_styles,
+    register_style,
+)
+
 
 # ------------------- Params ------------------- #
 from fragua.params import (
-    register_params,
     ForgeParams,
     ForgeParamsT,
     DeliveryParams,
@@ -71,9 +78,6 @@ from fragua.utils import (
 # ------------------- __all__ ------------------- #
 __all__ = [
     # Agents
-    "Miner",
-    "Blacksmith",
-    "Transporter",
     "StoreManager",
     # Store
     "Store",
@@ -81,7 +85,7 @@ __all__ = [
     "Box",
     "Container",
     # Base Classes
-    "BaseAgent",
+    "Agent",
     "BaseStyle",
     "BaseStorage",
     # Styles
@@ -128,6 +132,8 @@ __all__ = [
     # Registers
     "register_params",
     "register_style",
+    "get_style",
+    "list_styles",
     # Utilities
     "get_logger",
     "Config",
