@@ -16,7 +16,7 @@ class DeliveryParams(Params):
     destination: str
 
 
-@register_params(agent, style="excel")
+@register_params(agent, style="delivery_excel")
 class ExcelDeliveryParams(DeliveryParams):
     """Parameters for Excel delivery."""
 
@@ -25,7 +25,7 @@ class ExcelDeliveryParams(DeliveryParams):
     engine: str | None = None
 
 
-@register_params(agent, style="sql")
+@register_params(agent, style="delivery_sql")
 class SQLDeliveryParams(DeliveryParams):
     """Parameters for SQL delivery."""
 
@@ -35,7 +35,7 @@ class SQLDeliveryParams(DeliveryParams):
     chunksize: int | None = None
 
 
-@register_params(agent, style="api")
+@register_params(agent, style="delivery_api")
 class APIDeliveryParams(DeliveryParams):
     """Parameters for API delivery."""
 

@@ -16,14 +16,14 @@ class MineParams(Params):
     read_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
 
-@register_params(agent, style="csv")
+@register_params(agent, style="mine_csv")
 class CSVMineParams(MineParams):
     """Mining parameters for CSV files."""
 
     path: Union[str, Path]
 
 
-@register_params(agent, style="excel")
+@register_params(agent, style="mine_excel")
 class ExcelMineParams(MineParams):
     """Mining parameters for Excel files."""
 
@@ -31,7 +31,7 @@ class ExcelMineParams(MineParams):
     sheet_name: Union[str, int] = 0
 
 
-@register_params(agent, style="sql")
+@register_params(agent, style="mine_sql")
 class SQLMineParams(MineParams):
     """Mining parameters for SQL databases."""
 
@@ -39,7 +39,7 @@ class SQLMineParams(MineParams):
     query: str
 
 
-@register_params(agent, style="api")
+@register_params(agent, style="mine_api")
 class APIMineParams(MineParams):
     """Mining parameters for APIs."""
 

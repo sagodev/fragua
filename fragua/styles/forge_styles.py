@@ -87,7 +87,7 @@ class ForgeStyle(Style[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT]):
 
 
 # ---------------- MLForge ----------------
-@register_style(action, "ml")
+@register_style(action, "forge_ml")
 class MLForgeStyle(ForgeStyle[MLForgeParamsT, pd.DataFrame]):
     """Forge style for machine learning preprocessing."""
 
@@ -142,7 +142,7 @@ class MLForgeStyle(ForgeStyle[MLForgeParamsT, pd.DataFrame]):
 
 
 # ---------------- ReportForge ----------------
-@register_style(action, "report")
+@register_style(action, "forge_report")
 class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, pd.DataFrame]):
     """Forge style for reporting transformations."""
 
@@ -201,7 +201,7 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, pd.DataFrame]):
 
 
 # ---------------- AnalysisForge ----------------
-@register_style(action, "analysis")
+@register_style(action, "forge_analysis")
 class AnalysisForgeStyle(ForgeStyle[AnalysisForgeParamsT, pd.DataFrame]):
     """Forge style for data analysis transformations."""
 
