@@ -50,11 +50,12 @@ def restricted_to_role(
     """
     Decorator to restrict access to certain methods depending on the Agent's role.
     Methods marked as restricted will raise PermissionError if not allowed.
+    Master role ignores restrictions.
     """
     setattr(func, "_is_restricted", True)
 
     @wraps(func)
-    def wrapper(self: SelfT, *args: P.args, **kwargs: P.kwargs) -> R:
+    def wrapper(self: SelfT, /, *args: P.args, **kwargs: P.kwargs) -> R:
         role = getattr(self, "role", "unknown")
         func_name = func.__name__
         allowed = getattr(self, "allowed_functions", ())
