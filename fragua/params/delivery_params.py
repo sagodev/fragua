@@ -4,7 +4,7 @@ Delivery parameters classes for different types of data destinations.
 
 from typing import Dict, TypeVar
 from pandas import DataFrame
-from fragua.core.params import Params, register_params
+from fragua.params.params import Params, register_params
 
 agent: str = "transporter"
 

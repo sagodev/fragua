@@ -3,7 +3,7 @@
 # ------------------- Agent ------------------- #
 from fragua.agent import Agent, StoreManager
 
-# ------------------- Styles ------------------- #
+# ------------------- Style ------------------- #
 from fragua.style import (
     Style,
     # Forge Styles
@@ -34,9 +34,7 @@ from fragua.store import Wagon, Box, Container
 # ------------------- Core ------------------- #
 from fragua.core import (
     Storage,
-    Params,
     Store,
-    register_params,
     register_storage,
     get_storage,
     list_storages,
@@ -45,10 +43,10 @@ from fragua.core import (
 
 # ------------------- Params ------------------- #
 from fragua.params import (
-    ForgeParams,
-    ForgeParamsT,
-    DeliveryParams,
-    DeliveryParamsT,
+    Params,
+    # Params Registry Functions
+    register_params,
+    # Mine Params
     MineParams,
     MineParamsT,
     ExcelMineParams,
@@ -59,12 +57,18 @@ from fragua.params import (
     SQLMineParamsT,
     APIMineParams,
     APIMineParamsT,
+    # Forge Params
+    ForgeParams,
+    ForgeParamsT,
     MLForgeParams,
     MLForgeParamsT,
     ReportForgeParams,
     ReportForgeParamsT,
     AnalysisForgeParams,
     AnalysisForgeParamsT,
+    # Delivery Params
+    DeliveryParams,
+    DeliveryParamsT,
     SQLDeliveryParams,
     SQLDeliveryParamsT,
     APIDeliveryParams,

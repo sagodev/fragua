@@ -6,8 +6,6 @@ from .store import Store
 # ------------------- Storage ------------------- #
 from .storage import Storage, register_storage, get_storage, list_storages
 
-# ------------------- Params ------------------- #
-from .params import Params, register_params
 
 # ------------------- __all__ ------------------- #
 __all__ = [
@@ -18,7 +16,4 @@ __all__ = [
     "register_storage",
     "get_storage",
     "list_storages",
-    # Params
-    "Params",
-    "register_params",
 ]

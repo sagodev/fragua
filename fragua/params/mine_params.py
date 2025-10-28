@@ -5,7 +5,7 @@ Mine parameters classes for different types of data sources.
 from typing import Any, Dict, Union, TypeVar
 from pathlib import Path
 from pydantic import Field
-from fragua.core.params import Params, register_params
+from fragua.params.params import Params, register_params
 
 agent: str = "miner"
 
