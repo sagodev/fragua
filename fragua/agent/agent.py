@@ -166,6 +166,7 @@ class Agent:  # pylint: disable=too-many-instance-attributes
     @restricted_to_role
     def _log_movement(
         self,
+        /,
         **movement_log: Any,
     ) -> None:
         """Records a movement in the internal log."""
@@ -287,7 +288,7 @@ class Agent:  # pylint: disable=too-many-instance-attributes
 
     # ----------------- Store Manager Role Functions ----------------- #
     @restricted_to_role
-    def save(self, storage: Storage[Any], **kwargs: Any) -> None:
+    def save(self, /, storage: Storage[Any], **kwargs: Any) -> None:
         """Save a storage object in the store and update movement log."""
 
         storage_type: StorageType | None = determine_storage_type(storage=storage)
@@ -530,7 +531,7 @@ class Agent:  # pylint: disable=too-many-instance-attributes
 
     # ----------------- Work Pipeline ----------------- #
     @restricted_to_role
-    def work(self, style_name: str, **kwargs: Any) -> Storage[Any]:
+    def work(self, /, style_name: str, **kwargs: Any) -> Storage[Any]:
         """Execute the agent's task using the action and style defined by its role."""
 
         # ----------------- Deduce action & storage for master -----------------
