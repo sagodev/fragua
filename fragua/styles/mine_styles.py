@@ -11,7 +11,7 @@ import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
 
-from fragua.core.style import BaseStyle, ResultT, register_style
+from fragua.core.style import Style, ResultT, register_style
 from fragua.params.mine_params import MineParamsT
 from fragua.utils.logger import get_logger
 from fragua.params.mine_params import (
@@ -29,11 +29,11 @@ action: str = "mine"
 # ---------------------------------------------------------------------- #
 # Base MineStyle
 # ---------------------------------------------------------------------- #
-class MineStyle(BaseStyle[MineParamsT, ResultT], Generic[MineParamsT, ResultT]):
+class MineStyle(Style[MineParamsT, ResultT], Generic[MineParamsT, ResultT]):
     """
     Base class for all extraction styles in Fragua ETL.
 
-    Standard pipeline provided by BaseStyle:
+    Standard pipeline provided by Style:
         validate_params -> _run -> validate_result -> postprocess
     """
 
@@ -58,13 +58,13 @@ class MineStyle(BaseStyle[MineParamsT, ResultT], Generic[MineParamsT, ResultT]):
         return params
 
     # ---------------------------------------------------------------------- #
-    # Internal _run implementation for BaseStyle
+    # Internal _run implementation for Style
     # ---------------------------------------------------------------------- #
     def _run(self, params: MineParamsT) -> ResultT:
         """
         Executes the MineStyle extraction step.
 
-        This method is called by BaseStyle.use().
+        This method is called by Style.use().
         """
         logger.debug("Starting MineStyle '%s' extraction.", self.style_name)
         result = self.mine(params)

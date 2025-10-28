@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import requests
 
-from fragua.core.style import BaseStyle, ResultT, register_style
+from fragua.core.style import Style, ResultT, register_style
 from fragua.params.delivery_params import DeliveryParamsT
 from fragua.utils.logger import get_logger
 from fragua.params.delivery_params import (
@@ -27,13 +27,11 @@ action: str = "deliver"
 # ---------------------------------------------------------------------- #
 # Base DeliveryStyle
 # ---------------------------------------------------------------------- #
-class DeliveryStyle(
-    BaseStyle[DeliveryParamsT, ResultT], Generic[DeliveryParamsT, ResultT]
-):
+class DeliveryStyle(Style[DeliveryParamsT, ResultT], Generic[DeliveryParamsT, ResultT]):
     """
     Base class for all delivery styles in Fragua ETL.
 
-    Standard pipeline provided by BaseStyle:
+    Standard pipeline provided by Style:
         validate_params -> _run -> validate_result -> postprocess
     """
 
@@ -61,13 +59,13 @@ class DeliveryStyle(
         return params
 
     # ---------------------------------------------------------------------- #
-    # Internal _run implementation for BaseStyle
+    # Internal _run implementation for Style
     # ---------------------------------------------------------------------- #
     def _run(self, params: DeliveryParamsT) -> ResultT:
         """
         Executes the DeliveryStyle delivery step.
 
-        This method is called by BaseStyle.use().
+        This method is called by Style.use().
         """
         logger.debug("Starting DeliveryStyle '%s' delivery.", self.style_name)
         result = self.deliver(params)

@@ -4,7 +4,7 @@
 from .agent import Agent
 
 # ------------------- Style ------------------- #
-from .style import BaseStyle, register_style, get_style, list_styles
+from .style import Style, register_style, get_style, list_styles
 
 # ------------------- Storage ------------------- #
 from .base_storage import BaseStorage
@@ -17,7 +17,7 @@ __all__ = [
     # Agent
     "Agent",
     # Style
-    "BaseStyle",
+    "Style",
     "register_style",
     "get_style",
     "list_styles",

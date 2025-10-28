@@ -17,7 +17,7 @@ ResultT = TypeVar("ResultT")  # Output type (e.g., DataFrame, str, etc.)
 ParamsT = TypeVar("ParamsT", bound=Params)  # Must inherit from Params
 
 
-class BaseStyle(ABC, Generic[ParamsT, ResultT]):
+class Style(ABC, Generic[ParamsT, ResultT]):
     """
     Abstract base class for all styles in Fragua.
     Defines a standard interface for style operations.
@@ -129,7 +129,7 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
         return f"<{self.__class__.__name__} style_name={self.style_name}>"
 
 
-STYLE_REGISTRY: Dict[Tuple[str, str], Type[BaseStyle[Params, Any]]] = {}
+STYLE_REGISTRY: Dict[Tuple[str, str], Type[Style[Params, Any]]] = {}
 
 
 def register_style(action: str, style: str) -> Any:
@@ -143,8 +143,8 @@ def register_style(action: str, style: str) -> Any:
     """
 
     def decorator(
-        cls: Type[BaseStyle[Params, Any]],
-    ) -> Type[BaseStyle[Params, Any]]:
+        cls: Type[Style[Params, Any]],
+    ) -> Type[Style[Params, Any]]:
         key = (action, style)
         if key in STYLE_REGISTRY:
             logger.warning("Overwriting existing style registration for %s", key)
@@ -155,7 +155,7 @@ def register_style(action: str, style: str) -> Any:
     return decorator
 
 
-def get_style(action: str, style: str) -> Type[BaseStyle[Params, Any]]:
+def get_style(action: str, style: str) -> Type[Style[Params, Any]]:
     """Retrieve a registered Style class by (action, style)."""
     key = (action, style)
     try:
@@ -169,7 +169,7 @@ def get_style(action: str, style: str) -> Type[BaseStyle[Params, Any]]:
 
 def list_styles(
     action: Optional[str] = None,
-) -> Dict[Tuple[str, str], Type[BaseStyle[Params, Any]]]:
+) -> Dict[Tuple[str, str], Type[Style[Params, Any]]]:
     """List all registered styles, optionally filtered by action."""
     if action is not None:
         return {k: v for k, v in STYLE_REGISTRY.items() if k[0] == action}

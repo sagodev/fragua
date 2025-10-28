@@ -26,7 +26,7 @@ from fragua.store import Store, Wagon, Box, Container
 # ------------------- Base Classes ------------------- #
 from fragua.core import (
     Agent,
-    BaseStyle,
+    Style,
     BaseStorage,
     register_params,
     get_style,
@@ -86,7 +86,7 @@ __all__ = [
     "Container",
     # Base Classes
     "Agent",
-    "BaseStyle",
+    "Style",
     "BaseStorage",
     # Styles
     "ForgeStyle",

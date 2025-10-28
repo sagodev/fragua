@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
-from fragua.core.style import BaseStyle, ResultT, register_style
+from fragua.core.style import Style, ResultT, register_style
 from fragua.utils.logger import get_logger
 from fragua.params.forge_params import (
     ForgeParamsT,
@@ -28,11 +28,11 @@ action: str = "forge"
 # ---------------------------------------------------------------------- #
 # Base ForgeStyle
 # ---------------------------------------------------------------------- #
-class ForgeStyle(BaseStyle[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT]):
+class ForgeStyle(Style[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT]):
     """
     Base class for ForgeStyles.
 
-    Standard pipeline provided by BaseStyle:
+    Standard pipeline provided by Style:
         validate_params -> _run -> validate_result -> postprocess
     """
 
@@ -56,13 +56,13 @@ class ForgeStyle(BaseStyle[ForgeParamsT, ResultT], Generic[ForgeParamsT, ResultT
         return params
 
     # ---------------------------------------------------------------------- #
-    # Internal _run implementation for BaseStyle
+    # Internal _run implementation for Style
     # ---------------------------------------------------------------------- #
     def _run(self, params: ForgeParamsT) -> ResultT:
         """
         Executes the ForgeStyle transformation step.
 
-        This method is called by BaseStyle.use().
+        This method is called by Style.use().
         """
         logger.debug("Starting ForgeStyle '%s' transformation.", self.style_name)
         result = self.forge(params)

@@ -11,7 +11,7 @@ from typing import Any, Optional, TypeVar
 
 import pandas as pd
 from fragua.utils.logger import get_logger
-from fragua.core.style import BaseStyle, STYLE_REGISTRY
+from fragua.core.style import Style, STYLE_REGISTRY
 from fragua.core.base_storage import BaseStorage
 from fragua.core.params import PARAMS_REGISTRY
 from fragua.utils.metrics import (
@@ -20,7 +20,7 @@ from fragua.utils.metrics import (
     determine_storage_type,
 )
 
-StyleT = TypeVar("StyleT", bound=BaseStyle[Any, Any])
+StyleT = TypeVar("StyleT", bound=Style[Any, Any])
 
 AGENT_ROLES: dict[str, dict[str, str]] = {
     "miner": {"action": "mine", "storage": "wagon"},
