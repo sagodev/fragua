@@ -4,9 +4,9 @@
 from .agent import Agent
 
 # ------------------- Roles ------------------- #
-from .store_manager import StoreManager
 from .agent_roles import (
     # Roles
+    StoreManagerRole,
     MinerRole,
     BlacksmithRole,
     TransporterRole,
@@ -22,7 +22,7 @@ __all__ = [
     # Agent Class
     "Agent",
     # Roles
-    "StoreManager",
+    "StoreManagerRole",
     "MinerRole",
     "BlacksmithRole",
     "TransporterRole",

@@ -48,7 +48,13 @@ def list_roles() -> list[str]:
     "miner",
     action="mine",
     storage_type="Wagon",
-    allowed_functions=("work", "create_storage", "store_result"),
+    allowed_functions=(
+        "_generate_operation_metadata",
+        "work",
+        "create_storage",
+        "store_result",
+        "get_operations",
+    ),
 )
 class MinerRole:
     """Miner agent role."""
@@ -58,7 +64,13 @@ class MinerRole:
     "blacksmith",
     action="forge",
     storage_type="Box",
-    allowed_functions=("work", "create_storage", "store_result"),
+    allowed_functions=(
+        "work",
+        "create_storage",
+        "store_result",
+        "get_operations",
+        "_generate_operation_metadata",
+    ),
 )
 class BlacksmithRole:
     """Blacksmith agent role."""
@@ -68,10 +80,34 @@ class BlacksmithRole:
     "transporter",
     action="deliver",
     storage_type="Container",
-    allowed_functions=("work", "create_storage", "store_result"),
+    allowed_functions=(
+        "_generate_operation_metadata",
+        "work",
+        "create_storage",
+        "store_result",
+    ),
 )
 class TransporterRole:
     """Transporter agent role."""
+
+
+@register_role(
+    "store_manager",
+    action="manage",
+    storage_type="*",
+    allowed_functions=(
+        "_log_movement",
+        "_generate_save_metadata",
+        "movements_log",
+        "save",
+        "exists",
+        "add",
+        "remove",
+        "list_all",
+    ),
+)
+class StoreManagerRole:
+    """Store Manager agent role."""
 
 
 @register_role(
