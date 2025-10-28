@@ -1,7 +1,7 @@
 """Fragua package."""
 
 # ------------------- Agent ------------------- #
-from fragua.agent import Agent, StoreManager
+from fragua.agent import Agent, StoreManager, list_roles, get_role, register_role
 
 # ------------------- Style ------------------- #
 from fragua.style import (
@@ -29,12 +29,14 @@ from fragua.style import (
 )
 
 # ------------------- Store ------------------- #
-from fragua.store import Wagon, Box, Container
-
-# ------------------- Core ------------------- #
-from fragua.core import (
+from fragua.store import (
     Storage,
     Store,
+    # Storage Types
+    Wagon,
+    Box,
+    Container,
+    # Storage Registry Functions
     register_storage,
     get_storage,
     list_storages,
@@ -89,18 +91,17 @@ from fragua.utils import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    # Agents
-    "StoreManager",
-    # Store
-    "Store",
-    "Wagon",
-    "Box",
-    "Container",
     # Base Classes
     "Agent",
     "Style",
     "Params",
     "Storage",
+    "StoreManager",
+    "Store",
+    # Storage Classes
+    "Wagon",
+    "Box",
+    "Container",
     # Styles
     "ForgeStyle",
     "ReportForgeStyle",
@@ -142,6 +143,10 @@ __all__ = [
     "APIDeliveryParamsT",
     "ExcelDeliveryParams",
     "ExcelDeliveryParamsT",
+    # Roles Registry Functions
+    "register_role",
+    "get_role",
+    "list_roles",
     # Params Registery Functions
     "register_params",
     # Storage Registery Functions

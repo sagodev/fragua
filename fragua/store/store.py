@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 from fragua.utils.logger import get_logger
-from fragua.core.storage import Storage
+from fragua.store.storage import Storage
 
 
 logger = get_logger(__name__)
