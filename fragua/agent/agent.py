@@ -78,7 +78,7 @@ def restricted_to_role(
     return wrapper
 
 
-class Agent:
+class Agent:  # pylint: disable=too-many-instance-attributes
     """Agent class for ETL agents."""
 
     def __init__(self, role: str, name: str, store: Store | None = None):
