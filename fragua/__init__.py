@@ -1,7 +1,7 @@
 """Fragua package."""
 
 # ------------------- Agent ------------------- #
-from fragua.agent import Agent, StoreManager, list_roles, get_role, register_role
+from fragua.agent import Agent, list_roles, get_role, register_role
 
 # ------------------- Style ------------------- #
 from fragua.style import (
@@ -96,7 +96,6 @@ __all__ = [
     "Style",
     "Params",
     "Storage",
-    "StoreManager",
     "Store",
     # Storage Classes
     "Wagon",
