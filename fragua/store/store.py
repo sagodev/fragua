@@ -1,6 +1,6 @@
 """
 In-memory store for Fragua ETL objects.
-Supports multiple BaseStorage types simultaneously (wagon, box, container).
+Supports multiple Storage types simultaneously (wagon, box, container).
 """
 
 from typing import (
@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 from fragua.utils.logger import get_logger
-from fragua.core.base_storage import BaseStorage
+from fragua.core.storage import Storage
 
 
 logger = get_logger(__name__)
@@ -25,7 +25,7 @@ StorageType = Literal["wagon", "box", "container"]
 
 class Store:
     """
-    In-memory store for multiple BaseStorage types.
+    In-memory store for multiple Storage types.
     Manages one, several, or all storage categories dynamically.
     """
 
@@ -62,12 +62,12 @@ class Store:
                     invalid,
                 )
 
-        self._store: Dict[StorageType, Dict[str, BaseStorage[Any]]] = {
+        self._store: Dict[StorageType, Dict[str, Storage[Any]]] = {
             cast(StorageType, t): {} for t in types_to_store
         }
 
     @property
-    def store(self) -> Dict[StorageType, Dict[str, BaseStorage[Any]]]:
+    def store(self) -> Dict[StorageType, Dict[str, Storage[Any]]]:
         """Return the internal store mapping."""
         return self._store
 
@@ -76,16 +76,16 @@ class Store:
     def add(
         self,
         storage_type: StorageType,
-        obj: BaseStorage[Any],
+        obj: Storage[Any],
         name: Optional[str] = None,
         overwrite: bool = False,
     ) -> None:
         """
-        Add a BaseStorage object to the store without modifying its metadata.
+        Add a Storage object to the store without modifying its metadata.
 
         Args:
             storage_type (StorageType): Type of the object ('wagon', 'box', 'container').
-            obj (BaseStorage): The object to store.
+            obj (Storage): The object to store.
             name (str, optional): Custom name for the object. Defaults to obj.name.
             overwrite (bool): If True, overwrite existing object with same name.
         """
@@ -124,21 +124,21 @@ class Store:
         storage_type: Union[StorageType, Literal["all"]] = "all",
         name: str = "all",
     ) -> Union[
-        Optional[BaseStorage[Any]],
-        Mapping[str, BaseStorage[Any]],
-        Mapping[StorageType, Mapping[str, BaseStorage[Any]]],
+        Optional[Storage[Any]],
+        Mapping[str, Storage[Any]],
+        Mapping[StorageType, Mapping[str, Storage[Any]]],
     ]:
         """Retrieve objects from the store."""
         if storage_type == "all":
             if name != "all":
                 raise ValueError("Cannot specify a single name when storage_type='all'")
             return cast(
-                Mapping[StorageType, Mapping[str, BaseStorage[Any]]],
+                Mapping[StorageType, Mapping[str, Storage[Any]]],
                 {t: dict(objs) for t, objs in self._store.items()},
             )
 
         if name == "all":
-            return cast(Mapping[str, BaseStorage[Any]], dict(self._store[storage_type]))
+            return cast(Mapping[str, Storage[Any]], dict(self._store[storage_type]))
 
         return self._store.get(storage_type, {}).get(name)
 
@@ -147,9 +147,9 @@ class Store:
         storage_type: Union[StorageType, Literal["all"]] = "all",
         name: str = "all",
     ) -> Union[
-        Optional[BaseStorage[Any]],
-        Mapping[str, BaseStorage[Any]],
-        Mapping[StorageType, Mapping[str, BaseStorage[Any]]],
+        Optional[Storage[Any]],
+        Mapping[str, Storage[Any]],
+        Mapping[StorageType, Mapping[str, Storage[Any]]],
     ]:
         """Remove objects from the store."""
         if storage_type == "all":
@@ -158,16 +158,16 @@ class Store:
             all_objs = {t: dict(objs) for t, objs in self._store.items()}
             for t in self._store.keys():
                 self._store[t].clear()
-            return cast(Mapping[StorageType, Mapping[str, BaseStorage[Any]]], all_objs)
+            return cast(Mapping[StorageType, Mapping[str, Storage[Any]]], all_objs)
 
         if name == "all":
             objs = dict(self._store[storage_type])
             self._store[storage_type].clear()
-            return cast(Mapping[str, BaseStorage[Any]], objs)
+            return cast(Mapping[str, Storage[Any]], objs)
 
         return self._store.get(storage_type, {}).pop(name, None)
 
-    def remove_all(self) -> Mapping[StorageType, Mapping[str, BaseStorage[Any]]]:
+    def remove_all(self) -> Mapping[StorageType, Mapping[str, Storage[Any]]]:
         """Remove all objects from the store."""
         return self.remove("all", "all")  # type: ignore
 
@@ -178,7 +178,7 @@ class Store:
     def list_all(
         self, storage_type: Optional[StorageType] = None
     ) -> Mapping[StorageType, Mapping[str, dict[Any, Any]]]:
-        """Return metadata of all stored BaseStorage objects."""
+        """Return metadata of all stored Storage objects."""
         types_to_list = [storage_type] if storage_type else self._store.keys()
         result: dict[str, dict[str, dict[Any, Any]]] = {}
 

@@ -6,7 +6,7 @@ Handles metadata, checksums, logging, and unified reporting.
 
 from datetime import datetime
 from typing import Optional, Mapping, Union, Literal, Any, Dict, List
-from fragua.core.base_storage import BaseStorage
+from fragua.core.storage import Storage
 from fragua.store import Store
 from fragua.utils.metrics import (
     StorageType,
@@ -90,7 +90,7 @@ class StoreManager:
 
     # ------------------- Metadata ------------------- #
     def _generate_save_metadata(
-        self, storage: BaseStorage[Any], storage_name: str, agent_name: Optional[str]
+        self, storage: Storage[Any], storage_name: str, agent_name: Optional[str]
     ) -> None:
         """Generate and attach metadata to a storage object before saving."""
         metadata_kwargs: Dict[str, Any] = {
@@ -103,7 +103,7 @@ class StoreManager:
         add_metadata_to_storage(storage, metadata)
 
     # ------------------- Store Operations ------------------- #
-    def save(self, storage: BaseStorage[Any], **kwargs: Any) -> None:
+    def save(self, storage: Storage[Any], **kwargs: Any) -> None:
         """Save a storage object in the store and update movement log."""
         storage_type: StorageType | None = determine_storage_type(storage=storage)
         storage_name = kwargs.get("storage_name")
@@ -179,9 +179,9 @@ class StoreManager:
         storage_type: StorageType | Literal["all"] = "all",
         storage_name: str = "all",
     ) -> Union[
-        Optional[BaseStorage[Any]],
-        Mapping[str, BaseStorage[Any]],
-        Mapping[StorageType, Mapping[str, BaseStorage[Any]]],
+        Optional[Storage[Any]],
+        Mapping[str, Storage[Any]],
+        Mapping[StorageType, Mapping[str, Storage[Any]]],
     ]:
         """Retrieve objects from the store and log the operation."""
         movement_log: Dict[str, Any] = {}
@@ -214,9 +214,9 @@ class StoreManager:
         storage_type: StorageType | Literal["all"] = "all",
         storage_name: str = "all",
     ) -> Union[
-        Optional[BaseStorage[Any]],
-        Mapping[str, BaseStorage[Any]],
-        Mapping[StorageType, Mapping[str, BaseStorage[Any]]],
+        Optional[Storage[Any]],
+        Mapping[str, Storage[Any]],
+        Mapping[StorageType, Mapping[str, Storage[Any]]],
     ]:
         """Remove storages from the store and log the operation."""
         try:

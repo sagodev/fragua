@@ -12,7 +12,7 @@ from typing import Any, Optional, TypeVar
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.core.style import Style, STYLE_REGISTRY
-from fragua.core.base_storage import BaseStorage
+from fragua.core.storage import Storage
 from fragua.core.params import PARAMS_REGISTRY
 from fragua.utils.metrics import (
     add_metadata_to_storage,
@@ -52,9 +52,9 @@ class Agent:
         origin_name = None
 
         match origin:
-            case BaseStorage():
+            case Storage():
                 origin_name = str(determine_storage_type(origin))
-                logger.debug("Detected BaseStorage origin: %s", origin_name)
+                logger.debug("Detected Storage origin: %s", origin_name)
             case str() | Path():
                 origin_name = Path(origin).name
                 logger.debug("Detected file path origin: %s", origin_name)
@@ -73,7 +73,7 @@ class Agent:
         return origin_name
 
     def _generate_operation_metadata(
-        self, style_name: str, storage: BaseStorage[Any], origin: Any
+        self, style_name: str, storage: Storage[Any], origin: Any
     ) -> None:
         """Generate metadata from operation"""
         origin_name = self._determine_origin_name(origin)
@@ -97,7 +97,7 @@ class Agent:
         return pd.DataFrame(self._operations)
 
     # ----------------- Create Storage ----------------- #
-    def create_storage(self, data: Any) -> BaseStorage[Any]:
+    def create_storage(self, data: Any) -> Storage[Any]:
         """Convert raw style output into the appropriate storage object."""
         from fragua.store import Wagon, Box, Container
 
@@ -115,7 +115,7 @@ class Agent:
     def store_result(
         self,
         storage_manager: Any,
-        storage: BaseStorage[Any],
+        storage: Storage[Any],
         storage_name: str,
     ) -> None:
         """Store a storage(Wagon, Box, Container) via a store manager."""
@@ -130,7 +130,7 @@ class Agent:
         )
 
     # ----------------- Work Pipeline ----------------- #
-    def work(self, style_name: str, **kwargs: Any) -> BaseStorage[Any]:
+    def work(self, style_name: str, **kwargs: Any) -> Storage[Any]:
         """
         Execute the agent's task using the action and style defined by the agent's role.
         Resolves Params and Style classes from PARAMS_REGISTRY and STYLE_REGISTRY.

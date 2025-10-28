@@ -145,7 +145,7 @@ def add_metadata_to_storage(
     Add or merge metadata into a unified metadata dictionary of a storage object.
 
     Args:
-        storage (BaseStorage): The target storage object (e.g., Wagon, Box, Container).
+        storage (Storage): The target storage object (e.g., Wagon, Box, Container).
         data (dict | None): Metadata to add.
 
     Notes:

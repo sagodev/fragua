@@ -14,12 +14,12 @@ T = TypeVar("T")
 logger = get_logger(__name__)
 
 
-class BaseStorage(Generic[T]):
+class Storage(Generic[T]):
     """Core storage unit containing data and unified metadata handling."""
 
     def __init__(self, data: Optional[T] = None):
         """
-        Initialize a BaseStorage instance.
+        Initialize a Storage instance.
 
         Args:
             name: Name of the storage object.
