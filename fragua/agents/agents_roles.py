@@ -2,7 +2,42 @@
 Agent role classes with different behavior configurations.
 """
 
-from fragua.core.agent import register_role
+from typing import Any
+
+ROLE_REGISTRY: dict[str, dict[str, str | tuple[str, ...]]] = {}
+
+
+def register_role(
+    role_name: str,
+    action: str,
+    storage_type: str,
+    allowed_functions: tuple[str, ...] = (),
+) -> Any:
+    """
+    Decorator to register an Agent role in the global registry.
+    """
+
+    def decorator(cls: type) -> type:
+        ROLE_REGISTRY[role_name.lower()] = {
+            "action": action,
+            "storage_type": storage_type,
+            "allowed_functions": allowed_functions,
+        }
+        return cls
+
+    return decorator
+
+
+def get_role(role_name: str) -> dict[str, str | tuple[str, ...]]:
+    """Retrieve a agent role by name."""
+    if role_name.lower() not in ROLE_REGISTRY:
+        raise KeyError(f"Role '{role_name}' not registered.")
+    return ROLE_REGISTRY[role_name.lower()]
+
+
+def list_roles() -> list[str]:
+    """list all agent roles."""
+    return list(ROLE_REGISTRY.keys())
 
 
 @register_role(
