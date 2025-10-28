@@ -1,8 +1,5 @@
 """Fragua Styles package."""
 
-# ------------------- Params Registry ------------------- #
-from .styles_registry import register_style
-
 # ------------------- Delivery Style Types ------------------- #
 from .delivery_styles import (
     DeliveryStyle,
@@ -31,8 +28,6 @@ from .forge_styles import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    # Styles Registry
-    "register_style",
     # Base Styles
     "DeliveryStyle",
     "MineStyle",

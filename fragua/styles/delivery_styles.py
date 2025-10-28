@@ -22,7 +22,7 @@ from .styles_registry import register_style
 
 logger = get_logger(__name__)
 
-action: str = "delivery"
+action: str = "deliver"
 
 
 # ---------------------------------------------------------------------- #
