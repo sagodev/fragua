@@ -4,20 +4,28 @@
 from fragua.agent import Agent, StoreManager
 
 # ------------------- Styles ------------------- #
-from fragua.styles import (
+from fragua.style import (
+    Style,
+    # Forge Styles
     ForgeStyle,
     ReportForgeStyle,
     MLForgeStyle,
     AnalysisForgeStyle,
+    # Delivery Styles
     DeliveryStyle,
     SQLDeliveryStyle,
     APIDeliveryStyle,
     ExcelDeliveryStyle,
+    # Mine Styles
     MineStyle,
     CSVMineStyle,
     ExcelMineStyle,
     SQLMineStyle,
     APIMineStyle,
+    # Styles Registry Functions
+    register_style,
+    get_style,
+    list_styles,
 )
 
 # ------------------- Store ------------------- #
@@ -25,16 +33,12 @@ from fragua.store import Wagon, Box, Container
 
 # ------------------- Core ------------------- #
 from fragua.core import (
-    Style,
     Storage,
     Params,
     Store,
     register_params,
     register_storage,
-    register_style,
     get_storage,
-    get_style,
-    list_styles,
     list_storages,
 )
 
@@ -134,13 +138,15 @@ __all__ = [
     "APIDeliveryParamsT",
     "ExcelDeliveryParams",
     "ExcelDeliveryParamsT",
-    # Registers
+    # Params Registery Functions
     "register_params",
+    # Storage Registery Functions
     "register_storage",
-    "register_style",
-    "get_style",
     "get_storage",
     "list_storages",
+    # Style Registery Functions
+    "register_style",
+    "get_style",
     "list_styles",
     # Utilities
     "get_logger",

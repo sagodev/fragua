@@ -13,8 +13,8 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------- #
 # Type Variables
 # ---------------------------------------------------------------------- #
-ResultT = TypeVar("ResultT")  # Output type (e.g., DataFrame, str, etc.)
-ParamsT = TypeVar("ParamsT", bound=Params)  # Must inherit from Params
+ResultT = TypeVar("ResultT")
+ParamsT = TypeVar("ParamsT", bound=Params)
 
 
 class Style(ABC, Generic[ParamsT, ResultT]):
@@ -108,7 +108,6 @@ class Style(ABC, Generic[ParamsT, ResultT]):
             result = self.validate_result(result)
             result = self.postprocess(result)
 
-            # Update metadata
             self.metadata.update(
                 {
                     "last_execution": datetime.now(timezone.utc),

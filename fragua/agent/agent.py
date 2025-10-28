@@ -10,7 +10,7 @@ from typing import Any, Optional, TypeVar
 
 import pandas as pd
 from fragua.utils.logger import get_logger
-from fragua.core.style import Style, STYLE_REGISTRY
+from fragua.style.style import Style, STYLE_REGISTRY
 from fragua.core.storage import Storage, get_storage, list_storages
 from fragua.core.params import PARAMS_REGISTRY, Params
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
