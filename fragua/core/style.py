@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, TypeVar, Generic, Dict, Optional, Type, Tuple
 from datetime import datetime, timezone
 from fragua.utils.logger import get_logger
-from fragua.core.base_params import BaseParams
+from fragua.core.params import BaseParams
 
 logger = get_logger(__name__)
 
@@ -160,9 +160,11 @@ def get_style(action: str, style: str) -> Type[BaseStyle[BaseParams, Any]]:
     key = (action, style)
     try:
         return STYLE_REGISTRY[key]
-    except KeyError:
+    except KeyError as exc:
         logger.error("Style not found for action='%s', style='%s'", action, style)
-        raise KeyError(f"Style not found for action='{action}', style='{style}'")
+        raise KeyError(
+            f"Style not found for action='{action}', style='{style}'"
+        ) from exc
 
 
 def list_styles(

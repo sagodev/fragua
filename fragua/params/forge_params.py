@@ -4,7 +4,7 @@ Forge parameters classes for different types of data transformations.
 
 from typing import Any, Dict, TypeVar
 from pandas import DataFrame
-from fragua.core.base_params import BaseParams, register_params
+from fragua.core.params import BaseParams, register_params
 
 
 class ForgeParams(BaseParams):

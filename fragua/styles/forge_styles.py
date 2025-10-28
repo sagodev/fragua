@@ -6,11 +6,12 @@ from abc import abstractmethod
 from typing import Generic, Any
 
 from pandas.api.types import is_numeric_dtype
+from pandas.errors import UndefinedVariableError
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
-from fragua.core.base_style import BaseStyle, ResultT, register_style
+from fragua.core.style import BaseStyle, ResultT, register_style
 from fragua.utils.logger import get_logger
 from fragua.params.forge_params import (
     ForgeParamsT,
@@ -181,7 +182,7 @@ class ReportForgeStyle(ForgeStyle[ReportForgeParamsT, pd.DataFrame]):
                         new_col,
                         expr,
                     )
-                except Exception as e:
+                except (UndefinedVariableError, SyntaxError, TypeError) as e:
                     logger.warning(
                         "%s: Could not compute derived column '%s': %s",
                         self.style_name,

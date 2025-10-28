@@ -11,9 +11,9 @@ from typing import Any, Optional, TypeVar
 
 import pandas as pd
 from fragua.utils.logger import get_logger
-from fragua.core.base_style import BaseStyle, STYLE_REGISTRY
+from fragua.core.style import BaseStyle, STYLE_REGISTRY
 from fragua.core.base_storage import BaseStorage
-from fragua.core.base_params import PARAMS_REGISTRY
+from fragua.core.params import PARAMS_REGISTRY
 from fragua.utils.metrics import (
     add_metadata_to_storage,
     generate_metadata,

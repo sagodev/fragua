@@ -11,7 +11,7 @@ import pandas as pd
 import requests
 from requests.auth import HTTPBasicAuth
 
-from fragua.core.base_style import BaseStyle, ResultT, register_style
+from fragua.core.style import BaseStyle, ResultT, register_style
 from fragua.params.mine_params import MineParamsT
 from fragua.utils.logger import get_logger
 from fragua.params.mine_params import (

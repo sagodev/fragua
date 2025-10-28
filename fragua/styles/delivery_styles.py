@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import requests
 
-from fragua.core.base_style import BaseStyle, ResultT, register_style
+from fragua.core.style import BaseStyle, ResultT, register_style
 from fragua.params.delivery_params import DeliveryParamsT
 from fragua.utils.logger import get_logger
 from fragua.params.delivery_params import (
