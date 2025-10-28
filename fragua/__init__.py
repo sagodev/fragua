@@ -21,18 +21,22 @@ from fragua.styles import (
 )
 
 # ------------------- Store ------------------- #
-from fragua.store import Store, Wagon, Box, Container
+from fragua.store import Wagon, Box, Container
 
-# ------------------- Base Classes ------------------- #
+# ------------------- Core ------------------- #
 from fragua.core import (
     Agent,
     Style,
     Storage,
     Params,
+    Store,
     register_params,
+    register_storage,
+    register_style,
+    get_storage,
     get_style,
     list_styles,
-    register_style,
+    list_storages,
 )
 
 
@@ -133,8 +137,11 @@ __all__ = [
     "ExcelDeliveryParamsT",
     # Registers
     "register_params",
+    "register_storage",
     "register_style",
     "get_style",
+    "get_storage",
+    "list_storages",
     "list_styles",
     # Utilities
     "get_logger",

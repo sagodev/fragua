@@ -7,7 +7,7 @@ Handles metadata, checksums, logging, and unified reporting.
 from datetime import datetime
 from typing import Optional, Mapping, Union, Literal, Any, Dict, List
 from fragua.core.storage import Storage
-from fragua.store import Store
+from fragua.core.store import Store
 from fragua.utils.metrics import (
     StorageType,
     add_metadata_to_storage,
