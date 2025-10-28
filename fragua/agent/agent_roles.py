@@ -75,6 +75,16 @@ class TransporterRole:
 
 
 @register_role(
+    "store_manager",
+    action="manage",
+    storage_type="*",
+    allowed_functions=("movements_log", "save", "exists", "add", "remove", "list_all"),
+)
+class StoreManagerRole:
+    """Store Manager agent role."""
+
+
+@register_role(
     "master",
     action="*",
     storage_type="*",
