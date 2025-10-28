@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, TypeVar, Generic, Dict, Optional, Type, Tuple
 from datetime import datetime, timezone
 from fragua.utils.logger import get_logger
-from fragua.core.params import BaseParams
+from fragua.core.params import Params
 
 logger = get_logger(__name__)
 
@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 # Type Variables
 # ---------------------------------------------------------------------- #
 ResultT = TypeVar("ResultT")  # Output type (e.g., DataFrame, str, etc.)
-ParamsT = TypeVar("ParamsT", bound=BaseParams)  # Must inherit from BaseParams
+ParamsT = TypeVar("ParamsT", bound=Params)  # Must inherit from Params
 
 
 class BaseStyle(ABC, Generic[ParamsT, ResultT]):
@@ -129,7 +129,7 @@ class BaseStyle(ABC, Generic[ParamsT, ResultT]):
         return f"<{self.__class__.__name__} style_name={self.style_name}>"
 
 
-STYLE_REGISTRY: Dict[Tuple[str, str], Type[BaseStyle[BaseParams, Any]]] = {}
+STYLE_REGISTRY: Dict[Tuple[str, str], Type[BaseStyle[Params, Any]]] = {}
 
 
 def register_style(action: str, style: str) -> Any:
@@ -143,8 +143,8 @@ def register_style(action: str, style: str) -> Any:
     """
 
     def decorator(
-        cls: Type[BaseStyle[BaseParams, Any]],
-    ) -> Type[BaseStyle[BaseParams, Any]]:
+        cls: Type[BaseStyle[Params, Any]],
+    ) -> Type[BaseStyle[Params, Any]]:
         key = (action, style)
         if key in STYLE_REGISTRY:
             logger.warning("Overwriting existing style registration for %s", key)
@@ -155,7 +155,7 @@ def register_style(action: str, style: str) -> Any:
     return decorator
 
 
-def get_style(action: str, style: str) -> Type[BaseStyle[BaseParams, Any]]:
+def get_style(action: str, style: str) -> Type[BaseStyle[Params, Any]]:
     """Retrieve a registered Style class by (action, style)."""
     key = (action, style)
     try:
@@ -169,7 +169,7 @@ def get_style(action: str, style: str) -> Type[BaseStyle[BaseParams, Any]]:
 
 def list_styles(
     action: Optional[str] = None,
-) -> Dict[Tuple[str, str], Type[BaseStyle[BaseParams, Any]]]:
+) -> Dict[Tuple[str, str], Type[BaseStyle[Params, Any]]]:
     """List all registered styles, optionally filtered by action."""
     if action is not None:
         return {k: v for k, v in STYLE_REGISTRY.items() if k[0] == action}

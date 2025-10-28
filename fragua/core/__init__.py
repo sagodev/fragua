@@ -10,7 +10,7 @@ from .style import BaseStyle, register_style, get_style, list_styles
 from .base_storage import BaseStorage
 
 # ------------------- Params ------------------- #
-from .params import BaseParams, register_params
+from .params import Params, register_params
 
 # ------------------- __all__ ------------------- #
 __all__ = [
@@ -24,6 +24,6 @@ __all__ = [
     # Storage
     "BaseStorage",
     # Params
-    "BaseParams",
+    "Params",
     "register_params",
 ]

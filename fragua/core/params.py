@@ -6,17 +6,17 @@ from typing import Dict, Tuple, Type, Any
 from pydantic import BaseModel
 
 
-class BaseParams(BaseModel):
+class Params(BaseModel):
     """Base configuration model shared by all params."""
 
     class Config:
-        """Configuration for the BaseParams model."""
+        """Configuration for the Params model."""
 
         arbitrary_types_allowed = True  # Allows DataFrame
         extra = "forbid"  # Forbid unexpected fields (strict)
 
 
-PARAMS_REGISTRY: Dict[Tuple[str, str], Type[BaseParams]] = {}
+PARAMS_REGISTRY: Dict[Tuple[str, str], Type[Params]] = {}
 
 
 def register_params(agent: str, style: str) -> Any:
@@ -29,7 +29,7 @@ def register_params(agent: str, style: str) -> Any:
             ...
     """
 
-    def decorator(cls: Type[BaseParams]) -> Any:
+    def decorator(cls: Type[Params]) -> Any:
         PARAMS_REGISTRY[(agent, style)] = cls
         return cls
 
