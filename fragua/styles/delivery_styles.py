@@ -64,7 +64,7 @@ class DeliveryStyle(Style[DeliveryParamsT, ResultT], Generic[DeliveryParamsT, Re
 # ---------------------------------------------------------------------- #
 # Excel Delivery Style
 # ---------------------------------------------------------------------- #
-@register_style(action, "excel")
+@register_style(action, "delivery_excel")
 class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParamsT, pd.DataFrame]):
     """DeliveryStyle for exporting data to Excel files."""
 
@@ -103,7 +103,7 @@ class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParamsT, pd.DataFrame]):
 # ---------------------------------------------------------------------- #
 # SQL Delivery Style
 # ---------------------------------------------------------------------- #
-@register_style(action, "sql")
+@register_style(action, "delivery_sql")
 class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParamsT, pd.DataFrame]):
     """DeliveryStyle for delivering data to SQL databases."""
 
@@ -140,7 +140,7 @@ class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParamsT, pd.DataFrame]):
 # ---------------------------------------------------------------------- #
 # API Delivery Style
 # ---------------------------------------------------------------------- #
-@register_style(action, "api")
+@register_style(action, "delivery_api")
 class APIDeliveryStyle(DeliveryStyle[APIDeliveryParamsT, Any]):
     """DeliveryStyle for delivering data to external APIs."""
 
