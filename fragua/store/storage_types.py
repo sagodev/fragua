@@ -3,7 +3,7 @@ Storage types for storing different types of data.
 """
 
 from fragua.core.storage import register_storage, T
-from fragua.store.store import Storage
+from fragua.core.storage import Storage
 
 
 @register_storage
