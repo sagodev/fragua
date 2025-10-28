@@ -1,7 +1,7 @@
 """Fragua Core module"""
 
 # ------------------- Agent ------------------- #
-from .base_agent import Agent
+from .agent import Agent
 
 # ------------------- Style ------------------- #
 from .base_style import BaseStyle, register_style, get_style, list_styles
