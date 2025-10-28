@@ -4,6 +4,7 @@ Agents can take a rol to work like a Miner, Blacksmith or Transporter.
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any, Optional, TypeVar
@@ -29,6 +30,7 @@ AGENT_ROLES: dict[str, dict[str, str]] = {
 logger = get_logger(__name__)
 
 
+# -----------------Agent Class----------------- #
 class Agent:
     """Agent class for ETL agents."""
 
@@ -172,3 +174,41 @@ class Agent:
 
     def __repr__(self) -> str:
         return f"<Agent name={self.name} rol={self.rol}>"
+
+
+# -----------------Agent Roles Registry ----------------- #
+
+ROLE_REGISTRY: dict[str, dict[str, str | tuple[str, ...]]] = {}
+
+
+def register_role(
+    role_name: str,
+    action: str,
+    storage_type: str,
+    allowed_functions: tuple[str, ...] = (),
+) -> Any:
+    """
+    Decorator to register an Agent role in the global registry.
+    """
+
+    def decorator(cls: type) -> type:
+        ROLE_REGISTRY[role_name.lower()] = {
+            "action": action,
+            "storage_type": storage_type,
+            "allowed_functions": allowed_functions,
+        }
+        return cls
+
+    return decorator
+
+
+def get_role(role_name: str) -> dict[str, str | tuple[str, ...]]:
+    """Retrieve a agent role by name."""
+    if role_name.lower() not in ROLE_REGISTRY:
+        raise KeyError(f"Role '{role_name}' not registered.")
+    return ROLE_REGISTRY[role_name.lower()]
+
+
+def list_roles() -> list[str]:
+    """list all agent roles."""
+    return list(ROLE_REGISTRY.keys())
