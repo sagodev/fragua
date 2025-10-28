@@ -72,3 +72,27 @@ class BlacksmithRole:
 )
 class TransporterRole:
     """Transporter agent role."""
+
+
+@register_role(
+    "master",
+    action="*",
+    storage_type="*",
+    allowed_functions=("*",),
+)
+class MasterRole:
+    """Master agent role with full access to all functions."""
+
+    # Dict for storage type
+    style_prefix_to_storage = {
+        "mine": "Wagon",
+        "forge": "Box",
+        "deliver": "Container",
+    }
+
+    # Dict for action type
+    style_prefix_to_action = {
+        "mine": "mine",
+        "forge": "forge",
+        "deliver": "deliver",
+    }
