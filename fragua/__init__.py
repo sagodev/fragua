@@ -1,7 +1,7 @@
 """Fragua package."""
 
-# ------------------- Agents ------------------- #
-from fragua.agents import StoreManager
+# ------------------- Agent ------------------- #
+from fragua.agent import Agent, StoreManager
 
 # ------------------- Styles ------------------- #
 from fragua.styles import (
@@ -25,7 +25,6 @@ from fragua.store import Wagon, Box, Container
 
 # ------------------- Core ------------------- #
 from fragua.core import (
-    Agent,
     Style,
     Storage,
     Params,

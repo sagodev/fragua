@@ -1,12 +1,17 @@
 """Fragua Agents package."""
 
-# ------------------- Agents ------------------- #
+# ------------------- Agent ------------------- #
+from .agent import Agent
+
+# ------------------- Roles ------------------- #
 from .store_manager import StoreManager
 from .agent_roles import (
+    # Roles
     MinerRole,
     BlacksmithRole,
     TransporterRole,
     MasterRole,
+    # Functions
     get_role,
     list_roles,
     register_role,
@@ -14,11 +19,15 @@ from .agent_roles import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
+    # Agent Class
+    "Agent",
+    # Roles
     "StoreManager",
     "MinerRole",
     "BlacksmithRole",
     "TransporterRole",
     "MasterRole",
+    # Functions
     "get_role",
     "list_roles",
     "register_role",

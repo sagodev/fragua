@@ -3,9 +3,6 @@
 # ------------------- Store ------------------- #
 from .store import Store
 
-# ------------------- Agent ------------------- #
-from .agent import Agent
-
 # ------------------- Style ------------------- #
 from .style import Style, register_style, get_style, list_styles
 
@@ -19,8 +16,6 @@ from .params import Params, register_params
 __all__ = [
     # Store
     "Store",
-    # Agent
-    "Agent",
     # Style
     "Style",
     "register_style",
