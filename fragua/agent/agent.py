@@ -10,11 +10,11 @@ from typing import Any, Optional, TypeVar
 
 import pandas as pd
 from fragua.utils.logger import get_logger
-from fragua.core.style import Style, STYLE_REGISTRY
-from fragua.core.storage import Storage, get_storage, list_storages
-from fragua.core.params import PARAMS_REGISTRY, Params
+from fragua.style.style import Style, STYLE_REGISTRY
+from fragua.store.storage import Storage, get_storage, list_storages
+from fragua.params.params import PARAMS_REGISTRY, Params
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
-from fragua.agents.agent_roles import get_role, MasterRole
+from fragua.agent.agent_roles import get_role, MasterRole
 
 StyleT = TypeVar("StyleT", bound=Style[Any, Any])
 

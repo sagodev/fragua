@@ -1,5 +1,8 @@
 """Fragua ETL Params module."""
 
+# ------------------- Params ------------------- #
+from .params import Params, register_params
+
 # ------------------- Delivery Params ------------------- #
 from .delivery_params import (
     DeliveryParams,
@@ -40,6 +43,9 @@ from .forge_params import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
+    "Params",
+    # Params Registry Functions
+    "register_params",
     # Mine Params
     "MineParams",
     "CSVMineParams",

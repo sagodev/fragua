@@ -1,51 +1,54 @@
 """Fragua package."""
 
-# ------------------- Agents ------------------- #
-from fragua.agents import StoreManager
+# ------------------- Agent ------------------- #
+from fragua.agent import Agent, StoreManager, list_roles, get_role, register_role
 
-# ------------------- Styles ------------------- #
-from fragua.styles import (
+# ------------------- Style ------------------- #
+from fragua.style import (
+    Style,
+    # Forge Styles
     ForgeStyle,
     ReportForgeStyle,
     MLForgeStyle,
     AnalysisForgeStyle,
+    # Delivery Styles
     DeliveryStyle,
     SQLDeliveryStyle,
     APIDeliveryStyle,
     ExcelDeliveryStyle,
+    # Mine Styles
     MineStyle,
     CSVMineStyle,
     ExcelMineStyle,
     SQLMineStyle,
     APIMineStyle,
+    # Styles Registry Functions
+    register_style,
+    get_style,
+    list_styles,
 )
 
 # ------------------- Store ------------------- #
-from fragua.store import Wagon, Box, Container
-
-# ------------------- Core ------------------- #
-from fragua.core import (
-    Agent,
-    Style,
+from fragua.store import (
     Storage,
-    Params,
     Store,
-    register_params,
+    # Storage Types
+    Wagon,
+    Box,
+    Container,
+    # Storage Registry Functions
     register_storage,
-    register_style,
     get_storage,
-    get_style,
-    list_styles,
     list_storages,
 )
 
 
 # ------------------- Params ------------------- #
 from fragua.params import (
-    ForgeParams,
-    ForgeParamsT,
-    DeliveryParams,
-    DeliveryParamsT,
+    Params,
+    # Params Registry Functions
+    register_params,
+    # Mine Params
     MineParams,
     MineParamsT,
     ExcelMineParams,
@@ -56,12 +59,18 @@ from fragua.params import (
     SQLMineParamsT,
     APIMineParams,
     APIMineParamsT,
+    # Forge Params
+    ForgeParams,
+    ForgeParamsT,
     MLForgeParams,
     MLForgeParamsT,
     ReportForgeParams,
     ReportForgeParamsT,
     AnalysisForgeParams,
     AnalysisForgeParamsT,
+    # Delivery Params
+    DeliveryParams,
+    DeliveryParamsT,
     SQLDeliveryParams,
     SQLDeliveryParamsT,
     APIDeliveryParams,
@@ -82,18 +91,17 @@ from fragua.utils import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    # Agents
-    "StoreManager",
-    # Store
-    "Store",
-    "Wagon",
-    "Box",
-    "Container",
     # Base Classes
     "Agent",
     "Style",
     "Params",
     "Storage",
+    "StoreManager",
+    "Store",
+    # Storage Classes
+    "Wagon",
+    "Box",
+    "Container",
     # Styles
     "ForgeStyle",
     "ReportForgeStyle",
@@ -135,13 +143,19 @@ __all__ = [
     "APIDeliveryParamsT",
     "ExcelDeliveryParams",
     "ExcelDeliveryParamsT",
-    # Registers
+    # Roles Registry Functions
+    "register_role",
+    "get_role",
+    "list_roles",
+    # Params Registery Functions
     "register_params",
+    # Storage Registery Functions
     "register_storage",
-    "register_style",
-    "get_style",
     "get_storage",
     "list_storages",
+    # Style Registery Functions
+    "register_style",
+    "get_style",
     "list_styles",
     # Utilities
     "get_logger",
