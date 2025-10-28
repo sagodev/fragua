@@ -97,7 +97,7 @@ class Agent:
         return pd.DataFrame(self._operations)
 
     # ----------------- Create Storage ----------------- #
-    def create_storage(self, data: Any):
+    def create_storage(self, data: Any) -> BaseStorage[Any]:
         """Convert raw style output into the appropriate storage object."""
         from fragua.store import Wagon, Box, Container
 
@@ -135,7 +135,6 @@ class Agent:
         Execute the agent's task using the action and style defined by the agent's role.
         Resolves Params and Style classes from PARAMS_REGISTRY and STYLE_REGISTRY.
         """
-        # --- Resolve Params class ---
         params_cls = PARAMS_REGISTRY.get((self.rol, style_name))
         if not params_cls:
             raise ValueError(
@@ -143,27 +142,22 @@ class Agent:
             )
         params_instance = params_cls(**kwargs)
 
-        # --- Resolve Style class ---
         style_key = (self.action, style_name)
         style_cls = STYLE_REGISTRY.get(style_key)
         if not style_cls:
             raise ValueError(f"No Style class registered for {style_key}")
         style_instance = style_cls(style_name=style_name)
 
-        # --- Apply style ---
         stylized_data = style_instance.use(params_instance)
 
-        # --- Wrap result in storage ---
         storage = self.create_storage(stylized_data)
 
-        # --- Add operation metadata ---
         self._generate_operation_metadata(
             style_name=style_name,
             storage=storage,
             origin=params_instance,
         )
 
-        # --- Record operation for history ---
         self._operations.append(
             {
                 "action": self.action,
