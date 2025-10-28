@@ -1,6 +1,6 @@
 """
 Agent class in Fragua.
-Agents can take a role to work like a Miner, Blacksmith, or Transporter.
+Agents can take a role to work like a Miner, Blacksmith, Transporter, or Master.
 """
 
 from __future__ import annotations
@@ -13,11 +13,8 @@ from fragua.utils.logger import get_logger
 from fragua.core.style import Style, STYLE_REGISTRY
 from fragua.core.storage import Storage, get_storage, list_storages
 from fragua.core.params import PARAMS_REGISTRY
-from fragua.utils.metrics import (
-    add_metadata_to_storage,
-    generate_metadata,
-)
-from fragua.agents.agent_roles import get_role
+from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
+from fragua.agents.agent_roles import get_role, MasterRole
 
 StyleT = TypeVar("StyleT", bound=Style[Any, Any])
 
@@ -97,14 +94,24 @@ class Agent:
         return pd.DataFrame(self._operations)
 
     # ----------------- Create Storage ----------------- #
-    def create_storage(self, data: Any) -> Storage[Any]:
-        """Convert raw style output into the appropriate storage object using registry."""
+    def create_storage(self, data: Any, style_name: str) -> Storage[Any]:
+        """
+        Convert raw style output into the appropriate storage object using registry.
+        For master, deduce storage_type automatically based on style_name prefix.
+        """
+        storage_type = self.storage_type
+
+        if self.role == "master":
+            prefix = style_name.split("_")[0]
+            storage_type = MasterRole.style_prefix_to_storage.get(prefix, "Wagon")
+
         try:
-            storage_cls = get_storage(self.storage_type)
+            storage_cls = get_storage(storage_type)
         except KeyError as exc:
             raise TypeError(
-                f"Result type '{self.storage_type}' is not a valid registered storage"
+                f"Result type '{storage_type}' is not a valid registered storage"
             ) from exc
+
         return storage_cls(data=data)
 
     # ----------------- Store Manager Interaction ----------------- #
@@ -126,25 +133,45 @@ class Agent:
 
     # ----------------- Work Pipeline ----------------- #
     def work(self, style_name: str, **kwargs: Any) -> Storage[Any]:
-        """
-        Execute the agent's task using the action and style defined by the agent's role.
-        Resolves Params and Style classes from PARAMS_REGISTRY and STYLE_REGISTRY.
-        """
+        """Execute the agent's task using the action and style defined by its role."""
+
+        # ----------------- Deduce action & storage for master -----------------
+        if self.role == "master":
+            prefix = style_name.split("_")[0]
+            self.action = MasterRole.style_prefix_to_action.get(prefix, "mine")
+            self.storage_type = MasterRole.style_prefix_to_storage.get(prefix, "Wagon")
+
+        # ----------------- PARAMS fallback -----------------
         params_cls = PARAMS_REGISTRY.get((self.role, style_name))
+        if not params_cls and self.role == "master":
+            for (_, s), cls in PARAMS_REGISTRY.items():
+                if s == style_name:
+                    params_cls = cls
+                    break
+
         if not params_cls:
             raise ValueError(
                 f"No Params class registered for ({self.role}, {style_name})"
             )
+
         params_instance = params_cls(**kwargs)
 
+        # ----------------- STYLE fallback -----------------
         style_key = (self.action, style_name)
         style_cls = STYLE_REGISTRY.get(style_key)
+        if not style_cls and self.role == "master":
+            for (_, s), cls in STYLE_REGISTRY.items():
+                if s == style_name:
+                    style_cls = cls
+                    break
+
         if not style_cls:
             raise ValueError(f"No Style class registered for {style_key}")
-        style_instance = style_cls(style_name=style_name)
 
+        # ----------------- Execute style -----------------
+        style_instance = style_cls(style_name=style_name)
         stylized_data = style_instance.use(params_instance)
-        storage = self.create_storage(stylized_data)
+        storage = self.create_storage(stylized_data, style_name=style_name)
 
         self._generate_operation_metadata(
             style_name=style_name,
