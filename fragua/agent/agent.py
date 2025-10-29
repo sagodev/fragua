@@ -1,20 +1,13 @@
 """
 Agent class in Fragua.
-Agents can take a role to work like a Miner, Blacksmith, Transporter, or Master.
+Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 """
 
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timezone
 from types import FunctionType
-from typing import (
-    Any,
-    Optional,
-    TypeVar,
-    Callable,
-    Concatenate,
-    ParamSpec,
-)
+from typing import Any, Optional, TypeVar, Callable, Concatenate, ParamSpec
 from functools import wraps
 import pandas as pd
 
@@ -22,12 +15,9 @@ from fragua.agent.store_manager import StoreManager
 from fragua.style.style import Style, STYLE_REGISTRY
 from fragua.params.params import PARAMS_REGISTRY, Params
 from fragua.store.storage import Storage, get_storage, list_storages
-from fragua.agent.agent_roles import get_role, MasterRole
+from fragua.agent.agent_roles import get_role
 from fragua.utils.logger import get_logger
-from fragua.utils.metrics import (
-    add_metadata_to_storage,
-    generate_metadata,
-)
+from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
 StyleT = TypeVar("StyleT", bound=Style[Any, Any])
 P = ParamSpec("P")
@@ -43,7 +33,6 @@ def restricted_to_role(
     """
     Decorator to restrict access to certain methods depending on the Agent's role.
     Methods marked as restricted will raise PermissionError if not allowed.
-    Master role ignores restrictions.
     """
     setattr(func, "_is_restricted", True)
 
@@ -53,7 +42,7 @@ def restricted_to_role(
         func_name = func.__name__
         allowed = getattr(self, "allowed_functions", ())
 
-        if role != "master" and allowed and func_name not in allowed:
+        if allowed and func_name not in allowed:
             raise PermissionError(
                 f"Agent '{getattr(self, 'name', 'unknown')}' with role '{role}' "
                 f"is not allowed to execute '{func_name}'"
@@ -96,10 +85,6 @@ class Agent:  # pylint: disable=too-many-instance-attributes
         )
 
     def __dir__(self) -> list[str]:
-        """
-        Personaliza dir() para ocultar métodos marcados con _is_restricted
-        cuando no estén permitidos por el rol actual.
-        """
         all_attrs = super().__dir__()
         allowed = getattr(self, "allowed_functions", ())
 
@@ -120,10 +105,9 @@ class Agent:  # pylint: disable=too-many-instance-attributes
                 continue
 
             obj = getattr(self.__class__, attr, None)
-            is_restricted = False
-
-            if isinstance(obj, FunctionType):
-                is_restricted = getattr(obj, "_is_restricted", False)
+            is_restricted = isinstance(obj, FunctionType) and getattr(
+                obj, "_is_restricted", False
+            )
 
             if is_restricted:
                 if allowed and attr in allowed:
@@ -185,24 +169,14 @@ class Agent:  # pylint: disable=too-many-instance-attributes
 
     # ----------------- Create Storage ----------------- #
     @restricted_to_role
-    def create_storage(self, data: Any, style_name: str) -> Storage[Any]:
-        """
-        Convert raw style output into the appropriate storage object using registry.
-        For master, deduce storage_type automatically based on style_name prefix.
-        """
-        storage_type = self.storage_type
-
-        if self.role == "master":
-            prefix = style_name.split("_")[0]
-            storage_type = MasterRole.style_prefix_to_storage.get(prefix, "Wagon")
-
+    def create_storage(self, data: Any) -> Storage[Any]:
+        """Convert raw style output into the appropriate storage object using registry."""
         try:
-            storage_cls = get_storage(storage_type)
+            storage_cls = get_storage(self.storage_type)
         except KeyError as exc:
             raise TypeError(
-                f"Result type '{storage_type}' is not a valid registered storage"
+                f"Result type '{self.storage_type}' is not a valid registered storage"
             ) from exc
-
         return storage_cls(data=data)
 
     # ----------------- Store Manager Interaction ----------------- #
@@ -213,25 +187,21 @@ class Agent:  # pylint: disable=too-many-instance-attributes
         storage: Storage[Any],
         storage_name: str | None = None,
     ) -> None:
-        """
-        Store a Storage (Wagon, Box, Container) via a StoreManager.
-        Automatically generates a unique name if storage_name is not provided.
-        """
+        """Store a Storage object via a StoreManager."""
+        storage_type_lower = storage.__class__.__name__.lower()
 
-        storage_type = storage.__class__.__name__
-        storage_type_lower = storage_type.lower()
-
-        if storage_type not in list_storages():
-            raise ValueError(f"'{storage_type}' is not a valid registered storage type")
+        if storage_type_lower not in list_storages():
+            raise ValueError(
+                f"'{storage_type_lower}' is not a valid registered storage type"
+            )
 
         if storage_name is None:
-            existing_count = len(
-                storage_manager.store.store.get(storage_type_lower, {})
-            )
+            existing_count = len(storage_manager.store.data)
             storage_name = f"{storage_type_lower}_{existing_count + 1}"
 
         storage_manager.add(
             storage=storage,
+            storage_type=storage_type_lower,
             storage_name=storage_name,
             agent_name=self.name,
         )
@@ -239,7 +209,7 @@ class Agent:  # pylint: disable=too-many-instance-attributes
         logger.debug(
             "[%s] Stored %s as '%s' via store manager '%s'",
             self.name,
-            storage_type,
+            storage_type_lower,
             storage_name,
             storage_manager.name if hasattr(storage_manager, "name") else "unknown",
         )
@@ -247,26 +217,9 @@ class Agent:  # pylint: disable=too-many-instance-attributes
     # ----------------- Work Pipeline ----------------- #
     @restricted_to_role
     def work(self, /, style_name: str, **kwargs: Any) -> None:
-        """
-        Execute the agent's task using the action and style defined by its role.
-        Automatically creates the appropriate Storage and stores it via store_result().
-        The Storage receives an automatic unique name per type.
-        Does not return anything.
-        """
-
-        # ----------------- Deduce action & storage for master -----------------
-        if self.role == "master":
-            prefix = style_name.split("_")[0]
-            self.action = MasterRole.style_prefix_to_action.get(prefix, "mine")
-            self.storage_type = MasterRole.style_prefix_to_storage.get(prefix, "Wagon")
-
-        # ----------------- PARAMS fallback -----------------
+        """Execute the agent's task using the action and style defined by its role."""
+        # ----------------- PARAMS -----------------
         params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style_name))
-        if not params_cls and self.role == "master":
-            for (_, s), params_class in PARAMS_REGISTRY.items():
-                if s == style_name:
-                    params_cls = params_class
-                    break
         if not params_cls:
             raise ValueError(
                 f"No Params class registered for ({self.role}, {style_name})"
@@ -274,16 +227,9 @@ class Agent:  # pylint: disable=too-many-instance-attributes
 
         params_instance = params_cls(**kwargs)
 
-        # ----------------- STYLE fallback -----------------
+        # ----------------- STYLE -----------------
         style_key = (self.action, style_name)
-        style_cls: type[Style[Any, Any]] | None = STYLE_REGISTRY.get(
-            (self.action, style_name)
-        )
-        if not style_cls and self.role == "master":
-            for (_, s), style_class in STYLE_REGISTRY.items():
-                if s == style_name:
-                    style_cls = style_class
-                    break
+        style_cls: type[Style[Any, Any]] | None = STYLE_REGISTRY.get(style_key)
         if not style_cls:
             raise ValueError(f"No Style class registered for {style_key}")
 
@@ -292,7 +238,7 @@ class Agent:  # pylint: disable=too-many-instance-attributes
         stylized_data = style_instance.use(params_instance)
 
         # ----------------- Create storage -----------------
-        storage = self.create_storage(stylized_data, style_name=style_name)
+        storage = self.create_storage(stylized_data)
 
         # ----------------- Generate operation metadata -----------------
         self._generate_operation_metadata(
