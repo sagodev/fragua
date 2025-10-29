@@ -22,7 +22,7 @@ class Container(Storage[Any]):
     Storage designed to contain other storages (Wagon and Box).
     """
 
-    def __init__(self, name: str = "container"):
+    def __init__(self, name: str = "data_container"):
         super().__init__(data=None)
         self.name = name
         self._content: Dict[str, Union[Wagon, Box]] = {}

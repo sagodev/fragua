@@ -79,12 +79,11 @@ class BlacksmithRole:
 @register_role(
     "transporter",
     action="deliver",
-    storage_type="Container",
+    storage_type="*",
     allowed_functions=(
         "_generate_operation_metadata",
         "work",
         "create_storage",
-        "store_result",
     ),
 )
 class TransporterRole:
