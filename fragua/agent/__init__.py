@@ -10,7 +10,6 @@ from .agent_roles import (
     MinerRole,
     BlacksmithRole,
     TransporterRole,
-    MasterRole,
     # Roles Registry Functions
     get_role,
     list_roles,
@@ -26,7 +25,6 @@ __all__ = [
     "MinerRole",
     "BlacksmithRole",
     "TransporterRole",
-    "MasterRole",
     # Roles Registry Functions
     "get_role",
     "list_roles",
