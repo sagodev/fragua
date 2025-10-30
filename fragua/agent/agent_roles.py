@@ -79,56 +79,12 @@ class BlacksmithRole:
 @register_role(
     "transporter",
     action="deliver",
-    storage_type="Container",
+    storage_type="*",
     allowed_functions=(
         "_generate_operation_metadata",
         "work",
         "create_storage",
-        "store_result",
     ),
 )
 class TransporterRole:
     """Transporter agent role."""
-
-
-@register_role(
-    "store_manager",
-    action="manage",
-    storage_type="*",
-    allowed_functions=(
-        "_log_movement",
-        "_generate_save_metadata",
-        "movements_log",
-        "save",
-        "exists",
-        "add",
-        "remove",
-        "list_all",
-    ),
-)
-class StoreManagerRole:
-    """Store Manager agent role."""
-
-
-@register_role(
-    "master",
-    action="*",
-    storage_type="*",
-    allowed_functions=("*",),
-)
-class MasterRole:
-    """Master agent role with full access to all functions."""
-
-    # Dict for storage type
-    style_prefix_to_storage = {
-        "mine": "Wagon",
-        "forge": "Box",
-        "deliver": "Container",
-    }
-
-    # Dict for action type
-    style_prefix_to_action = {
-        "mine": "mine",
-        "forge": "forge",
-        "deliver": "deliver",
-    }

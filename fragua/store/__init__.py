@@ -1,13 +1,20 @@
 """Fragua Store package."""
 
 # ------------------- Storage Class ------------------- #
-from .storage import Storage, register_storage, get_storage, list_storages
+from .storage import Storage
 
 # ------------------- Store Class ------------------- #
 from .store import Store
 
 # ------------------- Storage Types ------------------- #
-from .storage_types import Box, Wagon, Container
+from .storage_types import (
+    Box,
+    Wagon,
+    Container,
+    register_storage,
+    get_storage,
+    list_storages,
+)
 
 
 # ------------------- __all__ ------------------- #
