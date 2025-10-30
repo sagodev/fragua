@@ -20,7 +20,7 @@ class Blacksmith(Agent):
         super().__init__(name=name, store_manager=store_manager)
         self.role: str = "blacksmith"
         self.action: str = "forge"
-        self.storage_type: str = "box"
+        self.storage_type: str = "Box"
 
         logger.debug(
             "Initialized Agent '%s' with role '%s' (action=%s, storage=%s)",
@@ -30,7 +30,9 @@ class Blacksmith(Agent):
             self.storage_type,
         )
 
-    def work(self, /, style_name: str, **kwargs: Any) -> None:
+    def work(
+        self, /, style_name: str, storage_name: str | None = None, **kwargs: Any
+    ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
 
         # ----------------- PARAMS -----------------
@@ -80,4 +82,7 @@ class Blacksmith(Agent):
 
         # ----------------- Auto-store -----------------
         if hasattr(self, "storage_name") and self.store_manager:
-            self.store_result(self.store_manager, storage, kwargs.get("storage_name"))
+            self.add_to_store(storage, storage_name)
+        if storage_name is None:
+            generated_name = self._generate_storage_name(style_name)
+            self.add_to_store(storage, generated_name)

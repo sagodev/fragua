@@ -20,7 +20,7 @@ class Haulier(Agent):
         super().__init__(name=name, store_manager=store_manager)
         self.role: str = "haulier"
         self.action: str = "deliver"
-        self.storage_type: str = "container"
+        self.storage_type: str = "Container"
 
         logger.debug(
             "Initialized Agent '%s' with role '%s' (action=%s, storage=%s)",
@@ -30,7 +30,9 @@ class Haulier(Agent):
             self.storage_type,
         )
 
-    def work(self, /, style_name: str, **kwargs: Any) -> None:
+    def work(
+        self, /, style_name: str, storage_name: str | None = None, **kwargs: Any
+    ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
 
         # ----------------- PARAMS -----------------
@@ -77,7 +79,3 @@ class Haulier(Agent):
             self.action,
             style_name,
         )
-
-        # ----------------- Auto-store -----------------
-        if hasattr(self, "storage_name") and self.store_manager:
-            self.store_result(self.store_manager, storage, kwargs.get("storage_name"))
