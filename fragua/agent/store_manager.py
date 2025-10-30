@@ -242,9 +242,9 @@ class StoreManager:
                 details={"result_type": type(result).__name__},
             )
 
-            if storage_name != "all":
-                return next(iter(result.values()), None)
-            return result
+            return (
+                next(iter(result.values()), None) if storage_name != "all" else result
+            )
 
         except Exception as e:
             self._log_movement(
