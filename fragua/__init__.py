@@ -3,6 +3,8 @@
 # ------------------- Agents ------------------- #
 from fragua.agent import Agent, list_roles, get_role, register_role
 from fragua.agent.store_manager import StoreManager
+from fragua.agent import Agent, StoreManager, Miner, Blacksmith, Haulier
+
 
 # ------------------- Style ------------------- #
 from fragua.style import (
@@ -94,6 +96,9 @@ from fragua.utils import (
 __all__ = [
     # Base Classes
     "Agent",
+    "Miner",
+    "Blacksmith",
+    "Haulier",
     "StoreManager",
     "Style",
     "Params",
