@@ -2,8 +2,29 @@
 Storage types for storing different kinds of data.
 """
 
-from typing import Any, Dict, Union
-from fragua.store.storage import register_storage, Storage
+from typing import Any, Dict, Union, Type, TypeVar
+from fragua.store.storage import Storage
+
+STORAGE_REGISTRY: Dict[str, Type[Storage[Any]]] = {}
+S = TypeVar("S", bound="Storage[Any]")
+
+
+def register_storage(cls: Type[S]) -> Type[S]:
+    """Register a Storage subclass in the global registry."""
+    STORAGE_REGISTRY[cls.__name__] = cls
+    return cls
+
+
+def get_storage(name: str) -> Type[Storage[Any]]:
+    """Retrieve a Storage subclass from the registry by name."""
+    if name not in STORAGE_REGISTRY:
+        raise KeyError(f"Storage class '{name}' not registered.")
+    return STORAGE_REGISTRY[name]
+
+
+def list_storages() -> list[str]:
+    """Return a list of all registered storage class names."""
+    return list(STORAGE_REGISTRY.keys())
 
 
 @register_storage

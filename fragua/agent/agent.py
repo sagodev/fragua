@@ -11,10 +11,11 @@ from typing import Any, Optional, TypeVar, Callable, Concatenate, ParamSpec
 from functools import wraps
 import pandas as pd
 
-from fragua.agent.store_manager import StoreManager
 from fragua.style.style import Style, STYLE_REGISTRY
 from fragua.params.params import PARAMS_REGISTRY, Params
-from fragua.store.storage import Storage, get_storage, list_storages
+from fragua.agent.store_manager import StoreManager
+from fragua.store.storage import Storage
+from fragua.store.storage_types import get_storage, list_storages
 from fragua.agent.agent_roles import get_role
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
@@ -218,6 +219,7 @@ class Agent:  # pylint: disable=too-many-instance-attributes
     @restricted_to_role
     def work(self, /, style_name: str, **kwargs: Any) -> None:
         """Execute the agent's task using the action and style defined by its role."""
+
         # ----------------- PARAMS -----------------
         params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style_name))
         if not params_cls:
