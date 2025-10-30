@@ -6,13 +6,13 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import abstractmethod, ABC
 from pathlib import Path
-from typing import Any, Optional, TypeVar, ParamSpec
+from typing import Any, Mapping, Optional, TypeVar, ParamSpec, Union
 import pandas as pd
 
 from fragua.agent.store_manager import StoreManager
 from fragua.style.style import Style
 from fragua.store.storage import Storage
-from fragua.store.storage_types import get_storage, list_storages
+from fragua.store.storage_types import Box, Wagon, get_storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -39,14 +39,6 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         self.action: str
         self.storage_type: str
 
-        logger.debug(
-            "Initialized Agent '%s' with role '%s' (action=%s, storage=%s)",
-            self.name,
-            self.role,
-            self.action,
-            self.storage_type,
-        )
-
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
         """Extract a meaningful origin name for operation metadata."""
@@ -71,6 +63,11 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
                     logger.debug("Origin type not recognized; returning None")
         return origin_name
 
+    def _generate_storage_name(self, style_name: str) -> str:
+        """Generate a name for storage from action and style."""
+        storage_name: str = f"{style_name}_{self.action}_data"
+        return storage_name
+
     # ----------------- Metadata----------------- #
     def _generate_operation_metadata(
         self, style_name: str, storage: Storage[Any], origin: Any
@@ -87,7 +84,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
 
     # ----------------- Operations ----------------- #
     def get_operations(self) -> pd.DataFrame:
-        """Return a DataFrame with all recorded operations."""
+        """Return a DataFrame with all recorded operations done by the agent."""
         logger.debug(
             "[%s] Returning %d recorded operations",
             self.name,
@@ -107,40 +104,35 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         return storage_cls(data=data)
 
     # ----------------- Store Manager Interaction ----------------- #
-    def store_result(
+    def add_to_store(
         self,
-        storage_manager: Any,
         storage: Storage[Any],
         storage_name: str | None = None,
     ) -> None:
         """Store a Storage object via a StoreManager."""
-        storage_type_lower = storage.__class__.__name__.lower()
 
-        if storage_type_lower not in list_storages():
-            raise ValueError(
-                f"'{storage_type_lower}' is not a valid registered storage type"
-            )
+        if self.store_manager is None:
+            raise TypeError(f"'{self.storage_type}' can't be None.")
 
-        if storage_name is None:
-            existing_count = len(storage_manager.store.data)
-            storage_name = f"{storage_type_lower}_{existing_count + 1}"
-
-        storage_manager.add(
+        self.store_manager.add(
             storage=storage,
-            storage_type=storage_type_lower,
             storage_name=storage_name,
             agent_name=self.name,
         )
 
-        logger.debug(
-            "[%s] Stored %s as '%s' via store manager '%s'",
-            self.name,
-            storage_type_lower,
-            storage_name,
-            storage_manager.name if hasattr(storage_manager, "name") else "unknown",
-        )
+    def get_from_store(self, storage_name: str) -> Union[
+        Optional[Union[Wagon, Box]],
+        Mapping[str, Union[Wagon, Box]],
+        Mapping[str, Mapping[str, Union[Wagon, Box]]],
+    ]:
+        """Get data from store by a given storage name."""
+        if self.store_manager is None:
+            raise TypeError(f"'{self.storage_type}' can't be None.")
+        return self.store_manager.get(storage_name=storage_name)
 
     # ----------------- Work Pipeline ----------------- #
     @abstractmethod
-    def work(self, /, style_name: str, **kwargs: Any) -> None:
+    def work(
+        self, /, style_name: str, storage_name: str | None = None, **kwargs: Any
+    ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
