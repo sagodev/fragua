@@ -66,7 +66,7 @@ class MineStyle(Style[MineParamsT, ResultT], Generic[MineParamsT, ResultT]):
 # ---------------------------------------------------------------------- #
 # CSV Extraction
 # ---------------------------------------------------------------------- #
-@register_style(action, "mine_csv")
+@register_style(action, "csv")
 class CSVMineStyle(MineStyle[CSVMineParamsT, pd.DataFrame]):
     """Extracts data from CSV files."""
 
@@ -84,7 +84,7 @@ class CSVMineStyle(MineStyle[CSVMineParamsT, pd.DataFrame]):
 # ---------------------------------------------------------------------- #
 # Excel Extraction
 # ---------------------------------------------------------------------- #
-@register_style(action, "mine_excel")
+@register_style(action, "excel")
 class ExcelMineStyle(MineStyle[ExcelMineParamsT, pd.DataFrame]):
     """Extracts data from Excel files."""
 
@@ -103,7 +103,7 @@ class ExcelMineStyle(MineStyle[ExcelMineParamsT, pd.DataFrame]):
 # ---------------------------------------------------------------------- #
 # SQL Extraction
 # ---------------------------------------------------------------------- #
-@register_style(action, "mine_sql")
+@register_style(action, "sql")
 class SQLMineStyle(MineStyle[SQLMineParamsT, pd.DataFrame]):
     """Extracts data from SQL databases."""
 

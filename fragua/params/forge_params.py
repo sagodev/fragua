@@ -16,7 +16,7 @@ class ForgeParams(Params):
 agent: str = "blacksmith"
 
 
-@register_params(agent, style="forge_ml")
+@register_params(agent, style="ml")
 class MLForgeParams(ForgeParams):
     """Parameters for machine learning transformations."""
 
@@ -26,7 +26,7 @@ class MLForgeParams(ForgeParams):
     outlier_threshold: float | None = None
 
 
-@register_params(agent, style="forge_report")
+@register_params(agent, style="report")
 class ReportForgeParams(ForgeParams):
     """Parameters for report generation transformations."""
 
@@ -35,7 +35,7 @@ class ReportForgeParams(ForgeParams):
     rounding_precision: int | None = None
 
 
-@register_params(agent, style="forge_analysis")
+@register_params(agent, style="analysis")
 class AnalysisForgeParams(ForgeParams):
     """Parameters for data analysis transformations."""
 
