@@ -122,7 +122,7 @@ class StoreManager:
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
         overwrite: bool = False,
-    ) -> None:
+    ) -> None:  # pylint: disable=too-many-instance-attributes
         """
         Add a Wagon or Box to the store and update movement log.
 
@@ -230,7 +230,7 @@ class StoreManager:
             for name, obj in self.store.data.items():
                 if not isinstance(obj, classes):
                     continue
-                if storage_name != "all" and name != storage_name:
+                if storage_name not in ("all", name):
                     continue
                 result[name] = obj
 
@@ -295,8 +295,7 @@ class StoreManager:
             keys_to_remove = [
                 name
                 for name, obj in data.items()
-                if isinstance(obj, classes)
-                and (storage_name == "all" or name == storage_name)
+                if isinstance(obj, classes) and storage_name in ("all", name)
             ]
 
             for key in keys_to_remove:
