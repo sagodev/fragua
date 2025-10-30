@@ -3,7 +3,8 @@ Lightweight in-memory store structure.
 The StoreManager handles all the logic.
 """
 
-from typing import Dict, Union
+from typing import Dict
+from fragua.store.storage import Storage
 from fragua.store.storage_types import Wagon, Box
 
 
@@ -13,8 +14,6 @@ class Store:
     StoreManager is responsible for all operations.
     """
 
-    VALID_TYPES = (Wagon, Box)
-
     def __init__(self, store_name: str = "store") -> None:
         """
         Initialize a Store.
@@ -23,10 +22,10 @@ class Store:
             store_name (str): Name of the store.
         """
         self.store_name = store_name
-        self._store: Dict[str, Union[Wagon, Box]] = {}
+        self._store: Dict[str, Storage[Wagon | Box]] = {}
 
     @property
-    def data(self) -> Dict[str, Union[Wagon, Box]]:
+    def data(self) -> Dict[str, Storage[Wagon | Box]]:
         """
         Expose the raw internal storage mapping.
 

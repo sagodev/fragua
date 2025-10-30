@@ -7,6 +7,7 @@ Works with a flat Store structure without grouping by type.
 from typing import Any, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 
+from fragua.store.storage import Storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.store.store import Store
@@ -117,7 +118,7 @@ class StoreManager:
     # -----------------------------
     def add(
         self,
-        storage: Union[Wagon, Box],
+        storage: Storage[Any],
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
         overwrite: bool = False,
@@ -138,8 +139,6 @@ class StoreManager:
         movement_log: Dict[str, Any] = {}
         storage_type = storage.__class__.__name__.lower()
         try:
-            if storage_name is None:
-                storage_name = getattr(storage, "name", None)
             if storage_name is None:
                 raise ValueError("Missing required argument: 'storage_name'")
 
