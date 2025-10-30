@@ -118,11 +118,10 @@ class StoreManager:
     def add(
         self,
         storage: Union[Wagon, Box],
-        storage_type: StorageType,
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
         overwrite: bool = False,
-    ) -> None:  # pylint: disable=too-many-instance-attributes
+    ) -> None:
         """
         Add a Wagon or Box to the store and update movement log.
 
@@ -137,7 +136,7 @@ class StoreManager:
             ValueError: If storage_name is missing or storage_type is invalid.
         """
         movement_log: Dict[str, Any] = {}
-
+        storage_type = storage.__class__.__name__.lower()
         try:
             if storage_name is None:
                 storage_name = getattr(storage, "name", None)
