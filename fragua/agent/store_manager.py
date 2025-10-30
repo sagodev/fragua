@@ -228,7 +228,7 @@ class StoreManager:
 
             for name, obj in self.store.data.items():
                 if not isinstance(obj, classes):
-                    continue # type: ignore[unreachable]
+                    continue  # type: ignore[unreachable]
                 if storage_name not in ("all", name):
                     continue
                 result[name] = obj
