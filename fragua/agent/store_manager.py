@@ -102,6 +102,7 @@ class StoreManager:
         storage_type: Union[Wagon, Box, None] = None,
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
+        operation: Optional[str] = None,
     ) -> List[dict[str, object]]:
         """Returns movements filtered by type, object name or agent."""
         result = self._movement_log
@@ -111,6 +112,8 @@ class StoreManager:
             result = [m for m in result if m["storage_name"] == storage_name]
         if agent_name:
             result = [m for m in result if m["agent_name"] == agent_name]
+        if operation:
+            result = [m for m in result if m["operation"] == operation]
         return result
 
     # -----------------------------
