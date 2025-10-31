@@ -120,7 +120,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             agent_name=self.name,
         )
 
-    def get_from_store(self, storage_name: str) -> Union[
+    def get_from_store(self, storage_name: str | None) -> Union[
         Optional[Union[Wagon, Box]],
         Mapping[str, Union[Wagon, Box]],
         Mapping[str, Mapping[str, Union[Wagon, Box]]],
@@ -128,11 +128,16 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         """Get data from store by a given storage name."""
         if self.store_manager is None:
             raise TypeError(f"'{self.storage_type}' can't be None.")
+        if storage_name is None:
+            raise TypeError("storage_name can't be None.")
         return self.store_manager.get(storage_name=storage_name)
 
     # ----------------- Work Pipeline ----------------- #
     @abstractmethod
     def work(
-        self, /, style_name: str, storage_name: str | None = None, **kwargs: Any
+        self,
+        /,
+        style: str,
+        **kwargs: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by its role."""

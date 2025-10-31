@@ -31,27 +31,28 @@ class Haulier(Agent):
         )
 
     def work(
-        self, /, style_name: str, storage_name: str | None = None, **kwargs: Any
+        self,
+        /,
+        style: str,
+        **kwargs: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
 
         # ----------------- PARAMS -----------------
-        params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style_name))
+        params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style))
         if not params_cls:
-            raise ValueError(
-                f"No Params class registered for ({self.role}, {style_name})"
-            )
+            raise ValueError(f"No Params class registered for ({self.role}, {style})")
 
         params_instance = params_cls(**kwargs)
 
         # ----------------- STYLE -----------------
-        style_key = (self.action, style_name)
+        style_key = (self.action, style)
         style_cls: type[Style[Any, Any]] | None = STYLE_REGISTRY.get(style_key)
         if not style_cls:
             raise ValueError(f"No Style class registered for {style_key}")
 
         # ----------------- Execute style -----------------
-        style_instance = style_cls(style_name=style_name)
+        style_instance = style_cls(style_name=style)
         stylized_data = style_instance.use(params_instance)
 
         # ----------------- Create storage -----------------
@@ -59,7 +60,7 @@ class Haulier(Agent):
 
         # ----------------- Generate operation metadata -----------------
         self._generate_operation_metadata(
-            style_name=style_name,
+            style_name=style,
             storage=storage,
             origin=params_instance,
         )
@@ -67,7 +68,7 @@ class Haulier(Agent):
         self._operations.append(
             {
                 "action": self.action,
-                "style_name": style_name,
+                "style_name": style,
                 "timestamp": datetime.now(timezone.utc),
                 "params": params_instance,
             }
@@ -77,5 +78,5 @@ class Haulier(Agent):
             "[%s] Executed '%s' action with style '%s'",
             self.name,
             self.action,
-            style_name,
+            style,
         )
