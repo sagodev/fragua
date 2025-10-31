@@ -10,7 +10,8 @@ from typing import Any, Mapping, Optional, TypeVar, ParamSpec, Union
 import pandas as pd
 
 from fragua.agent.store_manager import StoreManager
-from fragua.style.style import Style
+from fragua.params.params import PARAMS_REGISTRY, Params
+from fragua.style.style import STYLE_REGISTRY, Style
 from fragua.store.storage import Storage
 from fragua.store.storage_types import Box, Wagon, get_storage
 from fragua.utils.logger import get_logger
@@ -30,7 +31,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         name: str,
-        store_manager: StoreManager | None = None,
+        store_manager: StoreManager,
     ):
         self.name: str = name
         self.store_manager = store_manager
@@ -67,6 +68,23 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         """Generate a name for storage from action and style."""
         storage_name: str = f"{style_name}_{self.action}_data"
         return storage_name
+
+    def _get_params(self, style: str, **kwargs: Any) -> Params:
+        """Get params instance by a given agent role and style."""
+        params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style))
+        if not params_cls:
+            raise ValueError(f"No Params class registered for ({self.role}, {style})")
+
+        return params_cls(**kwargs)
+
+    def _get_style(self, style: str) -> Style[Any, Any]:
+        """Get style instance by a given agent role and style."""
+        style_key = (self.action, style)
+        style_cls: type[Style[Any, Any]] | None = STYLE_REGISTRY.get(style_key)
+        if not style_cls:
+            raise ValueError(f"No Style class registered for {style_key}")
+
+        return style_cls(style_name=style)
 
     # ----------------- Metadata----------------- #
     def _generate_operation_metadata(
@@ -111,9 +129,6 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
     ) -> None:
         """Store a Storage object via a StoreManager."""
 
-        if self.store_manager is None:
-            raise TypeError(f"'{self.storage_type}' can't be None.")
-
         self.store_manager.add(
             storage=storage,
             storage_name=storage_name,
@@ -126,11 +141,17 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         Mapping[str, Mapping[str, Union[Wagon, Box]]],
     ]:
         """Get data from store by a given storage name."""
-        if self.store_manager is None:
-            raise TypeError(f"'{self.storage_type}' can't be None.")
         if storage_name is None:
-            raise TypeError("storage_name can't be None.")
-        return self.store_manager.get(storage_name=storage_name)
+            raise TypeError("Missing required atribute: storage_name.")
+
+        storage = self.store_manager.get(
+            storage_name=storage_name, agent_name=self.name
+        )
+
+        if storage is None:
+            raise TypeError(f"Store has no storage named {storage_name}.")
+
+        return storage
 
     # ----------------- Work Pipeline ----------------- #
     @abstractmethod
