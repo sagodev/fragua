@@ -38,11 +38,13 @@ class Blacksmith(Agent):
     ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
 
+        # ----------------- Get data from store -----------------
         data = self.get_from_store(apply_to)
-        print(data)
-        # ----------------- Parms Instance -----------------
+
+        # ----------------- Params Instance -----------------
+        kwargs["data"] = data
         params_instance = self._get_params(style, **kwargs)
-        
+
         # ----------------- Style Instance -----------------
         style_instance = self._get_style(style)
 

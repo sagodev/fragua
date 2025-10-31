@@ -148,10 +148,17 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             storage_name=storage_name, agent_name=self.name
         )
 
-        if storage is None:
-            raise TypeError(f"Store has no storage named {storage_name}.")
-
-        return storage
+        if isinstance(storage, (Wagon, Box)):
+            df = storage.data
+        elif isinstance(storage, Mapping):
+            first_value = next(iter(storage.values()))
+            if isinstance(first_value, (Wagon, Box)):
+                df = first_value.data
+            else:
+                raise TypeError("Invalid nested mapping structure in store.")
+        else:
+            raise TypeError(f"Unexpected data type: {type(storage).__name__}")
+        return df
 
     # ----------------- Work Pipeline ----------------- #
     @abstractmethod
