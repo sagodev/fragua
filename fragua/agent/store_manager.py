@@ -200,6 +200,7 @@ class StoreManager:
     # -----------------------------
     def get(
         self,
+        agent_name: str,
         storage_type: StorageType = "all",
         storage_name: str = "all",
     ) -> Union[
@@ -236,7 +237,7 @@ class StoreManager:
                 operation="get",
                 storage_type=storage_type,
                 storage_name=storage_name,
-                agent_name=None,
+                agent_name=agent_name,
                 success=True,
                 details={"result_type": type(result).__name__},
             )
