@@ -6,8 +6,6 @@ from datetime import datetime, timezone
 from typing import Any
 from fragua.agent.agent import Agent
 from fragua.agent.store_manager import StoreManager
-from fragua.params.params import PARAMS_REGISTRY, Params
-from fragua.style.style import STYLE_REGISTRY, Style
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -38,24 +36,16 @@ class Haulier(Agent):
     ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
 
-        # ----------------- PARAMS -----------------
-        params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style))
-        if not params_cls:
-            raise ValueError(f"No Params class registered for ({self.role}, {style})")
+        # ----------------- Parms Instance -----------------
+        params_instance = self._get_params(style, **kwargs)
 
-        params_instance = params_cls(**kwargs)
+        # ----------------- Style Instance -----------------
+        style_instance = self._get_style(style)
 
-        # ----------------- STYLE -----------------
-        style_key = (self.action, style)
-        style_cls: type[Style[Any, Any]] | None = STYLE_REGISTRY.get(style_key)
-        if not style_cls:
-            raise ValueError(f"No Style class registered for {style_key}")
-
-        # ----------------- Execute style -----------------
-        style_instance = style_cls(style_name=style)
+        # ----------------- Apply Style -----------------
         stylized_data = style_instance.use(params_instance)
 
-        # ----------------- Create storage -----------------
+        # ----------------- Create Storage -----------------
         storage = self.create_storage(stylized_data)
 
         # ----------------- Generate operation metadata -----------------
