@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any, List
 from fragua.agents.agent import Agent
 from fragua.agents.store_manager import StoreManager
@@ -87,18 +86,4 @@ class Haulier(Agent):
             style_instance.use(params_instance)
 
             # ----------------- Generate operation metadata -----------------
-            self._operations.append(
-                {
-                    "action": self.action,
-                    "style_name": style,
-                    "timestamp": datetime.now(timezone.utc),
-                    "params": params_instance,
-                }
-            )
-
-            logger.info(
-                "[%s] Executed '%s' action with style '%s'",
-                self.name,
-                self.action,
-                style,
-            )
+            self._add_operation(style, params_instance)

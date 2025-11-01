@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 from fragua.agents.agent import Agent
 from fragua.agents.store_manager import StoreManager
@@ -61,18 +60,7 @@ class Blacksmith(Agent):
             origin=params_instance,
         )
 
-        self._operations.append(
-            {
-                "action": self.action,
-                "style_name": style,
-                "timestamp": datetime.now(timezone.utc),
-                "params": params_instance,
-            }
-        )
+        self._add_operation(style, params_instance)
 
         # ----------------- Auto-store -----------------
-        if save_as is not None:
-            self.add_to_store(storage, save_as)
-        else:
-            generated_name = self._generate_storage_name(style)
-            self.add_to_store(storage, generated_name)
+        self.auto_store(style, storage, save_as)
