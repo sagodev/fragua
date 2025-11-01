@@ -4,9 +4,9 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 """
 
 from __future__ import annotations
-from abc import abstractmethod, ABC
+from abc import ABC
 from pathlib import Path
-from typing import Any, Mapping, Optional, TypeVar, ParamSpec, Union
+from typing import Any, Mapping, Optional, Union
 from datetime import datetime, timezone
 import pandas as pd
 
@@ -18,10 +18,6 @@ from fragua.store.storage_types import Box, Wagon, get_storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
-StyleT = TypeVar("StyleT", bound=Style[Any, Any])
-P = ParamSpec("P")
-R = TypeVar("R")
-SelfT = TypeVar("SelfT")
 
 logger = get_logger(__name__)
 
@@ -189,11 +185,37 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             self.add_to_store(storage, generated_name)
 
     # ----------------- Work Pipeline ----------------- #
-    @abstractmethod
+    def _execute_workflow(
+        self,
+        style: str,
+        save_as: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Common workflow for agents that apply a style and store the result.
+        Used by subclasses like Miner and Blacksmith.
+        """
+        params_instance = self._get_params(style, **kwargs)
+        style_instance = self._get_style(style)
+        stylized_data = style_instance.use(params_instance)
+        storage = self.create_storage(stylized_data)
+
+        self._generate_operation_metadata(
+            style_name=style,
+            storage=storage,
+            origin=params_instance,
+        )
+
+        self._add_operation(style, params_instance)
+        self.auto_store(style, storage, save_as)
+
     def work(
         self,
         /,
         style: str,
+        save_as: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
+
+        self._execute_workflow(style, save_as, **kwargs)
