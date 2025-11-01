@@ -56,3 +56,23 @@ def get_params(role: str, style: str) -> Type[Params]:
         raise KeyError(
             f"No Params class registered for role='{role}', style='{style}'."
         ) from exc
+
+
+def list_params(role: str | None = None) -> Dict[Tuple[str, str], str]:
+    """
+    List all registered Params types, optionally filtered by agent role.
+
+    Args:
+        role (str | None): Optional role name to filter by.
+            If None, all registered Params are listed.
+
+    Returns:
+        Dict[Tuple[str, str], str]: A dictionary mapping (role, style) to
+        the corresponding Params class name.
+    """
+    if role is not None:
+        return {
+            key: cls.__name__ for key, cls in PARAMS_REGISTRY.items() if key[0] == role
+        }
+
+    return {key: cls.__name__ for key, cls in PARAMS_REGISTRY.items()}
