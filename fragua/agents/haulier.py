@@ -64,7 +64,7 @@ class Haulier(Agent):
         style_instance = self._get_style(style)
 
         # ----------------- Create Storage -----------------
-        container: Storage[Any] = self.create_container(content)
+        container: Container = self.create_container(content)
 
         # ----------------- Apply Style for each storage -----------------
         for name in container.list_storages():

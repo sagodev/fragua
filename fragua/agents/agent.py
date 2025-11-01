@@ -107,7 +107,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         )
         return pd.DataFrame(self._operations)
 
-    def _add_operation(self, style: str, params_instance: Params):
+    def _add_operation(self, style: str, params_instance: Params) -> None:
         """Add operation to agent operations list."""
         self._operations.append(
             {
@@ -176,7 +176,9 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             raise TypeError(f"Unexpected data type: {type(storage).__name__}")
         return df
 
-    def auto_store(self, style: str, storage: Storage[Any], save_as: str | None):
+    def auto_store(
+        self, style: str, storage: Storage[Any], save_as: str | None
+    ) -> None:
         """Add automatically an storage to store."""
         if save_as is not None:
             self.add_to_store(storage, save_as)
