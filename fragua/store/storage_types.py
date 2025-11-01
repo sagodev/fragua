@@ -47,9 +47,8 @@ class Container(Storage[Any]):
         super().__init__(data=None)
         self._content: Dict[str, Union[Wagon, Box]] = {}
 
-    def add_storage(self, storage: Union[Wagon, Box]) -> None:
+    def add_storage(self, storage_name: str, storage: Union[Wagon, Box]) -> None:
         """Add a sub-storage (Wagon or Box) to the container."""
-        storage_name = getattr(storage, "name", storage.__class__.__name__)
         self._content[storage_name] = storage
 
     def get_storage(self, name: str) -> Union[Wagon, Box]:
