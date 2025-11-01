@@ -7,6 +7,7 @@ from __future__ import annotations
 from abc import abstractmethod, ABC
 from pathlib import Path
 from typing import Any, Mapping, Optional, TypeVar, ParamSpec, Union
+from datetime import datetime, timezone
 import pandas as pd
 
 from fragua.agents.store_manager import StoreManager
@@ -110,6 +111,17 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         )
         return pd.DataFrame(self._operations)
 
+    def _add_operation(self, style: str, params_instance: Params):
+        """Add operation to agent operations list."""
+        self._operations.append(
+            {
+                "action": self.action,
+                "style_name": style,
+                "timestamp": datetime.now(timezone.utc),
+                "params": params_instance,
+            }
+        )
+
     # ----------------- Create Storage ----------------- #
     def create_storage(self, data: Any) -> Storage[Any]:
         """Convert raw style output into the appropriate storage object using registry."""
@@ -167,6 +179,14 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         else:
             raise TypeError(f"Unexpected data type: {type(storage).__name__}")
         return df
+
+    def auto_store(self, style: str, storage: Storage[Any], save_as: str | None):
+        """Add automatically an storage to store."""
+        if save_as is not None:
+            self.add_to_store(storage, save_as)
+        else:
+            generated_name = self._generate_storage_name(style)
+            self.add_to_store(storage, generated_name)
 
     # ----------------- Work Pipeline ----------------- #
     @abstractmethod
