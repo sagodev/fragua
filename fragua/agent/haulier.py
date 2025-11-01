@@ -66,32 +66,33 @@ class Haulier(Agent):
         if content is None:
             raise TypeError("Missing required attribute: 'content'.")
 
-        # ----------------- Parms Instance -----------------
-        params_instance = self._get_params(style, **kwargs)
-
         # ----------------- Style Instance -----------------
         style_instance = self._get_style(style)
 
         # ----------------- Create Storage -----------------
         container: Storage[Any] = self.create_container(content)
 
-        # ----------------- Apply Style -----------------
-        kwargs["data"] = container
-        style_instance.use(params_instance)
+        # ----------------- Apply Style for each storage -----------------
+        for name in container.list_storages():
+            kwargs["data"] = container.get_storage(name).data
 
-        # ----------------- Generate operation metadata -----------------
-        self._operations.append(
-            {
-                "action": self.action,
-                "style_name": style,
-                "timestamp": datetime.now(timezone.utc),
-                "params": params_instance,
-            }
-        )
+            params_instance = self._get_params(style, **kwargs)
 
-        logger.info(
-            "[%s] Executed '%s' action with style '%s'",
-            self.name,
-            self.action,
-            style,
-        )
+            style_instance.use(params_instance)
+
+            # ----------------- Generate operation metadata -----------------
+            self._operations.append(
+                {
+                    "action": self.action,
+                    "style_name": style,
+                    "timestamp": datetime.now(timezone.utc),
+                    "params": params_instance,
+                }
+            )
+
+            logger.info(
+                "[%s] Executed '%s' action with style '%s'",
+                self.name,
+                self.action,
+                style,
+            )
