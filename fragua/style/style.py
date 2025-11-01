@@ -42,29 +42,6 @@ class Style(ABC, Generic[ParamsT, ResultT]):
         """
         raise NotImplementedError
 
-    # ---------------------------------------------------------------------- #
-    # Validation hooks
-    # ---------------------------------------------------------------------- #
-    def validate_params(self, params: ParamsT | None) -> ParamsT:
-        """Validate input parameters before execution."""
-        if params is None:
-            raise ValueError(f"{self.style_name}: Parameters cannot be None.")
-        return params
-
-    def validate_result(self, result: ResultT) -> ResultT:
-        """Validate the result after execution."""
-        if result is None:
-            raise ValueError(f"{self.style_name}: Result cannot be None.")
-        return result
-
-    # ---------------------------------------------------------------------- #
-    # Optional hooks
-    # ---------------------------------------------------------------------- #
-
-    def postprocess(self, result: ResultT) -> ResultT:
-        """Optional postprocessing step after validation."""
-        return result
-
     def log_error(self, error: Exception) -> None:
         """Log an error with the style context."""
         logger.error(
@@ -77,20 +54,9 @@ class Style(ABC, Generic[ParamsT, ResultT]):
     def use(self, params: ParamsT) -> ResultT:
         """
         Execute the full style pipeline.
-
-        Steps:
-            1. validate_params
-            2. _run (extract/forge/deliver)
-            3. validate_result
-            4. postprocess
-
-        Updates standard metadata fields automatically.
         """
         try:
-            self.validate_params(params)
             result = self._run(params)
-            result = self.validate_result(result)
-            result = self.postprocess(result)
 
             return result
 
