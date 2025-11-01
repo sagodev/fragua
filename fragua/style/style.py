@@ -4,7 +4,6 @@ Base class for all styles used by ETL agents in Fragua.
 
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar, Generic, Dict, Optional, Type, Tuple
-from datetime import datetime, timezone
 from fragua.utils.logger import get_logger
 from fragua.params.params import Params
 
