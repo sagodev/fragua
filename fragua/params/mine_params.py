@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import Field
 from fragua.params.params import Params, register_params
 
-agent: str = "miner"
+role: str = "miner"
 
 
 class MineParams(Params):
@@ -16,14 +16,14 @@ class MineParams(Params):
     read_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
 
-@register_params(agent, style="csv")
+@register_params(role, style="csv")
 class CSVMineParams(MineParams):
     """Mining parameters for CSV files."""
 
     path: Union[str, Path]
 
 
-@register_params(agent, style="excel")
+@register_params(role, style="excel")
 class ExcelMineParams(MineParams):
     """Mining parameters for Excel files."""
 
@@ -31,7 +31,7 @@ class ExcelMineParams(MineParams):
     sheet_name: Union[str, int] = 0
 
 
-@register_params(agent, style="sql")
+@register_params(role, style="sql")
 class SQLMineParams(MineParams):
     """Mining parameters for SQL databases."""
 
@@ -39,7 +39,7 @@ class SQLMineParams(MineParams):
     query: str
 
 
-@register_params(agent, style="api")
+@register_params(role, style="api")
 class APIMineParams(MineParams):
     """Mining parameters for APIs."""
 

@@ -13,10 +13,10 @@ class ForgeParams(Params):
     data: DataFrame
 
 
-agent: str = "blacksmith"
+role: str = "blacksmith"
 
 
-@register_params(agent, style="ml")
+@register_params(role, style="ml")
 class MLForgeParams(ForgeParams):
     """Parameters for machine learning transformations."""
 
@@ -26,7 +26,7 @@ class MLForgeParams(ForgeParams):
     outlier_threshold: float | None = None
 
 
-@register_params(agent, style="report")
+@register_params(role, style="report")
 class ReportForgeParams(ForgeParams):
     """Parameters for report generation transformations."""
 
@@ -35,7 +35,7 @@ class ReportForgeParams(ForgeParams):
     rounding_precision: int | None = None
 
 
-@register_params(agent, style="analysis")
+@register_params(role, style="analysis")
 class AnalysisForgeParams(ForgeParams):
     """Parameters for data analysis transformations."""
 
