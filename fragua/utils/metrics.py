@@ -160,5 +160,3 @@ def add_metadata_to_storage(
         storage.metadata = {}
 
     storage.metadata.update(metadata)
-
-    logger.info("[%s] Metadata updated: %s", storage, metadata)
