@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any, List
 from fragua.agents.agent import Agent
 from fragua.agents.store_manager import StoreManager
+from fragua.params.params import get_params
 from fragua.store.storage_types import Box, Container, Wagon
+from fragua.style.style import get_style
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -60,7 +62,7 @@ class Haulier(Agent):
         style = style.lower()
 
         # ----------------- Style Instance -----------------
-        style_instance = self._get_style(style)
+        style_instance = get_style(self.action, style)(style)
 
         # ----------------- Create Storage -----------------
         container: Container = self.create_container(content)
@@ -73,7 +75,7 @@ class Haulier(Agent):
             if style == "excel":
                 kwargs["sheet_name"] = name
 
-            params_instance = self._get_params(style, **kwargs)
+            params_instance = get_params(self.role, style)(**kwargs)
 
             style_instance.use(params_instance)
 

@@ -11,8 +11,8 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from fragua.agents.store_manager import StoreManager
-from fragua.params.params import PARAMS_REGISTRY, Params
-from fragua.style.style import STYLE_REGISTRY, Style
+from fragua.params.params import Params, get_params
+from fragua.style.style import get_style
 from fragua.store.storage import Storage
 from fragua.store.storage_types import Box, Wagon, get_storage
 from fragua.utils.logger import get_logger
@@ -65,23 +65,6 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         """Generate a name for storage from action and style."""
         storage_name: str = f"{style_name}_{self.action}_data"
         return storage_name
-
-    def _get_params(self, style: str, **kwargs: Any) -> Params:
-        """Get params instance by a given agent role and style."""
-        params_cls: type[Params] | None = PARAMS_REGISTRY.get((self.role, style))
-        if not params_cls:
-            raise ValueError(f"No Params class registered for ({self.role}, {style})")
-
-        return params_cls(**kwargs)
-
-    def _get_style(self, style: str) -> Style[Any, Any]:
-        """Get style instance by a given agent role and style."""
-        style_key = (self.action, style)
-        style_cls: type[Style[Any, Any]] | None = STYLE_REGISTRY.get(style_key)
-        if not style_cls:
-            raise ValueError(f"No Style class registered for {style_key}")
-
-        return style_cls(style_name=style)
 
     # ----------------- Metadata----------------- #
     def _generate_operation_metadata(
@@ -197,9 +180,9 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         Common workflow for agents that apply a style and store the result.
         Used by subclasses like Miner and Blacksmith.
         """
-        params_instance = self._get_params(style, **kwargs)
-        style_instance = self._get_style(style)
-        stylized_data = style_instance.use(params_instance)
+        params_instance = get_params(self.role, style)(**kwargs)
+        stylized_data = get_style(self.action, style)(style).use(params_instance)
+
         storage = self.create_storage(stylized_data)
 
         self._generate_operation_metadata(
