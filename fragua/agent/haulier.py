@@ -50,7 +50,7 @@ class Haulier(Agent):
                     f"Type {type(storage).__name__} can't be stored in a container."
                 )
 
-            container.add_storage(storage)
+            container.add_storage(name, storage)
 
         return container
 
@@ -66,6 +66,8 @@ class Haulier(Agent):
         if content is None:
             raise TypeError("Missing required attribute: 'content'.")
 
+        style = style.lower()
+
         # ----------------- Style Instance -----------------
         style_instance = self._get_style(style)
 
@@ -74,7 +76,11 @@ class Haulier(Agent):
 
         # ----------------- Apply Style for each storage -----------------
         for name in container.list_storages():
+
             kwargs["data"] = container.get_storage(name).data
+
+            if style == "excel":
+                kwargs["sheet_name"] = name
 
             params_instance = self._get_params(style, **kwargs)
 
