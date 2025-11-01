@@ -6,7 +6,7 @@ from typing import Dict, TypeVar
 from pandas import DataFrame
 from fragua.params.params import Params, register_params
 
-agent: str = "haulier"
+role: str = "haulier"
 
 
 class DeliveryParams(Params):
@@ -16,7 +16,7 @@ class DeliveryParams(Params):
     destination: str
 
 
-@register_params(agent, style="excel")
+@register_params(role, style="excel")
 class ExcelDeliveryParams(DeliveryParams):
     """Parameters for Excel delivery."""
 
@@ -26,7 +26,7 @@ class ExcelDeliveryParams(DeliveryParams):
     engine: str | None = None
 
 
-@register_params(agent, style="sql")
+@register_params(role, style="sql")
 class SQLDeliveryParams(DeliveryParams):
     """Parameters for SQL delivery."""
 
@@ -36,7 +36,7 @@ class SQLDeliveryParams(DeliveryParams):
     chunksize: int | None = None
 
 
-@register_params(agent, style="api")
+@register_params(role, style="api")
 class APIDeliveryParams(DeliveryParams):
     """Parameters for API delivery."""
 

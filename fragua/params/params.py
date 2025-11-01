@@ -4,6 +4,9 @@ Base abstract class for all parameter schemas used by styles in Fragua.
 
 from typing import Dict, Tuple, Type, Any
 from pydantic import BaseModel
+from fragua.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Params(BaseModel):
@@ -76,3 +79,80 @@ def list_params(role: str | None = None) -> Dict[Tuple[str, str], str]:
         }
 
     return {key: cls.__name__ for key, cls in PARAMS_REGISTRY.items()}
+
+
+def create_params_class(
+    role: str, style: str, class_name: str, **kwargs: Any
+) -> Type[Params]:
+    """
+    Dynamically create and register a new Params subclass.
+
+    Required Args:
+        role (str): Role name ("miner", "blacksmith", or "haulier").
+        style (str): Style name (e.g., "excel", "forge").
+        class_name (str): Name of the new Params class.
+
+    Optional kwargs:
+        fields (Dict[str, tuple[type, Any] | type]): Field definitions.
+        base (Type[Params]): Base class to inherit from (default: Params).
+        overwrite (bool): If True, allows overwriting existing (role, style).
+
+    Returns:
+        Type[Params]: The newly created and registered Params subclass.
+    """
+    valid_roles = {"miner", "blacksmith", "haulier"}
+
+    # --- Extract kwargs ---
+    fields: Dict[str, tuple[type, Any] | type] = kwargs.get("fields", {})
+    base: Type[Params] = kwargs.get("base", Params)
+    overwrite: bool = kwargs.get("overwrite", False)
+
+    # --- Validate role ---
+    if role not in valid_roles:
+        raise ValueError(
+            f"Invalid role '{role}'. Must be one of: {', '.join(sorted(valid_roles))}."
+        )
+
+    # --- Prevent duplicate (role, style) unless overwrite=True ---
+    key = (role, style)
+    if key in PARAMS_REGISTRY and not overwrite:
+        raise KeyError(
+            f"A Params class is already registered for role='{role}', style='{style}'. "
+            "Use overwrite=True to replace it."
+        )
+
+    # --- Prepare annotations and defaults ---
+    annotations: Dict[str, type] = {}
+    defaults: Dict[str, Any] = {}
+    for name, value in fields.items():
+        if isinstance(value, tuple):
+            annotations[name] = value[0]
+            defaults[name] = value[1]
+        else:
+            annotations[name] = value
+
+    attrs: Dict[str, Any] = {"__annotations__": annotations, **defaults}
+
+    # --- Dynamically create subclass ---
+    cls: Type[Params] = type(class_name, (base,), attrs)
+
+    # --- Register it ---
+    PARAMS_REGISTRY[key] = cls
+
+    # --- Log success ---
+    if overwrite:
+        logger.info(
+            "Replaced existing Params class for role='%s', style='%s' with '%s'.",
+            role,
+            style,
+            class_name,
+        )
+    else:
+        logger.info(
+            "Created Params class '%s' for role='%s', style='%s'.",
+            class_name,
+            role,
+            style,
+        )
+
+    return cls

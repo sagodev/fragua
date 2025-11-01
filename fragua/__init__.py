@@ -51,6 +51,7 @@ from fragua.params import (
     register_params,
     get_params,
     list_params,
+    create_params_class,
     # Mine Params
     MineParams,
     MineParamsT,
@@ -153,6 +154,7 @@ __all__ = [
     "register_params",
     "get_params",
     "list_params",
+    "create_params_class",
     # Storage Registery Functions
     "register_storage",
     "get_storage",
