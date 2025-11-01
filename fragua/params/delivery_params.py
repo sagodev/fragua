@@ -20,6 +20,7 @@ class DeliveryParams(Params):
 class ExcelDeliveryParams(DeliveryParams):
     """Parameters for Excel delivery."""
 
+    file_name: str | None = None
     sheet_name: str | None = None
     index: bool = False
     engine: str | None = None
