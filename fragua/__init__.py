@@ -49,6 +49,7 @@ from fragua.params import (
     Params,
     # Params Registry Functions
     register_params,
+    get_params,
     # Mine Params
     MineParams,
     MineParamsT,
@@ -149,6 +150,7 @@ __all__ = [
     "ExcelDeliveryParamsT",
     # Params Registery Functions
     "register_params",
+    "get_params",
     # Storage Registery Functions
     "register_storage",
     "get_storage",
