@@ -1,7 +1,7 @@
 """Fragua Styles package."""
 
 # ------------------- Base Style ------------------- #
-from .style import Style, register_style, get_style, list_styles
+from .style import Style, STYLE_REGISTRY, register_style, get_style, list_styles
 
 # ------------------- Delivery Style Types ------------------- #
 from .delivery_styles import (
@@ -50,6 +50,7 @@ __all__ = [
     "APIDeliveryStyle",
     "ExcelDeliveryStyle",
     # Styles Registry Functions
+    "STYLE_REGISTRY",
     "register_style",
     "get_style",
     "list_styles",

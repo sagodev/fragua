@@ -11,6 +11,7 @@ from .storage_types import (
     Box,
     Wagon,
     Container,
+    STORAGE_REGISTRY,
     register_storage,
     get_storage,
     list_storages,
@@ -26,6 +27,7 @@ __all__ = [
     "Box",
     "Container",
     # Storage Registry Functions
+    "STORAGE_REGISTRY",
     "register_storage",
     "get_storage",
     "list_storages",
