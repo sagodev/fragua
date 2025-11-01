@@ -120,6 +120,9 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
                 f"Result type '{self.storage_type}' is not a valid registered storage"
             ) from exc
 
+        if self.storage_type == "Container":
+            return storage_cls()
+
         return storage_cls(data=data)
 
     # ----------------- Store Manager Interaction ----------------- #
@@ -150,7 +153,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             storage_name=storage_name, agent_name=self.name
         )
 
-        if self.role is "haulier":
+        if self.role == "haulier":
             return storage
 
         if isinstance(storage, (Wagon, Box)):
