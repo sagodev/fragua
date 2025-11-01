@@ -119,6 +119,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             raise TypeError(
                 f"Result type '{self.storage_type}' is not a valid registered storage"
             ) from exc
+
         return storage_cls(data=data)
 
     # ----------------- Store Manager Interaction ----------------- #
@@ -140,13 +141,17 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         Mapping[str, Union[Wagon, Box]],
         Mapping[str, Mapping[str, Union[Wagon, Box]]],
     ]:
-        """Get data from store by a given storage name."""
+        """Get data storage from store by a given storage name."""
+
         if storage_name is None:
             raise TypeError("Missing required atribute: storage_name.")
 
         storage = self.store_manager.get(
             storage_name=storage_name, agent_name=self.name
         )
+
+        if self.role is "haulier":
+            return storage
 
         if isinstance(storage, (Wagon, Box)):
             df = storage.data
