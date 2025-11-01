@@ -4,6 +4,7 @@ DeliveryStyle types for various data delivery methods.
 
 from abc import abstractmethod
 from typing import Any, Generic
+import os
 
 from sqlalchemy import create_engine
 import pandas as pd
@@ -64,20 +65,32 @@ class DeliveryStyle(Style[DeliveryParamsT, ResultT], Generic[DeliveryParamsT, Re
 # ---------------------------------------------------------------------- #
 # Excel Delivery Style
 # ---------------------------------------------------------------------- #
-@register_style(action, "delivery_excel")
+@register_style(action, "excel")
 class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParamsT, pd.DataFrame]):
     """DeliveryStyle for exporting data to Excel files."""
 
     def deliver(self, params: ExcelDeliveryParamsT) -> pd.DataFrame:
-        """Export data to an Excel file."""
-        data = params.data
+        """Export data to an Excel file.
+        If the file exists, append the DataFrame as a new sheet instead of overwriting.
+        """
 
+        data = params.data
         if not isinstance(data, pd.DataFrame):
             raise TypeError("ExcelDeliveryStyle requires a pandas DataFrame")
 
-        destination = params.destination
+        # -----------------------------
+        # Build full file path
+        # -----------------------------
+        destination_dir = params.destination
+        file_name = params.file_name or "output.xlsx"
+        os.makedirs(destination_dir, exist_ok=True)
 
+        destination = os.path.join(destination_dir, file_name)
+        sheet_name = params.sheet_name or "Sheet1"
+
+        # -----------------------------
         # Convert timezone-aware datetime columns to naive
+        # -----------------------------
         datetime_cols = data.select_dtypes(include=["datetimetz"]).columns
         if len(datetime_cols) > 0:
             data = data.copy()
@@ -88,22 +101,38 @@ class ExcelDeliveryStyle(DeliveryStyle[ExcelDeliveryParamsT, pd.DataFrame]):
                 list(datetime_cols),
             )
 
-        # Export to Excel
-        data.to_excel(
-            destination,
-            sheet_name=params.sheet_name or "Sheet1",
-            index=params.index,
-            engine=params.engine,
-        )
+        # -----------------------------
+        # Write or append to Excel file
+        # -----------------------------
+        if os.path.exists(destination):
+            with pd.ExcelWriter(
+                destination,
+                mode="a",
+                engine="openpyxl",
+                if_sheet_exists="new",
+            ) as writer:
+                data.to_excel(writer, sheet_name=sheet_name, index=params.index)
+                logger.info(
+                    "Appended new sheet '%s' to existing file %s",
+                    sheet_name,
+                    destination,
+                )
+        else:
+            with pd.ExcelWriter(destination, engine="openpyxl") as writer:
+                data.to_excel(writer, sheet_name=sheet_name, index=params.index)
+                logger.info(
+                    "Created new Excel file %s with sheet '%s'",
+                    destination,
+                    sheet_name,
+                )
 
-        logger.info("%s delivered data to %s", self.style_name, destination)
         return data
 
 
 # ---------------------------------------------------------------------- #
 # SQL Delivery Style
 # ---------------------------------------------------------------------- #
-@register_style(action, "delivery_sql")
+@register_style(action, "sql")
 class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParamsT, pd.DataFrame]):
     """DeliveryStyle for delivering data to SQL databases."""
 
@@ -140,7 +169,7 @@ class SQLDeliveryStyle(DeliveryStyle[SQLDeliveryParamsT, pd.DataFrame]):
 # ---------------------------------------------------------------------- #
 # API Delivery Style
 # ---------------------------------------------------------------------- #
-@register_style(action, "delivery_api")
+@register_style(action, "api")
 class APIDeliveryStyle(DeliveryStyle[APIDeliveryParamsT, Any]):
     """DeliveryStyle for delivering data to external APIs."""
 

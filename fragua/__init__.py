@@ -1,8 +1,8 @@
 """Fragua package."""
 
 # ------------------- Agents ------------------- #
-from fragua.agent import Agent, list_roles, get_role, register_role
-from fragua.agent.store_manager import StoreManager
+from fragua.agents import Agent, StoreManager, Miner, Blacksmith, Haulier
+
 
 # ------------------- Style ------------------- #
 from fragua.style import (
@@ -94,6 +94,9 @@ from fragua.utils import (
 __all__ = [
     # Base Classes
     "Agent",
+    "Miner",
+    "Blacksmith",
+    "Haulier",
     "StoreManager",
     "Style",
     "Params",
@@ -144,10 +147,6 @@ __all__ = [
     "APIDeliveryParamsT",
     "ExcelDeliveryParams",
     "ExcelDeliveryParamsT",
-    # Roles Registry Functions
-    "register_role",
-    "get_role",
-    "list_roles",
     # Params Registery Functions
     "register_params",
     # Storage Registery Functions

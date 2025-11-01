@@ -7,6 +7,7 @@ Works with a flat Store structure without grouping by type.
 from typing import Any, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 
+from fragua.store.storage import Storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.store.store import Store
@@ -101,6 +102,7 @@ class StoreManager:
         storage_type: Union[Wagon, Box, None] = None,
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
+        operation: Optional[str] = None,
     ) -> List[dict[str, object]]:
         """Returns movements filtered by type, object name or agent."""
         result = self._movement_log
@@ -110,6 +112,8 @@ class StoreManager:
             result = [m for m in result if m["storage_name"] == storage_name]
         if agent_name:
             result = [m for m in result if m["agent_name"] == agent_name]
+        if operation:
+            result = [m for m in result if m["operation"] == operation]
         return result
 
     # -----------------------------
@@ -117,7 +121,7 @@ class StoreManager:
     # -----------------------------
     def add(
         self,
-        storage: Union[Wagon, Box],
+        storage: Storage[Any],
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
         overwrite: bool = False,
@@ -138,8 +142,6 @@ class StoreManager:
         movement_log: Dict[str, Any] = {}
         storage_type = storage.__class__.__name__.lower()
         try:
-            if storage_name is None:
-                storage_name = getattr(storage, "name", None)
             if storage_name is None:
                 raise ValueError("Missing required argument: 'storage_name'")
 
@@ -201,6 +203,7 @@ class StoreManager:
     # -----------------------------
     def get(
         self,
+        agent_name: str,
         storage_type: StorageType = "all",
         storage_name: str = "all",
     ) -> Union[
@@ -237,7 +240,7 @@ class StoreManager:
                 operation="get",
                 storage_type=storage_type,
                 storage_name=storage_name,
-                agent_name=None,
+                agent_name=agent_name,
                 success=True,
                 details={"result_type": type(result).__name__},
             )
