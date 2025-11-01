@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
-from fragua.agent.agent import Agent
-from fragua.agent.store_manager import StoreManager
+from fragua.agents.agent import Agent
+from fragua.agents.store_manager import StoreManager
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)

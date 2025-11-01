@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional, TypeVar, ParamSpec, Union
 import pandas as pd
 
-from fragua.agent.store_manager import StoreManager
+from fragua.agents.store_manager import StoreManager
 from fragua.params.params import PARAMS_REGISTRY, Params
 from fragua.style.style import STYLE_REGISTRY, Style
 from fragua.store.storage import Storage

@@ -1,7 +1,7 @@
 """Fragua package."""
 
 # ------------------- Agents ------------------- #
-from fragua.agent import Agent, StoreManager, Miner, Blacksmith, Haulier
+from fragua.agents import Agent, StoreManager, Miner, Blacksmith, Haulier
 
 
 # ------------------- Style ------------------- #
