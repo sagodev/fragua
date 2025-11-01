@@ -21,14 +21,6 @@ class Haulier(Agent):
         self.action: str = "deliver"
         self.storage_type: str = "Container"
 
-        logger.debug(
-            "Initialized Agent '%s' with role '%s' (action=%s, storage=%s)",
-            self.name,
-            self.role,
-            self.action,
-            self.storage_type,
-        )
-
     def create_container(self, content: str | List[str]) -> Container:
         """Create and fill a Container using stored Wagon/Box objects."""
 
@@ -57,6 +49,7 @@ class Haulier(Agent):
         self,
         /,
         style: str,
+        save_as: str | None = None,
         content: str | list[str] | None = None,
         **kwargs: Any,
     ) -> None:

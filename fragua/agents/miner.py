@@ -15,17 +15,9 @@ class Miner(Agent):
 
     def __init__(self, name: str, store_manager: StoreManager):
         super().__init__(name=name, store_manager=store_manager)
-        self.role: str = "miner"
-        self.action: str = "mine"
-        self.storage_type: str = "Wagon"
-
-        logger.debug(
-            "Initialized Agent '%s' with role '%s' (action=%s, storage=%s)",
-            self.name,
-            self.role,
-            self.action,
-            self.storage_type,
-        )
+        self.role = "miner"
+        self.action = "mine"
+        self.storage_type = "Wagon"
 
     def work(
         self,
@@ -35,27 +27,4 @@ class Miner(Agent):
         **kwargs: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
-
-        # ----------------- Parms Instance -----------------
-        params_instance = self._get_params(style, **kwargs)
-
-        # ----------------- Style Instance -----------------
-        style_instance = self._get_style(style)
-
-        # ----------------- Apply Style -----------------
-        stylized_data = style_instance.use(params_instance)
-
-        # ----------------- Create Storage -----------------
-        storage = self.create_storage(stylized_data)
-
-        # ----------------- Generate operation metadata -----------------
-        self._generate_operation_metadata(
-            style_name=style,
-            storage=storage,
-            origin=params_instance,
-        )
-
-        self._add_operation(style, params_instance)
-
-        # ----------------- Auto-store -----------------
-        self.auto_store(style, storage, save_as)
+        self._execute_workflow(style, save_as, **kwargs)
