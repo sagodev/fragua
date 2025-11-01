@@ -82,37 +82,30 @@ def list_params(role: str | None = None) -> Dict[Tuple[str, str], str]:
 
 
 def create_params_class(
-    role: str,
-    style: str,
-    class_name: str,
-    fields: Dict[str, tuple[type, Any] | type],
-    base: Type[Params] = Params,
-    overwrite: bool = False,
+    role: str, style: str, class_name: str, **kwargs: Any
 ) -> Type[Params]:
     """
     Dynamically create and register a new Params subclass.
 
-    Args:
+    Required Args:
         role (str): Role name ("miner", "blacksmith", or "haulier").
         style (str): Style name (e.g., "excel", "forge").
-        class_name (str): Name of the new Params class (required).
-        fields (Dict[str, tuple[type, Any] | type]): Field definitions, e.g.:
-            {
-                "param1": (str, "default_value"),
-                "param2": int,
-            }
+        class_name (str): Name of the new Params class.
+
+    Optional kwargs:
+        fields (Dict[str, tuple[type, Any] | type]): Field definitions.
         base (Type[Params]): Base class to inherit from (default: Params).
-        overwrite (bool): If True, allows overwriting existing (role, style)
-            registrations. Default is False.
+        overwrite (bool): If True, allows overwriting existing (role, style).
 
     Returns:
         Type[Params]: The newly created and registered Params subclass.
-
-    Raises:
-        ValueError: If the role is invalid or class_name is empty.
-        KeyError: If the (role, style) combination already exists and overwrite=False.
     """
     valid_roles = {"miner", "blacksmith", "haulier"}
+
+    # --- Extract kwargs ---
+    fields: Dict[str, tuple[type, Any] | type] = kwargs.get("fields", {})
+    base: Type[Params] = kwargs.get("base", Params)
+    overwrite: bool = kwargs.get("overwrite", False)
 
     # --- Validate role ---
     if role not in valid_roles:
@@ -138,7 +131,6 @@ def create_params_class(
         else:
             annotations[name] = value
 
-    # --- Build class attributes ---
     attrs: Dict[str, Any] = {"__annotations__": annotations, **defaults}
 
     # --- Dynamically create subclass ---
@@ -147,7 +139,7 @@ def create_params_class(
     # --- Register it ---
     PARAMS_REGISTRY[key] = cls
 
-    # --- Log success (lazy formatting) ---
+    # --- Log success ---
     if overwrite:
         logger.info(
             "Replaced existing Params class for role='%s', style='%s' with '%s'.",
