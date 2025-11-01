@@ -3,6 +3,7 @@
 # ------------------- Params ------------------- #
 from .params import (
     Params,
+    PARAMS_REGISTRY,
     register_params,
     get_params,
     list_params,
@@ -51,6 +52,7 @@ from .forge_params import (
 __all__ = [
     "Params",
     # Params Registry Functions
+    "PARAMS_REGISTRY",
     "register_params",
     "get_params",
     "list_params",
