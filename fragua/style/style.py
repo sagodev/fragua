@@ -22,26 +22,11 @@ class Style(ABC, Generic[ParamsT, ResultT]):
     Abstract base class for all styles in Fragua.
     Defines a standard interface for style operations.
 
-    Metadata dictionary structure for all styles:
-        - style_name: str, name of the style
-        - style_type: Actual class name (e.g., 'ExcelMineStyle').
-        - created_at: datetime, when the style instance was created
-        - created_by: Optional[str], creator of the style
-        - params_type: Optional[str], type of parameters passed
-        - result_type: Optional[str], type of result returned
     """
 
-    def __init__(self, style_name: str, created_by: str | None = None):
+    def __init__(self, style_name: str):
         """Initialize the style with a given name and creator."""
         self.style_name = style_name
-        self.metadata: Dict[str, Any] = {
-            "style_name": style_name,
-            "style_type": self.__class__.__name__,
-            "created_at": datetime.now(timezone.utc),
-            "created_by": created_by,
-            "params_type": None,
-            "result_type": None,
-        }
 
     # ---------------------------------------------------------------------- #
     # Abstract Core
@@ -108,16 +93,6 @@ class Style(ABC, Generic[ParamsT, ResultT]):
             result = self.validate_result(result)
             result = self.postprocess(result)
 
-            self.metadata.update(
-                {
-                    "last_execution": datetime.now(timezone.utc),
-                    "params_type": type(params).__name__,
-                    "result_type": (
-                        type(result).__name__ if result is not None else None
-                    ),
-                }
-            )
-
             return result
 
         except Exception as e:
@@ -147,7 +122,7 @@ def register_style(action: str, style: str) -> Any:
         key = (action, style)
         if key in STYLE_REGISTRY:
             logger.warning("Overwriting existing style registration for %s", key)
-        STYLE_REGISTRY[key] = cls
+        STYLE_REGISTRY[(action, style)] = cls
         logger.debug("Registered style: %s -> %s", key, cls.__name__)
         return cls
 
@@ -156,9 +131,8 @@ def register_style(action: str, style: str) -> Any:
 
 def get_style(action: str, style: str) -> Type[Style[Params, Any]]:
     """Retrieve a registered Style class by (action, style)."""
-    key = (action, style)
     try:
-        return STYLE_REGISTRY[key]
+        return STYLE_REGISTRY[(action, style)]
     except KeyError as exc:
         logger.error("Style not found for action='%s', style='%s'", action, style)
         raise KeyError(
