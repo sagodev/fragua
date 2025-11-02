@@ -23,7 +23,7 @@ action: str = "deliver"
 
 
 @register_function(action, "validate_excel_params")
-def validate_excel_params(params: ExcelDeliveryParams):
+def validate_excel_params(params: ExcelDeliveryParams) -> None:
     """
     Validate Excel delivery parameters.
 
@@ -76,7 +76,7 @@ def convert_datetime_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 @register_function(action, "write_excel")
-def write_excel(df: pd.DataFrame, path: str, sheet_name: str, index: bool):
+def write_excel(df: pd.DataFrame, path: str, sheet_name: str, index: bool) -> None:
     """
     Write or append a DataFrame to an Excel file.
 
@@ -120,7 +120,7 @@ def delivery_excel(params: ExcelDeliveryParams) -> pd.DataFrame:
 
 
 @register_function(action, "validate_sql_params")
-def validate_sql_params(params: SQLDeliveryParams):
+def validate_sql_params(params: SQLDeliveryParams) -> None:
     """
     Validate SQL delivery parameters.
 
@@ -185,7 +185,7 @@ def delivery_sql(params: SQLDeliveryParams) -> pd.DataFrame:
 
 
 @register_function(action, "validate_api_params")
-def validate_api_params(params: APIDeliveryParams):
+def validate_api_params(params: APIDeliveryParams) -> None:
     """
     Validate API delivery parameters.
 
