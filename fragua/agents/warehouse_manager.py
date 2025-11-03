@@ -48,7 +48,7 @@ class WarehouseManager:
             "metadata_type": "save",
             "storage_name": storage_name,
             "agent_name": agent_name,
-            "Warehouse_manager_name": self.name,
+            "warehouse_manager": self.name,
         }
         metadata = generate_metadata(storage, **metadata_kwargs)
         add_metadata_to_storage(storage, metadata)
@@ -79,7 +79,7 @@ class WarehouseManager:
             "storage_type": movement_log.get("storage_type"),
             "storage_name": movement_log.get("storage_name"),
             "agent_name": movement_log.get("agent_name"),
-            "Warehouse_name": getattr(self.warehouse, "Warehouse_name", None),
+            "warehouse": getattr(self.warehouse, "warehouse_name", None),
             "success": movement_log.get("success"),
             "details": movement_log.get("details") or {},
         }

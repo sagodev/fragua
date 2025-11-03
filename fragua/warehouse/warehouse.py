@@ -14,15 +14,15 @@ class Warehouse:
     Warehouse manager is responsible for all operations.
     """
 
-    def __init__(self, store_name: str = "store") -> None:
+    def __init__(self, warehouse_name: str = "warehouse") -> None:
         """
-        Initialize a Store.
+        Initialize a warehouse.
 
         Args:
-            store_name (str): Name of the store.
+            warehouse_name (str): Name of the warehouse.
         """
-        self.store_name = store_name
-        self._store: Dict[str, Storage[Wagon | Box]] = {}
+        self.warehouse_name = warehouse_name
+        self._warehouse: Dict[str, Storage[Wagon | Box]] = {}
 
     @property
     def data(self) -> Dict[str, Storage[Wagon | Box]]:
@@ -31,4 +31,4 @@ class Warehouse:
 
         Returns: Dict[str, Union[Wagon, Box]]: Stored objects by name.
         """
-        return self._store
+        return self._warehouse
