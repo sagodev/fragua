@@ -3,7 +3,6 @@ Reusable Forge Functions.
 """
 
 from __future__ import annotations
-from typing import Any
 import numpy as np
 import pandas as pd
 from pandas.errors import UndefinedVariableError
@@ -11,6 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 from fragua.functions.function_registry import register_function
 from fragua.params.forge_params import (
+    ForgeParams,
     MLForgeParams,
     ReportForgeParams,
     AnalysisForgeParams,
@@ -21,21 +21,20 @@ logger = get_logger(__name__)
 
 action: str = "forge"
 
-# ----------------------------- #
-# --- Data Cleaning Helpers --- #
-# ----------------------------- #
 
-
+# ----------------------------- #
+# --- Functions --- #
+# ----------------------------- #
 @register_function(action, "fill_missing")
-def fill_missing(params: Any) -> pd.DataFrame:
+def fill_missing(params: ForgeParams) -> ForgeParams:
     """
     Fill missing values in numeric and categorical columns.
 
     Args:
-        params (Any): Parameters containing the DataFrame and strategy attributes.
+        params (ForgeParams): Parameters containing the DataFrame and strategy attributes.
 
     Returns:
-        pd.DataFrame: DataFrame with missing values filled.
+        ForgeParams: Params object with updated data.
     """
     df = params.data.copy()
     numeric_fill = getattr(params, "numeric_fill", "mean")
@@ -50,38 +49,38 @@ def fill_missing(params: Any) -> pd.DataFrame:
 
     params.data = df
     logger.info("forge: Missing values filled.")
-    return df
+    return params
 
 
 @register_function(action, "standardize")
-def standardize(params: Any) -> pd.DataFrame:
+def standardize(params: ForgeParams) -> ForgeParams:
     """
     Standardize string columns by trimming and lowering case.
 
     Args:
-        params (Any): Parameters containing the DataFrame.
+        params (ForgeParams): Parameters containing the DataFrame.
 
     Returns:
-        pd.DataFrame: Standardized DataFrame.
+        ForgeParams: Params object with updated data.
     """
     df = params.data.copy()
     for col in df.select_dtypes(include="object").columns:
         df[col] = df[col].astype(str).str.strip().str.lower()
     params.data = df
     logger.info("forge: String columns standardized.")
-    return df
+    return params
 
 
 @register_function(action, "encode_categoricals")
-def encode_categoricals(params: Any) -> pd.DataFrame:
+def encode_categoricals(params: ForgeParams) -> ForgeParams:
     """
     Encode categorical columns into dummy variables.
 
     Args:
-        params (Any): Parameters containing the DataFrame.
+        params (ForgeParams): Parameters containing the DataFrame.
 
     Returns:
-        pd.DataFrame: DataFrame with categorical columns encoded.
+        ForgeParams: Params object with updated data.
     """
     df = params.data.copy()
     cat_cols = df.select_dtypes(include="object").columns
@@ -89,19 +88,19 @@ def encode_categoricals(params: Any) -> pd.DataFrame:
         df = pd.get_dummies(df, columns=cat_cols)
         logger.info("forge: Encoded categoricals: %s", list(cat_cols))
     params.data = df
-    return df
+    return params
 
 
 @register_function(action, "scale_numeric")
-def scale_numeric(params: Any) -> pd.DataFrame:
+def scale_numeric(params: ForgeParams) -> ForgeParams:
     """
     Scale numeric columns using MinMaxScaler.
 
     Args:
-        params (Any): Parameters containing the DataFrame.
+        params (ForgeParams): Parameters containing the DataFrame.
 
     Returns:
-        pd.DataFrame: Scaled DataFrame.
+        ForgeParams: Params object with updated data.
     """
     df = params.data.copy()
     num_cols = df.select_dtypes(include="number").columns
@@ -110,22 +109,22 @@ def scale_numeric(params: Any) -> pd.DataFrame:
         df[num_cols] = scaler.fit_transform(df[num_cols])
         logger.info("forge: Scaled numeric columns: %s", list(num_cols))
     params.data = df
-    return df
+    return params
 
 
 @register_function(action, "treat_outliers")
-def treat_outliers(params: Any) -> pd.DataFrame:
+def treat_outliers(params: ForgeParams) -> ForgeParams:
     """
     Cap outliers in numeric columns using the IQR method.
 
     Args:
-        params (Any): Parameters containing the DataFrame and outlier threshold.
+        params (ForgeParams): Parameters containing the DataFrame and outlier threshold.
 
     Returns:
-        pd.DataFrame: DataFrame with outliers treated.
+        ForgeParams: Params object with updated data.
     """
     df = params.data.copy()
-    factor = getattr(params, "outlier_threshold", 1.5)
+    factor = getattr(params, "outlier_threshold", 1.5) or 1.5
     num_cols = df.select_dtypes(include="number").columns
 
     for col in num_cols:
@@ -135,19 +134,19 @@ def treat_outliers(params: Any) -> pd.DataFrame:
 
     params.data = df
     logger.info("forge: Outliers treated with factor %.2f", factor)
-    return df
+    return params
 
 
 @register_function(action, "add_derived_columns")
-def add_derived_columns(params: Any) -> pd.DataFrame:
+def add_derived_columns(params: ForgeParams) -> ForgeParams:
     """
     Add derived or computed columns to the DataFrame.
 
     Args:
-        params (Any): Parameters containing the DataFrame and derived column definitions.
+        params (ForgeParams): Parameters containing the DataFrame and derived column definitions.
 
     Returns:
-        pd.DataFrame: DataFrame with derived columns added.
+        ForgeParams: Params object with updated data.
     """
     df = params.data.copy()
     derived = getattr(params, "derived_columns", None)
@@ -166,7 +165,79 @@ def add_derived_columns(params: Any) -> pd.DataFrame:
         logger.debug("forge: Default derived column 'total' added.")
 
     params.data = df
-    return df
+    return params
+
+
+@register_function(action, "format_numeric")
+def format_numeric(params: ForgeParams) -> ForgeParams:
+    """
+    Format numeric columns by rounding to a given precision.
+
+    Args:
+        params ForgeParams): Parameters containing the DataFrame and rounding precision.
+
+    Returns:
+        ForgeParams: Params object with updated data.
+    """
+    df = params.data.copy()
+    precision = getattr(params, "rounding_precision", 2) or 2
+    for col in df.select_dtypes(include="number").columns:
+        df[col] = df[col].round(precision)
+
+    params.data = df
+    logger.info("forge: Numeric columns formatted with precision %d", precision)
+    return params
+
+
+@register_function(action, "group_and_aggregate")
+def group_and_aggregate(params: ForgeParams) -> ForgeParams:
+    """
+    Group and aggregate data based on provided columns and aggregation functions.
+
+    Args:
+        params (ForgeParams): Parameters containing DataFrame, groupby_cols, and agg_functions.
+
+    Returns:
+        ForgeParams: Params object with grouped and aggregated data.
+    """
+    df = params.data.copy()
+    groupby_cols = getattr(params, "groupby_cols", []) or []
+    agg_functions = getattr(params, "agg_functions", {}) or {}
+
+    if groupby_cols:
+        if agg_functions:
+            df = df.groupby(groupby_cols).agg(agg_functions).reset_index()
+            logger.info("forge: Grouped by %s with custom aggregations.", groupby_cols)
+        else:
+            df = df.groupby(groupby_cols).agg("sum").reset_index()
+            logger.info(
+                "forge: Grouped by %s using default sum aggregation.", groupby_cols
+            )
+
+    params.data = df
+    return params
+
+
+@register_function(action, "sort_dataframe")
+def sort_dataframe(params: ForgeParams) -> ForgeParams:
+    """
+    Sort DataFrame by specified columns.
+
+    Args:
+        params (ForgeParams): Parameters containing DataFrame and sort_by attribute.
+
+    Returns:
+        ForgeParams: Params object with sorted data.
+    """
+    df = params.data.copy()
+    sort_by = getattr(params, "sort_by", []) or []
+
+    if sort_by:
+        df = df.sort_values(by=sort_by)
+        logger.info("forge: Sorted DataFrame by %s.", sort_by)
+
+    params.data = df
+    return params
 
 
 # ----------------------------- #
@@ -184,11 +255,14 @@ def forge_ml(params: MLForgeParams) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Transformed DataFrame for ML.
     """
-    fill_missing(params)
-    standardize(params)
-    encode_categoricals(params)
-    treat_outliers(params)
-    scale_numeric(params)
+    for func in [
+        fill_missing,
+        standardize,
+        encode_categoricals,
+        treat_outliers,
+        scale_numeric,
+    ]:
+        params = func(params)
     return params.data
 
 
@@ -200,28 +274,15 @@ def forge_report(params: ReportForgeParams) -> pd.DataFrame:
     """
     Full ReportForge pipeline using registered functions:
     fill_missing, standardize, add_derived_columns, and formatting.
-
-    Args:
-        params (ReportForgeParams): Parameters data, derived columns, and rounding precision.
-
-    Returns:
-        pd.DataFrame: Transformed DataFrame ready for reporting.
     """
-    fill_missing(params)
-    standardize(params)
-    add_derived_columns(params)
-
-    # Format numeric columns
-    df = params.data
-    precision = (
-        2
-        if getattr(params, "rounding_precision", None) is None
-        else params.rounding_precision
-    )
-    for col in df.select_dtypes(include="number").columns:
-        df[col] = df[col].round(precision)
-    params.data = df
-    return df
+    for func in [
+        fill_missing,
+        standardize,
+        add_derived_columns,
+        format_numeric,
+    ]:
+        params = func(params)
+    return params.data
 
 
 # ----------------------------- #
@@ -232,29 +293,12 @@ def forge_analysis(params: AnalysisForgeParams) -> pd.DataFrame:
     """
     Full AnalysisForge pipeline using registered functions:
     fill_missing, standardize, group/aggregate, sort.
-
-    Args:
-        params (AnalysisForgeParams): Parameters data, groupby, aggregation, and sorting options.
-
-    Returns:
-        pd.DataFrame: Transformed DataFrame for analysis.
     """
-    fill_missing(params)
-    standardize(params)
-
-    df = params.data
-    groupby_cols = getattr(params, "groupby_cols", []) or []
-    agg_functions = getattr(params, "agg_functions", {}) or {}
-    sort_by = getattr(params, "sort_by", []) or []
-
-    if groupby_cols:
-        if agg_functions:
-            df = df.groupby(groupby_cols).agg(agg_functions).reset_index()
-        else:
-            df = df.groupby(groupby_cols).agg("sum").reset_index()
-
-    if sort_by:
-        df = df.sort_values(by=sort_by)
-
-    params.data = df
-    return df
+    for func in [
+        fill_missing,
+        standardize,
+        group_and_aggregate,
+        sort_dataframe,
+    ]:
+        params = func(params)
+    return params.data
