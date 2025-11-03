@@ -1,17 +1,17 @@
 """
-StoreManager class in Fragua.
+WarehouseManager class in Fragua.
 Handles all logic for adding, getting, removing, and listing storages.
-Works with a flat Store structure without grouping by type.
+Works with a flat Warehouse structure without grouping by type.
 """
 
 from typing import Any, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 
-from fragua.store.storage import Storage
+from fragua.warehouse.storage import Storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
-from fragua.store.store import Store
-from fragua.store.storage_types import Wagon, Box
+from fragua.warehouse.warehouse import Warehouse
+from fragua.warehouse.storage_types import Wagon, Box
 
 logger = get_logger(__name__)
 
@@ -23,20 +23,20 @@ TYPE_MAP: Dict[str, Any] = {
 }
 
 
-class StoreManager:
+class WarehouseManager:
     """
     Encapsulates storage management logic.
-    Handles only Wagon and Box storage objects stored in a flat structure.
+    Handles only Wagon and Box storage objects Warehoused in a flat structure.
     """
 
-    def __init__(self, name: str, store: Store) -> None:
+    def __init__(self, name: str, warehouse: Warehouse) -> None:
         """
-        Initialize the StoreManager with an existing Store instance.
+        Initialize the WarehouseManager with an existing Warehouse instance.
 
         Args:
-            store (Store): The store instance to manage.
+            Warehouse (Warehouse): The Warehouse instance to manage.
         """
-        self.store = store
+        self.warehouse = warehouse
         self.name = name
         self._movement_log: List[dict[str, object]] = []
 
@@ -48,7 +48,7 @@ class StoreManager:
             "metadata_type": "save",
             "storage_name": storage_name,
             "agent_name": agent_name,
-            "store_manager_name": self.name,
+            "Warehouse_manager_name": self.name,
         }
         metadata = generate_metadata(storage, **metadata_kwargs)
         add_metadata_to_storage(storage, metadata)
@@ -79,7 +79,7 @@ class StoreManager:
             "storage_type": movement_log.get("storage_type"),
             "storage_name": movement_log.get("storage_name"),
             "agent_name": movement_log.get("agent_name"),
-            "store_name": getattr(self.store, "store_name", None),
+            "Warehouse_name": getattr(self.warehouse, "Warehouse_name", None),
             "success": movement_log.get("success"),
             "details": movement_log.get("details") or {},
         }
@@ -127,12 +127,12 @@ class StoreManager:
         overwrite: bool = False,
     ) -> None:
         """
-        Add a Wagon or Box to the store and update movement log.
+        Add a Wagon or Box to the Warehouse and update movement log.
 
         Args:
-            storage: The Wagon or Box object to store.
+            storage: The Wagon or Box object to Warehouse.
             storage_type: 'wagon' or 'box'.
-            storage_name: Name to store the object under.
+            storage_name: Name to Warehouse the object under.
             agent_name: Optional agent performing the action.
             overwrite: Whether to overwrite if it already exists.
 
@@ -148,7 +148,7 @@ class StoreManager:
             if storage_type not in ("wagon", "box"):
                 raise ValueError(f"Invalid storage_type '{storage_type}'")
 
-            if storage_name in self.store.data and not overwrite:
+            if storage_name in self.warehouse.data and not overwrite:
                 logger.warning(
                     "[%s] %s '%s' exists. Use overwrite=True to replace.",
                     self.name,
@@ -166,8 +166,8 @@ class StoreManager:
                 self._log_movement(**movement_log)
                 return
 
-            # Save object in store
-            self.store.data[storage_name] = storage
+            # Save object in Warehouse
+            self.warehouse.data[storage_name] = storage
 
             logger.info(
                 "[%s] Added %s '%s' by agent '%s'",
@@ -212,7 +212,7 @@ class StoreManager:
         Mapping[str, Mapping[str, Union[Wagon, Box]]],
     ]:
         """
-        Retrieve objects from the store and log the operation.
+        Retrieve objects from the Warehouse and log the operation.
 
         Args:
             storage_type: 'wagon', 'box', or 'all'
@@ -229,7 +229,7 @@ class StoreManager:
             else:
                 classes = TYPE_MAP[storage_type]
 
-            for name, obj in self.store.data.items():
+            for name, obj in self.warehouse.data.items():
                 if not isinstance(obj, classes):
                     continue  # type: ignore[unreachable]
                 if storage_name not in ("all", name):
@@ -273,7 +273,7 @@ class StoreManager:
         Mapping[str, Mapping[str, Union[Wagon, Box]]],
     ]:
         """
-        Remove objects from the store and log the operation.
+        Remove objects from the Warehouse and log the operation.
 
         Args:
             storage_type: 'wagon', 'box', or 'all'
@@ -285,7 +285,7 @@ class StoreManager:
 
         removed: Dict[str, Union[Wagon, Box]] = {}
         try:
-            data = self.store.data
+            data = self.warehouse.data
 
             # Determine which classes to remove
             if storage_type == "all":
@@ -350,7 +350,7 @@ class StoreManager:
     # -----------------------------
     def exists(self, name: str) -> bool:
         """
-        Check if a specific object exists in the store.
+        Check if a specific object exists in the Warehouse.
 
         Args:
             name (str): Name of the object.
@@ -358,7 +358,7 @@ class StoreManager:
         Returns:
             bool: True if the object exists, False otherwise.
         """
-        return name in self.store.data
+        return name in self.warehouse.data
 
     # -----------------------------
     # List all metadata
@@ -369,7 +369,7 @@ class StoreManager:
         all_fields: bool = False,
     ) -> Mapping[str, Dict[str, object]]:
         """
-        Return metadata for all stored objects, optionally filtered by fields.
+        Return metadata for all Warehoused objects, optionally filtered by fields.
 
         Args:
             fields (List[str], optional): Specific metadata fields to include.
@@ -383,7 +383,7 @@ class StoreManager:
 
         result: Dict[str, Dict[str, object]] = {}
 
-        for name, obj in self.store.data.items():
+        for name, obj in self.warehouse.data.items():
             metadata = getattr(obj, "metadata", {})
             if all_fields:
                 result[name] = metadata
@@ -399,7 +399,7 @@ class StoreManager:
     # -----------------------------
     def remove_all(self) -> None:
         """
-        Remove all objects from the store.
+        Remove all objects from the Warehouse.
 
         Returns:
             Mapping[str, Union[Wagon, Box]]: All removed objects.

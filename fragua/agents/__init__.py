@@ -5,7 +5,7 @@ from .agent import Agent
 from .miner import Miner
 from .blacksmith import Blacksmith
 from .haulier import Haulier
-from .store_manager import StoreManager
+from .warehouse_manager import WarehouseManager
 
 
 # ------------------- __all__ ------------------- #
@@ -13,7 +13,7 @@ __all__ = [
     # Agent Class
     "Agent",
     # Roles
-    "StoreManager",
+    "WarehouseManager",
     "Miner",
     "Blacksmith",
     "Haulier",

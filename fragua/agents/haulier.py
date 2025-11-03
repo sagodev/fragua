@@ -4,20 +4,20 @@ from __future__ import annotations
 
 from typing import Any, List
 from fragua.agents.agent import Agent
-from fragua.agents.store_manager import StoreManager
+from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.params.params import get_params
-from fragua.store.storage_types import Box, Container, Wagon
-from fragua.style.style import get_style
+from fragua.warehouse.storage_types import Box, Container, Wagon
+from fragua.styles.style import get_style
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
 class Haulier(Agent):
-    """Agent that applies extraction styles to data sources for extraction."""
+    """Agent that applies extraction styles to data sources for loading."""
 
-    def __init__(self, name: str, store_manager: StoreManager):
-        super().__init__(name=name, store_manager=store_manager)
+    def __init__(self, name: str, warehouse_manager: WarehouseManager):
+        super().__init__(name=name, manager=warehouse_manager)
         self.role: str = "haulier"
         self.action: str = "deliver"
         self.storage_type: str = "Container"

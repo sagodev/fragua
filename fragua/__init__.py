@@ -7,10 +7,10 @@ from fragua.agents import *
 from fragua.functions import *
 
 # ------------------- Style ------------------- #
-from fragua.style import *
+from fragua.styles import *
 
 # ------------------- Store ------------------- #
-from fragua.store import *
+from fragua.warehouse import *
 
 # ------------------- Params ------------------- #
 from fragua.params import *
