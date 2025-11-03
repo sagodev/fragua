@@ -4,7 +4,7 @@
 from .storage import Storage
 
 # ------------------- Store Class ------------------- #
-from .store import Store
+from .warehouse import Warehouse
 
 # ------------------- Storage Types ------------------- #
 from .storage_types import (
@@ -20,7 +20,7 @@ from .storage_types import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    "Store",
+    "Warehouse",
     "Storage",
     # Storage Types
     "Wagon",

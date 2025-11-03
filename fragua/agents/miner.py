@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 from fragua.agents.agent import Agent
-from fragua.agents.store_manager import StoreManager
+from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -13,8 +13,8 @@ logger = get_logger(__name__)
 class Miner(Agent):
     """Agent that applies extraction styles to data sources for extraction."""
 
-    def __init__(self, name: str, store_manager: StoreManager):
-        super().__init__(name=name, store_manager=store_manager)
+    def __init__(self, name: str, warehouse_manager: WarehouseManager):
+        super().__init__(name=name, manager=warehouse_manager)
         self.role = "miner"
         self.action = "mine"
         self.storage_type = "Wagon"

@@ -10,11 +10,11 @@ from typing import Any, Mapping, Optional, Union
 from datetime import datetime, timezone
 import pandas as pd
 
-from fragua.agents.store_manager import StoreManager
+from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.params.params import Params, get_params
-from fragua.style.style import get_style
-from fragua.store.storage import Storage
-from fragua.store.storage_types import Box, Wagon, get_storage
+from fragua.styles.style import get_style
+from fragua.warehouse.storage import Storage
+from fragua.warehouse.storage_types import Box, Wagon, get_storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -28,10 +28,10 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         name: str,
-        store_manager: StoreManager,
+        manager: WarehouseManager,
     ):
         self.name: str = name
-        self.store_manager = store_manager
+        self.warehouse_manager = manager
         self.role: str
         self._operations: list[dict[str, Any]] = []
         self.action: str
@@ -122,9 +122,9 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         storage: Storage[Any],
         storage_name: str | None = None,
     ) -> None:
-        """Store a Storage object via a StoreManager."""
+        """Store a Storage object via a WarehouseManager."""
 
-        self.store_manager.add(
+        self.warehouse_manager.add(
             storage=storage,
             storage_name=storage_name,
             agent_name=self.name,
@@ -140,7 +140,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         if storage_name is None:
             raise TypeError("Missing required atribute: storage_name.")
 
-        storage = self.store_manager.get(
+        storage = self.warehouse_manager.get(
             storage_name=storage_name, agent_name=self.name
         )
 

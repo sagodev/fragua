@@ -7,7 +7,7 @@ from typing import Any, Generic
 import pandas as pd
 
 
-from fragua.style.style import Style, ResultT, register_style
+from fragua.styles.style import Style, ResultT, register_style
 from fragua.params.delivery_params import (
     DeliveryParamsT,
     ExcelDeliveryParamsT,

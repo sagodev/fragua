@@ -5,7 +5,7 @@ MineStyle types for various data extraction methods, refactored to use FUNCTION_
 from typing import Generic
 import pandas as pd
 
-from fragua.style.style import Style, ResultT, register_style
+from fragua.styles.style import Style, ResultT, register_style
 from fragua.params.mine_params import (
     MineParamsT,
     CSVMineParamsT,

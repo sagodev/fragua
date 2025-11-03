@@ -9,7 +9,7 @@ from pandas.api.types import is_numeric_dtype
 import pandas as pd
 
 from fragua.functions.function_registry import get_function
-from fragua.style.style import Style, ResultT, register_style
+from fragua.styles.style import Style, ResultT, register_style
 from fragua.utils.logger import get_logger
 from fragua.params.forge_params import (
     ForgeParamsT,

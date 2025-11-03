@@ -4,14 +4,14 @@ The StoreManager handles all the logic.
 """
 
 from typing import Dict
-from fragua.store.storage import Storage
-from fragua.store.storage_types import Wagon, Box
+from fragua.warehouse.storage import Storage
+from fragua.warehouse.storage_types import Wagon, Box
 
 
-class Store:
+class Warehouse:
     """
     Simple container for Wagons and Boxes.
-    StoreManager is responsible for all operations.
+    Warehouse manager is responsible for all operations.
     """
 
     def __init__(self, store_name: str = "store") -> None:
