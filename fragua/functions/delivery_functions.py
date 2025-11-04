@@ -43,7 +43,7 @@ def validate_excel_params(params: ExcelDeliveryParams) -> None:
 @register_function(action, "build_excel_path")
 def build_excel_path(params: ExcelDeliveryParams) -> str:
     """
-    Build the full path for the Excel file.
+    Build the full path for the Excel file, adding '.xlsx' if missing.
 
     Args:
         params (ExcelDeliveryParams): Parameters including destination and file_name.
@@ -52,7 +52,10 @@ def build_excel_path(params: ExcelDeliveryParams) -> str:
         str: Full path to the Excel file.
     """
     os.makedirs(params.destination, exist_ok=True)
-    file_name = params.file_name or "output.xlsx"
+
+    _, ext = os.path.splitext(params.file_name)
+    file_name = params.file_name if ext else f"{params.file_name}.xlsx"
+
     return os.path.join(params.destination, file_name)
 
 
