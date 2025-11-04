@@ -58,7 +58,7 @@ class CSVMineStyle(MineStyle[CSVMineParamsT, pd.DataFrame]):
     """Extracts data from CSV files."""
 
     def mine(self, params: CSVMineParamsT) -> pd.DataFrame:
-        func = get_function("mine", "mine_csv")
+        func = get_function(action, "mine_csv")
         return func(params)
 
 
@@ -70,7 +70,7 @@ class ExcelMineStyle(MineStyle[ExcelMineParamsT, pd.DataFrame]):
     """Extracts data from Excel files."""
 
     def mine(self, params: ExcelMineParamsT) -> pd.DataFrame:
-        func = get_function("mine", "mine_excel")
+        func = get_function(action, "mine_excel")
         return func(params)
 
 
@@ -82,7 +82,7 @@ class SQLMineStyle(MineStyle[SQLMineParamsT, pd.DataFrame]):
     """Extracts data from SQL databases."""
 
     def mine(self, params: SQLMineParamsT) -> pd.DataFrame:
-        func = get_function("mine", "mine_sql")
+        func = get_function(action, "mine_sql")
         return func(params)
 
 
@@ -94,5 +94,5 @@ class APIMineStyle(MineStyle[APIMineParamsT, pd.DataFrame]):
     """Extracts data from REST APIs."""
 
     def mine(self, params: APIMineParamsT) -> pd.DataFrame:
-        func = get_function("mine", "mine_api")
+        func = get_function(action, "mine_api")
         return func(params)
