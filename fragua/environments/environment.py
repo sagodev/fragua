@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Type, List
+from typing import Any, Dict, Optional, Type, List, cast
 
 
 from fragua.agents.agent import Agent
@@ -33,8 +33,8 @@ class Environment:
 
         # Structured component registry
         self.components: Dict[str, Any] = {
-            "warehouse": Warehouse | None,
-            "manager": WarehouseManager | None,
+            "warehouse": None,
+            "manager": None,
             "agents": {atype: [] for atype in self.AGENT_CLASSES},
         }
 
@@ -154,15 +154,15 @@ class Environment:
 
     def create_miner(self, name: Optional[str] = None) -> Miner:
         """Shortcut to create a Miner agent."""
-        return self.create_agent("miner", name)
+        return cast(Miner, self.create_agent("miner", name))
 
     def create_blacksmith(self, name: Optional[str] = None) -> Blacksmith:
         """Shortcut to create a Blacksmith agent."""
-        return self.create_agent("blacksmith", name)
+        return cast(Blacksmith, self.create_agent("blacksmith", name))
 
     def create_haulier(self, name: Optional[str] = None) -> Haulier:
         """Shortcut to create a Haulier agent."""
-        return self.create_agent("haulier", name)
+        return cast(Haulier, self.create_agent("haulier", name))
 
     # ---------------------------------------------------------------------
     # ACCESSORS
@@ -170,11 +170,11 @@ class Environment:
 
     def get_warehouse(self) -> Optional[Warehouse]:
         """Return warehouse."""
-        return self.components["warehouse"]
+        return cast(Optional[Warehouse], self.components["warehouse"])
 
     def get_manager(self) -> Optional[WarehouseManager]:
         """Return warehouse manager."""
-        return self.components["manager"]
+        return cast(Optional[WarehouseManager], self.components["manager"])
 
     def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
         """Return all agents or those of a given type."""
@@ -182,7 +182,7 @@ class Environment:
             return [a for agents in self.components["agents"].values() for a in agents]
         if agent_type not in self.AGENT_CLASSES:
             raise ValueError(f"Invalid agent type '{agent_type}'.")
-        return self.components["agents"][agent_type]
+        return cast(List[Any], self.components["agents"][agent_type])
 
     # ---------------------------------------------------------------------
     # SUMMARY
