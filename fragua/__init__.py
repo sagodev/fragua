@@ -1,5 +1,8 @@
 """Fragua Module."""
 
+# ------------------- Environments ------------------- #
+from fragua.environments import *
+
 # ------------------- Agents ------------------- #
 from fragua.agents import *
 
