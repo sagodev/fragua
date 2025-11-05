@@ -1,5 +1,7 @@
 """Empty Environment Class."""
 
+from __future__ import annotations
+
 from fragua.environments.environment import Environment
 from fragua.utils.logger import get_logger
 

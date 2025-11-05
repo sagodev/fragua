@@ -1,12 +1,14 @@
 """Base environment class."""
 
-from typing import Any, Dict, Optional, Type, List
-from fragua.agents.agent import Agent
-from fragua.utils.logger import get_logger
+from __future__ import annotations
 
-# Core imports
+from typing import Any, Dict, Optional, Type, List
+
+
+from fragua.agents.agent import Agent
 from fragua.storages.warehouse import Warehouse
 from fragua.agents import WarehouseManager, Miner, Blacksmith, Haulier
+from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -122,22 +124,24 @@ class Environment:
             manager: Optional existing WarehouseManager; created if not present.
         """
         agent_type = agent_type.lower()
+
         if agent_type not in self.AGENT_CLASSES:
             raise ValueError(
                 f"Unknown agent type '{agent_type}'. "
                 f"Available: {list(self.AGENT_CLASSES.keys())}"
             )
 
-        if manager is None:
-            manager = self.components["manager"] or self.create_manager()
-
         agent_cls = self.AGENT_CLASSES[agent_type]
+
         agent_name = (
             name
             or f"{self.name}_{agent_type}_{len(self.components['agents'][agent_type]) + 1}"
         )
 
         self._check_duplicate_name(agent_name)
+
+        if manager is None:
+            manager = self.components["manager"] or self.create_manager()
 
         if manager is None:
             raise TypeError("A warehouse manager is required.")

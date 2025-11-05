@@ -4,7 +4,7 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 """
 
 from __future__ import annotations
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Mapping, Optional, Union
 from datetime import datetime, timezone
@@ -194,6 +194,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         self._add_operation(style, params_instance)
         self.auto_store(style, storage, save_as)
 
+    @abstractmethod
     def work(
         self,
         /,
