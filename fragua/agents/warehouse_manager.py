@@ -231,7 +231,7 @@ class WarehouseManager:
 
             for name, obj in self.warehouse.data.items():
                 if not isinstance(obj, classes):
-                    continue  # type: ignore[unreachable]
+                    continue
                 if storage_name not in ("all", name):
                     continue
                 result[name] = obj
@@ -268,9 +268,9 @@ class WarehouseManager:
         storage_type: StorageType,
         storage_name: str = "all",
     ) -> Union[
-        Optional[Union[Wagon, Box]],
-        Mapping[str, Union[Wagon, Box]],
-        Mapping[str, Mapping[str, Union[Wagon, Box]]],
+        Optional[Storage[Wagon | Box]],
+        Mapping[str, Storage[Wagon | Box]],
+        Mapping[str, Mapping[str, Storage[Wagon | Box]]],
     ]:
         """
         Remove objects from the Warehouse and log the operation.
@@ -283,7 +283,7 @@ class WarehouseManager:
             The removed object(s) or dict by type.
         """
 
-        removed: Dict[str, Union[Wagon, Box]] = {}
+        removed: Dict[str, Storage[Wagon | Box]] = {}
         try:
             data = self.warehouse.data
 

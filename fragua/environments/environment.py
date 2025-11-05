@@ -33,8 +33,8 @@ class Environment:
 
         # Structured component registry
         self.components: Dict[str, Any] = {
-            "warehouse": None,
-            "manager": None,
+            "warehouse": Warehouse | None,
+            "manager": WarehouseManager | None,
             "agents": {atype: [] for atype in self.AGENT_CLASSES},
         }
 
@@ -114,7 +114,7 @@ class Environment:
         agent_type: str,
         name: Optional[str] = None,
         manager: Optional[WarehouseManager] = None,
-    ) -> Any:
+    ) -> Agent:
         """
         Create and register an agent associated with the warehouse manager.
 
