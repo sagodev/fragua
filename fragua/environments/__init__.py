@@ -3,12 +3,13 @@
 from typing import Dict, Type
 from fragua.environments.environment import Environment
 from fragua.environments.basic import BasicEnvironment
-
+from fragua.environments.empty import EmptyEnvironment
 
 # Registry of available environment types
 ENVIRONMENT_TYPES: Dict[str, Type[Environment]] = {
     "base": Environment,
     "basic": BasicEnvironment,
+    "empty": EmptyEnvironment,
 }
 
 
@@ -42,5 +43,6 @@ def create_fragua(name: str, env_type: str = "basic") -> Environment:
 __all__ = [
     "Environment",
     "BasicEnvironment",
+    "EmptyEnvironment",
     "create_fragua",
 ]
