@@ -4,7 +4,7 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 """
 
 from __future__ import annotations
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Mapping, Optional, Union
 from datetime import datetime, timezone
@@ -13,8 +13,8 @@ import pandas as pd
 from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.params.params import Params, get_params
 from fragua.styles.style import get_style
-from fragua.warehouse.storage import Storage
-from fragua.warehouse.storage_types import Box, Wagon, get_storage
+from fragua.storages.storage import Storage
+from fragua.storages.storage_types import Box, Wagon, get_storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -194,6 +194,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         self._add_operation(style, params_instance)
         self.auto_store(style, storage, save_as)
 
+    @abstractmethod
     def work(
         self,
         /,

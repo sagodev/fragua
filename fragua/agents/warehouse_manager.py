@@ -7,11 +7,11 @@ Works with a flat Warehouse structure without grouping by type.
 from typing import Any, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 
-from fragua.warehouse.storage import Storage
+from fragua.storages.storage import Storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
-from fragua.warehouse.warehouse import Warehouse
-from fragua.warehouse.storage_types import Wagon, Box
+from fragua.storages.warehouse import Warehouse
+from fragua.storages.storage_types import Wagon, Box
 
 logger = get_logger(__name__)
 
@@ -231,7 +231,7 @@ class WarehouseManager:
 
             for name, obj in self.warehouse.data.items():
                 if not isinstance(obj, classes):
-                    continue  # type: ignore[unreachable]
+                    continue
                 if storage_name not in ("all", name):
                     continue
                 result[name] = obj
@@ -268,9 +268,9 @@ class WarehouseManager:
         storage_type: StorageType,
         storage_name: str = "all",
     ) -> Union[
-        Optional[Union[Wagon, Box]],
-        Mapping[str, Union[Wagon, Box]],
-        Mapping[str, Mapping[str, Union[Wagon, Box]]],
+        Optional[Storage[Wagon | Box]],
+        Mapping[str, Storage[Wagon | Box]],
+        Mapping[str, Mapping[str, Storage[Wagon | Box]]],
     ]:
         """
         Remove objects from the Warehouse and log the operation.
@@ -283,7 +283,7 @@ class WarehouseManager:
             The removed object(s) or dict by type.
         """
 
-        removed: Dict[str, Union[Wagon, Box]] = {}
+        removed: Dict[str, Storage[Wagon | Box]] = {}
         try:
             data = self.warehouse.data
 

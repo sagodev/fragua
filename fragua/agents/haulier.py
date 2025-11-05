@@ -6,7 +6,7 @@ from typing import Any, List
 from fragua.agents.agent import Agent
 from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.params.params import get_params
-from fragua.warehouse.storage_types import Box, Container, Wagon
+from fragua.storages.storage_types import Box, Container, Wagon
 from fragua.styles.style import get_style
 from fragua.utils.logger import get_logger
 

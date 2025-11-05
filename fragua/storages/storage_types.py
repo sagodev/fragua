@@ -3,7 +3,7 @@ Storage types for storing different kinds of data.
 """
 
 from typing import Any, Dict, Union, Type, TypeVar
-from fragua.warehouse.storage import Storage
+from fragua.storages.storage import Storage
 
 STORAGE_REGISTRY: Dict[str, Type[Storage[Any]]] = {}
 S = TypeVar("S", bound="Storage[Any]")

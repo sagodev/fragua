@@ -1,5 +1,8 @@
 """Fragua Module."""
 
+# ------------------- Environments ------------------- #
+from fragua.environments import *
+
 # ------------------- Agents ------------------- #
 from fragua.agents import *
 
@@ -10,7 +13,7 @@ from fragua.functions import *
 from fragua.styles import *
 
 # ------------------- Store ------------------- #
-from fragua.warehouse import *
+from fragua.storages import *
 
 # ------------------- Params ------------------- #
 from fragua.params import *
