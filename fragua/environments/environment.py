@@ -5,7 +5,7 @@ from fragua.agents.agent import Agent
 from fragua.utils.logger import get_logger
 
 # Core imports
-from fragua.warehouse.warehouse import Warehouse
+from fragua.storages.warehouse import Warehouse
 from fragua.agents import WarehouseManager, Miner, Blacksmith, Haulier
 
 logger = get_logger(__name__)

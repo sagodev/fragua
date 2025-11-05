@@ -4,8 +4,8 @@ The StoreManager handles all the logic.
 """
 
 from typing import Dict
-from fragua.warehouse.storage import Storage
-from fragua.warehouse.storage_types import Wagon, Box
+from fragua.storages.storage import Storage
+from fragua.storages.storage_types import Wagon, Box
 
 
 class Warehouse:

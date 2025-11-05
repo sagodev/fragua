@@ -7,11 +7,11 @@ Works with a flat Warehouse structure without grouping by type.
 from typing import Any, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 
-from fragua.warehouse.storage import Storage
+from fragua.storages.storage import Storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
-from fragua.warehouse.warehouse import Warehouse
-from fragua.warehouse.storage_types import Wagon, Box
+from fragua.storages.warehouse import Warehouse
+from fragua.storages.storage_types import Wagon, Box
 
 logger = get_logger(__name__)
 

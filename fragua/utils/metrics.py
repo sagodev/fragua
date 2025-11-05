@@ -68,7 +68,7 @@ def get_local_time_and_offset() -> tuple[str, str]:
 
 def determine_storage_type(storage: Any) -> Optional[StorageType]:
     """Determine the storage type ('wagon', 'box', or 'container')."""
-    from fragua.warehouse import (
+    from fragua.storages import (
         Wagon,
         Box,
         Container,

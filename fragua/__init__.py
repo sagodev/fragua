@@ -13,7 +13,7 @@ from fragua.functions import *
 from fragua.styles import *
 
 # ------------------- Store ------------------- #
-from fragua.warehouse import *
+from fragua.storages import *
 
 # ------------------- Params ------------------- #
 from fragua.params import *
