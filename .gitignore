@@ -1,10 +1,26 @@
-.venv/
-__pycache__/
-*.pyc
-.DS_Store
+#test 
 tests/
-fragua.py
-test_*
-fragua.egg-info/
-output_files/
+test_files/
 main.py
+
+# Archivos de compilación y empaquetado
+build/
+dist/
+*.egg-info/
+
+# Entorno virtual
+venv/
+.env/
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Archivos temporales de IDE
+.vscode/
+.idea/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
