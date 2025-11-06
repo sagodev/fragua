@@ -16,9 +16,7 @@ class EmptyEnvironment(Environment):
     """
 
     def __init__(self, name: str):
-        """
-        Initialize an EmptyEnvironment with no predefined components.
-        """
+        super().__init__(name, env_type="empty")
 
         # Create only core components
         warehouse = self.create_warehouse(f"{self.name}_warehouse")
