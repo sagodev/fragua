@@ -1,4 +1,4 @@
-name: Python CI (Smart Auto Formatter)
+name: Python CI
 
 on:
   push:
