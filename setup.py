@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="fragua",
-    version="0.1.2",
+    version="0.1.3",
     author="SagoDev",
     description="Package for creating ETL environments for data analysis",
     packages=find_packages(where=".", include=["fragua", "fragua.*"]),
