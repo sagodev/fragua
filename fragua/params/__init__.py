@@ -10,16 +10,16 @@ from .params import (
     create_params_class,
 )
 
-# ------------------- Delivery Params ------------------- #
-from .delivery_params import (
-    DeliveryParams,
-    ExcelDeliveryParams,
-    SQLDeliveryParams,
-    APIDeliveryParams,
-    DeliveryParamsT,
-    ExcelDeliveryParamsT,
-    SQLDeliveryParamsT,
-    APIDeliveryParamsT,
+# ------------------- Load Params ------------------- #
+from .load_params import (
+    LoadParams,
+    ExcelLoadParams,
+    SQLLoadParams,
+    APILoadParams,
+    LoadParamsT,
+    ExcelLoadParamsT,
+    SQLLoadParamsT,
+    APILoadParamsT,
 )
 
 # ------------------- Extract Params ------------------- #
@@ -68,15 +68,15 @@ __all__ = [
     "ExcelExtractParamsT",
     "SQLExtractParamsT",
     "APIExtractParamsT",
-    # Delivery Params
-    "DeliveryParams",
-    "ExcelDeliveryParams",
-    "SQLDeliveryParams",
-    "APIDeliveryParams",
-    "DeliveryParamsT",
-    "ExcelDeliveryParamsT",
-    "SQLDeliveryParamsT",
-    "APIDeliveryParamsT",
+    # Load Params
+    "LoadParams",
+    "ExcelLoadParams",
+    "SQLLoadParams",
+    "APILoadParams",
+    "LoadParamsT",
+    "ExcelLoadParamsT",
+    "SQLLoadParamsT",
+    "APILoadParamsT",
     # Transform Params
     "TransformParams",
     "MLTransformParams",

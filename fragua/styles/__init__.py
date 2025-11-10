@@ -3,12 +3,12 @@
 # ------------------- Base Style ------------------- #
 from .style import Style, STYLE_REGISTRY, register_style, get_style, list_styles
 
-# ------------------- Delivery Style Types ------------------- #
-from .delivery_styles import (
-    DeliveryStyle,
-    SQLDeliveryStyle,
-    APIDeliveryStyle,
-    ExcelDeliveryStyle,
+# ------------------- Load Style Types ------------------- #
+from .load_styles import (
+    LoadStyle,
+    SQLLoadStyle,
+    APILoadStyle,
+    ExcelLoadStyle,
 )
 
 # ------------------- Extract Styles ------------------- #
@@ -33,7 +33,7 @@ from .transform_styles import (
 __all__ = [
     # Base Styles
     "Style",
-    "DeliveryStyle",
+    "LoadStyle",
     "ExtractStyle",
     "TransformStyle",
     # Extract Styles
@@ -45,10 +45,10 @@ __all__ = [
     "MLTransformStyle",
     "ReportTransformStyle",
     "AnalysisTransformStyle",
-    # Delivery Styles
-    "SQLDeliveryStyle",
-    "APIDeliveryStyle",
-    "ExcelDeliveryStyle",
+    # Load Styles
+    "SQLLoadStyle",
+    "APILoadStyle",
+    "ExcelLoadStyle",
     # Styles Registry Functions
     "STYLE_REGISTRY",
     "register_style",
