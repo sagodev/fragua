@@ -13,7 +13,7 @@ from fragua.params.extract_params import (
     SQLExtractParamsT,
     APIExtractParamsT,
 )
-from fragua.functions.function_registry import get_function
+from fragua.functions.function import get_function
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)

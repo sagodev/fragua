@@ -15,7 +15,7 @@ from fragua.params.load_params import (
     APILoadParamsT,
 )
 from fragua.utils.logger import get_logger
-from fragua.functions.function_registry import get_function
+from fragua.functions.function import get_function
 
 logger = get_logger(__name__)
 

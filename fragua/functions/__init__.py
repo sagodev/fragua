@@ -2,11 +2,12 @@
 Reusable Functions Module.
 """
 
-from fragua.functions.function_registry import (
+from fragua.functions.function import (
     FUNCTIONS_REGISTRY,
     register_function,
     get_function,
     list_functions,
+    FraguaFunction,
 )
 
 # Import modules to auto-register their functions
@@ -23,5 +24,5 @@ __all__ = [
     "register_function",
     "get_function",
     "list_functions",
-    # Mine Functions
+    "FraguaFunction",
 ]

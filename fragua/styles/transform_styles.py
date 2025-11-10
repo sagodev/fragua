@@ -7,7 +7,7 @@ from typing import Generic
 
 import pandas as pd
 
-from fragua.functions.function_registry import get_function
+from fragua.functions.function import get_function
 from fragua.styles.style import Style, ResultT, register_style
 from fragua.utils.logger import get_logger
 from fragua.params.transform_params import (
