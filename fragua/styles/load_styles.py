@@ -3,23 +3,20 @@ LoadStyle types for various data Load methods.
 """
 
 from abc import abstractmethod
-from typing import Any, Generic
+from typing import Generic
 import pandas as pd
 
 
-from fragua.styles.style import Style, ResultT, register_style
+from fragua.functions.load_functions import ExcelLoadFunction
+from fragua.styles.style import Style, ResultT
 from fragua.params.load_params import (
     LoadParamsT,
     ExcelLoadParamsT,
-    SQLLoadParamsT,
-    APILoadParamsT,
 )
 from fragua.utils.logger import get_logger
-from fragua.functions.function import get_function
+
 
 logger = get_logger(__name__)
-
-action: str = "load"
 
 
 # ---------------------------------------------------------------------- #
@@ -54,7 +51,6 @@ class LoadStyle(Style[LoadParamsT, ResultT], Generic[LoadParamsT, ResultT]):
 # ---------------------------------------------------------------------- #
 # Excel Load
 # ---------------------------------------------------------------------- #
-@register_style(action, "excel")
 class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
     """
     LoadStyle for exporting data to Excel files.
@@ -62,35 +58,14 @@ class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
     """
 
     def load(self, params: ExcelLoadParamsT) -> pd.DataFrame:
-        load_func = get_function(action, "load_excel")
-        return load_func(params)
+        return ExcelLoadFunction("load_excel", params).execute()
 
 
 # ---------------------------------------------------------------------- #
 # SQL Load
 # ---------------------------------------------------------------------- #
-@register_style(action, "sql")
-class SQLLoadStyle(LoadStyle[SQLLoadParamsT, pd.DataFrame]):
-    """
-    LoadStyle for loading data to SQL databases.
-    Uses registered functions for pipeline steps.
-    """
-
-    def load(self, params: SQLLoadParamsT) -> pd.DataFrame:
-        load_func = get_function(action, "load_sql")
-        return load_func(params)
 
 
 # ---------------------------------------------------------------------- #
 # API Load
 # ---------------------------------------------------------------------- #
-@register_style(action, "api")
-class APILoadStyle(LoadStyle[APILoadParamsT, Any]):
-    """
-    LoadStyle for loading data to external APIs.
-    Uses registered functions for pipeline steps.
-    """
-
-    def load(self, params: APILoadParamsT) -> Any:
-        load_func = get_function(action, "load_api")
-        return load_func(params)
