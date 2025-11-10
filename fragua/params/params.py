@@ -3,7 +3,7 @@ Base abstract class for all parameter schemas used by styles in Fragua.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Tuple, Type, Any
+from typing import Dict, Tuple, Type, Any, TypeVar
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -33,6 +33,8 @@ class Params(ABC):
     def describe(self) -> str:
         """Subclasses should implement this to provide a textual summary of their parameters."""
 
+
+ParamsT = TypeVar("ParamsT", bound=Params)
 
 PARAMS_REGISTRY: Dict[Tuple[str, str], Type[Params]] = {}
 
