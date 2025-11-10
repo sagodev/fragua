@@ -7,6 +7,7 @@ from pathlib import Path
 from fragua.params.params import Params
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
+# pylint: disable=too-many-instance-attributes
 
 
 class ExtractParams(Params):
