@@ -20,12 +20,12 @@ from .extract_styles import (
     APIExtractStyle,
 )
 
-# ------------------- Forge Styles ------------------- #
-from .forge_styles import (
-    ForgeStyle,
-    MLForgeStyle,
-    ReportForgeStyle,
-    AnalysisForgeStyle,
+# ------------------- Transform Styles ------------------- #
+from .transform_styles import (
+    TransformStyle,
+    MLTransformStyle,
+    ReportTransformStyle,
+    AnalysisTransformStyle,
 )
 
 
@@ -35,16 +35,16 @@ __all__ = [
     "Style",
     "DeliveryStyle",
     "ExtractStyle",
-    "ForgeStyle",
+    "TransformStyle",
     # Extract Styles
     "CSVExtractStyle",
     "ExcelExtractStyle",
     "SQLExtractStyle",
     "APIExtractStyle",
-    # Forge Styles
-    "MLForgeStyle",
-    "ReportForgeStyle",
-    "AnalysisForgeStyle",
+    # Transform Styles
+    "MLTransformStyle",
+    "ReportTransformStyle",
+    "AnalysisTransformStyle",
     # Delivery Styles
     "SQLDeliveryStyle",
     "APIDeliveryStyle",

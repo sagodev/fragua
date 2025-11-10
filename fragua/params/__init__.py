@@ -36,16 +36,16 @@ from .extract_params import (
     APIExtractParamsT,
 )
 
-# ------------------- Forge Params ------------------- #
-from .forge_params import (
-    ForgeParams,
-    MLForgeParams,
-    ReportForgeParams,
-    AnalysisForgeParams,
-    ForgeParamsT,
-    MLForgeParamsT,
-    ReportForgeParamsT,
-    AnalysisForgeParamsT,
+# ------------------- Transform Params ------------------- #
+from .transform_params import (
+    TransformParams,
+    MLTransformParams,
+    ReportTransformParams,
+    AnalysisTransformParams,
+    TransformParamsT,
+    MLTransformParamsT,
+    ReportTransformParamsT,
+    AnalysisTransformParamsT,
 )
 
 # ------------------- __all__ ------------------- #
@@ -77,13 +77,13 @@ __all__ = [
     "ExcelDeliveryParamsT",
     "SQLDeliveryParamsT",
     "APIDeliveryParamsT",
-    # Forge Params
-    "ForgeParams",
-    "MLForgeParams",
-    "ReportForgeParams",
-    "AnalysisForgeParams",
-    "ForgeParamsT",
-    "MLForgeParamsT",
-    "ReportForgeParamsT",
-    "AnalysisForgeParamsT",
+    # Transform Params
+    "TransformParams",
+    "MLTransformParams",
+    "ReportTransformParams",
+    "AnalysisTransformParams",
+    "TransformParamsT",
+    "MLTransformParamsT",
+    "ReportTransformParamsT",
+    "AnalysisTransformParamsT",
 ]
