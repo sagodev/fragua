@@ -3,29 +3,29 @@
 # ------------------- Base Style ------------------- #
 from .style import Style, STYLE_REGISTRY, register_style, get_style, list_styles
 
-# ------------------- Delivery Style Types ------------------- #
-from .delivery_styles import (
-    DeliveryStyle,
-    SQLDeliveryStyle,
-    APIDeliveryStyle,
-    ExcelDeliveryStyle,
+# ------------------- Load Style Types ------------------- #
+from .load_styles import (
+    LoadStyle,
+    SQLLoadStyle,
+    APILoadStyle,
+    ExcelLoadStyle,
 )
 
-# ------------------- Mine Styles ------------------- #
-from .mine_styles import (
-    MineStyle,
-    CSVMineStyle,
-    ExcelMineStyle,
-    SQLMineStyle,
-    APIMineStyle,
+# ------------------- Extract Styles ------------------- #
+from .extract_styles import (
+    ExtractStyle,
+    CSVExtractStyle,
+    ExcelExtractStyle,
+    SQLExtractStyle,
+    APIExtractStyle,
 )
 
-# ------------------- Forge Styles ------------------- #
-from .forge_styles import (
-    ForgeStyle,
-    MLForgeStyle,
-    ReportForgeStyle,
-    AnalysisForgeStyle,
+# ------------------- Transform Styles ------------------- #
+from .transform_styles import (
+    TransformStyle,
+    MLTransformStyle,
+    ReportTransformStyle,
+    AnalysisTransformStyle,
 )
 
 
@@ -33,22 +33,22 @@ from .forge_styles import (
 __all__ = [
     # Base Styles
     "Style",
-    "DeliveryStyle",
-    "MineStyle",
-    "ForgeStyle",
-    # Mine Styles
-    "CSVMineStyle",
-    "ExcelMineStyle",
-    "SQLMineStyle",
-    "APIMineStyle",
-    # Forge Styles
-    "MLForgeStyle",
-    "ReportForgeStyle",
-    "AnalysisForgeStyle",
-    # Delivery Styles
-    "SQLDeliveryStyle",
-    "APIDeliveryStyle",
-    "ExcelDeliveryStyle",
+    "LoadStyle",
+    "ExtractStyle",
+    "TransformStyle",
+    # Extract Styles
+    "CSVExtractStyle",
+    "ExcelExtractStyle",
+    "SQLExtractStyle",
+    "APIExtractStyle",
+    # Transform Styles
+    "MLTransformStyle",
+    "ReportTransformStyle",
+    "AnalysisTransformStyle",
+    # Load Styles
+    "SQLLoadStyle",
+    "APILoadStyle",
+    "ExcelLoadStyle",
     # Styles Registry Functions
     "STYLE_REGISTRY",
     "register_style",

@@ -10,42 +10,42 @@ from .params import (
     create_params_class,
 )
 
-# ------------------- Delivery Params ------------------- #
-from .delivery_params import (
-    DeliveryParams,
-    ExcelDeliveryParams,
-    SQLDeliveryParams,
-    APIDeliveryParams,
-    DeliveryParamsT,
-    ExcelDeliveryParamsT,
-    SQLDeliveryParamsT,
-    APIDeliveryParamsT,
+# ------------------- Load Params ------------------- #
+from .load_params import (
+    LoadParams,
+    ExcelLoadParams,
+    SQLLoadParams,
+    APILoadParams,
+    LoadParamsT,
+    ExcelLoadParamsT,
+    SQLLoadParamsT,
+    APILoadParamsT,
 )
 
-# ------------------- Mine Params ------------------- #
-from .mine_params import (
-    MineParams,
-    CSVMineParams,
-    ExcelMineParams,
-    SQLMineParams,
-    APIMineParams,
-    MineParamsT,
-    CSVMineParamsT,
-    ExcelMineParamsT,
-    SQLMineParamsT,
-    APIMineParamsT,
+# ------------------- Extract Params ------------------- #
+from .extract_params import (
+    ExtractParams,
+    CSVExtractParams,
+    ExcelExtractParams,
+    SQLExtractParams,
+    APIExtractParams,
+    ExtractParamsT,
+    CSVExtractParamsT,
+    ExcelExtractParamsT,
+    SQLExtractParamsT,
+    APIExtractParamsT,
 )
 
-# ------------------- Forge Params ------------------- #
-from .forge_params import (
-    ForgeParams,
-    MLForgeParams,
-    ReportForgeParams,
-    AnalysisForgeParams,
-    ForgeParamsT,
-    MLForgeParamsT,
-    ReportForgeParamsT,
-    AnalysisForgeParamsT,
+# ------------------- Transform Params ------------------- #
+from .transform_params import (
+    TransformParams,
+    MLTransformParams,
+    ReportTransformParams,
+    AnalysisTransformParams,
+    TransformParamsT,
+    MLTransformParamsT,
+    ReportTransformParamsT,
+    AnalysisTransformParamsT,
 )
 
 # ------------------- __all__ ------------------- #
@@ -57,33 +57,33 @@ __all__ = [
     "get_params",
     "list_params",
     "create_params_class",
-    # Mine Params
-    "MineParams",
-    "CSVMineParams",
-    "ExcelMineParams",
-    "SQLMineParams",
-    "APIMineParams",
-    "MineParamsT",
-    "CSVMineParamsT",
-    "ExcelMineParamsT",
-    "SQLMineParamsT",
-    "APIMineParamsT",
-    # Delivery Params
-    "DeliveryParams",
-    "ExcelDeliveryParams",
-    "SQLDeliveryParams",
-    "APIDeliveryParams",
-    "DeliveryParamsT",
-    "ExcelDeliveryParamsT",
-    "SQLDeliveryParamsT",
-    "APIDeliveryParamsT",
-    # Forge Params
-    "ForgeParams",
-    "MLForgeParams",
-    "ReportForgeParams",
-    "AnalysisForgeParams",
-    "ForgeParamsT",
-    "MLForgeParamsT",
-    "ReportForgeParamsT",
-    "AnalysisForgeParamsT",
+    # Extract Params
+    "ExtractParams",
+    "CSVExtractParams",
+    "ExcelExtractParams",
+    "SQLExtractParams",
+    "APIExtractParams",
+    "ExtractParamsT",
+    "CSVExtractParamsT",
+    "ExcelExtractParamsT",
+    "SQLExtractParamsT",
+    "APIExtractParamsT",
+    # Load Params
+    "LoadParams",
+    "ExcelLoadParams",
+    "SQLLoadParams",
+    "APILoadParams",
+    "LoadParamsT",
+    "ExcelLoadParamsT",
+    "SQLLoadParamsT",
+    "APILoadParamsT",
+    # Transform Params
+    "TransformParams",
+    "MLTransformParams",
+    "ReportTransformParams",
+    "AnalysisTransformParams",
+    "TransformParamsT",
+    "MLTransformParamsT",
+    "ReportTransformParamsT",
+    "AnalysisTransformParamsT",
 ]

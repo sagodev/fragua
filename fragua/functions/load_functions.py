@@ -1,5 +1,5 @@
 """
-Reusable Delivery Functions.
+Reusable Load Functions.
 """
 
 import os
@@ -9,10 +9,10 @@ import requests
 from sqlalchemy import create_engine
 
 from fragua.functions.function_registry import register_function
-from fragua.params.delivery_params import (
-    ExcelDeliveryParams,
-    SQLDeliveryParams,
-    APIDeliveryParams,
+from fragua.params.load_params import (
+    ExcelLoadParams,
+    SQLLoadParams,
+    APILoadParams,
 )
 
 action: str = "deliver"
@@ -23,30 +23,30 @@ action: str = "deliver"
 
 
 @register_function(action, "validate_excel_params")
-def validate_excel_params(params: ExcelDeliveryParams) -> None:
+def validate_excel_params(params: ExcelLoadParams) -> None:
     """
-    Validate Excel delivery parameters.
+    Validate Excel Load parameters.
 
     Args:
-        params (ExcelDeliveryParams): Parameters for Excel delivery.
+        params (ExcelLoadParams): Parameters for Excel Load.
 
     Raises:
         TypeError: If data is not a DataFrame.
         ValueError: If destination folder is missing.
     """
     if not isinstance(params.data, pd.DataFrame):
-        raise TypeError("ExcelDeliveryStyle requires a pandas DataFrame")
+        raise TypeError("ExcelLoadStyle requires a pandas DataFrame")
     if not params.destination:
         raise ValueError("Destination folder is required")
 
 
 @register_function(action, "build_excel_path")
-def build_excel_path(params: ExcelDeliveryParams) -> str:
+def build_excel_path(params: ExcelLoadParams) -> str:
     """
     Build the full path for the Excel file, adding '.xlsx' if missing.
 
     Args:
-        params (ExcelDeliveryParams): Parameters including destination and file_name.
+        params (ExcelLoadParams): Parameters including destination and file_name.
 
     Returns:
         str: Full path to the Excel file.
@@ -99,13 +99,13 @@ def write_excel(df: pd.DataFrame, path: str, sheet_name: str, index: bool) -> No
             df.to_excel(writer, sheet_name=sheet_name, index=index)
 
 
-@register_function(action, "delivery_excel")
-def delivery_excel(params: ExcelDeliveryParams) -> pd.DataFrame:
+@register_function(action, "load_excel")
+def load_excel(params: ExcelLoadParams) -> pd.DataFrame:
     """
-    Full Excel delivery pipeline.
+    Full Excel Load pipeline.
 
     Args:
-        params (ExcelDeliveryParams): Parameters for delivery.
+        params (ExcelLoadParams): Parameters for Load.
 
     Returns:
         pd.DataFrame: Delivered DataFrame.
@@ -123,19 +123,19 @@ def delivery_excel(params: ExcelDeliveryParams) -> pd.DataFrame:
 
 
 @register_function(action, "validate_sql_params")
-def validate_sql_params(params: SQLDeliveryParams) -> None:
+def validate_sql_params(params: SQLLoadParams) -> None:
     """
-    Validate SQL delivery parameters.
+    Validate SQL Load parameters.
 
     Args:
-        params (SQLDeliveryParams): Parameters for SQL delivery.
+        params (SQLLoadParams): Parameters for SQL Load.
 
     Raises:
         TypeError: If data is not a DataFrame.
         ValueError: If destination or table_name is missing.
     """
     if not isinstance(params.data, pd.DataFrame):
-        raise TypeError("SQLDeliveryStyle requires a pandas DataFrame")
+        raise TypeError("SQLLoadStyle requires a pandas DataFrame")
     if not params.destination:
         raise ValueError("destination (connection_string) is required")
     if not params.table_name:
@@ -143,12 +143,12 @@ def validate_sql_params(params: SQLDeliveryParams) -> None:
 
 
 @register_function(action, "write_sql")
-def write_sql(params: SQLDeliveryParams) -> pd.DataFrame:
+def write_sql(params: SQLLoadParams) -> pd.DataFrame:
     """
     Write a DataFrame to a SQL table.
 
     Args:
-        params (SQLDeliveryParams): Parameters including data and table information.
+        params (SQLLoadParams): Parameters including data and table information.
 
     Returns:
         pd.DataFrame: Delivered DataFrame.
@@ -167,13 +167,13 @@ def write_sql(params: SQLDeliveryParams) -> pd.DataFrame:
     return params.data
 
 
-@register_function(action, "delivery_sql")
-def delivery_sql(params: SQLDeliveryParams) -> pd.DataFrame:
+@register_function(action, "load_sql")
+def load_sql(params: SQLLoadParams) -> pd.DataFrame:
     """
-    Full SQL delivery pipeline.
+    Full SQL Load pipeline.
 
     Args:
-        params (SQLDeliveryParams): Parameters for delivery.
+        params (SQLLoadParams): Parameters for Load.
 
     Returns:
         pd.DataFrame: Delivered DataFrame.
@@ -188,12 +188,12 @@ def delivery_sql(params: SQLDeliveryParams) -> pd.DataFrame:
 
 
 @register_function(action, "validate_api_params")
-def validate_api_params(params: APIDeliveryParams) -> None:
+def validate_api_params(params: APILoadParams) -> None:
     """
-    Validate API delivery parameters.
+    Validate API Load parameters.
 
     Args:
-        params (APIDeliveryParams): Parameters for API delivery.
+        params (APILoadParams): Parameters for API Load.
 
     Raises:
         ValueError: If data or endpoint is missing.
@@ -205,12 +205,12 @@ def validate_api_params(params: APIDeliveryParams) -> None:
 
 
 @register_function(action, "send_api_request")
-def send_api_request(params: APIDeliveryParams) -> Any:
+def send_api_request(params: APILoadParams) -> Any:
     """
     Send a REST API request with the provided data.
 
     Args:
-        params (APIDeliveryParams): Parameters including endpoint, method, headers, and data.
+        params (APILoadParams): Parameters including endpoint, method, headers, and data.
 
     Returns:
         Any: The delivered data.
@@ -232,13 +232,13 @@ def send_api_request(params: APIDeliveryParams) -> Any:
     return params.data
 
 
-@register_function(action, "delivery_api")
-def delivery_api(params: APIDeliveryParams) -> Any:
+@register_function(action, "load_api")
+def load_api(params: APILoadParams) -> Any:
     """
-    Full API delivery pipeline.
+    Full API Load pipeline.
 
     Args:
-        params (APIDeliveryParams): Parameters for delivery.
+        params (APILoadParams): Parameters for Load.
 
     Returns:
         Any: Delivered data.
