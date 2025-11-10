@@ -11,13 +11,13 @@ from .delivery_styles import (
     ExcelDeliveryStyle,
 )
 
-# ------------------- Mine Styles ------------------- #
-from .mine_styles import (
-    MineStyle,
-    CSVMineStyle,
-    ExcelMineStyle,
-    SQLMineStyle,
-    APIMineStyle,
+# ------------------- Extract Styles ------------------- #
+from .extract_styles import (
+    ExtractStyle,
+    CSVExtractStyle,
+    ExcelExtractStyle,
+    SQLExtractStyle,
+    APIExtractStyle,
 )
 
 # ------------------- Forge Styles ------------------- #
@@ -34,13 +34,13 @@ __all__ = [
     # Base Styles
     "Style",
     "DeliveryStyle",
-    "MineStyle",
+    "ExtractStyle",
     "ForgeStyle",
-    # Mine Styles
-    "CSVMineStyle",
-    "ExcelMineStyle",
-    "SQLMineStyle",
-    "APIMineStyle",
+    # Extract Styles
+    "CSVExtractStyle",
+    "ExcelExtractStyle",
+    "SQLExtractStyle",
+    "APIExtractStyle",
     # Forge Styles
     "MLForgeStyle",
     "ReportForgeStyle",

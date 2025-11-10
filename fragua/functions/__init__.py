@@ -11,7 +11,7 @@ from fragua.functions.function_registry import (
 
 # Import modules to auto-register their functions
 from fragua.functions import (
-    mine_functions,
+    extract_functions,
     forge_functions,
     delivery_functions,
 )  # noqa: F401

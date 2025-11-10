@@ -14,7 +14,7 @@ class Params(ABC):
     Abstract base configuration class for all Fragua parameter types.
 
     Attributes:
-        role (str): Defines the agent role, such as "miner", "blacksmith", or "haulier".
+        role (str): Defines the agent role, such as "extractor", "transformer", or "loader".
         style (str): Defines the style or data source type (e.g., "csv", "excel", "sql", "api").
     """
 
@@ -42,8 +42,8 @@ def register_params(role: str, style: str) -> Any:
     Decorator to register a Params class for a given agent and style.
 
     Example:
-        @register_params(agent="miner", style="excel")
-        class ExcelMineParams(MineParams):
+        @register_params(agent="extractor", style="excel")
+        class ExcelExtractParams(ExtractParams):
             ...
     """
 
@@ -59,8 +59,8 @@ def get_params(role: str, style: str) -> Type[Params]:
     Retrieve the registered Params class for a given role and style.
 
     Args:
-        role (str): Name of the agent role (e.g., "miner", "blacksmith").
-        style (str): Name of the style (e.g., "excel", "forge").
+        role (str): Name of the agent role (e.g., "extractor", "transformer").
+        style (str): Name of the style (e.g., "excel").
 
     Returns:
         Type[Params]: The registered Params subclass.
@@ -103,8 +103,8 @@ def create_params_class(
     Dynamically create and register a new Params subclass.
 
     Required Args:
-        role (str): Role name ("miner", "blacksmith", or "haulier").
-        style (str): Style name (e.g., "excel", "forge").
+        role (str): Role name ("extractor", "transformer", or "loader").
+        style (str): Style name (e.g., "excel").
         class_name (str): Name of the new Params class.
 
     Optional kwargs:
@@ -115,7 +115,7 @@ def create_params_class(
     Returns:
         Type[Params]: The newly created and registered Params subclass.
     """
-    valid_roles = {"miner", "blacksmith", "haulier"}
+    valid_roles = {"extractor", "transformer", "loader"}
 
     # --- Extract kwargs ---
     fields: Dict[str, tuple[type, Any] | type] = kwargs.get("fields", {})

@@ -1,5 +1,5 @@
 """
-Reusable Mine Functions.
+Reusable Extract Functions.
 """
 
 from typing import Any
@@ -10,18 +10,18 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from fragua.functions.function_registry import register_function
-from fragua.params.mine_params import (
-    CSVMineParams,
-    ExcelMineParams,
-    SQLMineParams,
-    APIMineParams,
+from fragua.params.extract_params import (
+    CSVExtractParams,
+    ExcelExtractParams,
+    SQLExtractParams,
+    APIExtractParams,
 )
 
-action: str = "mine"
+action: str = "extract"
 
 
-@register_function(action, "mine_csv")
-def mine_csv(params: CSVMineParams) -> pd.DataFrame:
+@register_function(action, "extract_csv")
+def extract_csv(params: CSVExtractParams) -> pd.DataFrame:
     """Extract data from CSV file."""
     path = params.path
     if not path:
@@ -32,8 +32,8 @@ def mine_csv(params: CSVMineParams) -> pd.DataFrame:
     return pd.read_csv(path_str, **read_kwargs)
 
 
-@register_function(action, "mine_excel")
-def mine_excel(params: ExcelMineParams) -> pd.DataFrame:
+@register_function(action, "extract_excel")
+def extract_excel(params: ExcelExtractParams) -> pd.DataFrame:
     """Extract data from Excel file."""
     path = params.path
     if not path:
@@ -44,8 +44,8 @@ def mine_excel(params: ExcelMineParams) -> pd.DataFrame:
     return pd.read_excel(path_str, sheet_name=params.sheet_name, **read_kwargs)
 
 
-@register_function(action, "mine_sql")
-def mine_sql(params: SQLMineParams) -> pd.DataFrame:
+@register_function(action, "extract_sql")
+def extract_sql(params: SQLExtractParams) -> pd.DataFrame:
     """Extract data from SQL database."""
     connection_string = params.connection_string
     query = params.query
@@ -61,8 +61,8 @@ def mine_sql(params: SQLMineParams) -> pd.DataFrame:
         engine.dispose()
 
 
-@register_function(action, "mine_api")
-def mine_api(params: APIMineParams) -> pd.DataFrame:
+@register_function(action, "extract_api")
+def extract_api(params: APIExtractParams) -> pd.DataFrame:
     """Extract data from REST API."""
     url = params.url
     if not url:

@@ -22,18 +22,18 @@ from .delivery_params import (
     APIDeliveryParamsT,
 )
 
-# ------------------- Mine Params ------------------- #
-from .mine_params import (
-    MineParams,
-    CSVMineParams,
-    ExcelMineParams,
-    SQLMineParams,
-    APIMineParams,
-    MineParamsT,
-    CSVMineParamsT,
-    ExcelMineParamsT,
-    SQLMineParamsT,
-    APIMineParamsT,
+# ------------------- Extract Params ------------------- #
+from .extract_params import (
+    ExtractParams,
+    CSVExtractParams,
+    ExcelExtractParams,
+    SQLExtractParams,
+    APIExtractParams,
+    ExtractParamsT,
+    CSVExtractParamsT,
+    ExcelExtractParamsT,
+    SQLExtractParamsT,
+    APIExtractParamsT,
 )
 
 # ------------------- Forge Params ------------------- #
@@ -57,17 +57,17 @@ __all__ = [
     "get_params",
     "list_params",
     "create_params_class",
-    # Mine Params
-    "MineParams",
-    "CSVMineParams",
-    "ExcelMineParams",
-    "SQLMineParams",
-    "APIMineParams",
-    "MineParamsT",
-    "CSVMineParamsT",
-    "ExcelMineParamsT",
-    "SQLMineParamsT",
-    "APIMineParamsT",
+    # Extract Params
+    "ExtractParams",
+    "CSVExtractParams",
+    "ExcelExtractParams",
+    "SQLExtractParams",
+    "APIExtractParams",
+    "ExtractParamsT",
+    "CSVExtractParamsT",
+    "ExcelExtractParamsT",
+    "SQLExtractParamsT",
+    "APIExtractParamsT",
     # Delivery Params
     "DeliveryParams",
     "ExcelDeliveryParams",
