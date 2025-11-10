@@ -6,8 +6,6 @@ from .style import Style, STYLE_REGISTRY, register_style, get_style, list_styles
 # ------------------- Load Style Types ------------------- #
 from .load_styles import (
     LoadStyle,
-    SQLLoadStyle,
-    APILoadStyle,
     ExcelLoadStyle,
 )
 
@@ -46,8 +44,6 @@ __all__ = [
     "ReportTransformStyle",
     "AnalysisTransformStyle",
     # Load Styles
-    "SQLLoadStyle",
-    "APILoadStyle",
     "ExcelLoadStyle",
     # Styles Registry Functions
     "STYLE_REGISTRY",

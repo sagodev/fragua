@@ -5,7 +5,13 @@ ExtractStyle types for various data extraction methods, refactored to use FUNCTI
 from typing import Generic
 import pandas as pd
 
-from fragua.styles.style import Style, ResultT, register_style
+from fragua.functions.extract_functions import (
+    APIExtractFunction,
+    CSVExtractFunction,
+    ExcelExtractFunction,
+    SQLExtractFunction,
+)
+from fragua.styles.style import Style, ResultT
 from fragua.params.extract_params import (
     ExtractParamsT,
     CSVExtractParamsT,
@@ -13,11 +19,10 @@ from fragua.params.extract_params import (
     SQLExtractParamsT,
     APIExtractParamsT,
 )
-from fragua.functions.function import get_function
+
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
-action: str = "extract"
 
 
 # ---------------------------------------------------------------------- #
@@ -53,46 +58,45 @@ class ExtractStyle(Style[ExtractParamsT, ResultT], Generic[ExtractParamsT, Resul
 # ---------------------------------------------------------------------- #
 # CSV Extraction
 # ---------------------------------------------------------------------- #
-@register_style(action, "csv")
+
+
 class CSVExtractStyle(ExtractStyle[CSVExtractParamsT, pd.DataFrame]):
     """Extracts data from CSV files."""
 
     def extract(self, params: CSVExtractParamsT) -> pd.DataFrame:
-        func = get_function(action, "Extract_csv")
-        return func(params)
+        return CSVExtractFunction("extract_csv", params).execute()
 
 
 # ---------------------------------------------------------------------- #
 # Excel Extraction
 # ---------------------------------------------------------------------- #
-@register_style(action, "excel")
+
+
 class ExcelExtractStyle(ExtractStyle[ExcelExtractParamsT, pd.DataFrame]):
     """Extracts data from Excel files."""
 
     def extract(self, params: ExcelExtractParamsT) -> pd.DataFrame:
-        func = get_function(action, "extract_excel")
-        return func(params)
+        return ExcelExtractFunction("extract_excel", params).execute()
 
 
 # ---------------------------------------------------------------------- #
 # SQL Extraction
 # ---------------------------------------------------------------------- #
-@register_style(action, "sql")
+
+
 class SQLExtractStyle(ExtractStyle[SQLExtractParamsT, pd.DataFrame]):
     """Extracts data from SQL databases."""
 
     def extract(self, params: SQLExtractParamsT) -> pd.DataFrame:
-        func = get_function(action, "extract_sql")
-        return func(params)
+        return SQLExtractFunction("extract_sql", params).execute()
 
 
 # ---------------------------------------------------------------------- #
 # API Extraction
-# ---------------------------------------------------------------------- #
-@register_style(action, "api")
+
+
 class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
     """Extracts data from REST APIs."""
 
     def extract(self, params: APIExtractParamsT) -> pd.DataFrame:
-        func = get_function(action, "extract_api")
-        return func(params)
+        return APIExtractFunction("extract_api", params).execute()
