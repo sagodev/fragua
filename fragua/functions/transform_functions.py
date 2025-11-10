@@ -8,7 +8,9 @@ import pandas as pd
 from pandas.errors import UndefinedVariableError
 from sklearn.preprocessing import MinMaxScaler
 
-from fragua.functions.function_registry import register_function
+
+from fragua.functions.function import FraguaFunction
+from fragua.params.params import Params
 from fragua.params.transform_params import (
     TransformParams,
     MLTransformParams,
@@ -19,13 +21,12 @@ from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-action: str = "transform"
-
 
 # ----------------------------- #
 # --- Functions --- #
 # ----------------------------- #
-@register_function(action, "fill_missing")
+
+
 def fill_missing(params: TransformParams) -> TransformParams:
     """
     Fill missing values in numeric and categorical columns.
@@ -52,7 +53,6 @@ def fill_missing(params: TransformParams) -> TransformParams:
     return params
 
 
-@register_function(action, "standardize")
 def standardize(params: TransformParams) -> TransformParams:
     """
     Standardize string columns by trimming and lowering case.
@@ -71,7 +71,6 @@ def standardize(params: TransformParams) -> TransformParams:
     return params
 
 
-@register_function(action, "encode_categoricals")
 def encode_categoricals(params: TransformParams) -> TransformParams:
     """
     Encode categorical columns into dummy variables.
@@ -91,7 +90,6 @@ def encode_categoricals(params: TransformParams) -> TransformParams:
     return params
 
 
-@register_function(action, "scale_numeric")
 def scale_numeric(params: TransformParams) -> TransformParams:
     """
     Scale numeric columns using MinMaxScaler.
@@ -112,7 +110,6 @@ def scale_numeric(params: TransformParams) -> TransformParams:
     return params
 
 
-@register_function(action, "treat_outliers")
 def treat_outliers(params: TransformParams) -> TransformParams:
     """
     Cap outliers in numeric columns using the IQR method.
@@ -137,7 +134,6 @@ def treat_outliers(params: TransformParams) -> TransformParams:
     return params
 
 
-@register_function(action, "add_derived_columns")
 def add_derived_columns(params: TransformParams) -> TransformParams:
     """
     Add derived or computed columns to the DataFrame.
@@ -169,7 +165,6 @@ def add_derived_columns(params: TransformParams) -> TransformParams:
     return params
 
 
-@register_function(action, "format_numeric")
 def format_numeric(params: TransformParams) -> TransformParams:
     """
     Format numeric columns by rounding to a given precision.
@@ -190,7 +185,6 @@ def format_numeric(params: TransformParams) -> TransformParams:
     return params
 
 
-@register_function(action, "group_and_aggregate")
 def group_and_aggregate(params: TransformParams) -> TransformParams:
     """
     Group and aggregate data based on provided columns and aggregation functions.
@@ -221,7 +215,6 @@ def group_and_aggregate(params: TransformParams) -> TransformParams:
     return params
 
 
-@register_function(action, "sort_dataframe")
 def sort_dataframe(params: TransformParams) -> TransformParams:
     """
     Sort DataFrame by specified columns.
@@ -244,64 +237,73 @@ def sort_dataframe(params: TransformParams) -> TransformParams:
 
 
 # ----------------------------- #
-# --- MLTransform Pipeline --- #
+# --- Pipelines --- #
 # ----------------------------- #
-@register_function("Transform", "transform_ml")
-def transform_ml(params: MLTransformParams) -> pd.DataFrame:
-    """
-    Full MLTransform pipeline using registered functions:
-    fill_missing, standardize, encode_categoricals, treat_outliers, scale_numeric.
-
-    Args:
-        params (MLTransformParams): Parameters including data and preprocessing options.
-
-    Returns:
-        pd.DataFrame: Transformed DataFrame for ML.
-    """
-    for func in [
-        fill_missing,
-        standardize,
-        encode_categoricals,
-        treat_outliers,
-        scale_numeric,
-    ]:
-        params = func(params)
-    return params.data
 
 
-# ----------------------------- #
-# --- ReportTransform Pipeline --- #
-# ----------------------------- #
-@register_function("transform", "transform_report")
-def transform_report(params: ReportTransformParams) -> pd.DataFrame:
+class TransformFunction(FraguaFunction, Params):
     """
-    Full ReportTransform pipeline using registered functions:
-    fill_missing, standardize, add_derived_columns, and formatting.
+    Represents a Transform function in the Fragua framework.
+    Used to define transformations applied to extracted data.
     """
-    for func in [
-        fill_missing,
-        standardize,
-        add_derived_columns,
-        format_numeric,
-    ]:
-        params = func(params)
-    return params.data
+
+    def __init__(self, name: str, params: TransformParams) -> None:
+        super().__init__(name=name, action="transform", params=params)
 
 
-# ----------------------------- #
-# --- AnalysisTransform Pipeline --- #
-# ----------------------------- #
-@register_function("transform", "transform_analysis")
-def transform_analysis(params: AnalysisTransformParams) -> pd.DataFrame:
+class MLTransformFunction(TransformFunction):
     """
-    Full AnalysisTransform pipeline using registered functions:
-    fill_missing, standardize, group/aggregate, sort.
+    TransformFunction for ML pipelines.
     """
-    for func in [
-        fill_missing,
-        standardize,
-        group_and_aggregate,
-        sort_dataframe,
-    ]:
-        params = func(params)
-    return params.data
+
+    def __init__(self, name: str, params: MLTransformParams) -> None:
+        super().__init__(name=name, params=params)
+
+    def execute(self) -> pd.DataFrame:
+        for func in [
+            fill_missing,
+            standardize,
+            encode_categoricals,
+            treat_outliers,
+            scale_numeric,
+        ]:
+            self.params = func(self.params)
+        return self.params.data
+
+
+class ReportTransformFunction(TransformFunction):
+    """
+    TransformFunction for Report pipelines.
+    """
+
+    def __init__(self, name: str, params: ReportTransformParams) -> None:
+        super().__init__(name=name, params=params)
+
+    def execute(self) -> pd.DataFrame:
+        for func in [
+            fill_missing,
+            standardize,
+            add_derived_columns,
+            format_numeric,
+        ]:
+            self.params = func(self.params)
+        return self.params.data
+
+
+class AnalysisTransformFunction(TransformFunction):
+    """
+    TransformFunction for Analysis pipelines.
+    """
+
+    def __init__(self, name: str, params: AnalysisTransformParams) -> None:
+        super().__init__(name=name, params=params)
+
+    def execute(self) -> pd.DataFrame:
+        for func in [
+            fill_missing,
+            standardize,
+            group_and_aggregate,
+            sort_dataframe,
+        ]:
+            self.params = func(self.params)
+        return self.params.data
