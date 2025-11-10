@@ -6,6 +6,8 @@ from typing import Any, Dict, TypeVar
 from pandas import DataFrame
 from fragua.params.params import Params
 
+# pylint: disable=too-many-arguments, too-many-positional-arguments
+
 
 class TransformParams(Params):
     """Common parameters for transformation agents."""

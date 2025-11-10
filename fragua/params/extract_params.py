@@ -6,6 +6,8 @@ from typing import Any, Dict, Union, TypeVar
 from pathlib import Path
 from fragua.params.params import Params
 
+# pylint: disable=too-many-arguments, too-many-positional-arguments
+
 
 class ExtractParams(Params):
     """Common parameters for extraction agents."""

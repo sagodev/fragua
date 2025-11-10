@@ -6,6 +6,8 @@ from typing import Dict, TypeVar
 from pandas import DataFrame
 from fragua.params.params import Params
 
+# pylint: disable=too-many-arguments, too-many-positional-arguments
+
 
 class LoadParams(Params):
     """Common parameters for loading agents."""
