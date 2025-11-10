@@ -7,8 +7,13 @@ from typing import Generic
 
 import pandas as pd
 
-from fragua.functions.function import get_function
-from fragua.styles.style import Style, ResultT, register_style
+
+from fragua.functions.transform_functions import (
+    AnalysisTransformFunction,
+    MLTransformFunction,
+    ReportTransformFunction,
+)
+from fragua.styles.style import Style, ResultT
 from fragua.utils.logger import get_logger
 from fragua.params.transform_params import (
     TransformParamsT,
@@ -18,8 +23,6 @@ from fragua.params.transform_params import (
 )
 
 logger = get_logger(__name__)
-
-action: str = "transform"
 
 
 # ---------------------------------------------------------------------- #
@@ -62,30 +65,24 @@ class TransformStyle(
 
 
 # ---------------- MLTransform ----------------
-@register_style(action, "ml")
 class MLTransformStyle(TransformStyle[MLTransformParamsT, pd.DataFrame]):
     """Transform style for machine learning preprocessing."""
 
     def transform(self, params: MLTransformParamsT) -> pd.DataFrame:
-        transform_func = get_function(action, "transform_ml")
-        return transform_func(params)
+        return MLTransformFunction("transform_ml", params).execute()
 
 
 # ---------------- ReportTransform ----------------
-@register_style(action, "report")
 class ReportTransformStyle(TransformStyle[ReportTransformParamsT, pd.DataFrame]):
     """Transform style for reporting transformations."""
 
     def transform(self, params: ReportTransformParamsT) -> pd.DataFrame:
-        transform_func = get_function(action, "transform_report")
-        return transform_func(params)
+        return ReportTransformFunction("transform_report", params).execute()
 
 
 # ---------------- AnalysisTransform ----------------
-@register_style(action, "analysis")
 class AnalysisTransformStyle(TransformStyle[AnalysisTransformParamsT, pd.DataFrame]):
     """Transform style for data analysis transformations."""
 
     def transform(self, params: AnalysisTransformParamsT) -> pd.DataFrame:
-        transform_func = get_function(action, "transform_analysis")
-        return transform_func(params)
+        return AnalysisTransformFunction("transform_analysis", params).execute()
