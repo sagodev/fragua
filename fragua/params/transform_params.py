@@ -11,7 +11,7 @@ class TransformParams(Params):
     """Common parameters for transformation agents."""
 
     def __init__(self, style: str, data: DataFrame | None = None) -> None:
-        super().__init__(role="blacksmith", style=style)
+        super().__init__(role="transformer", style=style)
         self.data = data
 
     def describe(self) -> str:
