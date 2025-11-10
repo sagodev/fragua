@@ -3,20 +3,16 @@ Reusable Load Functions.
 """
 
 import os
-from typing import Any
+from typing import Generic
 import pandas as pd
-import requests
-from sqlalchemy import create_engine
 
 
 from fragua.functions.function import FraguaFunction
 from fragua.params.load_params import (
     ExcelLoadParams,
-    LoadParams,
-    SQLLoadParams,
-    APILoadParams,
+    ExcelLoadParamsT,
+    LoadParamsT,
 )
-from fragua.params.params import Params
 
 
 # ----------------------------- #
@@ -51,8 +47,13 @@ def build_excel_path(params: ExcelLoadParams) -> str:
     Returns:
         str: Full path to the Excel file.
     """
+    if params.destination is None:
+        raise ValueError("'destination' must be provided")
+
     os.makedirs(params.destination, exist_ok=True)
 
+    if params.file_name is None:
+        raise ValueError("'file_name' must be provided")
     _, ext = os.path.splitext(params.file_name)
     file_name = params.file_name if ext else f"{params.file_name}.xlsx"
 
@@ -98,51 +99,13 @@ def write_excel(df: pd.DataFrame, path: str, sheet_name: str, index: bool) -> No
 
 
 # ----------------------------- #
-# --- SQL Helpers --- #
+# --- CSV Helpers --- #
 # ----------------------------- #
 
 
-def validate_sql_params(params: SQLLoadParams) -> None:
-    """
-    Validate SQL Load parameters.
-
-    Args:
-        params (SQLLoadParams): Parameters for SQL Load.
-
-    Raises:
-        TypeError: If data is not a DataFrame.
-        ValueError: If destination or table_name is missing.
-    """
-    if not isinstance(params.data, pd.DataFrame):
-        raise TypeError("SQLLoadStyle requires a pandas DataFrame")
-    if not params.destination:
-        raise ValueError("destination (connection_string) is required")
-    if not params.table_name:
-        raise ValueError("table_name is required")
-
-
-def write_sql(params: SQLLoadParams) -> pd.DataFrame:
-    """
-    Write a DataFrame to a SQL table.
-
-    Args:
-        params (SQLLoadParams): Parameters including data and table information.
-
-    Returns:
-        pd.DataFrame: Delivered DataFrame.
-    """
-    engine = create_engine(params.destination)
-    try:
-        params.data.to_sql(
-            name=params.table_name,
-            con=engine,
-            if_exists=params.if_exists,
-            index=params.index,
-            chunksize=params.chunksize,
-        )
-    finally:
-        engine.dispose()
-    return params.data
+# ----------------------------- #
+# --- SQL Helpers --- #
+# ----------------------------- #
 
 
 # ----------------------------- #
@@ -150,95 +113,26 @@ def write_sql(params: SQLLoadParams) -> pd.DataFrame:
 # ----------------------------- #
 
 
-def validate_api_params(params: APILoadParams) -> None:
-    """
-    Validate API Load parameters.
-
-    Args:
-        params (APILoadParams): Parameters for API Load.
-
-    Raises:
-        ValueError: If data or endpoint is missing.
-    """
-    if params.data is None:
-        raise ValueError("data is required")
-    if not params.endpoint:
-        raise ValueError("endpoint is required")
-
-
-def send_api_request(params: APILoadParams) -> Any:
-    """
-    Send a REST API request with the provided data.
-
-    Args:
-        params (APILoadParams): Parameters including endpoint, method, headers, and data.
-
-    Returns:
-        Any: The delivered data.
-    """
-    headers: dict[Any, Any] = params.headers or {}
-    if params.auth:
-        token = params.auth.get("token")
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-
-    response = requests.request(
-        method=params.method,
-        url=params.endpoint,
-        json=params.data,
-        headers=headers,
-        timeout=params.timeout,
-    )
-    response.raise_for_status()
-    return params.data
-
-
 # ----------------------------- #
 # --- Pipelines --- #
 # ----------------------------- #
 
 
-class LoadFunction(FraguaFunction, Params):
+class LoadFunction(FraguaFunction[LoadParamsT], Generic[LoadParamsT]):
     """
     Represents a Load function in the Fragua framework.
     """
 
-    def __init__(self, name: str, params: LoadParams) -> None:
+    def __init__(self, name: str, params: LoadParamsT) -> None:
         super().__init__(name=name, action="load", params=params)
 
 
-class APILoadFunction(LoadFunction):
-    """
-    LoadFunction for API pipelines.
-    """
-
-    def __init__(self, name: str, params: APILoadParams) -> None:
-        super().__init__(name=name, params=params)
-
-    def execute(self) -> Any:
-        validate_api_params(self.params)
-        return send_api_request(self.params)
-
-
-class SQLLoadFunction(LoadFunction):
-    """
-    LoadFunction for SQL pipelines.
-    """
-
-    def __init__(self, name: str, params: SQLLoadParams) -> None:
-        super().__init__(name=name, params=params)
-
-    def execute(self) -> pd.DataFrame:
-        validate_sql_params(self.params)
-        return write_sql(self.params)
-
-
-class ExcelLoadFunction(LoadFunction):
+class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
     """
     LoadFunction for Excel pipelines.
     """
 
-    def __init__(self, name: str, params: ExcelLoadParams) -> None:
+    def __init__(self, name: str, params: ExcelLoadParamsT) -> None:
         super().__init__(name=name, params=params)
 
     def execute(self) -> pd.DataFrame:

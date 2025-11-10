@@ -3,6 +3,7 @@ Reusable Extract Functions.
 """
 
 from pathlib import Path
+from typing import Generic
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
@@ -10,30 +11,29 @@ from requests.auth import HTTPBasicAuth
 
 from fragua.functions.function import FraguaFunction
 from fragua.params.extract_params import (
-    CSVExtractParams,
-    ExcelExtractParams,
-    ExtractParams,
-    SQLExtractParams,
-    APIExtractParams,
+    ExtractParamsT,
+    CSVExtractParamsT,
+    ExcelExtractParamsT,
+    SQLExtractParamsT,
+    APIExtractParamsT,
 )
-from fragua.params.params import Params
 
 
-class ExtractFunction(FraguaFunction, Params):
+class ExtractFunction(FraguaFunction[ExtractParamsT], Generic[ExtractParamsT]):
     """
     Generic ExtractFunction for Fragua, typed by the specific ExtractParams subclass.
     """
 
-    def __init__(self, name: str, params: ExtractParams) -> None:
+    def __init__(self, name: str, params: ExtractParamsT) -> None:
         super().__init__(name=name, action="extract", params=params)
 
 
-class CSVExtractFunction(ExtractFunction):
+class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
     """
     ExtractFunction for CSV files.
     """
 
-    def __init__(self, name: str, params: CSVExtractParams) -> None:
+    def __init__(self, name: str, params: CSVExtractParamsT) -> None:
         super().__init__(name=name, params=params)
 
     def execute(self) -> pd.DataFrame:
@@ -46,12 +46,12 @@ class CSVExtractFunction(ExtractFunction):
         return pd.read_csv(path_str, **read_kwargs)
 
 
-class ExcelExtractFunction(ExtractFunction):
+class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
     """
     ExtractFunction for Excel files.
     """
 
-    def __init__(self, name: str, params: ExcelExtractParams) -> None:
+    def __init__(self, name: str, params: ExcelExtractParamsT) -> None:
         super().__init__(name=name, params=params)
 
     def execute(self) -> pd.DataFrame:
@@ -64,12 +64,12 @@ class ExcelExtractFunction(ExtractFunction):
         return pd.read_excel(path_str, sheet_name=self.params.sheet_name, **read_kwargs)
 
 
-class SQLExtractFunction(ExtractFunction):
+class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
     """
     ExtractFunction for SQL databases.
     """
 
-    def __init__(self, name: str, params: SQLExtractParams) -> None:
+    def __init__(self, name: str, params: SQLExtractParamsT) -> None:
         super().__init__(name=name, params=params)
 
     def execute(self) -> pd.DataFrame:
@@ -87,12 +87,12 @@ class SQLExtractFunction(ExtractFunction):
             engine.dispose()
 
 
-class APIExtractFunction(ExtractFunction):
+class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
     """
     ExtractFunction for REST APIs.
     """
 
-    def __init__(self, name: str, params: APIExtractParams) -> None:
+    def __init__(self, name: str, params: APIExtractParamsT) -> None:
         super().__init__(name=name, params=params)
 
     def execute(self) -> pd.DataFrame:

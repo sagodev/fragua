@@ -31,8 +31,6 @@ from fragua.functions.transform_functions import (
 # ------------------- Load classes ------------------- #
 from fragua.functions.load_functions import (
     LoadFunction,
-    APILoadFunction,
-    SQLLoadFunction,
     ExcelLoadFunction,
 )
 
@@ -56,7 +54,5 @@ __all__ = [
     "MLTransformFunction",
     # Load classes
     "LoadFunction",
-    "APILoadFunction",
-    "SQLLoadFunction",
     "ExcelLoadFunction",
 ]

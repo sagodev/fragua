@@ -3,6 +3,7 @@ Reusable Transform Functions.
 """
 
 from __future__ import annotations
+from typing import Generic
 import numpy as np
 import pandas as pd
 from pandas.errors import UndefinedVariableError
@@ -10,12 +11,11 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 from fragua.functions.function import FraguaFunction
-from fragua.params.params import Params
 from fragua.params.transform_params import (
-    TransformParams,
-    MLTransformParams,
-    ReportTransformParams,
-    AnalysisTransformParams,
+    TransformParamsT,
+    MLTransformParamsT,
+    ReportTransformParamsT,
+    AnalysisTransformParamsT,
 )
 from fragua.utils.logger import get_logger
 
@@ -27,15 +27,15 @@ logger = get_logger(__name__)
 # ----------------------------- #
 
 
-def fill_missing(params: TransformParams) -> TransformParams:
+def fill_missing(params: TransformParamsT) -> TransformParamsT:
     """
     Fill missing values in numeric and categorical columns.
 
     Args:
-        params (TransformParams): Parameters containing the DataFrame and strategy attributes.
+        params (TransformParamsT): Parameters containing the DataFrame and strategy attributes.
 
     Returns:
-        TransformParams: Params object with updated data.
+        TransformParamsT: Params object with updated data.
     """
     df = params.data.copy()
     numeric_fill = getattr(params, "numeric_fill", "mean")
@@ -53,15 +53,15 @@ def fill_missing(params: TransformParams) -> TransformParams:
     return params
 
 
-def standardize(params: TransformParams) -> TransformParams:
+def standardize(params: TransformParamsT) -> TransformParamsT:
     """
     Standardize string columns by trimming and lowering case.
 
     Args:
-        params (TransformParams): Parameters containing the DataFrame.
+        params (TransformParamsT): Parameters containing the DataFrame.
 
     Returns:
-        TransformParams: Params object with updated data.
+        TransformParamsT: Params object with updated data.
     """
     df = params.data.copy()
     for col in df.select_dtypes(include="object").columns:
@@ -71,15 +71,15 @@ def standardize(params: TransformParams) -> TransformParams:
     return params
 
 
-def encode_categoricals(params: TransformParams) -> TransformParams:
+def encode_categoricals(params: TransformParamsT) -> TransformParamsT:
     """
     Encode categorical columns into dummy variables.
 
     Args:
-        params (TransformParams): Parameters containing the DataFrame.
+        params (TransformParamsT): Parameters containing the DataFrame.
 
     Returns:
-        TransformParams: Params object with updated data.
+        TransformParamsT: Params object with updated data.
     """
     df = params.data.copy()
     cat_cols = df.select_dtypes(include="object").columns
@@ -90,15 +90,15 @@ def encode_categoricals(params: TransformParams) -> TransformParams:
     return params
 
 
-def scale_numeric(params: TransformParams) -> TransformParams:
+def scale_numeric(params: TransformParamsT) -> TransformParamsT:
     """
     Scale numeric columns using MinMaxScaler.
 
     Args:
-        params (TransformParams): Parameters containing the DataFrame.
+        params (TransformParamsT): Parameters containing the DataFrame.
 
     Returns:
-        TransformParams: Params object with updated data.
+        TransformParamsT: Params object with updated data.
     """
     df = params.data.copy()
     num_cols = df.select_dtypes(include="number").columns
@@ -110,15 +110,15 @@ def scale_numeric(params: TransformParams) -> TransformParams:
     return params
 
 
-def treat_outliers(params: TransformParams) -> TransformParams:
+def treat_outliers(params: TransformParamsT) -> TransformParamsT:
     """
     Cap outliers in numeric columns using the IQR method.
 
     Args:
-        params (TransformParams): Parameters containing the DataFrame and outlier threshold.
+        params (TransformParamsT): Parameters containing the DataFrame and outlier threshold.
 
     Returns:
-        TransformParams: Params object with updated data.
+        TransformParamsT: Params object with updated data.
     """
     df = params.data.copy()
     factor = getattr(params, "outlier_threshold", 1.5) or 1.5
@@ -134,16 +134,16 @@ def treat_outliers(params: TransformParams) -> TransformParams:
     return params
 
 
-def add_derived_columns(params: TransformParams) -> TransformParams:
+def add_derived_columns(params: TransformParamsT) -> TransformParamsT:
     """
     Add derived or computed columns to the DataFrame.
 
     Args:
-        params (TransformParams): Parameters containing the DataFrame
+        params (TransformParamsT): Parameters containing the DataFrame
                                   and derived column definitions.
 
     Returns:
-        TransformParams: Params object with updated data.
+        TransformParamsT: Params object with updated data.
     """
     df = params.data.copy()
     derived = getattr(params, "derived_columns", None)
@@ -165,15 +165,15 @@ def add_derived_columns(params: TransformParams) -> TransformParams:
     return params
 
 
-def format_numeric(params: TransformParams) -> TransformParams:
+def format_numeric(params: TransformParamsT) -> TransformParamsT:
     """
     Format numeric columns by rounding to a given precision.
 
     Args:
-        params TransformParams): Parameters containing the DataFrame and rounding precision.
+        params TransformParamsT): Parameters containing the DataFrame and rounding precision.
 
     Returns:
-        TransformParams: Params object with updated data.
+        TransformParamsT: Params object with updated data.
     """
     df = params.data.copy()
     precision = getattr(params, "rounding_precision", 2) or 2
@@ -185,15 +185,15 @@ def format_numeric(params: TransformParams) -> TransformParams:
     return params
 
 
-def group_and_aggregate(params: TransformParams) -> TransformParams:
+def group_and_aggregate(params: TransformParamsT) -> TransformParamsT:
     """
     Group and aggregate data based on provided columns and aggregation functions.
 
     Args:
-        params (TransformParams): Parameters containing DataFrame, groupby_cols, and agg_functions.
+        params (TransformParamsT): Parameters containing DataFrame, groupby_cols, and agg_functions.
 
     Returns:
-        TransformParams: Params object with grouped and aggregated data.
+        TransformParamsT: Params object with grouped and aggregated data.
     """
     df = params.data.copy()
     groupby_cols = getattr(params, "groupby_cols", []) or []
@@ -215,15 +215,15 @@ def group_and_aggregate(params: TransformParams) -> TransformParams:
     return params
 
 
-def sort_dataframe(params: TransformParams) -> TransformParams:
+def sort_dataframe(params: TransformParamsT) -> TransformParamsT:
     """
     Sort DataFrame by specified columns.
 
     Args:
-        params (TransformParams): Parameters containing DataFrame and sort_by attribute.
+        params (TransformParamsT): Parameters containing DataFrame and sort_by attribute.
 
     Returns:
-        TransformParams: Params object with sorted data.
+        TransformParamsT: Params object with sorted data.
     """
     df = params.data.copy()
     sort_by = getattr(params, "sort_by", []) or []
@@ -241,22 +241,22 @@ def sort_dataframe(params: TransformParams) -> TransformParams:
 # ----------------------------- #
 
 
-class TransformFunction(FraguaFunction, Params):
+class TransformFunction(FraguaFunction[TransformParamsT], Generic[TransformParamsT]):
     """
     Represents a Transform function in the Fragua framework.
     Used to define transformations applied to extracted data.
     """
 
-    def __init__(self, name: str, params: TransformParams) -> None:
+    def __init__(self, name: str, params: TransformParamsT) -> None:
         super().__init__(name=name, action="transform", params=params)
 
 
-class MLTransformFunction(TransformFunction):
+class MLTransformFunction(TransformFunction[MLTransformParamsT]):
     """
     TransformFunction for ML pipelines.
     """
 
-    def __init__(self, name: str, params: MLTransformParams) -> None:
+    def __init__(self, name: str, params: MLTransformParamsT) -> None:
         super().__init__(name=name, params=params)
 
     def execute(self) -> pd.DataFrame:
@@ -271,12 +271,12 @@ class MLTransformFunction(TransformFunction):
         return self.params.data
 
 
-class ReportTransformFunction(TransformFunction):
+class ReportTransformFunction(TransformFunction[ReportTransformParamsT]):
     """
     TransformFunction for Report pipelines.
     """
 
-    def __init__(self, name: str, params: ReportTransformParams) -> None:
+    def __init__(self, name: str, params: ReportTransformParamsT) -> None:
         super().__init__(name=name, params=params)
 
     def execute(self) -> pd.DataFrame:
@@ -290,12 +290,12 @@ class ReportTransformFunction(TransformFunction):
         return self.params.data
 
 
-class AnalysisTransformFunction(TransformFunction):
+class AnalysisTransformFunction(TransformFunction[AnalysisTransformParamsT]):
     """
     TransformFunction for Analysis pipelines.
     """
 
-    def __init__(self, name: str, params: AnalysisTransformParams) -> None:
+    def __init__(self, name: str, params: AnalysisTransformParamsT) -> None:
         super().__init__(name=name, params=params)
 
     def execute(self) -> pd.DataFrame:
