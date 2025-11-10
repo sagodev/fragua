@@ -25,7 +25,7 @@ class Params(ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(role='{self.role}', style='{self.style}')"
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, str]:
         """Return a dictionary representation of the Params object."""
         return {"role": self.role, "style": self.style}
 
