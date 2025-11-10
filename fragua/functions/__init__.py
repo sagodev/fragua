@@ -2,6 +2,7 @@
 Reusable Functions Module.
 """
 
+# ------------------- Function class ------------------- #
 from fragua.functions.function import (
     FUNCTIONS_REGISTRY,
     register_function,
@@ -10,19 +11,52 @@ from fragua.functions.function import (
     FraguaFunction,
 )
 
-# Import modules to auto-register their functions
-from fragua.functions import (
-    extract_functions,
-    load_functions,
-    transform_functions,
-)  # noqa: F401
+# ------------------- Extract classes ------------------- #
+from fragua.functions.extract_functions import (
+    ExtractFunction,
+    ExcelExtractFunction,
+    APIExtractFunction,
+    CSVExtractFunction,
+    SQLExtractFunction,
+)
 
+# ------------------- Transform classes ------------------- #
+from fragua.functions.transform_functions import (
+    TransformFunction,
+    AnalysisTransformFunction,
+    ReportTransformFunction,
+    MLTransformFunction,
+)
+
+# ------------------- Load classes ------------------- #
+from fragua.functions.load_functions import (
+    LoadFunction,
+    APILoadFunction,
+    SQLLoadFunction,
+    ExcelLoadFunction,
+)
 
 __all__ = [
-    # Registry Functions
+    # Function class
     "FUNCTIONS_REGISTRY",
     "register_function",
     "get_function",
     "list_functions",
     "FraguaFunction",
+    # Extract classes
+    "ExtractFunction",
+    "ExcelExtractFunction",
+    "APIExtractFunction",
+    "CSVExtractFunction",
+    "SQLExtractFunction",
+    # Transform classes
+    "TransformFunction",
+    "AnalysisTransformFunction",
+    "ReportTransformFunction",
+    "MLTransformFunction",
+    # Load classes
+    "LoadFunction",
+    "APILoadFunction",
+    "SQLLoadFunction",
+    "ExcelLoadFunction",
 ]
