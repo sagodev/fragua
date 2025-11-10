@@ -12,7 +12,7 @@ from fragua.params.params import Params
 class TransformParams(Params):
     """Common parameters for transformation agents."""
 
-    def __init__(self, style: str, data: DataFrame | None = None) -> None:
+    def __init__(self, style: str, data: DataFrame) -> None:
         super().__init__(role="transformer", style=style)
         self.data = data
 
@@ -25,7 +25,7 @@ class MLTransformParams(TransformParams):
 
     def __init__(
         self,
-        data: DataFrame | None = None,
+        data: DataFrame,
         target_column: str | None = None,
         categorical_cols: list[str] | None = None,
         numeric_cols: list[str] | None = None,
@@ -50,7 +50,7 @@ class ReportTransformParams(TransformParams):
 
     def __init__(
         self,
-        data: DataFrame | None = None,
+        data: DataFrame,
         format_config: Dict[str, Any] | None = None,
         derived_columns: Dict[str, str] | None = None,
         rounding_precision: int | None = None,
@@ -73,7 +73,7 @@ class AnalysisTransformParams(TransformParams):
 
     def __init__(
         self,
-        data: DataFrame | None = None,
+        data: DataFrame,
         groupby_cols: list[str] | None = None,
         agg_functions: Dict[str, str] | None = None,
         sort_by: list[str] | None = None,

@@ -13,7 +13,7 @@ class LoadParams(Params):
     """Common parameters for loading agents."""
 
     def __init__(
-        self, style: str, data: DataFrame | None = None, destination: str | None = None
+        self, style: str, data: DataFrame, destination: str | None = None
     ) -> None:
         super().__init__(role="loader", style=style)
         self.data = data
@@ -28,7 +28,7 @@ class ExcelLoadParams(LoadParams):
 
     def __init__(
         self,
-        data: DataFrame | None = None,
+        data: DataFrame,
         destination: str | None = None,
         file_name: str | None = None,
         sheet_name: str | None = None,
@@ -53,7 +53,7 @@ class SQLLoadParams(LoadParams):
 
     def __init__(
         self,
-        data: DataFrame | None = None,
+        data: DataFrame,
         destination: str | None = None,
         table_name: str | None = None,
         if_exists: str = "fail",
@@ -78,7 +78,7 @@ class APILoadParams(LoadParams):
 
     def __init__(
         self,
-        data: DataFrame | None = None,
+        data: DataFrame,
         destination: str | None = None,
         endpoint: str | None = None,
         method: str = "POST",
