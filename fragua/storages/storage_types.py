@@ -46,3 +46,10 @@ class Container(Storage[Any]):
     def __repr__(self) -> str:
         items = ", ".join(self._content.keys()) or "empty"
         return f"<Container: {items}>"
+
+
+STORAGE_CLASSES: dict[str, type[Storage[Any]]] = {
+    "Wagon": Wagon,
+    "Box": Box,
+    "Container": Container,
+}
