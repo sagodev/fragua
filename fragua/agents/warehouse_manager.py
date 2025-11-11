@@ -229,7 +229,7 @@ class WarehouseManager:
                     continue
                 if storage_name not in ("all", name):
                     continue
-                result[name] = obj
+                result[name] = obj.data
 
             self._log_movement(
                 operation="get",
