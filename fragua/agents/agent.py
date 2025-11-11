@@ -137,7 +137,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         """Get data storage from store by a given storage name."""
 
         if storage_name is None:
-            raise TypeError("Missing required atribute: storage_name.")
+            raise TypeError("Missing required attribute: storage_name.")
 
         storage = self.warehouse_manager.get(
             storage_name=storage_name, agent_name=self.name
@@ -146,17 +146,19 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         if self.role == "haulier":
             return storage
 
+        # Si querés devolver solo un Wagon/Box cuando es uno solo:
         if isinstance(storage, (Wagon, Box)):
-            df = storage.data
+            return storage  # <- devuelve el Storage, no storage.data
+
         elif isinstance(storage, Mapping):
-            first_value = next(iter(storage.values()))
-            if isinstance(first_value, (Wagon, Box)):
-                df = first_value.data
-            else:
-                raise TypeError("Invalid nested mapping structure in store.")
+            # Si es un mapping, asegurarse de que los valores sean Storage
+            for value in storage.values():
+                if not isinstance(value, (Wagon, Box)):
+                    raise TypeError("Invalid nested mapping structure in store.")
+            return storage
+
         else:
             raise TypeError(f"Unexpected data type: {type(storage).__name__}")
-        return df
 
     def auto_store(
         self, style: str, storage: Storage[Any], save_as: str | None
