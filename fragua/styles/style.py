@@ -3,9 +3,9 @@ Base class for all styles used by ETL agents in Fragua.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, TypeVar, Generic, Dict, Optional, Type, Tuple
+from typing import TypeVar, Generic
 from fragua.utils.logger import get_logger
-from fragua.params.params import Params, ParamsT
+from fragua.params.params import ParamsT
 
 logger = get_logger(__name__)
 
@@ -65,49 +65,3 @@ class Style(ABC, Generic[ParamsT, ResultT]):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} style_name={self.style_name}>"
-
-
-STYLE_REGISTRY: Dict[Tuple[str, str], Type[Style[Params, Any]]] = {}
-
-
-def register_style(action: str, style: str) -> Any:
-    """
-    Decorator to register a Style class for a given (action, style).
-
-    Example:
-        @register_style(action="forge", style="ml")
-        class MLForgeStyle(ForgeStyle):
-            ...
-    """
-
-    def decorator(
-        cls: Type[Style[Params, Any]],
-    ) -> Type[Style[Params, Any]]:
-        key = (action, style)
-        if key in STYLE_REGISTRY:
-            logger.warning("Overwriting existing style registration for %s", key)
-        STYLE_REGISTRY[(action, style)] = cls
-        logger.debug("Registered style: %s -> %s", key, cls.__name__)
-        return cls
-
-    return decorator
-
-
-def get_style(action: str, style: str) -> Type[Style[Params, Any]]:
-    """Retrieve a registered Style class by (action, style)."""
-    try:
-        return STYLE_REGISTRY[(action, style)]
-    except KeyError as exc:
-        logger.error("Style not found for action='%s', style='%s'", action, style)
-        raise KeyError(
-            f"Style not found for action='{action}', style='{style}'"
-        ) from exc
-
-
-def list_styles(
-    action: Optional[str] = None,
-) -> Dict[Tuple[str, str], Type[Style[Params, Any]]]:
-    """List all registered styles, optionally filtered by action."""
-    if action is not None:
-        return {k: v for k, v in STYLE_REGISTRY.items() if k[0] == action}
-    return dict(STYLE_REGISTRY)
