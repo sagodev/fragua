@@ -2,42 +2,18 @@
 Storage types for storing different kinds of data.
 """
 
-from typing import Any, Dict, Union, Type, TypeVar
+from typing import Any, Dict, Union
 from fragua.storages.storage import Storage
 
-STORAGE_REGISTRY: Dict[str, Type[Storage[Any]]] = {}
-S = TypeVar("S", bound="Storage[Any]")
 
-
-def register_storage(cls: Type[S]) -> Type[S]:
-    """Register a Storage subclass in the global registry."""
-    STORAGE_REGISTRY[cls.__name__] = cls
-    return cls
-
-
-def get_storage(name: str) -> Type[Storage[Any]]:
-    """Retrieve a Storage subclass from the registry by name."""
-    if name not in STORAGE_REGISTRY:
-        raise KeyError(f"Storage class '{name}' not registered.")
-    return STORAGE_REGISTRY[name]
-
-
-def list_storages() -> list[str]:
-    """Return a list of all registered storage class names."""
-    return list(STORAGE_REGISTRY.keys())
-
-
-@register_storage
 class Wagon(Storage[Any]):
     """Storage type for raw data."""
 
 
-@register_storage
 class Box(Storage[Any]):
     """Storage type for transformed data."""
 
 
-@register_storage
 class Container(Storage[Any]):
     """
     Storage designed to contain other storages (Wagon and Box).
@@ -70,3 +46,10 @@ class Container(Storage[Any]):
     def __repr__(self) -> str:
         items = ", ".join(self._content.keys()) or "empty"
         return f"<Container: {items}>"
+
+
+STORAGE_CLASSES: dict[str, type[Storage[Any]]] = {
+    "Wagon": Wagon,
+    "Box": Box,
+    "Container": Container,
+}

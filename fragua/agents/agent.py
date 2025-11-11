@@ -14,7 +14,7 @@ from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.params.params import Params, get_params
 from fragua.styles.style import get_style
 from fragua.storages.storage import Storage
-from fragua.storages.storage_types import Box, Wagon, get_storage
+from fragua.storages.storage_types import Box, Wagon, STORAGE_CLASSES
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -103,13 +103,12 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
 
     # ----------------- Create Storage ----------------- #
     def create_storage(self, data: Any) -> Storage[Any]:
-        """Convert raw style output into the appropriate storage object using registry."""
-        try:
-            storage_cls = get_storage(self.storage_type)
-        except KeyError as exc:
+        """Convert raw style output into the appropriate storage object."""
+        storage_cls = STORAGE_CLASSES.get(self.storage_type)
+        if not storage_cls:
             raise TypeError(
-                f"Result type '{self.storage_type}' is not a valid registered storage"
-            ) from exc
+                f"Result type '{self.storage_type}' is not a valid storage type."
+            )
 
         if self.storage_type == "Container":
             return storage_cls()
@@ -138,7 +137,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         """Get data storage from store by a given storage name."""
 
         if storage_name is None:
-            raise TypeError("Missing required atribute: storage_name.")
+            raise TypeError("Missing required attribute: storage_name.")
 
         storage = self.warehouse_manager.get(
             storage_name=storage_name, agent_name=self.name
@@ -148,16 +147,16 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             return storage
 
         if isinstance(storage, (Wagon, Box)):
-            df = storage.data
-        elif isinstance(storage, Mapping):
-            first_value = next(iter(storage.values()))
-            if isinstance(first_value, (Wagon, Box)):
-                df = first_value.data
-            else:
-                raise TypeError("Invalid nested mapping structure in store.")
-        else:
-            raise TypeError(f"Unexpected data type: {type(storage).__name__}")
-        return df
+            return storage
+
+        if isinstance(storage, Mapping):
+
+            for value in storage.values():
+                if not isinstance(value, (Wagon, Box)):
+                    raise TypeError("Invalid nested mapping structure in store.")
+            return storage
+
+        raise TypeError(f"Unexpected data type: {type(storage).__name__}")
 
     def auto_store(
         self, style: str, storage: Storage[Any], save_as: str | None
