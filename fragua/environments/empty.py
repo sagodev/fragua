@@ -22,6 +22,5 @@ class EmptyEnvironment(Environment):
         warehouse = self.create_warehouse(f"{self.name}_warehouse")
         self.create_manager(f"{self.name}_manager", warehouse)
 
-        super().__init__(name, env_type="empty")
         logger.debug("EmptyEnvironment '%s' initialized with no components.", self.name)
         logger.info("EmptyEnvironment '%s' is ready for manual setup.", self.name)
