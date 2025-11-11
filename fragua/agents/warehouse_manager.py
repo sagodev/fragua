@@ -11,16 +11,12 @@ from fragua.storages.storage import Storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.storages.warehouse import Warehouse
-from fragua.storages.storage_types import Wagon, Box
+from fragua.storages.storage_types import Wagon, Box, STORAGE_CLASSES
 
 logger = get_logger(__name__)
 
 
 StorageType = Literal["wagon", "box", "all"]
-TYPE_MAP: Dict[str, Any] = {
-    "wagon": Wagon,
-    "box": Box,
-}
 
 
 class WarehouseManager:
@@ -227,7 +223,7 @@ class WarehouseManager:
             if storage_type == "all":
                 classes = (Wagon, Box)
             else:
-                classes = TYPE_MAP[storage_type]
+                classes = STORAGE_CLASSES[storage_type]
 
             for name, obj in self.warehouse.data.items():
                 if not isinstance(obj, classes):
@@ -291,7 +287,7 @@ class WarehouseManager:
             if storage_type == "all":
                 classes = (Wagon, Box)
             else:
-                classes = TYPE_MAP[storage_type]
+                classes = STORAGE_CLASSES[storage_type]
 
             # Collect keys to remove
             keys_to_remove = [
