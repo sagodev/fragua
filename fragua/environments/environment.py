@@ -70,44 +70,8 @@ class Environment:
                     )
 
     # ---------------------------------------------------------------------
-    # CREATION HELPERS
+    # AGENT MANAGEMENT (CREATE, GET, UPDATE, DELETE)
     # ---------------------------------------------------------------------
-
-    def create_warehouse(self, name: Optional[str] = None) -> Warehouse:
-        """Create the warehouse (only one allowed per environment)."""
-        if self.components["warehouse"] is not None:
-            raise RuntimeError("A warehouse already exists in this environment.")
-
-        wh_name = name or f"{self.name}_warehouse"
-        self._check_duplicate_name(wh_name)
-
-        warehouse = Warehouse(wh_name)
-        self.components["warehouse"] = warehouse
-        logger.info("Warehouse created: %s", wh_name)
-        return warehouse
-
-    def create_manager(
-        self, name: Optional[str] = None, warehouse: Optional[Warehouse] = None
-    ) -> WarehouseManager:
-        """Create the warehouse manager (only one allowed per environment)."""
-
-        if self.components["manager"] is not None:
-            raise RuntimeError("A WarehouseManager already exists in this environment.")
-
-        # Ensure warehouse exists
-        if warehouse is None:
-            warehouse = self.components["warehouse"] or self.create_warehouse()
-
-        if warehouse is None:
-            raise TypeError("A warehouse is required.")
-
-        mgr_name = name or f"{self.name}_manager"
-        self._check_duplicate_name(mgr_name)
-
-        manager = WarehouseManager(mgr_name, warehouse)
-        self.components["manager"] = manager
-        logger.info("WarehouseManager created: %s", mgr_name)
-        return manager
 
     def create_agent(
         self,
@@ -152,6 +116,86 @@ class Environment:
         logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
         return agent
 
+    def get_agent(self, agent_name: str) -> Optional[Agent]:
+        """Return an agent by its name."""
+        agents_dict = cast(Dict[str, List[Agent]], self.components["agents"])
+        for agents in agents_dict.values():
+            for agent in agents:
+                if getattr(agent, "name", None) == agent_name:
+                    return agent
+        return None
+
+    def update_agent(self, agent_name: str, **updates: Any) -> Agent:
+        """
+        Update attributes of an existing agent.
+        Example: update_agent("miner_1", active=True)
+        """
+        agent = self.get_agent(agent_name)
+        if not agent:
+            raise ValueError(
+                f"Agent '{agent_name}' not found in environment '{self.name}'."
+            )
+
+        for key, value in updates.items():
+            if not hasattr(agent, key):
+                raise AttributeError(f"Agent has no attribute '{key}'.")
+            setattr(agent, key, value)
+
+        logger.info("Agent updated: %s (%s)", agent_name, updates)
+        return agent
+
+    def delete_agent(self, agent_name: str) -> bool:
+        """Remove an agent from this environment."""
+        for atype, agents in self.components["agents"].items():
+            for i, agent in enumerate(agents):
+                if getattr(agent, "name", None) == agent_name:
+                    agents.pop(i)
+                    logger.info("Agent deleted: %s (%s)", agent_name, atype)
+                    return True
+        raise ValueError(
+            f"Agent '{agent_name}' not found in environment '{self.name}'."
+        )
+
+    # ---------------------------------------------------------------------
+    # CREATION HELPERS
+    # ---------------------------------------------------------------------
+
+    def create_warehouse(self, name: Optional[str] = None) -> Warehouse:
+        """Create the warehouse (only one allowed per environment)."""
+        if self.components["warehouse"] is not None:
+            raise RuntimeError("A warehouse already exists in this environment.")
+
+        wh_name = name or f"{self.name}_warehouse"
+        self._check_duplicate_name(wh_name)
+
+        warehouse = Warehouse(wh_name)
+        self.components["warehouse"] = warehouse
+        logger.info("Warehouse created: %s", wh_name)
+        return warehouse
+
+    def create_manager(
+        self, name: Optional[str] = None, warehouse: Optional[Warehouse] = None
+    ) -> WarehouseManager:
+        """Create the warehouse manager (only one allowed per environment)."""
+
+        if self.components["manager"] is not None:
+            raise RuntimeError("A WarehouseManager already exists in this environment.")
+
+        # Ensure warehouse exists
+        if warehouse is None:
+            warehouse = self.components["warehouse"] or self.create_warehouse()
+
+        if warehouse is None:
+            raise TypeError("A warehouse is required.")
+
+        mgr_name = name or f"{self.name}_manager"
+        self._check_duplicate_name(mgr_name)
+
+        manager = WarehouseManager(mgr_name, warehouse)
+        self.components["manager"] = manager
+        logger.info("WarehouseManager created: %s", mgr_name)
+        return manager
+
     def create_miner(self, name: Optional[str] = None) -> Miner:
         """Shortcut to create a Miner agent."""
         return cast(Miner, self.create_agent("miner", name))
@@ -165,7 +209,7 @@ class Environment:
         return cast(Haulier, self.create_agent("haulier", name))
 
     # ---------------------------------------------------------------------
-    # ACCESSORS
+    # GET HELPERS
     # ---------------------------------------------------------------------
 
     def get_warehouse(self) -> Optional[Warehouse]:
