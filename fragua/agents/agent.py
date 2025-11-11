@@ -146,12 +146,11 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         if self.role == "haulier":
             return storage
 
-        # Si querés devolver solo un Wagon/Box cuando es uno solo:
         if isinstance(storage, (Wagon, Box)):
-            return storage  # <- devuelve el Storage, no storage.data
+            return storage
 
-        elif isinstance(storage, Mapping):
-            # Si es un mapping, asegurarse de que los valores sean Storage
+        if isinstance(storage, Mapping):
+
             for value in storage.values():
                 if not isinstance(value, (Wagon, Box)):
                     raise TypeError("Invalid nested mapping structure in store.")
