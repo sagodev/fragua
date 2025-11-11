@@ -118,7 +118,8 @@ class Environment:
 
     def get_agent(self, agent_name: str) -> Optional[Agent]:
         """Return an agent by its name."""
-        for agents in self.components["agents"].values():
+        agents_dict = cast(Dict[str, List[Agent]], self.components["agents"])
+        for agents in agents_dict.values():
             for agent in agents:
                 if getattr(agent, "name", None) == agent_name:
                     return agent
