@@ -1,7 +1,7 @@
 """Fragua Styles package."""
 
 # ------------------- Base Style ------------------- #
-from .style import Style, STYLE_REGISTRY, register_style, get_style, list_styles
+from .style import Style
 
 # ------------------- Load Style Types ------------------- #
 from .load_styles import (
@@ -45,9 +45,4 @@ __all__ = [
     "AnalysisTransformStyle",
     # Load Styles
     "ExcelLoadStyle",
-    # Styles Registry Functions
-    "STYLE_REGISTRY",
-    "register_style",
-    "get_style",
-    "list_styles",
 ]

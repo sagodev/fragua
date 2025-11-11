@@ -4,10 +4,6 @@ Reusable Functions Module.
 
 # ------------------- Function class ------------------- #
 from fragua.functions.function import (
-    FUNCTIONS_REGISTRY,
-    register_function,
-    get_function,
-    list_functions,
     FraguaFunction,
 )
 
@@ -36,10 +32,6 @@ from fragua.functions.load_functions import (
 
 __all__ = [
     # Function class
-    "FUNCTIONS_REGISTRY",
-    "register_function",
-    "get_function",
-    "list_functions",
     "FraguaFunction",
     # Extract classes
     "ExtractFunction",
