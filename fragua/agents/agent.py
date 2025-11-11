@@ -156,8 +156,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
                     raise TypeError("Invalid nested mapping structure in store.")
             return storage
 
-        else:
-            raise TypeError(f"Unexpected data type: {type(storage).__name__}")
+        raise TypeError(f"Unexpected data type: {type(storage).__name__}")
 
     def auto_store(
         self, style: str, storage: Storage[Any], save_as: str | None
