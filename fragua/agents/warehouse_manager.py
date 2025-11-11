@@ -162,7 +162,6 @@ class WarehouseManager:
                 self._log_movement(**movement_log)
                 return
 
-            # Save object in Warehouse
             self.warehouse.data[storage_name] = storage
 
             logger.info(
@@ -221,9 +220,9 @@ class WarehouseManager:
         result: Dict[str, Union[Wagon, Box]] = {}
         try:
             if storage_type == "all":
-                classes = (Wagon, Box)
+                classes: tuple[type[Storage[Any]], ...] = (Wagon, Box)
             else:
-                classes = STORAGE_CLASSES[storage_type]
+                classes = (STORAGE_CLASSES[storage_type],)
 
             for name, obj in self.warehouse.data.items():
                 if not isinstance(obj, classes):
@@ -283,13 +282,11 @@ class WarehouseManager:
         try:
             data = self.warehouse.data
 
-            # Determine which classes to remove
             if storage_type == "all":
-                classes = (Wagon, Box)
+                classes: tuple[type[Storage[Any]], ...] = (Wagon, Box)
             else:
-                classes = STORAGE_CLASSES[storage_type]
+                classes = (STORAGE_CLASSES[storage_type],)
 
-            # Collect keys to remove
             keys_to_remove = [
                 name
                 for name, obj in data.items()
