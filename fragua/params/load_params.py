@@ -101,3 +101,10 @@ LoadParamsT = TypeVar("LoadParamsT", bound=LoadParams)
 ExcelLoadParamsT = TypeVar("ExcelLoadParamsT", bound=ExcelLoadParams)
 SQLLoadParamsT = TypeVar("SQLLoadParamsT", bound=SQLLoadParams)
 APILoadParamsT = TypeVar("APILoadParamsT", bound=APILoadParams)
+
+
+LOAD_PARAMS_CLASSES: Dict[str, type[Params]] = {
+    "ExcelLoadParams": ExcelLoadParams,
+    "SQLLoadParams": SQLLoadParams,
+    "APILoadParams": APILoadParams,
+}

@@ -96,3 +96,9 @@ ReportTransformParamsT = TypeVar("ReportTransformParamsT", bound=ReportTransform
 AnalysisTransformParamsT = TypeVar(
     "AnalysisTransformParamsT", bound=AnalysisTransformParams
 )
+
+TRANSFORM_PARAMS_CLASSES: Dict[str, type[Params]] = {
+    "MLTransformParams": MLTransformParams,
+    "ReportTransformParams": ReportTransformParams,
+    "AnalysisTransformParams": AnalysisTransformParams,
+}

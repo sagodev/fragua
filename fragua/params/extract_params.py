@@ -96,3 +96,11 @@ CSVExtractParamsT = TypeVar("CSVExtractParamsT", bound=CSVExtractParams)
 ExcelExtractParamsT = TypeVar("ExcelExtractParamsT", bound=ExcelExtractParams)
 SQLExtractParamsT = TypeVar("SQLExtractParamsT", bound=SQLExtractParams)
 APIExtractParamsT = TypeVar("APIExtractParamsT", bound=APIExtractParams)
+
+
+EXTRACT_PARAMS_CLASSES: Dict[str, type[Params]] = {
+    "CSVExtractParams": CSVExtractParams,
+    "ExcelExtractParams": ExcelExtractParams,
+    "SQLExtractParams": SQLExtractParams,
+    "APIExtractParams": APIExtractParams,
+}
