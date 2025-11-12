@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from typing import Any, List
 from fragua.agents.agent import Agent
-from fragua.agents.warehouse_manager import WarehouseManager
-from fragua.params.params import get_params
+from fragua.environments.environment import Environment
 from fragua.storages.storage_types import Box, Container, Wagon
-from fragua.styles.style import get_style
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -16,10 +14,10 @@ logger = get_logger(__name__)
 class Haulier(Agent):
     """Agent that applies extraction styles to data sources for loading."""
 
-    def __init__(self, name: str, warehouse_manager: WarehouseManager):
-        super().__init__(name=name, manager=warehouse_manager)
+    def __init__(self, name: str, environment: Environment):
+        super().__init__(name=name, environment=environment)
         self.role: str = "haulier"
-        self.action: str = "deliver"
+        self.action: str = "load"
         self.storage_type: str = "Container"
 
     def create_container(self, content: str | List[str]) -> Container:
@@ -62,7 +60,7 @@ class Haulier(Agent):
         style = style.lower()
 
         # ----------------- Style Instance -----------------
-        style_instance = get_style(self.action, style)(style)
+        style_instance = self.get_registred_class("load", style, self.action)
 
         # ----------------- Create Storage -----------------
         container: Container = self.create_container(content)
@@ -75,7 +73,7 @@ class Haulier(Agent):
             if style == "excel":
                 kwargs["sheet_name"] = name
 
-            params_instance = get_params(self.role, style)(**kwargs)
+            params_instance = self.get_registred_class("load", style, self.action)
 
             style_instance.use(params_instance)
 

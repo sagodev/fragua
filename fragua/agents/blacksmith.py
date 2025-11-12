@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 from fragua.agents.agent import Agent
-from fragua.agents.warehouse_manager import WarehouseManager
+
+from fragua.environments.environment import Environment
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -13,10 +14,10 @@ logger = get_logger(__name__)
 class Blacksmith(Agent):
     """Agent that applies forge styles to data for transformation."""
 
-    def __init__(self, name: str, warehouse_manager: WarehouseManager):
-        super().__init__(name=name, manager=warehouse_manager)
+    def __init__(self, name: str, environment: Environment):
+        super().__init__(name=name, environment=environment)
         self.role = "blacksmith"
-        self.action = "forge"
+        self.action = "transform"
         self.storage_type = "Box"
 
     def work(
