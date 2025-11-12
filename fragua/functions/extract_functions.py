@@ -124,8 +124,8 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
 
 
 EXTRACT_FUNCTION_CLASSES: Dict[str, type[ExtractFunction]] = {
-    "CSVExtractFunction": CSVExtractFunction,
-    "ExcelExtractFunction": ExcelExtractFunction,
-    "SQLExtractFunction": SQLExtractFunction,
-    "APIExtractFunction": APIExtractFunction,
+    "csv": CSVExtractFunction,
+    "excel": ExcelExtractFunction,
+    "sql": SQLExtractFunction,
+    "api": APIExtractFunction,
 }

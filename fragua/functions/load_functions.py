@@ -144,5 +144,5 @@ class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
 
 
 LOAD_FUNCTION_CLASSES: Dict[str, type[LoadFunction]] = {
-    "ExcelLoadFunction": ExcelLoadFunction,
+    "excel": ExcelLoadFunction,
 }

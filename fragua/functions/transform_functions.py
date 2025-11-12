@@ -322,7 +322,7 @@ TRANSFORM_FUNCTIONS: Dict[str, Callable[...]] = {
 }
 
 TRANSFORM_FUNCTION_CLASSES: Dict[str, type[TransformFunction]] = {
-    "MLTransformFunction": MLTransformFunction,
-    "ReportTransformFunction": ReportTransformFunction,
-    "AnalysisTransformFunction": AnalysisTransformFunction,
+    "ml": MLTransformFunction,
+    "report": ReportTransformFunction,
+    "analysis": AnalysisTransformFunction,
 }
