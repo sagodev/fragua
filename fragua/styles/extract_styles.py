@@ -2,7 +2,7 @@
 ExtractStyle types for various data extraction methods, refactored to use FUNCTION_REGISTRY.
 """
 
-from typing import Generic
+from typing import Generic, Dict
 import pandas as pd
 
 from fragua.functions.extract_functions import (
@@ -93,6 +93,7 @@ class SQLExtractStyle(ExtractStyle[SQLExtractParamsT, pd.DataFrame]):
 
 # ---------------------------------------------------------------------- #
 # API Extraction
+# ---------------------------------------------------------------------- #
 
 
 class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
@@ -100,3 +101,11 @@ class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
 
     def extract(self, params: APIExtractParamsT) -> pd.DataFrame:
         return APIExtractFunction("extract_api", params).execute()
+
+
+EXTRACT_STYLE_CLASSES: Dict[str, type[ExtractStyle]] = {
+    "CSVExtractStyle": CSVExtractStyle,
+    "ExcelExtractStyle": ExcelExtractStyle,
+    "SQLExtractStyle": SQLExtractStyle,
+    "APIExtractStyle": APIExtractStyle,
+}

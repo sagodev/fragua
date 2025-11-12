@@ -3,7 +3,7 @@ LoadStyle types for various data Load methods.
 """
 
 from abc import abstractmethod
-from typing import Generic
+from typing import Dict, Generic
 import pandas as pd
 
 
@@ -69,3 +69,8 @@ class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
 # ---------------------------------------------------------------------- #
 # API Load
 # ---------------------------------------------------------------------- #
+
+
+LOAD_STYLE_CLASSES: Dict[str, type[LoadStyle]] = {
+    "ExcelLoadStyle": ExcelLoadStyle,
+}

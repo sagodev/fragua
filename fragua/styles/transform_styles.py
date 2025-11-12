@@ -3,7 +3,7 @@ Transform style types for various data transformation scenarios.
 """
 
 from abc import abstractmethod
-from typing import Generic
+from typing import Dict, Generic
 
 import pandas as pd
 
@@ -86,3 +86,10 @@ class AnalysisTransformStyle(TransformStyle[AnalysisTransformParamsT, pd.DataFra
 
     def transform(self, params: AnalysisTransformParamsT) -> pd.DataFrame:
         return AnalysisTransformFunction("transform_analysis", params).execute()
+
+
+TRANSFORM_STYLE_CLASSES: Dict[str, type[TransformStyle]] = {
+    "MLTransformStyle": MLTransformStyle,
+    "ReportTransformStyle": ReportTransformStyle,
+    "AnalysisTransformStyle": AnalysisTransformStyle,
+}
