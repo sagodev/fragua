@@ -89,7 +89,7 @@ class AnalysisTransformStyle(TransformStyle[AnalysisTransformParamsT, pd.DataFra
 
 
 TRANSFORM_STYLE_CLASSES: Dict[str, type[TransformStyle]] = {
-    "MLTransformStyle": MLTransformStyle,
-    "ReportTransformStyle": ReportTransformStyle,
-    "AnalysisTransformStyle": AnalysisTransformStyle,
+    "ml": MLTransformStyle,
+    "report": ReportTransformStyle,
+    "analysis": AnalysisTransformStyle,
 }

@@ -104,8 +104,8 @@ class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
 
 
 EXTRACT_STYLE_CLASSES: Dict[str, type[ExtractStyle]] = {
-    "CSVExtractStyle": CSVExtractStyle,
-    "ExcelExtractStyle": ExcelExtractStyle,
-    "SQLExtractStyle": SQLExtractStyle,
-    "APIExtractStyle": APIExtractStyle,
+    "csv": CSVExtractStyle,
+    "excel": ExcelExtractStyle,
+    "sql": SQLExtractStyle,
+    "api": APIExtractStyle,
 }

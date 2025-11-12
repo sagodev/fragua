@@ -72,5 +72,5 @@ class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
 
 
 LOAD_STYLE_CLASSES: Dict[str, type[LoadStyle]] = {
-    "ExcelLoadStyle": ExcelLoadStyle,
+    "excel": ExcelLoadStyle,
 }
