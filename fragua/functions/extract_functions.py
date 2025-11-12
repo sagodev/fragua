@@ -3,7 +3,7 @@ Reusable Extract Functions.
 """
 
 from pathlib import Path
-from typing import Generic
+from typing import Generic, Dict
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
@@ -121,3 +121,11 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
             return pd.json_normalize(result_data, **read_kwargs)
 
         raise ValueError(f"Unexpected API response type: {type(result_data)}")
+
+
+EXTRACT_FUNCTION_CLASSES: Dict[str, type[ExtractFunction]] = {
+    "CSVExtractFunction": CSVExtractFunction,
+    "ExcelExtractFunction": ExcelExtractFunction,
+    "SQLExtractFunction": SQLExtractFunction,
+    "APIExtractFunction": APIExtractFunction,
+}
