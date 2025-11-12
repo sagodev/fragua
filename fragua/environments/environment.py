@@ -5,9 +5,28 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Type, List, cast
 
 
-from fragua.agents.agent import Agent
 from fragua.storages.warehouse import Warehouse
-from fragua.agents import WarehouseManager, Miner, Blacksmith, Haulier
+
+from fragua.agents import Agent, WarehouseManager, Miner, Blacksmith, Haulier
+
+from fragua.params import (
+    EXTRACT_PARAMS_CLASSES,
+    TRANSFORM_PARAMS_CLASSES,
+    LOAD_PARAMS_CLASSES,
+)
+
+from fragua.functions import (
+    EXTRACT_FUNCTION_CLASSES,
+    TRANSFORM_FUNCTION_CLASSES,
+    LOAD_FUNCTION_CLASSES,
+)
+
+from fragua.styles import (
+    EXTRACT_STYLE_CLASSES,
+    TRANSFORM_STYLE_CLASSES,
+    LOAD_STYLE_CLASSES,
+)
+
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,16 +46,19 @@ class Environment:
         "haulier": Haulier,
     }
 
-    def __init__(self, name: str, env_type: str = "base"):
+    REGISTRY_TYPES: List[str] = ["params", "functions", "styles"]
+
+    def __init__(self, name: str, env_type: str = "base", fg_reg: bool = False):
         self.name = name
         self.env_type = env_type
-
-        # Structured component registry
+        self.fg_reg = fg_reg
         self.components: Dict[str, Any] = {
-            "warehouse": None,
-            "manager": None,
+            "warehouse": Warehouse,
+            "manager": WarehouseManager,
             "agents": {atype: [] for atype in self.AGENT_CLASSES},
         }
+
+        self.registries = self._initialize_registries()
 
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
@@ -70,6 +92,119 @@ class Environment:
                     )
 
     # ---------------------------------------------------------------------
+    # REGISTRY INITIALIZATION
+    # ---------------------------------------------------------------------
+
+    def _initialize_registries(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
+        """Populate default registry entries for Params, Functions, and Styles."""
+
+        registries: Dict[str, Dict[str, Dict[str, Any]]] = {
+            "params": {
+                "extract": {},
+                "transform": {},
+                "load": {},
+            },
+            "functions": {
+                "extract": {},
+                "transform": {},
+                "load": {},
+            },
+            "styles": {
+                "extract": {},
+                "transform": {},
+                "load": {},
+            },
+        }
+
+        if self.fg_reg:
+
+            registries["params"] = {
+                "extract": {**EXTRACT_PARAMS_CLASSES},
+                "transform": {**TRANSFORM_PARAMS_CLASSES},
+                "load": {**LOAD_PARAMS_CLASSES},
+            }
+
+            registries["functions"] = {
+                "extract": {**EXTRACT_FUNCTION_CLASSES},
+                "transform": {**TRANSFORM_FUNCTION_CLASSES},
+                "load": {**LOAD_FUNCTION_CLASSES},
+            }
+            registries["styles"] = {
+                "extract": {**EXTRACT_STYLE_CLASSES},
+                "transform": {**TRANSFORM_STYLE_CLASSES},
+                "load": {**LOAD_STYLE_CLASSES},
+            }
+
+        logger.info("Default registries initialized for environment '%s'.", self.name)
+
+        return registries
+
+    # ---------------------------------------------------------------------
+    # REGISTRY MANAGEMENT (CREATE, GET, UPDATE, DELETE)
+    # ---------------------------------------------------------------------
+
+    def _validate_registry_type(self, registry_type: str) -> None:
+        """Validate that a given registry type is valid."""
+        if registry_type not in self.REGISTRY_TYPES:
+            raise ValueError(
+                f"Invalid registry type '{registry_type}'. Must be one of {self.REGISTRY_TYPES}"
+            )
+
+    def create_registry_record(
+        self, registry_type: str, name: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Create and register a new record in the specified registry."""
+        self._validate_registry_type(registry_type)
+        registry = self.registries[registry_type]
+
+        if name in registry:
+            raise ValueError(
+                f"Record '{name}' already exists in {registry_type} registry."
+            )
+
+        registry[name] = data
+        logger.info("%s created: %s", registry_type.capitalize(), name)
+        return {name: data}
+
+    def get_registry_record(
+        self, registry_type: str, name: str
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve a specific registry record by name."""
+        self._validate_registry_type(registry_type)
+        return self.registries[registry_type].get(name)
+
+    def update_registry_record(
+        self, registry_type: str, name: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Update an existing registry record."""
+        self._validate_registry_type(registry_type)
+        registry = self.registries[registry_type]
+
+        if name not in registry:
+            raise ValueError(f"Record '{name}' not found in {registry_type} registry.")
+
+        registry[name].update(data)
+        logger.info("%s updated: %s", registry_type.capitalize(), name)
+        return {name: registry[name]}
+
+    def delete_registry_record(self, registry_type: str, name: str) -> bool:
+        """Delete a registry record by name."""
+        self._validate_registry_type(registry_type)
+        registry = self.registries[registry_type]
+
+        if name not in registry:
+            raise ValueError(f"Record '{name}' not found in {registry_type} registry.")
+
+        del registry[name]
+        logger.info("%s deleted: %s", registry_type.capitalize(), name)
+        return True
+
+    def list_registry_records(self, registry_type: str) -> Dict[str, Any]:
+        """List all records in a given registry."""
+        self._validate_registry_type(registry_type)
+        return self.registries[registry_type]
+
+    # ---------------------------------------------------------------------
     # AGENT MANAGEMENT (CREATE, GET, UPDATE, DELETE)
     # ---------------------------------------------------------------------
 
@@ -77,15 +212,15 @@ class Environment:
         self,
         agent_type: str,
         name: Optional[str] = None,
-        manager: Optional[WarehouseManager] = None,
+        environment: Optional[Environment] = None,
     ) -> Agent:
         """
-        Create and register an agent associated with the warehouse manager.
+        Create and register an agent within the given environment.
 
         Args:
-            agent_type: One of 'miner', 'blacksmith', 'haulier'.
+            agent_type: One of 'miner', 'blacksmith', or 'haulier'.
             name: Optional name for the agent.
-            manager: Optional existing WarehouseManager; created if not present.
+            environment: The environment instance this agent belongs to.
         """
         agent_type = agent_type.lower()
 
@@ -95,8 +230,10 @@ class Environment:
                 f"Available: {list(self.AGENT_CLASSES.keys())}"
             )
 
-        agent_cls = self.AGENT_CLASSES[agent_type]
+        if environment is None:
+            raise TypeError("An Environment instance is required to create an agent.")
 
+        agent_cls = self.AGENT_CLASSES[agent_type]
         agent_name = (
             name
             or f"{self.name}_{agent_type}_{len(self.components['agents'][agent_type]) + 1}"
@@ -104,16 +241,11 @@ class Environment:
 
         self._check_duplicate_name(agent_name)
 
-        if manager is None:
-            manager = self.components["manager"] or self.create_manager()
+        agent = agent_cls(name=agent_name, environment=environment)
 
-        if manager is None:
-            raise TypeError("A warehouse manager is required.")
-
-        agent = agent_cls(agent_name, manager)
         self.components["agents"][agent_type].append(agent)
-
         logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
+
         return agent
 
     def get_agent(self, agent_name: str) -> Optional[Agent]:
@@ -212,13 +344,13 @@ class Environment:
     # GET HELPERS
     # ---------------------------------------------------------------------
 
-    def get_warehouse(self) -> Optional[Warehouse]:
+    def get_warehouse(self) -> Warehouse:
         """Return warehouse."""
-        return cast(Optional[Warehouse], self.components["warehouse"])
+        return self.components["warehouse"]
 
-    def get_manager(self) -> Optional[WarehouseManager]:
+    def get_manager(self) -> WarehouseManager:
         """Return warehouse manager."""
-        return cast(Optional[WarehouseManager], self.components["manager"])
+        return self.components["manager"]
 
     def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
         """Return all agents or those of a given type."""
