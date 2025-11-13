@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from fragua.agents.agent import Agent
-
-from fragua.environments.environment import Environment
 from fragua.utils.logger import get_logger
+
+if TYPE_CHECKING:
+    from fragua.environments.environment import Environment
+
 
 logger = get_logger(__name__)
 

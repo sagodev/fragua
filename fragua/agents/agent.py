@@ -6,16 +6,20 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
 from datetime import datetime, timezone
 import pandas as pd
 
 from fragua.params.params import Params
 from fragua.storages.storage import Storage
 from fragua.storages.storage_types import Box, Wagon, STORAGE_CLASSES
-from fragua.environments.environment import Environment
+
+
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
+
+if TYPE_CHECKING:
+    from fragua.environments.environment import Environment
 
 logger = get_logger(__name__)
 

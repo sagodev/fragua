@@ -7,7 +7,11 @@ from typing import Any, Dict, Optional, Type, List, cast
 
 from fragua.storages.warehouse import Warehouse
 
-from fragua.agents import Agent, WarehouseManager, Miner, Blacksmith, Haulier
+from fragua.agents.agent import Agent
+from fragua.agents.warehouse_manager import WarehouseManager
+from fragua.agents.miner import Miner
+from fragua.agents.blacksmith import Blacksmith
+from fragua.agents.haulier import Haulier
 
 from fragua.params import (
     EXTRACT_PARAMS_CLASSES,
@@ -53,8 +57,8 @@ class Environment:
         self.env_type = env_type
         self.fg_reg = fg_reg
         self.components: Dict[str, Any] = {
-            "warehouse": Warehouse,
-            "manager": WarehouseManager,
+            "warehouse": None,
+            "manager": None,
             "agents": {atype: [] for atype in self.AGENT_CLASSES},
         }
 
