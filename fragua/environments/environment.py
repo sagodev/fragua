@@ -334,15 +334,15 @@ class Environment:
 
     def create_miner(self, name: Optional[str] = None) -> Miner:
         """Shortcut to create a Miner agent."""
-        return cast(Miner, self.create_agent("miner", name))
+        return cast(Miner, self.create_agent("miner", name, environment=self))
 
     def create_blacksmith(self, name: Optional[str] = None) -> Blacksmith:
         """Shortcut to create a Blacksmith agent."""
-        return cast(Blacksmith, self.create_agent("blacksmith", name))
+        return cast(Blacksmith, self.create_agent("blacksmith", name, environment=self))
 
     def create_haulier(self, name: Optional[str] = None) -> Haulier:
         """Shortcut to create a Haulier agent."""
-        return cast(Haulier, self.create_agent("haulier", name))
+        return cast(Haulier, self.create_agent("haulier", name, environment=self))
 
     # ---------------------------------------------------------------------
     # GET HELPERS
