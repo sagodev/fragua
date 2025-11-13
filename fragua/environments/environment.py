@@ -369,23 +369,19 @@ class Environment:
     # ---------------------------------------------------------------------
 
     def summary(self) -> Dict[str, Any]:
-        """Return environment metadata and component overview."""
+        """Return a full summary of the environment including actual objects and metadata."""
         return {
             "name": self.name,
             "type": self.env_type,
-            "warehouse": (
-                self.components["warehouse"].__class__.__name__
-                if self.components["warehouse"]
-                else None
-            ),
-            "manager": (
-                self.components["manager"].__class__.__name__
-                if self.components["manager"]
-                else None
-            ),
-            "agents": {
-                atype: [getattr(a, "name", str(a)) for a in agents]
-                for atype, agents in self.components["agents"].items()
+            "fg_reg": self.fg_reg,
+            "registries": self.registries,
+            "components": {
+                "warehouse": self.components.get("warehouse"),
+                "manager": self.components.get("manager"),
+                "agents": {
+                    atype: [a for a in agents]
+                    for atype, agents in self.components["agents"].items()
+                },
             },
         }
 
