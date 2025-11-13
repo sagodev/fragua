@@ -364,6 +364,33 @@ class Environment:
             raise ValueError(f"Invalid agent type '{agent_type}'.")
         return cast(List[Any], self.components["agents"][agent_type])
 
+    def get_miner(self, agent_name: str) -> Miner:
+        """Return a miner agent by a given name."""
+        return cast(
+            Miner,
+            self.get_agent(
+                agent_name,
+            ),
+        )
+
+    def get_blacksmith(self, agent_name: str) -> Blacksmith:
+        """Return a blacksmith agent by a given name."""
+        return cast(
+            Blacksmith,
+            self.get_agent(
+                agent_name,
+            ),
+        )
+
+    def get_haulier(self, agent_name: str) -> Haulier:
+        """Return a haulier agent by a given name."""
+        return cast(
+            Haulier,
+            self.get_agent(
+                agent_name,
+            ),
+        )
+
     # ---------------------------------------------------------------------
     # SUMMARY
     # ---------------------------------------------------------------------
