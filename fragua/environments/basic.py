@@ -18,8 +18,8 @@ class BasicEnvironment(Environment):
     - 1 Haulier
     """
 
-    def __init__(self, name: str):
-        super().__init__(name, env_type="basic")
+    def __init__(self, name: str, fg_reg: bool):
+        super().__init__(name, env_type="basic", fg_reg=fg_reg)
 
         # Automatically build basic setup
         logger.debug("Creating BasicEnvironment '%s'...", self.name)

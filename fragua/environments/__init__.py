@@ -12,7 +12,9 @@ ENVIRONMENT_TYPES: Dict[str, Type[Environment]] = {
 }
 
 
-def create_fragua(name: str, env_type: str = "basic") -> Environment:
+def create_fragua(
+    name: str, env_type: str = "basic", fg_reg: bool = False
+) -> Environment:
     """
     Create a Fragua environment with a specific configuration.
 
@@ -34,7 +36,7 @@ def create_fragua(name: str, env_type: str = "basic") -> Environment:
         )
 
     env_class = ENVIRONMENT_TYPES[env_type]
-    environment = env_class(name)
+    environment = env_class(name, fg_reg=fg_reg)
 
     return environment
 

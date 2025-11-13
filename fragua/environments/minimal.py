@@ -14,8 +14,8 @@ class MinimalEnvironment(Environment):
     without Agents. Useful for flexible or custom setups.
     """
 
-    def __init__(self, name: str):
-        super().__init__(name, env_type="minimal")
+    def __init__(self, name: str, fg_reg: bool):
+        super().__init__(name, env_type="minimal", fg_reg=fg_reg)
 
         # Create only core components
         warehouse = self.create_warehouse(f"{self.name}_warehouse")
