@@ -32,6 +32,7 @@ class Blacksmith(Agent):
     ) -> None:
         """Execute the agent's task using the action and style defined by blacksmith role."""
 
-        data = self.get_from_store(apply_to)
+        storage = self.get_from_warehouse(apply_to)
+        data = storage.data
         kwargs["data"] = data
         self._execute_workflow(style, save_as, **kwargs)

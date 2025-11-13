@@ -6,7 +6,7 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from datetime import datetime, timezone
 import pandas as pd
 
@@ -115,7 +115,7 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         )
 
     # ----------------- Store Interaction ----------------- #
-    def add_to_store(
+    def add_to_warehouse(
         self, storage: Storage[Any], storage_name: str | None = None
     ) -> None:
         """Store an object using the shared WarehouseManager."""
@@ -124,28 +124,36 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             storage=storage, storage_name=storage_name, agent_name=self.name
         )
 
-    def get_from_store(
+    def get_from_warehouse(
         self,
         storage_name: str | None,
     ) -> Union[
-        Optional[Union[Wagon, Box]],
-        Mapping[str, Union[Wagon, Box]],
-        Mapping[str, Mapping[str, Union[Wagon, Box]]],
+        Wagon,
+        Box,
     ]:
-        """Get data storage from store by a given storage name."""
+        """Get storage from warehouse by a given storage name."""
+
         if storage_name is None:
             raise TypeError("Missing required attribute: storage_name.")
 
-        return self.warehouse_manager.get(
+        storage = self.warehouse_manager.get(
             storage_name=storage_name, agent_name=self.name
         )
+
+        if storage is None:
+            raise TypeError("Storage not found in warehouse.")
+
+        if not isinstance(storage, Union[Wagon, Box]):
+            raise TypeError("Storage is not a Wagon or Box.")
+
+        return storage
 
     def auto_store(
         self, style: str, storage: Storage[Any], save_as: str | None
     ) -> None:
-        """Add automatically an storage to store."""
+        """Add automatically an storage to warehouse."""
         name = save_as or self._generate_storage_name(style)
-        self.add_to_store(storage, name)
+        self.add_to_warehouse(storage, name)
 
     # ----------------- Work Pipeline ----------------- #
     def _execute_workflow(
