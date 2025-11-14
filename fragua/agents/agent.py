@@ -6,11 +6,12 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, Generic
 from datetime import datetime, timezone
+
 import pandas as pd
 
-from fragua.params.params import Params
+from fragua.params.params import Params, ParamsT
 from fragua.storages.storage import Storage
 from fragua.storages.storage_types import Box, Wagon, STORAGE_CLASSES
 
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Agent(ABC):  # pylint: disable=too-many-instance-attributes
+class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attributes
     """Agent class for ETL agents using shared Environment registries."""
 
     def __init__(
@@ -160,18 +161,23 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         self,
         style: str,
         save_as: str | None = None,
+        params: Params | None = None,
         **kwargs: Any,
     ) -> None:
         """Common workflow for agents using environment registries."""
 
         style = style.lower()
-        params_cls = self.get_registred_class("params", style, self.action)
-        params_instance = params_cls(**kwargs)
+
+        if params is None:
+            params_cls = self.get_registred_class("params", style, self.action)
+            params_instance = params_cls(**kwargs)
+        else:
+            params_instance = params
 
         style_cls = self.get_registred_class("styles", style, self.action)
         stylized_data = style_cls(style).use(params_instance)
-
         storage = self.create_storage(stylized_data)
+
         self._generate_operation_metadata(style, storage, params_instance)
         self._add_operation(style, params_instance)
         self.auto_store(style, storage, save_as)
@@ -182,8 +188,10 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         self,
         /,
         style: str,
+        apply_to: str | list[str] | None = None,
         save_as: str | None = None,
+        params: ParamsT | None = None,
         **kwargs: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
-        self._execute_workflow(style, save_as, **kwargs)
+        self._execute_workflow(style, save_as, params, **kwargs)

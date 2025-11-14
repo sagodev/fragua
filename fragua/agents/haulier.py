@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List
 from fragua.agents.agent import Agent
 
+from fragua.params.load_params import LoadParams
 from fragua.storages.storage_types import Box, Container, Wagon
 from fragua.utils.logger import get_logger
 
@@ -52,13 +53,14 @@ class Haulier(Agent):
         self,
         /,
         style: str,
+        apply_to: str | list[str] | None = None,
         save_as: str | None = None,
-        content: str | list[str] | None = None,
-        **params: Any,
+        params: LoadParams | None = None,
+        **kwargs: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by haulier role."""
 
-        if content is None:
+        if apply_to is None:
             raise TypeError("Missing required attribute: 'content'.")
 
         style = style.lower()
@@ -67,18 +69,17 @@ class Haulier(Agent):
         style_cls = self.get_registred_class("styles", style, self.action)
 
         # ----------------- Create Storage -----------------
-        container: Container = self.create_container(content)
+        container: Container = self.create_container(apply_to)
 
         # ----------------- Apply Style for each storage -----------------
         for name in container.list_storages():
 
-            params["data"] = container.get_storage(name).data
-
-            if style == "excel":
-                params["sheet_name"] = name
-
-            params_cls = self.get_registred_class("params", style, self.action)
-            params_instance = params_cls(**params)
+            if params is None:
+                params_cls = self.get_registred_class("params", style, self.action)
+                kwargs["data"] = container.get_storage(name)
+                params_instance = params_cls(**kwargs)
+            else:
+                params_instance = params
 
             style_cls.use(params_instance)
 

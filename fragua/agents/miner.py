@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 from fragua.agents.agent import Agent
+from fragua.params.extract_params import ExtractParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -26,8 +27,12 @@ class Miner(Agent):
         self,
         /,
         style: str,
+        apply_to: str | list[str] | None = None,
         save_as: str | None = None,
+        params: ExtractParams | None = None,
         **kwargs: Any,
     ) -> None:
-        """Execute the agent's task using the action and style defined by its role."""
-        self._execute_workflow(style, save_as, **kwargs)
+        """
+        Execute the miner extraction workflow using an ExtractParams instance.
+        """
+        self._execute_workflow(style, save_as, params, **kwargs)
