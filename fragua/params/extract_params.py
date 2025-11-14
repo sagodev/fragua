@@ -14,11 +14,11 @@ class ExtractParams(Params):
     """Common parameters for extraction agents."""
 
     def __init__(self, style: str, read_kwargs: Dict[str, Any] | None = None) -> None:
-        super().__init__(role="extractor", style=style)
+        super().__init__(action="extract", style=style)
         self.read_kwargs = read_kwargs or {}
 
     def describe(self) -> str:
-        return f"ExtractParams(role={self.role}, style={self.style})"
+        return f"ExtractParams(role={self.action}, style={self.style})"
 
 
 class CSVExtractParams(ExtractParams):
