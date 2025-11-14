@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List
 from fragua.agents.agent import Agent
+
 from fragua.storages.storage_types import Box, Container, Wagon
 from fragua.utils.logger import get_logger
 
@@ -19,7 +20,7 @@ class Haulier(Agent):
 
     def __init__(self, name: str, environment: Environment):
         super().__init__(name=name, environment=environment)
-        self.role: str = "haulier"
+        self.role: str = "loader"
         self.action: str = "load"
         self.storage_type: str = "Container"
 
@@ -36,7 +37,7 @@ class Haulier(Agent):
         storage_names = [content] if isinstance(content, str) else content
 
         for name in storage_names:
-            storage = self.get_from_store(name)
+            storage = self.get_from_warehouse(name)
 
             if not isinstance(storage, (Wagon, Box)):
                 raise TypeError(
@@ -53,7 +54,7 @@ class Haulier(Agent):
         style: str,
         save_as: str | None = None,
         content: str | list[str] | None = None,
-        **kwargs: Any,
+        **params: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by haulier role."""
 
@@ -62,8 +63,8 @@ class Haulier(Agent):
 
         style = style.lower()
 
-        # ----------------- Style Instance -----------------
-        style_instance = self.get_registred_class("load", style, self.action)
+        # ----------------- Style class -----------------
+        style_cls = self.get_registred_class("styles", style, self.action)
 
         # ----------------- Create Storage -----------------
         container: Container = self.create_container(content)
@@ -71,14 +72,15 @@ class Haulier(Agent):
         # ----------------- Apply Style for each storage -----------------
         for name in container.list_storages():
 
-            kwargs["data"] = container.get_storage(name).data
+            params["data"] = container.get_storage(name).data
 
             if style == "excel":
-                kwargs["sheet_name"] = name
+                params["sheet_name"] = name
 
-            params_instance = self.get_registred_class("load", style, self.action)
+            params_cls = self.get_registred_class("params", style, self.action)
+            params_instance = params_cls(**params)
 
-            style_instance.use(params_instance)
+            style_cls.use(params_instance)
 
             # ----------------- Generate operation metadata -----------------
             self._add_operation(style, params_instance)
