@@ -36,7 +36,7 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Environment:
+class Environment:  # pylint: disable=too-many-public-methods
     """
     Base Environment for Fragua.
 
@@ -406,7 +406,7 @@ class Environment:
                 "warehouse": self.components.get("warehouse"),
                 "manager": self.components.get("manager"),
                 "agents": {
-                    atype: [a for a in agents]
+                    atype: list(agents)
                     for atype, agents in self.components["agents"].items()
                 },
             },
