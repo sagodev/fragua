@@ -262,7 +262,8 @@ class Environment:  # pylint: disable=too-many-public-methods
 
     def get_agent(self, agent_name: str) -> Optional[Agent[Any]]:
         """Return an agent by its name."""
-        agents_dict = cast(Dict[str, List[Agent[Any]]], self.components["agents"])
+        agents_dict = self.components["agents"]
+
         for agents in agents_dict.values():
             for agent in agents:
                 if getattr(agent, "name", None) == agent_name:
