@@ -3,13 +3,14 @@ LoadStyle types for various data Load methods.
 """
 
 from abc import abstractmethod
-from typing import Dict, Generic
+from typing import Any, Dict, Generic
 import pandas as pd
 
 
 from fragua.functions.load_functions import ExcelLoadFunction
 from fragua.styles.style import Style, ResultT
 from fragua.params.load_params import (
+    LoadParams,
     LoadParamsT,
     ExcelLoadParamsT,
 )
@@ -71,6 +72,6 @@ class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
 # ---------------------------------------------------------------------- #
 
 
-LOAD_STYLE_CLASSES: Dict[str, type[LoadStyle]] = {
+LOAD_STYLE_CLASSES: Dict[str, type[LoadStyle[LoadParams, Any]]] = {
     "excel": ExcelLoadStyle,
 }

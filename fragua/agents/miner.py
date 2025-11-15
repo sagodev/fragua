@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Miner(Agent):
+class Miner(Agent[ExtractParams]):
     """Agent that applies extraction styles to data sources for extraction."""
 
     def __init__(self, name: str, environment: Environment):

@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
+from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.params.params import Params, ParamsT
 from fragua.storages.storage import Storage
 from fragua.storages.storage_types import Box, Wagon, STORAGE_CLASSES
@@ -53,7 +54,7 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
         raise KeyError(f"No class found for registry '{reg}'.")
 
     @property
-    def warehouse_manager(self):
+    def warehouse_manager(self) -> WarehouseManager:
         """Access the shared warehouse manager from the environment."""
         return self.environment.get_manager()
 
@@ -144,7 +145,7 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
         if storage is None:
             raise TypeError("Storage not found in warehouse.")
 
-        if not isinstance(storage, Union[Wagon, Box]):
+        if not isinstance(storage, (Wagon, Box)):
             raise TypeError("Storage is not a Wagon or Box.")
 
         return storage

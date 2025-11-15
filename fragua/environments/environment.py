@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Type, List, cast
+from typing import Any, Dict, Optional, Type, List, TypedDict, cast
 
 
 from fragua.storages.warehouse import Warehouse
@@ -36,6 +36,14 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+class EnvironmentComponents(TypedDict):
+    """Class for environment attribute components"""
+
+    warehouse: Optional[Warehouse]
+    manager: Optional[WarehouseManager]
+    agents: Dict[str, List[Agent[Any]]]
+
+
 class Environment:  # pylint: disable=too-many-public-methods
     """
     Base Environment for Fragua.
@@ -44,7 +52,7 @@ class Environment:  # pylint: disable=too-many-public-methods
     a single warehouse manager, and multiple agents of different types.
     """
 
-    AGENT_CLASSES: Dict[str, Type[Agent]] = {
+    AGENT_CLASSES: Dict[str, Type[Agent[Any]]] = {
         "miner": Miner,
         "blacksmith": Blacksmith,
         "haulier": Haulier,
@@ -56,7 +64,7 @@ class Environment:  # pylint: disable=too-many-public-methods
         self.name = name
         self.env_type = env_type
         self.fg_reg = fg_reg
-        self.components: Dict[str, Any] = {
+        self.components: EnvironmentComponents = {
             "warehouse": None,
             "manager": None,
             "agents": {atype: [] for atype in self.AGENT_CLASSES},
@@ -217,7 +225,7 @@ class Environment:  # pylint: disable=too-many-public-methods
         agent_type: str,
         name: Optional[str] = None,
         environment: Optional[Environment] = None,
-    ) -> Agent:
+    ) -> Agent[Any]:
         """
         Create and register an agent within the given environment.
 
@@ -252,16 +260,16 @@ class Environment:  # pylint: disable=too-many-public-methods
 
         return agent
 
-    def get_agent(self, agent_name: str) -> Optional[Agent]:
+    def get_agent(self, agent_name: str) -> Optional[Agent[Any]]:
         """Return an agent by its name."""
-        agents_dict = cast(Dict[str, List[Agent]], self.components["agents"])
+        agents_dict = cast(Dict[str, List[Agent[Any]]], self.components["agents"])
         for agents in agents_dict.values():
             for agent in agents:
                 if getattr(agent, "name", None) == agent_name:
                     return agent
         return None
 
-    def update_agent(self, agent_name: str, **updates: Any) -> Agent:
+    def update_agent(self, agent_name: str, **updates: Any) -> Agent[Any]:
         """
         Update attributes of an existing agent.
         Example: update_agent("miner_1", active=True)
@@ -350,11 +358,17 @@ class Environment:  # pylint: disable=too-many-public-methods
 
     def get_warehouse(self) -> Warehouse:
         """Return warehouse."""
-        return self.components["warehouse"]
+        warehouse = self.components["warehouse"]
+        if warehouse is None:
+            raise RuntimeError("Warehouse not initialized.")
+        return warehouse
 
     def get_manager(self) -> WarehouseManager:
         """Return warehouse manager."""
-        return self.components["manager"]
+        warehouse_manager = self.components["manager"]
+        if warehouse_manager is None:
+            raise RuntimeError("Warehouse manager not initialized.")
+        return warehouse_manager
 
     def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
         """Return all agents or those of a given type."""

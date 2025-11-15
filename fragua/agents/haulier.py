@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Haulier(Agent):
+class Haulier(Agent[LoadParams]):
     """Agent that applies extraction styles to data sources for loading."""
 
     def __init__(self, name: str, environment: Environment):

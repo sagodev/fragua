@@ -11,6 +11,7 @@ from fragua.functions.function import FraguaFunction
 from fragua.params.load_params import (
     ExcelLoadParams,
     ExcelLoadParamsT,
+    LoadParams,
     LoadParamsT,
 )
 
@@ -143,6 +144,6 @@ class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
         return df
 
 
-LOAD_FUNCTION_CLASSES: Dict[str, type[LoadFunction]] = {
+LOAD_FUNCTION_CLASSES: Dict[str, type[LoadFunction[LoadParams]]] = {
     "excel": ExcelLoadFunction,
 }

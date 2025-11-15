@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 from fragua.functions.function import FraguaFunction
 from fragua.params.transform_params import (
+    TransformParams,
     TransformParamsT,
     MLTransformParamsT,
     ReportTransformParamsT,
@@ -321,7 +322,7 @@ TRANSFORM_FUNCTIONS: Dict[str, Callable[...]] = {
     "sort_dataframe": sort_dataframe,
 }
 
-TRANSFORM_FUNCTION_CLASSES: Dict[str, type[TransformFunction]] = {
+TRANSFORM_FUNCTION_CLASSES: Dict[str, type[TransformFunction[TransformParams]]] = {
     "ml": MLTransformFunction,
     "report": ReportTransformFunction,
     "analysis": AnalysisTransformFunction,

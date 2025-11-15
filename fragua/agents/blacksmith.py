@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Blacksmith(Agent):
+class Blacksmith(Agent[TransformParams]):
     """Agent that applies forge styles to data for transformation."""
 
     def __init__(self, name: str, environment: Environment):
