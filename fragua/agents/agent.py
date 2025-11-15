@@ -52,7 +52,7 @@ class Agent(ABC, Generic[ParamsT]):
     @property
     def warehouse_manager(self) -> WarehouseManager:
         """Access the shared warehouse manager from the environment."""
-        return self.environment.get_manager()
+        return self.environment.manager()
 
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
