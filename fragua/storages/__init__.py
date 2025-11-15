@@ -9,7 +9,6 @@ from .warehouse import Warehouse
 # ------------------- Storage types ------------------- #
 from .storage_types import (
     Box,
-    Wagon,
     Container,
     STORAGE_CLASSES,
 )
@@ -23,7 +22,6 @@ __all__ = [
     "Storage",
     # Storage types
     "STORAGE_CLASSES",
-    "Wagon",
     "Box",
     "Container",
 ]

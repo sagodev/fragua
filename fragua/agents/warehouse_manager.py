@@ -11,26 +11,25 @@ from fragua.storages.storage import Storage
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.storages.warehouse import Warehouse
-from fragua.storages.storage_types import Wagon, Box, STORAGE_CLASSES
+from fragua.storages.storage_types import Box, STORAGE_CLASSES
 
 logger = get_logger(__name__)
 
 
-StorageType = Literal["wagon", "box", "all"]
+StorageType = Literal["box", "all"]
 
 StorageResult: TypeAlias = Union[
-    Wagon,
     Box,
-    Storage[Union[Wagon, Box]],
-    Mapping[str, Storage[Union[Wagon, Box]]],
-    Mapping[str, Mapping[str, Storage[Union[Wagon, Box]]]],
+    Storage[Box],
+    Mapping[str, Storage[Box]],
+    Mapping[str, Mapping[str, Storage[Box]]],
 ]
 
 
 class WarehouseManager:
     """
     Encapsulates storage management logic.
-    Handles only Wagon and Box storage objects Warehoused in a flat structure.
+    Handles only Box storage objects Warehoused in a flat structure.
     """
 
     def __init__(self, name: str, warehouse: Warehouse) -> None:
@@ -45,7 +44,7 @@ class WarehouseManager:
         self._movement_log: List[dict[str, object]] = []
 
     def _generate_save_metadata(
-        self, storage: Union[Wagon, Box], storage_name: str, agent_name: Optional[str]
+        self, storage: Box, storage_name: str, agent_name: Optional[str]
     ) -> None:
         """Generate and attach metadata to a storage object before saving."""
         metadata_kwargs: Dict[str, Any] = {
@@ -80,7 +79,6 @@ class WarehouseManager:
             "time": time_str,
             "timezone": tz_offset,
             "operation": movement_log.get("operation"),
-            "storage_type": movement_log.get("storage_type"),
             "storage_name": movement_log.get("storage_name"),
             "agent_name": movement_log.get("agent_name"),
             "warehouse": getattr(self.warehouse, "warehouse_name", None),
@@ -103,7 +101,7 @@ class WarehouseManager:
 
     def movements_log(
         self,
-        storage_type: Union[Wagon, Box, None] = None,
+        storage_type: Optional[Box] = None,
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
         operation: Optional[str] = None,
@@ -125,17 +123,17 @@ class WarehouseManager:
     # -----------------------------
     def add(
         self,
-        storage: Storage[Any],
+        storage: Box,
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
         overwrite: bool = False,
     ) -> None:
         """
-        Add a Wagon or Box to the Warehouse and update movement log.
+        Add a Box to the Warehouse and update movement log.
 
         Args:
-            storage: The Wagon or Box object to Warehouse.
-            storage_type: 'wagon' or 'box'.
+            storage: The Box object to Warehouse.
+            storage_type: 'box'.
             storage_name: Name to Warehouse the object under.
             agent_name: Optional agent performing the action.
             overwrite: Whether to overwrite if it already exists.
@@ -149,7 +147,7 @@ class WarehouseManager:
             if storage_name is None:
                 raise ValueError("Missing required argument: 'storage_name'")
 
-            if storage_type not in ("wagon", "box"):
+            if storage_type not in ("box"):
                 raise ValueError(f"Invalid storage_type '{storage_type}'")
 
             if storage_name in self.warehouse.data and not overwrite:
@@ -204,7 +202,6 @@ class WarehouseManager:
     # -----------------------------
     # Get
     # -----------------------------
-
     def get(
         self,
         agent_name: str,
@@ -212,25 +209,35 @@ class WarehouseManager:
         storage_name: str = "all",
     ) -> Optional[StorageResult]:
         """
-        Retrieve storage objects (Wagon or Box) from the Warehouse.
+        Retrieve one or more storage objects from the Warehouse.
+
+        Behavior:
+            - If `storage_name` is a concrete name, return a single object or None.
+            - If `storage_name='all'`, return a dict of matching objects.
+            - If `storage_type='all'`, return all Box storages.
+            - Otherwise return only objects matching the specified storage type.
 
         Args:
-            agent_name: Name of the requesting agent.
-            storage_type: 'wagon', 'box', or 'all'.
-            storage_name: Specific storage name or 'all' for all storages.
+            agent_name (str): Name of the agent requesting the objects.
+            storage_type (StorageType): Either "box" or "all".
+            storage_name (str): Specific object name or "all" to return every match.
 
         Returns:
-            - A single object if a specific name is provided.
-            - A dict of objects if storage_name='all'.
-            - A nested dict by type if storage_type='all' and storage_name='all'.
+            Optional[StorageResult]: A single object, a dict of objects, or None if not found.
+
+        Raises:
+            Exception: Propagates unexpected errors while logging the failure.
         """
 
-        result: Dict[str, Storage[Union[Wagon, Box]]] = {}
+        classes: type[Storage[Any]] | tuple[type[Storage[Any]], ...]
+
         try:
             if storage_type == "all":
-                classes: tuple[type[Storage[Any]], ...] = (Wagon, Box)
+                classes = Box
             else:
-                classes = (STORAGE_CLASSES[storage_type],)
+                classes = STORAGE_CLASSES[storage_type]
+
+            result: Dict[str, Storage[Box]] = {}
 
             for name, obj in self.warehouse.data.items():
                 if not isinstance(obj, classes):
@@ -271,29 +278,43 @@ class WarehouseManager:
         storage_type: StorageType,
         storage_name: str = "all",
     ) -> Union[
-        Optional[Storage[Wagon | Box]],
-        Mapping[str, Storage[Wagon | Box]],
-        Mapping[str, Mapping[str, Storage[Wagon | Box]]],
+        Optional[Box],
+        Mapping[str, Box],
+        Mapping[str, Mapping[str, Box]],
     ]:
         """
-        Remove objects from the Warehouse and log the operation.
+        Remove one or more storage objects from the Warehouse.
+
+        Behavior:
+            - If `storage_name` is a specific name, return the removed object or None.
+            - If `storage_name='all'`, remove every object matching the type.
+            - If `storage_type='all'`, remove all Box storages.
+            - Returns a dict of removed objects when multiple were removed.
 
         Args:
-            storage_type: 'wagon', 'box', or 'all'
-            storage_name: Name of the object, or 'all'
+            storage_type (StorageType): Either "box" or "all".
+            storage_name (str): Name of the object or "all" to remove all matching items.
 
         Returns:
-            The removed object(s) or dict by type.
+            Union[Optional[Box], Mapping[str, Box], Mapping[str, Mapping[str, Box]]]:
+                The removed object(s). A single removed object, a dict of removed
+                objects, or an empty dict if nothing matched.
+
+        Raises:
+            Exception: Propagates unexpected errors while also logging the failure.
         """
 
-        removed: Dict[str, Storage[Wagon | Box]] = {}
+        classes: type[Storage[Any]] | tuple[type[Storage[Any]], ...]
+
         try:
             data = self.warehouse.data
 
             if storage_type == "all":
-                classes: tuple[type[Storage[Any]], ...] = (Wagon, Box)
+                classes = Box
             else:
-                classes = (STORAGE_CLASSES[storage_type],)
+                classes = STORAGE_CLASSES[storage_type]
+
+            removed: Dict[str, Box] = {}
 
             keys_to_remove = [
                 name
@@ -306,7 +327,6 @@ class WarehouseManager:
 
             count_removed = len(removed)
 
-            # Log movement
             self._log_movement(
                 operation="remove",
                 storage_type=storage_type,
@@ -315,21 +335,6 @@ class WarehouseManager:
                 success=bool(removed),
                 details={"removed_count": count_removed},
             )
-
-            if removed:
-                logger.info(
-                    "[%s] Removed object(s) '%s' of type '%s'",
-                    self.name,
-                    storage_name,
-                    storage_type,
-                )
-            else:
-                logger.warning(
-                    "[%s] Nothing removed for '%s' (%s)",
-                    self.name,
-                    storage_name,
-                    storage_type,
-                )
 
             if storage_name != "all" and removed:
                 return next(iter(removed.values()))
@@ -403,6 +408,6 @@ class WarehouseManager:
         Remove all objects from the Warehouse.
 
         Returns:
-            Mapping[str, Union[Wagon, Box]]: All removed objects.
+            Mapping[str, Box]: All removed objects.
         """
         self.remove("all")

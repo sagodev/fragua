@@ -4,13 +4,12 @@ The StoreManager handles all the logic.
 """
 
 from typing import Dict
-from fragua.storages.storage import Storage
-from fragua.storages.storage_types import Wagon, Box
+from fragua.storages.storage_types import Box
 
 
 class Warehouse:
     """
-    Simple container for Wagons and Boxes.
+    Simple container for Boxes.
     Warehouse manager is responsible for all operations.
     """
 
@@ -22,10 +21,10 @@ class Warehouse:
             warehouse_name (str): Name of the warehouse.
         """
         self.warehouse_name = warehouse_name
-        self._warehouse: Dict[str, Storage[Wagon | Box]] = {}
+        self._warehouse: Dict[str, Box] = {}
 
     @property
-    def data(self) -> Dict[str, Storage[Wagon | Box]]:
+    def data(self) -> Dict[str, Box]:
         """
         Expose the raw internal storage mapping.
 

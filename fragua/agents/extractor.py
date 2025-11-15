@@ -21,7 +21,7 @@ class Extractor(Agent[ExtractParams]):
         super().__init__(name=name, environment=environment)
         self.role = "extractor"
         self.action = "extract"
-        self.storage_type = "Wagon"
+        self.storage_type = "Box"
 
     def work(
         self,

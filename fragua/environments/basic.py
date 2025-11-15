@@ -13,9 +13,9 @@ class BasicEnvironment(Environment):
     Predefined environment with the essential Fragua setup:
     - 1 Warehouse
     - 1 WarehouseManager
-    - 1 Miner
-    - 1 Blacksmith
-    - 1 Haulier
+    - 1 Extractor
+    - 1 Transformer
+    - 1 Loader
     """
 
     def __init__(self, name: str, fg_reg: bool):
@@ -31,9 +31,9 @@ class BasicEnvironment(Environment):
         self.create_manager(f"{name}_manager", warehouse)
 
         # 3. Agents
-        self.create_miner(f"{name}_miner")
-        self.create_blacksmith(f"{name}_blacksmith")
-        self.create_haulier(f"{name}_haulier")
+        self.create_extractor(f"{name}_etr")
+        self.create_transformer(f"{name}_tfr")
+        self.create_loader(f"{name}_ldr")
 
         logger.info(
             "BasicEnvironment '%s' created successfully with warehouse, manager, and 3 agents.",

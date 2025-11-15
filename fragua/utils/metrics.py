@@ -15,7 +15,7 @@ import pandas as pd
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
-StorageType = Literal["wagon", "box", "container"]
+StorageType = Literal["", "box", "container"]
 
 
 def _serialize_dataframe(df: pd.DataFrame) -> bytes:
@@ -66,23 +66,6 @@ def get_local_time_and_offset() -> tuple[str, str]:
     return local_time_str, timezone_offset
 
 
-def determine_storage_type(storage: Any) -> Optional[StorageType]:
-    """Determine the storage type ('wagon', 'box', or 'container')."""
-    from fragua.storages import (
-        Wagon,
-        Box,
-        Container,
-    )  # pylint: disable=import-outside-toplevel
-
-    if isinstance(storage, Wagon):
-        return "wagon"
-    if isinstance(storage, Box):
-        return "box"
-    if isinstance(storage, Container):
-        return "container"
-    return None
-
-
 def generate_metadata(
     storage: Any,
     **metadata_kwargs: Any,
@@ -91,7 +74,7 @@ def generate_metadata(
     Generate metadata dictionary for objects with .data and .name.
 
     Args:
-        storage: Storage object that holds data (e.g., Wagon, Box, Container).
+        storage: Storage object that holds data (e.g.  Box, Container).
         **kwargs: Additional metadata fields
             (e.g.,metadata_type, storage_name, agent_name, style_name, etc.).
     """
@@ -145,7 +128,7 @@ def add_metadata_to_storage(
     Add or merge metadata into a unified metadata dictionary of a storage object.
 
     Args:
-        storage (Storage): The target storage object (e.g., Wagon, Box, Container).
+        storage (Storage): The target storage object (e.g., Box, Container).
         data (dict | None): Metadata to add.
 
     Notes:

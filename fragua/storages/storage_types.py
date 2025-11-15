@@ -2,12 +2,8 @@
 Storage types for storing different kinds of data.
 """
 
-from typing import Any, Dict, Union
+from typing import Any, Dict
 from fragua.storages.storage import Storage
-
-
-class Wagon(Storage[Any]):
-    """Storage type for raw data."""
 
 
 class Box(Storage[Any]):
@@ -16,18 +12,18 @@ class Box(Storage[Any]):
 
 class Container(Storage[Any]):
     """
-    Storage designed to contain other storages (Wagon and Box).
+    Storage designed to contain  Boxes.
     """
 
     def __init__(self) -> None:
         super().__init__(data=None)
-        self._content: Dict[str, Union[Wagon, Box]] = {}
+        self._content: Dict[str, Box] = {}
 
-    def add_storage(self, storage_name: str, storage: Union[Wagon, Box]) -> None:
-        """Add a sub-storage (Wagon or Box) to the container."""
+    def add_storage(self, storage_name: str, storage: Box) -> None:
+        """Add a sub-storage Box to the container."""
         self._content[storage_name] = storage
 
-    def get_storage(self, name: str) -> Union[Wagon, Box]:
+    def get_storage(self, name: str) -> Box:
         """Retrieve a specific sub-storage by name."""
         return self._content[name]
 
@@ -49,7 +45,6 @@ class Container(Storage[Any]):
 
 
 STORAGE_CLASSES: dict[str, type[Storage[Any]]] = {
-    "Wagon": Wagon,
     "Box": Box,
     "Container": Container,
 }

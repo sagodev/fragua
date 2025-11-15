@@ -6,7 +6,7 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union, Generic
+from typing import TYPE_CHECKING, Any, Optional, Generic
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -14,7 +14,7 @@ import pandas as pd
 from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.params.params import Params, ParamsT
 from fragua.storages.storage import Storage
-from fragua.storages.storage_types import Box, Wagon, STORAGE_CLASSES
+from fragua.storages.storage_types import Box, STORAGE_CLASSES
 
 
 from fragua.utils.logger import get_logger
@@ -129,10 +129,7 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
     def get_from_warehouse(
         self,
         storage_name: str | None,
-    ) -> Union[
-        Wagon,
-        Box,
-    ]:
+    ) -> Box:
         """Get storage from warehouse by a given storage name."""
 
         if storage_name is None:
@@ -145,8 +142,8 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
         if storage is None:
             raise TypeError("Storage not found in warehouse.")
 
-        if not isinstance(storage, (Wagon, Box)):
-            raise TypeError("Storage is not a Wagon or Box.")
+        if not isinstance(storage, Box):
+            raise TypeError("Storage is not a Box.")
 
         return storage
 
