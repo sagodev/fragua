@@ -87,7 +87,7 @@ class Environment:
 
     def _initialize_registries(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
         """Initialize the environment registries for params, functions, and styles."""
-        registries = {
+        registries: Dict[str, Dict[str, Dict[str, Any]]] = {
             rtype: {atype: {} for atype in ["extract", "transform", "load"]}
             for rtype in self.REGISTRY_TYPES
         }
