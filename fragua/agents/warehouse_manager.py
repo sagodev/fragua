@@ -168,9 +168,15 @@ class WarehouseManager:
         """Pipeline method for getting storage objects."""
         try:
             if storage_name != "all":
-                result = self._get_one(storage_name, storage_type)
+                # Single object or None
+                result: Optional[Storage[Box]] = self._get_one(
+                    storage_name, storage_type
+                )
             else:
-                result = self._get_all(storage_type)
+                # Dict of objects
+                result_dict: Dict[str, Storage[Box]] = self._get_all(storage_type)
+                result = result_dict  # type: ignore
+
             self._log_movement(
                 operation="get",
                 storage_type=storage_type,
@@ -227,11 +233,17 @@ class WarehouseManager:
         """Pipeline method for deleting storage objects with undo support."""
         try:
             if storage_name != "all":
-                removed = self._delete_one(storage_name, storage_type)
+                removed: Optional[Storage[Box]] = self._delete_one(
+                    storage_name, storage_type
+                )
                 count_removed = 1 if removed else 0
             else:
-                removed = self._delete_multiple(storage_type)
-                count_removed = len(removed)
+                removed_dict: Dict[str, Storage[Box]] = self._delete_multiple(
+                    storage_type
+                )
+                removed = removed_dict  # type: ignore
+                count_removed = len(removed_dict)
+
             self._log_movement(
                 operation="delete",
                 storage_type=storage_type,
