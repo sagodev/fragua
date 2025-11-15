@@ -4,7 +4,7 @@
 from .agent import Agent
 from .extractor import Extractor
 from .transformer import Transformer
-from .haulier import Haulier
+from .loader import Loader
 from .warehouse_manager import WarehouseManager
 
 
@@ -16,5 +16,5 @@ __all__ = [
     "WarehouseManager",
     "Extractor",
     "Transformer",
-    "Haulier",
+    "Loader",
 ]

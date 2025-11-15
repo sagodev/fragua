@@ -11,7 +11,7 @@ from fragua.agents.agent import Agent
 from fragua.agents.warehouse_manager import WarehouseManager
 from fragua.agents.extractor import Extractor
 from fragua.agents.transformer import Transformer
-from fragua.agents.haulier import Haulier
+from fragua.agents.loader import Loader
 
 from fragua.params import (
     EXTRACT_PARAMS_CLASSES,
@@ -55,7 +55,7 @@ class Environment:  # pylint: disable=too-many-public-methods
     AGENT_CLASSES: Dict[str, Type[Agent[Any]]] = {
         "extractor": Extractor,
         "transformer": Transformer,
-        "haulier": Haulier,
+        "loader": Loader,
     }
 
     REGISTRY_TYPES: List[str] = ["params", "functions", "styles"]
@@ -230,7 +230,7 @@ class Environment:  # pylint: disable=too-many-public-methods
         Create and register an agent within the given environment.
 
         Args:
-            agent_type: One of 'extractor', 'transformer', or 'haulier'.
+            agent_type: One of 'extractor', 'transformer', or 'loader'.
             name: Optional name for the agent.
             environment: The environment instance this agent belongs to.
         """
@@ -351,9 +351,9 @@ class Environment:  # pylint: disable=too-many-public-methods
             Transformer, self.create_agent("transformer", name, environment=self)
         )
 
-    def create_haulier(self, name: Optional[str] = None) -> Haulier:
-        """Shortcut to create a Haulier agent."""
-        return cast(Haulier, self.create_agent("haulier", name, environment=self))
+    def create_loader(self, name: Optional[str] = None) -> Loader:
+        """Shortcut to create a Loader agent."""
+        return cast(Loader, self.create_agent("loader", name, environment=self))
 
     # ---------------------------------------------------------------------
     # GET HELPERS
@@ -399,10 +399,10 @@ class Environment:  # pylint: disable=too-many-public-methods
             ),
         )
 
-    def get_haulier(self, agent_name: str) -> Haulier:
-        """Return a haulier agent by a given name."""
+    def get_loader(self, agent_name: str) -> Loader:
+        """Return a Loader agent by a given name."""
         return cast(
-            Haulier,
+            Loader,
             self.get_agent(
                 agent_name,
             ),

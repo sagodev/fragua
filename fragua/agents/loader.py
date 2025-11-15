@@ -1,4 +1,4 @@
-"""Haulier Class."""
+"""Loader Class."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Haulier(Agent[LoadParams]):
+class Loader(Agent[LoadParams]):
     """Agent that applies extraction styles to data sources for loading."""
 
     def __init__(self, name: str, environment: Environment):
@@ -58,7 +58,7 @@ class Haulier(Agent[LoadParams]):
         params: LoadParams | None = None,
         **kwargs: Any,
     ) -> None:
-        """Execute the agent's task using the action and style defined by haulier role."""
+        """Execute the agent's task using the action and style defined by loader role."""
 
         if apply_to is None:
             raise TypeError("Missing required attribute: 'content'.")
