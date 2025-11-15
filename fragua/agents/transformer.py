@@ -1,4 +1,4 @@
-"""Blacksmith Class."""
+"""Transformer Class."""
 
 from __future__ import annotations
 
@@ -15,12 +15,12 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Blacksmith(Agent[TransformParams]):
-    """Agent that applies forge styles to data for transformation."""
+class Transformer(Agent[TransformParams]):
+    """Agent that applies transform styles to data for transformation."""
 
     def __init__(self, name: str, environment: Environment):
         super().__init__(name=name, environment=environment)
-        self.role = "blacksmith"
+        self.role = "transformer"
         self.action = "transform"
         self.storage_type = "Box"
 
@@ -33,7 +33,7 @@ class Blacksmith(Agent[TransformParams]):
         params: TransformParams | None = None,
         **kwargs: Any,
     ) -> None:
-        """Execute the agent's task using the action and style defined by blacksmith role."""
+        """Execute the agent's task using the action and style defined by transformer role."""
 
         if isinstance(apply_to, str):
             storage = self.get_from_warehouse(apply_to)
