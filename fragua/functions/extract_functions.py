@@ -3,7 +3,7 @@ Reusable Extract Functions.
 """
 
 from pathlib import Path
-from typing import Generic
+from typing import Generic, Dict
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
@@ -11,6 +11,7 @@ from requests.auth import HTTPBasicAuth
 
 from fragua.functions.function import FraguaFunction
 from fragua.params.extract_params import (
+    ExtractParams,
     ExtractParamsT,
     CSVExtractParamsT,
     ExcelExtractParamsT,
@@ -121,3 +122,11 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
             return pd.json_normalize(result_data, **read_kwargs)
 
         raise ValueError(f"Unexpected API response type: {type(result_data)}")
+
+
+EXTRACT_FUNCTION_CLASSES: Dict[str, type[ExtractFunction[ExtractParams]]] = {
+    "csv": CSVExtractFunction,
+    "excel": ExcelExtractFunction,
+    "sql": SQLExtractFunction,
+    "api": APIExtractFunction,
+}

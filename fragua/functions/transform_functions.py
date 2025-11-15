@@ -3,7 +3,7 @@ Reusable Transform Functions.
 """
 
 from __future__ import annotations
-from typing import Generic
+from typing import Any, Callable, Dict, Generic
 import numpy as np
 import pandas as pd
 from pandas.errors import UndefinedVariableError
@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 from fragua.functions.function import FraguaFunction
 from fragua.params.transform_params import (
+    TransformParams,
     TransformParamsT,
     MLTransformParamsT,
     ReportTransformParamsT,
@@ -307,3 +308,22 @@ class AnalysisTransformFunction(TransformFunction[AnalysisTransformParamsT]):
         ]:
             self.params = func(self.params)
         return self.params.data
+
+
+TRANSFORM_FUNCTIONS: Dict[str, Callable[..., Any]] = {
+    "fill_missing": fill_missing,
+    "standardize": standardize,
+    "encode_categoricals": encode_categoricals,
+    "scale_numeric": scale_numeric,
+    "treat_outliers": treat_outliers,
+    "add_derived_columns": add_derived_columns,
+    "format_numeric": format_numeric,
+    "group_and_aggregate": group_and_aggregate,
+    "sort_dataframe": sort_dataframe,
+}
+
+TRANSFORM_FUNCTION_CLASSES: Dict[str, type[TransformFunction[TransformParams]]] = {
+    "ml": MLTransformFunction,
+    "report": ReportTransformFunction,
+    "analysis": AnalysisTransformFunction,
+}

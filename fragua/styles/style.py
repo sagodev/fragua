@@ -9,9 +9,6 @@ from fragua.params.params import ParamsT
 
 logger = get_logger(__name__)
 
-# ---------------------------------------------------------------------- #
-# Type Variables
-# ---------------------------------------------------------------------- #
 ResultT = TypeVar("ResultT")
 
 
@@ -26,18 +23,10 @@ class Style(ABC, Generic[ParamsT, ResultT]):
         """Initialize the style with a given name and creator."""
         self.style_name = style_name
 
-    # ---------------------------------------------------------------------- #
-    # Abstract Core
-    # ---------------------------------------------------------------------- #
     @abstractmethod
     def _run(self, params: ParamsT) -> ResultT:
         """
         Core implementation of the style.
-
-        Must be implemented by subclasses:
-        - MineStyle -> extract
-        - ForgeStyle -> forge
-        - DeliveryStyle -> deliver
         """
         raise NotImplementedError
 
@@ -47,9 +36,6 @@ class Style(ABC, Generic[ParamsT, ResultT]):
             "[%s ERROR] %s: %s", self.__class__.__name__, type(error).__name__, error
         )
 
-    # ---------------------------------------------------------------------- #
-    # Public pipeline
-    # ---------------------------------------------------------------------- #
     def use(self, params: ParamsT) -> ResultT:
         """
         Execute the full style pipeline.

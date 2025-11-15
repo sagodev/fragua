@@ -3,7 +3,7 @@ Transform style types for various data transformation scenarios.
 """
 
 from abc import abstractmethod
-from typing import Generic
+from typing import Any, Dict, Generic
 
 import pandas as pd
 
@@ -16,6 +16,7 @@ from fragua.functions.transform_functions import (
 from fragua.styles.style import Style, ResultT
 from fragua.utils.logger import get_logger
 from fragua.params.transform_params import (
+    TransformParams,
     TransformParamsT,
     MLTransformParamsT,
     ReportTransformParamsT,
@@ -86,3 +87,10 @@ class AnalysisTransformStyle(TransformStyle[AnalysisTransformParamsT, pd.DataFra
 
     def transform(self, params: AnalysisTransformParamsT) -> pd.DataFrame:
         return AnalysisTransformFunction("transform_analysis", params).execute()
+
+
+TRANSFORM_STYLE_CLASSES: Dict[str, type[TransformStyle[TransformParams, Any]]] = {
+    "ml": MLTransformStyle,
+    "report": ReportTransformStyle,
+    "analysis": AnalysisTransformStyle,
+}

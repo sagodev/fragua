@@ -4,7 +4,7 @@ Handles all logic for adding, getting, removing, and listing storages.
 Works with a flat Warehouse structure without grouping by type.
 """
 
-from typing import Any, Union, Optional, Mapping, Dict, List, Literal
+from typing import Any, TypeAlias, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 
 from fragua.storages.storage import Storage
@@ -17,6 +17,14 @@ logger = get_logger(__name__)
 
 
 StorageType = Literal["wagon", "box", "all"]
+
+StorageResult: TypeAlias = Union[
+    Wagon,
+    Box,
+    Storage[Union[Wagon, Box]],
+    Mapping[str, Storage[Union[Wagon, Box]]],
+    Mapping[str, Mapping[str, Storage[Union[Wagon, Box]]]],
+]
 
 
 class WarehouseManager:
@@ -196,28 +204,28 @@ class WarehouseManager:
     # -----------------------------
     # Get
     # -----------------------------
+
     def get(
         self,
         agent_name: str,
         storage_type: StorageType = "all",
         storage_name: str = "all",
-    ) -> Union[
-        Optional[Union[Wagon, Box]],
-        Mapping[str, Union[Wagon, Box]],
-        Mapping[str, Mapping[str, Union[Wagon, Box]]],
-    ]:
+    ) -> Optional[StorageResult]:
         """
-        Retrieve objects from the Warehouse and log the operation.
+        Retrieve storage objects (Wagon or Box) from the Warehouse.
 
         Args:
-            storage_type: 'wagon', 'box', or 'all'
-            storage_name: Name of the object, or 'all'
+            agent_name: Name of the requesting agent.
+            storage_type: 'wagon', 'box', or 'all'.
+            storage_name: Specific storage name or 'all' for all storages.
 
         Returns:
-            Single object, dict of objects, or dict by type.
+            - A single object if a specific name is provided.
+            - A dict of objects if storage_name='all'.
+            - A nested dict by type if storage_type='all' and storage_name='all'.
         """
 
-        result: Dict[str, Union[Wagon, Box]] = {}
+        result: Dict[str, Storage[Union[Wagon, Box]]] = {}
         try:
             if storage_type == "all":
                 classes: tuple[type[Storage[Any]], ...] = (Wagon, Box)
@@ -229,7 +237,7 @@ class WarehouseManager:
                     continue
                 if storage_name not in ("all", name):
                     continue
-                result[name] = obj.data
+                result[name] = obj
 
             self._log_movement(
                 operation="get",

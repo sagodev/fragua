@@ -2,18 +2,49 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Type, List, cast
+from typing import Any, Dict, Optional, Type, List, TypedDict, cast
 
+
+from fragua.storages.warehouse import Warehouse
 
 from fragua.agents.agent import Agent
-from fragua.storages.warehouse import Warehouse
-from fragua.agents import WarehouseManager, Miner, Blacksmith, Haulier
+from fragua.agents.warehouse_manager import WarehouseManager
+from fragua.agents.miner import Miner
+from fragua.agents.blacksmith import Blacksmith
+from fragua.agents.haulier import Haulier
+
+from fragua.params import (
+    EXTRACT_PARAMS_CLASSES,
+    TRANSFORM_PARAMS_CLASSES,
+    LOAD_PARAMS_CLASSES,
+)
+
+from fragua.functions import (
+    EXTRACT_FUNCTION_CLASSES,
+    TRANSFORM_FUNCTION_CLASSES,
+    LOAD_FUNCTION_CLASSES,
+)
+
+from fragua.styles import (
+    EXTRACT_STYLE_CLASSES,
+    TRANSFORM_STYLE_CLASSES,
+    LOAD_STYLE_CLASSES,
+)
+
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class Environment:
+class EnvironmentComponents(TypedDict):
+    """Class for environment attribute components"""
+
+    warehouse: Optional[Warehouse]
+    manager: Optional[WarehouseManager]
+    agents: Dict[str, List[Agent[Any]]]
+
+
+class Environment:  # pylint: disable=too-many-public-methods
     """
     Base Environment for Fragua.
 
@@ -21,22 +52,25 @@ class Environment:
     a single warehouse manager, and multiple agents of different types.
     """
 
-    AGENT_CLASSES: Dict[str, Type[Agent]] = {
+    AGENT_CLASSES: Dict[str, Type[Agent[Any]]] = {
         "miner": Miner,
         "blacksmith": Blacksmith,
         "haulier": Haulier,
     }
 
-    def __init__(self, name: str, env_type: str = "base"):
+    REGISTRY_TYPES: List[str] = ["params", "functions", "styles"]
+
+    def __init__(self, name: str, env_type: str = "base", fg_reg: bool = False):
         self.name = name
         self.env_type = env_type
-
-        # Structured component registry
-        self.components: Dict[str, Any] = {
+        self.fg_reg = fg_reg
+        self.components: EnvironmentComponents = {
             "warehouse": None,
             "manager": None,
             "agents": {atype: [] for atype in self.AGENT_CLASSES},
         }
+
+        self.registries = self._initialize_registries()
 
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
@@ -70,6 +104,119 @@ class Environment:
                     )
 
     # ---------------------------------------------------------------------
+    # REGISTRY INITIALIZATION
+    # ---------------------------------------------------------------------
+
+    def _initialize_registries(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
+        """Populate default registry entries for Params, Functions, and Styles."""
+
+        registries: Dict[str, Dict[str, Dict[str, Any]]] = {
+            "params": {
+                "extract": {},
+                "transform": {},
+                "load": {},
+            },
+            "functions": {
+                "extract": {},
+                "transform": {},
+                "load": {},
+            },
+            "styles": {
+                "extract": {},
+                "transform": {},
+                "load": {},
+            },
+        }
+
+        if self.fg_reg:
+
+            registries["params"] = {
+                "extract": {**EXTRACT_PARAMS_CLASSES},
+                "transform": {**TRANSFORM_PARAMS_CLASSES},
+                "load": {**LOAD_PARAMS_CLASSES},
+            }
+
+            registries["functions"] = {
+                "extract": {**EXTRACT_FUNCTION_CLASSES},
+                "transform": {**TRANSFORM_FUNCTION_CLASSES},
+                "load": {**LOAD_FUNCTION_CLASSES},
+            }
+            registries["styles"] = {
+                "extract": {**EXTRACT_STYLE_CLASSES},
+                "transform": {**TRANSFORM_STYLE_CLASSES},
+                "load": {**LOAD_STYLE_CLASSES},
+            }
+
+        logger.info("Default registries initialized for environment '%s'.", self.name)
+
+        return registries
+
+    # ---------------------------------------------------------------------
+    # REGISTRY MANAGEMENT (CREATE, GET, UPDATE, DELETE)
+    # ---------------------------------------------------------------------
+
+    def _validate_registry_type(self, registry_type: str) -> None:
+        """Validate that a given registry type is valid."""
+        if registry_type not in self.REGISTRY_TYPES:
+            raise ValueError(
+                f"Invalid registry type '{registry_type}'. Must be one of {self.REGISTRY_TYPES}"
+            )
+
+    def create_registry_record(
+        self, registry_type: str, name: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Create and register a new record in the specified registry."""
+        self._validate_registry_type(registry_type)
+        registry = self.registries[registry_type]
+
+        if name in registry:
+            raise ValueError(
+                f"Record '{name}' already exists in {registry_type} registry."
+            )
+
+        registry[name] = data
+        logger.info("%s created: %s", registry_type.capitalize(), name)
+        return {name: data}
+
+    def get_registry_record(
+        self, registry_type: str, name: str
+    ) -> Optional[Dict[str, Any]]:
+        """Retrieve a specific registry record by name."""
+        self._validate_registry_type(registry_type)
+        return self.registries[registry_type].get(name)
+
+    def update_registry_record(
+        self, registry_type: str, name: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Update an existing registry record."""
+        self._validate_registry_type(registry_type)
+        registry = self.registries[registry_type]
+
+        if name not in registry:
+            raise ValueError(f"Record '{name}' not found in {registry_type} registry.")
+
+        registry[name].update(data)
+        logger.info("%s updated: %s", registry_type.capitalize(), name)
+        return {name: registry[name]}
+
+    def delete_registry_record(self, registry_type: str, name: str) -> bool:
+        """Delete a registry record by name."""
+        self._validate_registry_type(registry_type)
+        registry = self.registries[registry_type]
+
+        if name not in registry:
+            raise ValueError(f"Record '{name}' not found in {registry_type} registry.")
+
+        del registry[name]
+        logger.info("%s deleted: %s", registry_type.capitalize(), name)
+        return True
+
+    def list_registry_records(self, registry_type: str) -> Dict[str, Any]:
+        """List all records in a given registry."""
+        self._validate_registry_type(registry_type)
+        return self.registries[registry_type]
+
+    # ---------------------------------------------------------------------
     # AGENT MANAGEMENT (CREATE, GET, UPDATE, DELETE)
     # ---------------------------------------------------------------------
 
@@ -77,15 +224,15 @@ class Environment:
         self,
         agent_type: str,
         name: Optional[str] = None,
-        manager: Optional[WarehouseManager] = None,
-    ) -> Agent:
+        environment: Optional[Environment] = None,
+    ) -> Agent[Any]:
         """
-        Create and register an agent associated with the warehouse manager.
+        Create and register an agent within the given environment.
 
         Args:
-            agent_type: One of 'miner', 'blacksmith', 'haulier'.
+            agent_type: One of 'miner', 'blacksmith', or 'haulier'.
             name: Optional name for the agent.
-            manager: Optional existing WarehouseManager; created if not present.
+            environment: The environment instance this agent belongs to.
         """
         agent_type = agent_type.lower()
 
@@ -95,8 +242,10 @@ class Environment:
                 f"Available: {list(self.AGENT_CLASSES.keys())}"
             )
 
-        agent_cls = self.AGENT_CLASSES[agent_type]
+        if environment is None:
+            raise TypeError("An Environment instance is required to create an agent.")
 
+        agent_cls = self.AGENT_CLASSES[agent_type]
         agent_name = (
             name
             or f"{self.name}_{agent_type}_{len(self.components['agents'][agent_type]) + 1}"
@@ -104,28 +253,24 @@ class Environment:
 
         self._check_duplicate_name(agent_name)
 
-        if manager is None:
-            manager = self.components["manager"] or self.create_manager()
+        agent = agent_cls(name=agent_name, environment=environment)
 
-        if manager is None:
-            raise TypeError("A warehouse manager is required.")
-
-        agent = agent_cls(agent_name, manager)
         self.components["agents"][agent_type].append(agent)
-
         logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
+
         return agent
 
-    def get_agent(self, agent_name: str) -> Optional[Agent]:
+    def get_agent(self, agent_name: str) -> Optional[Agent[Any]]:
         """Return an agent by its name."""
-        agents_dict = cast(Dict[str, List[Agent]], self.components["agents"])
+        agents_dict = self.components["agents"]
+
         for agents in agents_dict.values():
             for agent in agents:
                 if getattr(agent, "name", None) == agent_name:
                     return agent
         return None
 
-    def update_agent(self, agent_name: str, **updates: Any) -> Agent:
+    def update_agent(self, agent_name: str, **updates: Any) -> Agent[Any]:
         """
         Update attributes of an existing agent.
         Example: update_agent("miner_1", active=True)
@@ -198,27 +343,33 @@ class Environment:
 
     def create_miner(self, name: Optional[str] = None) -> Miner:
         """Shortcut to create a Miner agent."""
-        return cast(Miner, self.create_agent("miner", name))
+        return cast(Miner, self.create_agent("miner", name, environment=self))
 
     def create_blacksmith(self, name: Optional[str] = None) -> Blacksmith:
         """Shortcut to create a Blacksmith agent."""
-        return cast(Blacksmith, self.create_agent("blacksmith", name))
+        return cast(Blacksmith, self.create_agent("blacksmith", name, environment=self))
 
     def create_haulier(self, name: Optional[str] = None) -> Haulier:
         """Shortcut to create a Haulier agent."""
-        return cast(Haulier, self.create_agent("haulier", name))
+        return cast(Haulier, self.create_agent("haulier", name, environment=self))
 
     # ---------------------------------------------------------------------
     # GET HELPERS
     # ---------------------------------------------------------------------
 
-    def get_warehouse(self) -> Optional[Warehouse]:
+    def get_warehouse(self) -> Warehouse:
         """Return warehouse."""
-        return cast(Optional[Warehouse], self.components["warehouse"])
+        warehouse = self.components["warehouse"]
+        if warehouse is None:
+            raise RuntimeError("Warehouse not initialized.")
+        return warehouse
 
-    def get_manager(self) -> Optional[WarehouseManager]:
+    def get_manager(self) -> WarehouseManager:
         """Return warehouse manager."""
-        return cast(Optional[WarehouseManager], self.components["manager"])
+        warehouse_manager = self.components["manager"]
+        if warehouse_manager is None:
+            raise RuntimeError("Warehouse manager not initialized.")
+        return warehouse_manager
 
     def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
         """Return all agents or those of a given type."""
@@ -228,28 +379,51 @@ class Environment:
             raise ValueError(f"Invalid agent type '{agent_type}'.")
         return cast(List[Any], self.components["agents"][agent_type])
 
+    def get_miner(self, agent_name: str) -> Miner:
+        """Return a miner agent by a given name."""
+        return cast(
+            Miner,
+            self.get_agent(
+                agent_name,
+            ),
+        )
+
+    def get_blacksmith(self, agent_name: str) -> Blacksmith:
+        """Return a blacksmith agent by a given name."""
+        return cast(
+            Blacksmith,
+            self.get_agent(
+                agent_name,
+            ),
+        )
+
+    def get_haulier(self, agent_name: str) -> Haulier:
+        """Return a haulier agent by a given name."""
+        return cast(
+            Haulier,
+            self.get_agent(
+                agent_name,
+            ),
+        )
+
     # ---------------------------------------------------------------------
     # SUMMARY
     # ---------------------------------------------------------------------
 
     def summary(self) -> Dict[str, Any]:
-        """Return environment metadata and component overview."""
+        """Return a full summary of the environment including actual objects and metadata."""
         return {
             "name": self.name,
             "type": self.env_type,
-            "warehouse": (
-                self.components["warehouse"].__class__.__name__
-                if self.components["warehouse"]
-                else None
-            ),
-            "manager": (
-                self.components["manager"].__class__.__name__
-                if self.components["manager"]
-                else None
-            ),
-            "agents": {
-                atype: [getattr(a, "name", str(a)) for a in agents]
-                for atype, agents in self.components["agents"].items()
+            "fg_reg": self.fg_reg,
+            "registries": self.registries,
+            "components": {
+                "warehouse": self.components.get("warehouse"),
+                "manager": self.components.get("manager"),
+                "agents": {
+                    atype: list(agents)
+                    for atype, agents in self.components["agents"].items()
+                },
             },
         }
 

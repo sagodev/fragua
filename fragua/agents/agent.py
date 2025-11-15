@@ -6,71 +6,80 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, Generic
 from datetime import datetime, timezone
+
 import pandas as pd
 
 from fragua.agents.warehouse_manager import WarehouseManager
-from fragua.params.params import Params, get_params
-from fragua.styles.style import get_style
+from fragua.params.params import Params, ParamsT
 from fragua.storages.storage import Storage
 from fragua.storages.storage_types import Box, Wagon, STORAGE_CLASSES
+
+
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
+if TYPE_CHECKING:
+    from fragua.environments.environment import Environment
 
 logger = get_logger(__name__)
 
 
-class Agent(ABC):  # pylint: disable=too-many-instance-attributes
-    """Agent class for ETL agents."""
+class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attributes
+    """Agent class for ETL agents using shared Environment registries."""
 
     def __init__(
         self,
         name: str,
-        manager: WarehouseManager,
-    ):
+        environment: Environment,
+    ) -> None:
         self.name: str = name
-        self.warehouse_manager = manager
+        self.environment: Environment = environment
         self.role: str
-        self._operations: list[dict[str, Any]] = []
         self.action: str
         self.storage_type: str
+        self._operations: list[dict[str, Any]] = []
+
+    # ----------------- Registry Access ----------------- #
+
+    def get_registred_class(self, reg: str, style: str, action: str) -> Any:
+        """Retrieve a class object from environment registries."""
+        registry = self.environment.registries.get(reg, {})
+        for a_name, styles in registry.items():
+            if a_name == action:
+                for s_name, cls in styles.items():
+                    if s_name == style:
+                        return cls
+        raise KeyError(f"No class found for registry '{reg}'.")
+
+    @property
+    def warehouse_manager(self) -> WarehouseManager:
+        """Access the shared warehouse manager from the environment."""
+        return self.environment.get_manager()
 
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
-        """Extract a meaningful origin name for operation metadata."""
         origin_name = None
         match origin:
             case Storage():
                 origin_name = origin.__class__.__name__
-                logger.debug("Detected Storage origin: %s", origin_name)
             case str() | Path():
                 origin_name = Path(origin).name
-                logger.debug("Detected file path origin: %s", origin_name)
             case _:
                 if hasattr(origin, "path") and isinstance(origin.path, (str, Path)):
                     origin_name = Path(origin.path).name
-                    logger.debug(
-                        "Detected object with .path attribute: %s", origin_name
-                    )
                 elif hasattr(origin, "data") and isinstance(origin.data, pd.DataFrame):
                     origin_name = "DataFrame"
-                    logger.debug("Detected object with .data as DataFrame")
-                else:
-                    logger.debug("Origin type not recognized; returning None")
         return origin_name
 
     def _generate_storage_name(self, style_name: str) -> str:
-        """Generate a name for storage from action and style."""
-        storage_name: str = f"{style_name}_{self.action}_data"
-        return storage_name
+        return f"{style_name}_{self.action}_data"
 
-    # ----------------- Metadata----------------- #
+    # ----------------- Metadata ----------------- #
     def _generate_operation_metadata(
         self, style_name: str, storage: Storage[Any], origin: Any
     ) -> None:
-        """Generate metadata from operation"""
         origin_name = self._determine_origin_name(origin)
         metadata = generate_metadata(
             storage=storage,
@@ -83,15 +92,9 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
     # ----------------- Operations ----------------- #
     def get_operations(self) -> pd.DataFrame:
         """Return a DataFrame with all recorded operations done by the agent."""
-        logger.debug(
-            "[%s] Returning %d recorded operations",
-            self.name,
-            len(self._operations),
-        )
         return pd.DataFrame(self._operations)
 
     def _add_operation(self, style: str, params_instance: Params) -> None:
-        """Add operation to agent operations list."""
         self._operations.append(
             {
                 "action": self.action,
@@ -106,35 +109,31 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
         """Convert raw style output into the appropriate storage object."""
         storage_cls = STORAGE_CLASSES.get(self.storage_type)
         if not storage_cls:
-            raise TypeError(
-                f"Result type '{self.storage_type}' is not a valid storage type."
-            )
-
-        if self.storage_type == "Container":
-            return storage_cls()
-
-        return storage_cls(data=data)
-
-    # ----------------- Store Manager Interaction ----------------- #
-    def add_to_store(
-        self,
-        storage: Storage[Any],
-        storage_name: str | None = None,
-    ) -> None:
-        """Store a Storage object via a WarehouseManager."""
-
-        self.warehouse_manager.add(
-            storage=storage,
-            storage_name=storage_name,
-            agent_name=self.name,
+            raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
+        return (
+            storage_cls(data=data)
+            if self.storage_type != "Container"
+            else storage_cls()
         )
 
-    def get_from_store(self, storage_name: str | None) -> Union[
-        Optional[Union[Wagon, Box]],
-        Mapping[str, Union[Wagon, Box]],
-        Mapping[str, Mapping[str, Union[Wagon, Box]]],
+    # ----------------- Store Interaction ----------------- #
+    def add_to_warehouse(
+        self, storage: Storage[Any], storage_name: str | None = None
+    ) -> None:
+        """Store an object using the shared WarehouseManager."""
+
+        self.warehouse_manager.add(
+            storage=storage, storage_name=storage_name, agent_name=self.name
+        )
+
+    def get_from_warehouse(
+        self,
+        storage_name: str | None,
+    ) -> Union[
+        Wagon,
+        Box,
     ]:
-        """Get data storage from store by a given storage name."""
+        """Get storage from warehouse by a given storage name."""
 
         if storage_name is None:
             raise TypeError("Missing required attribute: storage_name.")
@@ -143,64 +142,57 @@ class Agent(ABC):  # pylint: disable=too-many-instance-attributes
             storage_name=storage_name, agent_name=self.name
         )
 
-        if self.role == "haulier":
-            return storage
+        if storage is None:
+            raise TypeError("Storage not found in warehouse.")
 
-        if isinstance(storage, (Wagon, Box)):
-            return storage
+        if not isinstance(storage, (Wagon, Box)):
+            raise TypeError("Storage is not a Wagon or Box.")
 
-        if isinstance(storage, Mapping):
-
-            for value in storage.values():
-                if not isinstance(value, (Wagon, Box)):
-                    raise TypeError("Invalid nested mapping structure in store.")
-            return storage
-
-        raise TypeError(f"Unexpected data type: {type(storage).__name__}")
+        return storage
 
     def auto_store(
         self, style: str, storage: Storage[Any], save_as: str | None
     ) -> None:
-        """Add automatically an storage to store."""
-        if save_as is not None:
-            self.add_to_store(storage, save_as)
-        else:
-            generated_name = self._generate_storage_name(style)
-            self.add_to_store(storage, generated_name)
+        """Add automatically an storage to warehouse."""
+        name = save_as or self._generate_storage_name(style)
+        self.add_to_warehouse(storage, name)
 
     # ----------------- Work Pipeline ----------------- #
     def _execute_workflow(
         self,
         style: str,
         save_as: str | None = None,
+        params: Params | None = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Common workflow for agents that apply a style and store the result.
-        Used by subclasses like Miner and Blacksmith.
-        """
-        params_instance = get_params(self.role, style)(**kwargs)
-        stylized_data = get_style(self.action, style)(style).use(params_instance)
+        """Common workflow for agents using environment registries."""
 
+        style = style.lower()
+
+        if params is None:
+            params_cls = self.get_registred_class("params", style, self.action)
+            params_instance = params_cls(**kwargs)
+        else:
+            params_instance = params
+
+        style_cls = self.get_registred_class("styles", style, self.action)
+        stylized_data = style_cls(style).use(params_instance)
         storage = self.create_storage(stylized_data)
 
-        self._generate_operation_metadata(
-            style_name=style,
-            storage=storage,
-            origin=params_instance,
-        )
-
+        self._generate_operation_metadata(style, storage, params_instance)
         self._add_operation(style, params_instance)
         self.auto_store(style, storage, save_as)
 
+    # ----------------- Abstract ----------------- #
     @abstractmethod
     def work(
         self,
         /,
         style: str,
+        apply_to: str | list[str] | None = None,
         save_as: str | None = None,
+        params: ParamsT | None = None,
         **kwargs: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by its role."""
-
-        self._execute_workflow(style, save_as, **kwargs)
+        self._execute_workflow(style, save_as, params, **kwargs)

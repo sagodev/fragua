@@ -3,7 +3,7 @@ Reusable Load Functions.
 """
 
 import os
-from typing import Generic
+from typing import Dict, Generic
 import pandas as pd
 
 
@@ -11,6 +11,7 @@ from fragua.functions.function import FraguaFunction
 from fragua.params.load_params import (
     ExcelLoadParams,
     ExcelLoadParamsT,
+    LoadParams,
     LoadParamsT,
 )
 
@@ -141,3 +142,8 @@ class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
         df = convert_datetime_columns(self.params.data)
         write_excel(df, path, self.params.sheet_name or "Sheet1", self.params.index)
         return df
+
+
+LOAD_FUNCTION_CLASSES: Dict[str, type[LoadFunction[LoadParams]]] = {
+    "excel": ExcelLoadFunction,
+}

@@ -18,16 +18,20 @@ class Params(ABC):
         style (str): Defines the style or data source type (e.g., "csv", "excel", "sql", "api").
     """
 
-    def __init__(self, role: str, style: str) -> None:
-        self.role = role
+    def __init__(
+        self,
+        action: str,
+        style: str,
+    ) -> None:
+        self.action = action
         self.style = style
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(role='{self.role}', style='{self.style}')"
+        return f"{self.__class__.__name__}(role='{self.action}', style='{self.style}')"
 
     def to_dict(self) -> dict[str, str]:
         """Return a dictionary representation of the Params object."""
-        return {"role": self.role, "style": self.style}
+        return {"role": self.action, "style": self.style}
 
     @abstractmethod
     def describe(self) -> str:

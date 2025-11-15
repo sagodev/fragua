@@ -13,11 +13,11 @@ class TransformParams(Params):
     """Common parameters for transformation agents."""
 
     def __init__(self, style: str, data: DataFrame) -> None:
-        super().__init__(role="transformer", style=style)
+        super().__init__(action="transform", style=style)
         self.data = data
 
     def describe(self) -> str:
-        return f"TransformParams(role={self.role}, style={self.style})"
+        return f"TransformParams(role={self.action}, style={self.style})"
 
 
 class MLTransformParams(TransformParams):
@@ -96,3 +96,9 @@ ReportTransformParamsT = TypeVar("ReportTransformParamsT", bound=ReportTransform
 AnalysisTransformParamsT = TypeVar(
     "AnalysisTransformParamsT", bound=AnalysisTransformParams
 )
+
+TRANSFORM_PARAMS_CLASSES: Dict[str, type[TransformParams]] = {
+    "ml": MLTransformParams,
+    "report": ReportTransformParams,
+    "analysis": AnalysisTransformParams,
+}

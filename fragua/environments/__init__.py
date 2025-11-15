@@ -3,23 +3,24 @@
 from typing import Dict, Type
 from fragua.environments.environment import Environment
 from fragua.environments.basic import BasicEnvironment
-from fragua.environments.empty import EmptyEnvironment
+from fragua.environments.minimal import MinimalEnvironment
 
 # Registry of available environment types
 ENVIRONMENT_TYPES: Dict[str, Type[Environment]] = {
-    "base": Environment,
+    "minimal": MinimalEnvironment,
     "basic": BasicEnvironment,
-    "empty": EmptyEnvironment,
 }
 
 
-def create_fragua(name: str, env_type: str = "basic") -> Environment:
+def create_fragua(
+    name: str, env_type: str = "basic", fg_reg: bool = False
+) -> Environment:
     """
     Create a Fragua environment with a specific configuration.
 
     Args:
         name (str): Environment name.
-        env_type (str): Environment type ("basic", "free", "base", ...).
+        env_type (str): Environment type ("basic", "minimal", ...).
 
     Returns:
         Environment: Instantiated and configured environment.
@@ -35,14 +36,14 @@ def create_fragua(name: str, env_type: str = "basic") -> Environment:
         )
 
     env_class = ENVIRONMENT_TYPES[env_type]
-    environment = env_class(name)
+    environment = env_class(name, fg_reg=fg_reg)
 
     return environment
 
 
 __all__ = [
     "Environment",
+    "MinimalEnvironment",
     "BasicEnvironment",
-    "EmptyEnvironment",
     "create_fragua",
 ]

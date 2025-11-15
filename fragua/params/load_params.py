@@ -15,12 +15,12 @@ class LoadParams(Params):
     def __init__(
         self, style: str, data: DataFrame, destination: str | None = None
     ) -> None:
-        super().__init__(role="loader", style=style)
+        super().__init__(action="load", style=style)
         self.data = data
         self.destination = destination
 
     def describe(self) -> str:
-        return f"LoadParams(role={self.role}, style={self.style}, destination={self.destination})"
+        return f"LoadParams(role={self.action}, style={self.style}, destination={self.destination})"
 
 
 class ExcelLoadParams(LoadParams):
@@ -101,3 +101,10 @@ LoadParamsT = TypeVar("LoadParamsT", bound=LoadParams)
 ExcelLoadParamsT = TypeVar("ExcelLoadParamsT", bound=ExcelLoadParams)
 SQLLoadParamsT = TypeVar("SQLLoadParamsT", bound=SQLLoadParams)
 APILoadParamsT = TypeVar("APILoadParamsT", bound=APILoadParams)
+
+
+LOAD_PARAMS_CLASSES: Dict[str, type[LoadParams]] = {
+    "excel": ExcelLoadParams,
+    "sql": SQLLoadParams,
+    "api": APILoadParams,
+}
