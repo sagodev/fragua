@@ -26,23 +26,19 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attributes
-    """Agent class for ETL agents using shared Environment registries."""
+class Agent(ABC, Generic[ParamsT]):
+    """Agent class for ETL agents using shared Environment registries with pipeline helpers."""
 
-    def __init__(
-        self,
-        name: str,
-        environment: Environment,
-    ) -> None:
+    def __init__(self, name: str, environment: Environment) -> None:
         self.name: str = name
         self.environment: Environment = environment
         self.role: str
         self.action: str
         self.storage_type: str
         self._operations: list[dict[str, Any]] = []
+        self._undo_stack: list[dict[str, Any]] = []
 
     # ----------------- Registry Access ----------------- #
-
     def get_registred_class(self, reg: str, style: str, action: str) -> Any:
         """Retrieve a class object from environment registries."""
         registry = self.environment.registries.get(reg, {})
@@ -60,6 +56,7 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
 
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
+        """Determine a string name for the origin of data for metadata."""
         origin_name = None
         match origin:
             case Storage():
@@ -80,6 +77,7 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
     def _generate_operation_metadata(
         self, style_name: str, storage: Storage[Any], origin: Any
     ) -> None:
+        """Attach metadata to a storage object."""
         origin_name = self._determine_origin_name(origin)
         metadata = generate_metadata(
             storage=storage,
@@ -89,11 +87,7 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
         )
         add_metadata_to_storage(storage, metadata)
 
-    # ----------------- Operations ----------------- #
-    def get_operations(self) -> pd.DataFrame:
-        """Return a DataFrame with all recorded operations done by the agent."""
-        return pd.DataFrame(self._operations)
-
+    # ----------------- Operations Logging ----------------- #
     def _add_operation(self, style: str, params_instance: Params) -> None:
         self._operations.append(
             {
@@ -103,10 +97,28 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
                 "params": params_instance,
             }
         )
+        # Optional: backup for undo
+        self._undo_stack.append(
+            {"operation": "workflow", "style": style, "params": params_instance}
+        )
 
-    # ----------------- Create Storage ----------------- #
+    def get_operations(self) -> pd.DataFrame:
+        """Return a DataFrame with all recorded operations done by the agent."""
+        return pd.DataFrame(self._operations)
+
+    def undo_last_operation(self) -> bool:
+        """Undo the last workflow operation."""
+        if not self._undo_stack:
+            return False
+        last = self._undo_stack.pop()
+        # Here you could implement logic to reverse the effects
+        self._operations = [op for op in self._operations if op != last.get("params")]
+        logger.info("Undid last operation: %s", last.get("style"))
+        return True
+
+    # ----------------- Storage Management ----------------- #
     def create_storage(self, data: Any) -> Storage[Any]:
-        """Convert raw style output into the appropriate storage object."""
+        """Create a storage type for a given data."""
         storage_cls = STORAGE_CLASSES.get(self.storage_type)
         if not storage_cls:
             raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
@@ -116,41 +128,30 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
             else storage_cls()
         )
 
-    # ----------------- Store Interaction ----------------- #
     def add_to_warehouse(
         self, storage: Storage[Box], storage_name: str | None = None
     ) -> None:
-        """Store an object using the shared WarehouseManager."""
-
+        """Pipeline for adding an object to warehouse with logging."""
+        name = storage_name or getattr(storage, "name", None)
         self.warehouse_manager.add(
-            storage=storage, storage_name=storage_name, agent_name=self.name
+            storage=storage, storage_name=name, agent_name=self.name
         )
 
-    def get_from_warehouse(
-        self,
-        storage_name: str | None,
-    ) -> Box:
-        """Get storage from warehouse by a given storage name."""
-
-        if storage_name is None:
-            raise TypeError("Missing required attribute: storage_name.")
-
+    def get_from_warehouse(self, storage_name: str) -> Box:
+        """Pipeline for retrieving a storage object from warehouse with type checking."""
         storage = self.warehouse_manager.get(
             storage_name=storage_name, agent_name=self.name
         )
-
         if storage is None:
             raise TypeError("Storage not found in warehouse.")
-
         if not isinstance(storage, Box):
             raise TypeError("Storage is not a Box.")
-
         return storage
 
     def auto_store(
-        self, style: str, storage: Storage[Box], save_as: str | None
+        self, style: str, storage: Storage[Box], save_as: str | None = None
     ) -> None:
-        """Add automatically an storage to warehouse."""
+        """Add a storage object automatically using pipeline helpers."""
         name = save_as or self._generate_storage_name(style)
         self.add_to_warehouse(storage, name)
 
@@ -162,20 +163,14 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
         params: Params | None = None,
         **kwargs: Any,
     ) -> None:
-        """Common workflow for agents using environment registries."""
-
+        """Common workflow pipeline for agents."""
         style = style.lower()
-
-        if params is None:
-            params_cls = self.get_registred_class("params", style, self.action)
-            params_instance = params_cls(**kwargs)
-        else:
-            params_instance = params
-
+        params_instance = params or self.get_registred_class(
+            "params", style, self.action
+        )(**kwargs)
         style_cls = self.get_registred_class("styles", style, self.action)
         stylized_data = style_cls(style).use(params_instance)
         storage = self.create_storage(stylized_data)
-
         self._generate_operation_metadata(style, storage, params_instance)
         self._add_operation(style, params_instance)
         self.auto_store(style, storage, save_as)
@@ -191,5 +186,5 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
         params: ParamsT | None = None,
         **kwargs: Any,
     ) -> None:
-        """Execute the agent's task using the action and style defined by its role."""
+        """Execute the agent's task."""
         self._execute_workflow(style, save_as, params, **kwargs)
