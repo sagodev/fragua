@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List
 from fragua.agents.agent import Agent
 
-from fragua.params.load_params import LoadParams
+from fragua.params.load_params import ExcelLoadParams, LoadParams
 from fragua.storages.storage_types import Box, Container, Wagon
 from fragua.utils.logger import get_logger
 
@@ -74,14 +74,22 @@ class Haulier(Agent):
         # ----------------- Apply Style for each storage -----------------
         for name in container.list_storages():
 
+            # -------- Build params --------
             if params is None:
                 params_cls = self.get_registred_class("params", style, self.action)
-                kwargs["data"] = container.get_storage(name)
+                kwargs["data"] = container.get_storage(name).data
                 params_instance = params_cls(**kwargs)
             else:
                 params_instance = params
 
-            style_cls.use(params_instance)
+            # -------- Assign sheet_name based on storage name --------
+            if isinstance(params_instance, ExcelLoadParams):
+                if getattr(params_instance, "sheet_name", None) in (None, ""):
+                    params_instance.sheet_name = name
+
+            # ----------------- Instantiate the style -----------------
+            style_instance = style_cls(style)
+            style_instance.use(params_instance)
 
             # ----------------- Generate operation metadata -----------------
             self._add_operation(style, params_instance)
