@@ -118,7 +118,7 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
 
     # ----------------- Store Interaction ----------------- #
     def add_to_warehouse(
-        self, storage: Storage[Any], storage_name: str | None = None
+        self, storage: Storage[Box], storage_name: str | None = None
     ) -> None:
         """Store an object using the shared WarehouseManager."""
 
@@ -148,7 +148,7 @@ class Agent(ABC, Generic[ParamsT]):  # pylint: disable=too-many-instance-attribu
         return storage
 
     def auto_store(
-        self, style: str, storage: Storage[Any], save_as: str | None
+        self, style: str, storage: Storage[Box], save_as: str | None
     ) -> None:
         """Add automatically an storage to warehouse."""
         name = save_as or self._generate_storage_name(style)

@@ -123,7 +123,7 @@ class WarehouseManager:
     # -----------------------------
     def add(
         self,
-        storage: Box,
+        storage: Storage[Box],
         storage_name: Optional[str] = None,
         agent_name: Optional[str] = None,
         overwrite: bool = False,
@@ -278,9 +278,9 @@ class WarehouseManager:
         storage_type: StorageType,
         storage_name: str = "all",
     ) -> Union[
-        Optional[Box],
-        Mapping[str, Box],
-        Mapping[str, Mapping[str, Box]],
+        Optional[Storage[Box]],
+        Mapping[str, Storage[Box]],
+        Mapping[str, Mapping[str, Storage[Box]]],
     ]:
         """
         Remove one or more storage objects from the Warehouse.
@@ -314,7 +314,7 @@ class WarehouseManager:
             else:
                 classes = STORAGE_CLASSES[storage_type]
 
-            removed: Dict[str, Box] = {}
+            removed: Dict[str, Storage[Box]] = {}
 
             keys_to_remove = [
                 name
