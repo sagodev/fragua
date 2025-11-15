@@ -14,12 +14,12 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Miner(Agent[ExtractParams]):
+class Extractor(Agent[ExtractParams]):
     """Agent that applies extraction styles to data sources for extraction."""
 
     def __init__(self, name: str, environment: Environment):
         super().__init__(name=name, environment=environment)
-        self.role = "miner"
+        self.role = "extractor"
         self.action = "extract"
         self.storage_type = "Wagon"
 
@@ -33,6 +33,6 @@ class Miner(Agent[ExtractParams]):
         **kwargs: Any,
     ) -> None:
         """
-        Execute the miner extraction workflow using an ExtractParams instance.
+        Execute the extraction workflow using an ExtractParams instance.
         """
         self._execute_workflow(style, save_as, params, **kwargs)

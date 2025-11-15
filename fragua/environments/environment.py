@@ -9,9 +9,9 @@ from fragua.storages.warehouse import Warehouse
 
 from fragua.agents.agent import Agent
 from fragua.agents.warehouse_manager import WarehouseManager
-from fragua.agents.miner import Miner
-from fragua.agents.blacksmith import Blacksmith
-from fragua.agents.haulier import Haulier
+from fragua.agents.extractor import Extractor
+from fragua.agents.transformer import Transformer
+from fragua.agents.loader import Loader
 
 from fragua.params import (
     EXTRACT_PARAMS_CLASSES,
@@ -53,9 +53,9 @@ class Environment:  # pylint: disable=too-many-public-methods
     """
 
     AGENT_CLASSES: Dict[str, Type[Agent[Any]]] = {
-        "miner": Miner,
-        "blacksmith": Blacksmith,
-        "haulier": Haulier,
+        "extractor": Extractor,
+        "transformer": Transformer,
+        "loader": Loader,
     }
 
     REGISTRY_TYPES: List[str] = ["params", "functions", "styles"]
@@ -230,7 +230,7 @@ class Environment:  # pylint: disable=too-many-public-methods
         Create and register an agent within the given environment.
 
         Args:
-            agent_type: One of 'miner', 'blacksmith', or 'haulier'.
+            agent_type: One of 'extractor', 'transformer', or 'loader'.
             name: Optional name for the agent.
             environment: The environment instance this agent belongs to.
         """
@@ -273,7 +273,7 @@ class Environment:  # pylint: disable=too-many-public-methods
     def update_agent(self, agent_name: str, **updates: Any) -> Agent[Any]:
         """
         Update attributes of an existing agent.
-        Example: update_agent("miner_1", active=True)
+        Example: update_agent("extractor_1", active=True)
         """
         agent = self.get_agent(agent_name)
         if not agent:
@@ -341,17 +341,19 @@ class Environment:  # pylint: disable=too-many-public-methods
         logger.info("WarehouseManager created: %s", mgr_name)
         return manager
 
-    def create_miner(self, name: Optional[str] = None) -> Miner:
-        """Shortcut to create a Miner agent."""
-        return cast(Miner, self.create_agent("miner", name, environment=self))
+    def create_extractor(self, name: Optional[str] = None) -> Extractor:
+        """Shortcut to create a Extractor agent."""
+        return cast(Extractor, self.create_agent("extractor", name, environment=self))
 
-    def create_blacksmith(self, name: Optional[str] = None) -> Blacksmith:
-        """Shortcut to create a Blacksmith agent."""
-        return cast(Blacksmith, self.create_agent("blacksmith", name, environment=self))
+    def create_transformer(self, name: Optional[str] = None) -> Transformer:
+        """Shortcut to create a Transformer agent."""
+        return cast(
+            Transformer, self.create_agent("transformer", name, environment=self)
+        )
 
-    def create_haulier(self, name: Optional[str] = None) -> Haulier:
-        """Shortcut to create a Haulier agent."""
-        return cast(Haulier, self.create_agent("haulier", name, environment=self))
+    def create_loader(self, name: Optional[str] = None) -> Loader:
+        """Shortcut to create a Loader agent."""
+        return cast(Loader, self.create_agent("loader", name, environment=self))
 
     # ---------------------------------------------------------------------
     # GET HELPERS
@@ -379,28 +381,28 @@ class Environment:  # pylint: disable=too-many-public-methods
             raise ValueError(f"Invalid agent type '{agent_type}'.")
         return cast(List[Any], self.components["agents"][agent_type])
 
-    def get_miner(self, agent_name: str) -> Miner:
-        """Return a miner agent by a given name."""
+    def get_extractor(self, agent_name: str) -> Extractor:
+        """Return a Extractor agent by a given name."""
         return cast(
-            Miner,
+            Extractor,
             self.get_agent(
                 agent_name,
             ),
         )
 
-    def get_blacksmith(self, agent_name: str) -> Blacksmith:
-        """Return a blacksmith agent by a given name."""
+    def get_transformer(self, agent_name: str) -> Transformer:
+        """Return a Transformer agent by a given name."""
         return cast(
-            Blacksmith,
+            Transformer,
             self.get_agent(
                 agent_name,
             ),
         )
 
-    def get_haulier(self, agent_name: str) -> Haulier:
-        """Return a haulier agent by a given name."""
+    def get_loader(self, agent_name: str) -> Loader:
+        """Return a Loader agent by a given name."""
         return cast(
-            Haulier,
+            Loader,
             self.get_agent(
                 agent_name,
             ),

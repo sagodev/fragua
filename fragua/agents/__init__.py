@@ -2,9 +2,9 @@
 
 # ------------------- Agents ------------------- #
 from .agent import Agent
-from .miner import Miner
-from .blacksmith import Blacksmith
-from .haulier import Haulier
+from .extractor import Extractor
+from .transformer import Transformer
+from .loader import Loader
 from .warehouse_manager import WarehouseManager
 
 
@@ -14,7 +14,7 @@ __all__ = [
     "Agent",
     # Roles
     "WarehouseManager",
-    "Miner",
-    "Blacksmith",
-    "Haulier",
+    "Extractor",
+    "Transformer",
+    "Loader",
 ]
