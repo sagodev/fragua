@@ -12,7 +12,6 @@ from .metrics import (
     generate_metadata,
     get_local_time_and_offset,
     add_metadata_to_storage,
-    determine_storage_type,
 )
 
 # ------------------- __all__ ------------------- #
@@ -26,5 +25,4 @@ __all__ = [
     "generate_metadata",
     "get_local_time_and_offset",
     "add_metadata_to_storage",
-    "determine_storage_type",
 ]

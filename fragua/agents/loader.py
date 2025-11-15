@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, List
 from fragua.agents.agent import Agent
 
 from fragua.params.load_params import ExcelLoadParams, LoadParams
-from fragua.storages.storage_types import Box, Container, Wagon
+from fragua.storages.storage_types import Box, Container
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ class Loader(Agent[LoadParams]):
         self.storage_type: str = "Container"
 
     def create_container(self, content: str | List[str]) -> Container:
-        """Create and fill a Container using stored Wagon/Box objects."""
+        """Create and fill a Container using stored Box objects."""
 
         container = self.create_storage(data=None)
 
@@ -40,7 +40,7 @@ class Loader(Agent[LoadParams]):
         for name in storage_names:
             storage = self.get_from_warehouse(name)
 
-            if not isinstance(storage, (Wagon, Box)):
+            if not isinstance(storage, Box):
                 raise TypeError(
                     f"Type {type(storage).__name__} can't be stored in a container."
                 )
