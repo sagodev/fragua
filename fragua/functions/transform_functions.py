@@ -3,7 +3,7 @@ Reusable Transform Functions.
 """
 
 from __future__ import annotations
-from typing import Callable, Dict, Generic
+from typing import Any, Callable, Dict, Generic
 import numpy as np
 import pandas as pd
 from pandas.errors import UndefinedVariableError
@@ -310,7 +310,7 @@ class AnalysisTransformFunction(TransformFunction[AnalysisTransformParamsT]):
         return self.params.data
 
 
-TRANSFORM_FUNCTIONS: Dict[str, Callable[...]] = {
+TRANSFORM_FUNCTIONS: Dict[str, Callable[..., Any]] = {
     "fill_missing": fill_missing,
     "standardize": standardize,
     "encode_categoricals": encode_categoricals,
