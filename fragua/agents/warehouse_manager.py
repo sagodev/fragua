@@ -1,23 +1,21 @@
 """
 WarehouseManager class in Fragua.
 Handles all logic for adding, getting, removing, and listing storages.
-Works with a flat Warehouse structure without grouping by type.
 """
 
 from typing import Any, TypeAlias, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
+import copy as py_copy
 
 from fragua.storages.storage import Storage
 from fragua.utils.logger import get_logger
-from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
+
 from fragua.storages.warehouse import Warehouse
 from fragua.storages.storage_types import Box, STORAGE_CLASSES
 
 logger = get_logger(__name__)
 
-
 StorageType = Literal["box", "all"]
-
 StorageResult: TypeAlias = Union[
     Box,
     Storage[Box],
@@ -28,52 +26,29 @@ StorageResult: TypeAlias = Union[
 
 class WarehouseManager:
     """
-    Encapsulates storage management logic.
-    Handles only Box storage objects Warehoused in a flat structure.
+    Encapsulates storage management logic for Box objects in a flat Warehouse structure.
+    Provides add, get, delete, rename, copy, batch operations,
+    metadata search, snapshot, and undo capabilities.
     """
 
     def __init__(self, name: str, warehouse: Warehouse) -> None:
-        """
-        Initialize the WarehouseManager with an existing Warehouse instance.
-
-        Args:
-            Warehouse (Warehouse): The Warehouse instance to manage.
-        """
         self.warehouse = warehouse
         self.name = name
         self._movement_log: List[dict[str, object]] = []
-
-    def _generate_save_metadata(
-        self, storage: Box, storage_name: str, agent_name: Optional[str]
-    ) -> None:
-        """Generate and attach metadata to a storage object before saving."""
-        metadata_kwargs: Dict[str, Any] = {
-            "metadata_type": "save",
-            "storage_name": storage_name,
-            "agent_name": agent_name,
-            "warehouse_manager": self.name,
-        }
-        metadata = generate_metadata(storage, **metadata_kwargs)
-        add_metadata_to_storage(storage, metadata)
+        self._undo_stack: List[dict[str, Any]] = []
 
     # ------------------- Movement Logging ------------------- #
-    def _log_movement(
-        self,
-        /,
-        **movement_log: Any,
-    ) -> None:
+    def _log_movement(self, /, **movement_log: Any) -> None:
         """Records a movement in the internal log."""
         now = datetime.now().astimezone()
-
         date_str = now.date().isoformat()
         time_str = now.time().strftime("%H:%M:%S")
-
         raw_offset = now.strftime("%z")
-        if raw_offset and len(raw_offset) == 5:
-            tz_offset = f"{raw_offset[:3]}:{raw_offset[3:]}"
-        else:
-            tz_offset = raw_offset or ""
-
+        tz_offset = (
+            f"{raw_offset[:3]}:{raw_offset[3:]}"
+            if raw_offset and len(raw_offset) == 5
+            else raw_offset or ""
+        )
         entry: dict[str, object] = {
             "date": date_str,
             "time": time_str,
@@ -85,7 +60,6 @@ class WarehouseManager:
             "success": movement_log.get("success"),
             "details": movement_log.get("details") or {},
         }
-
         self._movement_log.append(entry)
         logger.info(
             "[%s] Movement logged by '%s': %s '%s' by agent '%s' at %s %s %s",
@@ -99,28 +73,16 @@ class WarehouseManager:
             entry["timezone"],
         )
 
-    def movements_log(
-        self,
-        storage_type: Optional[Box] = None,
-        storage_name: Optional[str] = None,
-        agent_name: Optional[str] = None,
-        operation: Optional[str] = None,
-    ) -> List[dict[str, object]]:
-        """Returns movements filtered by type, object name or agent."""
-        result = self._movement_log
-        if storage_type:
-            result = [m for m in result if m["storage_type"] == storage_type]
-        if storage_name:
-            result = [m for m in result if m["storage_name"] == storage_name]
-        if agent_name:
-            result = [m for m in result if m["agent_name"] == agent_name]
-        if operation:
-            result = [m for m in result if m["operation"] == operation]
-        return result
+    def get_movements_log(self) -> List[dict[str, object]]:
+        """
+        Return a copy of the movements log.
 
-    # -----------------------------
-    # Add
-    # -----------------------------
+        Returns:
+            List[dict[str, object]]: List of movement entries.
+        """
+        return self._movement_log.copy()
+
+    # ----------------------------- Add ----------------------------- #
     def add(
         self,
         storage: Storage[Box],
@@ -128,123 +90,92 @@ class WarehouseManager:
         agent_name: Optional[str] = None,
         overwrite: bool = False,
     ) -> None:
-        """
-        Add a Box to the Warehouse and update movement log.
-
-        Args:
-            storage: The Box object to Warehouse.
-            storage_type: 'box'.
-            storage_name: Name to Warehouse the object under.
-            agent_name: Optional agent performing the action.
-            overwrite: Whether to overwrite if it already exists.
-
-        Raises:
-            ValueError: If storage_name is missing or storage_type is invalid.
-        """
-        movement_log: Dict[str, Any] = {}
+        """Add a Box to the Warehouse with logging and undo support."""
         storage_type = storage.__class__.__name__.lower()
         try:
             if storage_name is None:
                 raise ValueError("Missing required argument: 'storage_name'")
-
-            if storage_type not in ("box"):
+            if storage_type != "box":
                 raise ValueError(f"Invalid storage_type '{storage_type}'")
 
-            if storage_name in self.warehouse.data and not overwrite:
-                logger.warning(
-                    "[%s] %s '%s' exists. Use overwrite=True to replace.",
-                    self.name,
-                    storage_type,
-                    storage_name,
+            old_obj = self.warehouse.data.get(storage_name)
+            if old_obj and not overwrite:
+                self._log_movement(
+                    operation="add",
+                    storage_type=storage_type,
+                    storage_name=storage_name,
+                    agent_name=agent_name,
+                    success=False,
+                    details={"reason": "exists"},
                 )
-                movement_log = {
-                    "operation": "add",
-                    "storage_type": storage_type,
-                    "storage_name": storage_name,
-                    "agent_name": agent_name,
-                    "success": False,
-                    "details": {"reason": "exists"},
-                }
-                self._log_movement(**movement_log)
                 return
 
+            # Backup for undo
+            if old_obj:
+                self._undo_stack.append(
+                    {
+                        "operation": "add",
+                        "name": storage_name,
+                        "backup": py_copy.deepcopy(old_obj),
+                    }
+                )
+            else:
+                self._undo_stack.append(
+                    {"operation": "add", "name": storage_name, "backup": None}
+                )
+
             self.warehouse.data[storage_name] = storage
-
-            logger.info(
-                "[%s] Added %s '%s' by agent '%s'",
-                self.name,
-                storage_type,
-                storage_name,
-                agent_name,
+            self._log_movement(
+                operation="add",
+                storage_type=storage_type,
+                storage_name=storage_name,
+                agent_name=agent_name,
+                success=True,
             )
-
-            movement_log = {
-                "operation": "add",
-                "storage_type": storage_type,
-                "storage_name": storage_name,
-                "agent_name": agent_name,
-                "success": True,
-            }
-            self._log_movement(**movement_log)
-
         except Exception as e:
-            movement_log = {
-                "operation": "add",
-                "storage_type": storage_type,
-                "storage_name": storage_name or "unknown",
-                "agent_name": agent_name,
-                "success": False,
-                "details": {"error": str(e)},
-            }
-            self._log_movement(**movement_log)
+            self._log_movement(
+                operation="add",
+                storage_type=storage_type,
+                storage_name=storage_name or "unknown",
+                agent_name=agent_name,
+                success=False,
+                details={"error": str(e)},
+            )
             raise
 
-    # -----------------------------
-    # Get
-    # -----------------------------
+    # ----------------------------- Get Helpers ----------------------------- #
+    def _get_one(
+        self, storage_name: str, storage_type: StorageType
+    ) -> Optional[Storage[Box]]:
+        classes = Box if storage_type == "all" else STORAGE_CLASSES[storage_type]
+        obj = self.warehouse.data.get(storage_name)
+        return obj if isinstance(obj, classes) else None
+
+    def _get_all(self, storage_type: StorageType) -> Dict[str, Storage[Box]]:
+        classes = Box if storage_type == "all" else STORAGE_CLASSES[storage_type]
+        return {
+            name: obj
+            for name, obj in self.warehouse.data.items()
+            if isinstance(obj, classes)
+        }
+
     def get(
         self,
         agent_name: str,
         storage_type: StorageType = "all",
         storage_name: str = "all",
     ) -> Optional[StorageResult]:
-        """
-        Retrieve one or more storage objects from the Warehouse.
-
-        Behavior:
-            - If `storage_name` is a concrete name, return a single object or None.
-            - If `storage_name='all'`, return a dict of matching objects.
-            - If `storage_type='all'`, return all Box storages.
-            - Otherwise return only objects matching the specified storage type.
-
-        Args:
-            agent_name (str): Name of the agent requesting the objects.
-            storage_type (StorageType): Either "box" or "all".
-            storage_name (str): Specific object name or "all" to return every match.
-
-        Returns:
-            Optional[StorageResult]: A single object, a dict of objects, or None if not found.
-
-        Raises:
-            Exception: Propagates unexpected errors while logging the failure.
-        """
-
-        classes: type[Storage[Any]] | tuple[type[Storage[Any]], ...]
-
+        """Pipeline method for getting storage objects."""
         try:
-            if storage_type == "all":
-                classes = Box
+            if storage_name != "all":
+                # Single object or None
+                result: Optional[Storage[Box]] = self._get_one(
+                    storage_name, storage_type
+                )
             else:
-                classes = STORAGE_CLASSES[storage_type]
-
-            result: Dict[str, Storage[Box]] = {}
-
-            for name, obj in self.warehouse.data.items():
-                if not isinstance(obj, classes):
-                    continue
-                if storage_name not in ("all", name):
-                    continue
-                result[name] = obj
+                # Dict of objects
+                result_dict: Dict[str, Storage[Box]] = self._get_all(storage_type)
+                result = result_dict  # type: ignore
 
             self._log_movement(
                 operation="get",
@@ -254,95 +185,77 @@ class WarehouseManager:
                 success=True,
                 details={"result_type": type(result).__name__},
             )
-
-            return (
-                next(iter(result.values()), None) if storage_name != "all" else result
-            )
-
+            return result
         except Exception as e:
             self._log_movement(
                 operation="get",
                 storage_type=storage_type,
                 storage_name=storage_name,
-                agent_name=None,
+                agent_name=agent_name,
                 success=False,
                 details={"error": str(e)},
             )
             raise
 
-    # -----------------------------
-    # Remove
-    # -----------------------------
-    def remove(
-        self,
-        storage_type: StorageType,
-        storage_name: str = "all",
-    ) -> Union[
-        Optional[Storage[Box]],
-        Mapping[str, Storage[Box]],
-        Mapping[str, Mapping[str, Storage[Box]]],
-    ]:
-        """
-        Remove one or more storage objects from the Warehouse.
+    # ----------------------------- Delete Helpers ----------------------------- #
+    def _delete_one(
+        self, storage_name: str, storage_type: StorageType
+    ) -> Optional[Storage[Box]]:
+        obj = self._get_one(storage_name, storage_type)
+        if obj:
+            self._undo_stack.append(
+                {
+                    "operation": "delete",
+                    "name": storage_name,
+                    "backup": py_copy.deepcopy(obj),
+                }
+            )
+            del self.warehouse.data[storage_name]
+        return obj
 
-        Behavior:
-            - If `storage_name` is a specific name, return the removed object or None.
-            - If `storage_name='all'`, remove every object matching the type.
-            - If `storage_type='all'`, remove all Box storages.
-            - Returns a dict of removed objects when multiple were removed.
+    def _delete_multiple(self, storage_type: StorageType) -> Dict[str, Storage[Box]]:
+        classes = Box if storage_type == "all" else STORAGE_CLASSES[storage_type]
+        to_delete = {
+            name: obj
+            for name, obj in self.warehouse.data.items()
+            if isinstance(obj, classes)
+        }
+        for name, obj in to_delete.items():
+            self._undo_stack.append(
+                {"operation": "delete", "name": name, "backup": py_copy.deepcopy(obj)}
+            )
+            del self.warehouse.data[name]
+        return to_delete
 
-        Args:
-            storage_type (StorageType): Either "box" or "all".
-            storage_name (str): Name of the object or "all" to remove all matching items.
-
-        Returns:
-            Union[Optional[Box], Mapping[str, Box], Mapping[str, Mapping[str, Box]]]:
-                The removed object(s). A single removed object, a dict of removed
-                objects, or an empty dict if nothing matched.
-
-        Raises:
-            Exception: Propagates unexpected errors while also logging the failure.
-        """
-
-        classes: type[Storage[Any]] | tuple[type[Storage[Any]], ...]
-
+    def delete(
+        self, storage_type: StorageType, storage_name: str = "all"
+    ) -> Union[Optional[Storage[Box]], Dict[str, Storage[Box]]]:
+        """Pipeline method for deleting storage objects with undo support."""
         try:
-            data = self.warehouse.data
-
-            if storage_type == "all":
-                classes = Box
+            if storage_name != "all":
+                removed: Optional[Storage[Box]] = self._delete_one(
+                    storage_name, storage_type
+                )
+                count_removed = 1 if removed else 0
             else:
-                classes = STORAGE_CLASSES[storage_type]
-
-            removed: Dict[str, Storage[Box]] = {}
-
-            keys_to_remove = [
-                name
-                for name, obj in data.items()
-                if isinstance(obj, classes) and storage_name in ("all", name)
-            ]
-
-            for key in keys_to_remove:
-                removed[key] = data.pop(key)
-
-            count_removed = len(removed)
+                removed_dict: Dict[str, Storage[Box]] = self._delete_multiple(
+                    storage_type
+                )
+                removed = removed_dict  # type: ignore
+                count_removed = len(removed_dict)
 
             self._log_movement(
-                operation="remove",
+                operation="delete",
                 storage_type=storage_type,
                 storage_name=storage_name,
                 agent_name=None,
-                success=bool(removed),
+                success=bool(count_removed),
                 details={"removed_count": count_removed},
             )
-
-            if storage_name != "all" and removed:
-                return next(iter(removed.values()))
             return removed
-
         except Exception as e:
             self._log_movement(
-                operation="remove",
+                operation="delete",
                 storage_type=storage_type,
                 storage_name=storage_name,
                 agent_name=None,
@@ -351,63 +264,76 @@ class WarehouseManager:
             )
             raise
 
-    # -----------------------------
-    # Exists
-    # -----------------------------
-    def exists(self, name: str) -> bool:
-        """
-        Check if a specific object exists in the Warehouse.
+    # ----------------------------- Additional Functionalities ----------------------------- #
+    def rename(self, old_name: str, new_name: str) -> bool:
+        """Rename a storage object if it exists."""
+        if old_name not in self.warehouse.data or new_name in self.warehouse.data:
+            return False
+        self.warehouse.data[new_name] = self.warehouse.data.pop(old_name)
+        self._log_movement(
+            operation="rename",
+            storage_type="box",
+            storage_name=new_name,
+            agent_name=None,
+            success=True,
+            details={"from": old_name, "to": new_name},
+        )
+        return True
 
-        Args:
-            name (str): Name of the object.
+    def copy(self, storage_name: str, new_name: str) -> bool:
+        """Duplicate a storage object if it exists and new_name is free."""
+        obj = self.warehouse.data.get(storage_name)
+        if not obj or new_name in self.warehouse.data:
+            return False
+        self.warehouse.data[new_name] = py_copy.deepcopy(obj)
+        self._log_movement(
+            operation="copy",
+            storage_type="box",
+            storage_name=new_name,
+            agent_name=None,
+            success=True,
+            details={"from": storage_name},
+        )
+        return True
 
-        Returns:
-            bool: True if the object exists, False otherwise.
-        """
-        return name in self.warehouse.data
+    def batch_add(
+        self, items: Dict[str, Storage[Box]], overwrite: bool = False
+    ) -> None:
+        """Add multiple storage objects at once."""
+        for name, obj in items.items():
+            self.add(obj, storage_name=name, overwrite=overwrite)
 
-    # -----------------------------
-    # List all metadata
-    # -----------------------------
-    def list_all(
-        self,
-        fields: Optional[List[str]] = None,
-        all_fields: bool = False,
-    ) -> Mapping[str, Dict[str, object]]:
-        """
-        Return metadata for all Warehoused objects, optionally filtered by fields.
+    def search_by_metadata(self, key: str, value: Any) -> Dict[str, Storage[Box]]:
+        """Search objects by metadata key/value."""
+        return {
+            name: obj
+            for name, obj in self.warehouse.data.items()
+            if getattr(obj, "metadata", {}).get(key) == value
+        }
 
-        Args:
-            fields (List[str], optional): Specific metadata fields to include.
-            all_fields (bool): If True, include all metadata fields.
+    def snapshot(self) -> Dict[str, Storage[Box]]:
+        """Return a shallow copy of the warehouse state."""
+        return self.warehouse.data.copy()
 
-        Returns:
-            Mapping[str, Dict[str, object]]: Dictionary of object names to filtered metadata.
-        """
-        default_fields = ["storage_name", "type", "rows", "columns", "checksum"]
-        selected_fields = [] if all_fields else (fields or default_fields)
-
-        result: Dict[str, Dict[str, object]] = {}
-
-        for name, obj in self.warehouse.data.items():
-            metadata = getattr(obj, "metadata", {})
-            if all_fields:
-                result[name] = metadata
+    def undo_last_action(self) -> bool:
+        """Undo the last add or delete action."""
+        if not self._undo_stack:
+            return False
+        last = self._undo_stack.pop()
+        op, name, backup = last["operation"], last["name"], last["backup"]
+        if op == "add":
+            if backup:
+                self.warehouse.data[name] = backup
             else:
-                result[name] = {
-                    k: v for k, v in metadata.items() if k in selected_fields
-                }
-
-        return result
-
-    # -----------------------------
-    # Remove all convenience
-    # -----------------------------
-    def remove_all(self) -> None:
-        """
-        Remove all objects from the Warehouse.
-
-        Returns:
-            Mapping[str, Box]: All removed objects.
-        """
-        self.remove("all")
+                self.warehouse.data.pop(name, None)
+        elif op == "delete" and backup:
+            self.warehouse.data[name] = backup
+        self._log_movement(
+            operation="undo",
+            storage_type="box",
+            storage_name=name,
+            agent_name=None,
+            success=True,
+            details={"reverted_operation": op},
+        )
+        return True
