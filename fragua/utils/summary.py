@@ -5,7 +5,7 @@ from typing import Any
 from dataclasses import is_dataclass, asdict
 
 
-def summary(obj: Any) -> Any:
+def summary(obj: Any) -> Any:  # pylint: disable=R0911
     """
     Generic summarization utility that converts any object into a JSON-serializable structure.
     """
