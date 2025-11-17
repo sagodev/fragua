@@ -37,6 +37,35 @@ class WarehouseManager:
         self._movement_log: List[dict[str, object]] = []
         self._undo_stack: List[dict[str, Any]] = []
 
+    def summary(self) -> Dict[str, Any]:
+        """
+        Return a JSON-serializable summary of the WarehouseManager state.
+
+        Includes:
+            - manager name
+            - warehouse name
+            - number of storages
+            - storage names and their types
+            - full movement log
+            - counters (log size, undo size)
+        """
+        warehouse_name = getattr(self.warehouse, "warehouse_name", None)
+
+        # Map each storage name to its class name
+        storages_info: Dict[str, str] = {
+            name: obj.__class__.__name__ for name, obj in self.warehouse.data.items()
+        }
+
+        return {
+            "manager_name": self.name,
+            "warehouse_name": warehouse_name,
+            "storage_count": len(self.warehouse.data),
+            "storages": storages_info,
+            "movement_log": self._movement_log.copy(),
+            "log_entries": len(self._movement_log),
+            "undo_stack_size": len(self._undo_stack),
+        }
+
     # ------------------- Movement Logging ------------------- #
     def _log_movement(self, /, **movement_log: Any) -> None:
         """Records a movement in the internal log."""
