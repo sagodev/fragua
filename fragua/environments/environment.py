@@ -275,14 +275,62 @@ class Environment:
         return cast(List[Any], self.components["agents"][agent_type])
 
     # ---------------------- Summary ---------------------- #
+
     def summary(self) -> Dict[str, Any]:
-        """Return a summary of the environment including components and registries."""
+        """
+        Return a JSON-serializable summary of the Environment instance,
+        including metadata, components, agents and registries.
+        """
+
+        def serialize_registry(reg: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+            """Convert registry class references into JSON-safe values."""
+            clean: Dict[str, Any] = {}
+            for category, items in reg.items():
+                clean[category] = {
+                    name: getattr(cls, "__name__", str(cls))
+                    for name, cls in items.items()
+                }
+            return clean
+
+        def serialize_agents(agent_dict: Dict[str, List[Agent[Any]]]) -> Dict[str, Any]:
+            """Serialize all agents by calling agent.summary() if available."""
+            output: Dict[str, Any] = {}
+            for atype, agents in agent_dict.items():
+                output[atype] = [
+                    a.summary() if hasattr(a, "summary") else {"name": a.name}
+                    for a in agents
+                ]
+            return output
+
+        # Warehouse
+        warehouse = self.components["warehouse"]
+        warehouse_summary = (
+            warehouse.summary() if warehouse and hasattr(warehouse, "summary") else None
+        )
+
+        # Manager
+        manager = self.components["manager"]
+        manager_summary = (
+            manager.summary() if manager and hasattr(manager, "summary") else None
+        )
+
         return {
+            "meta": {
+                "class": type(self).__name__,
+                "module": type(self).__module__,
+            },
             "name": self.name,
             "type": self.env_type,
             "fg_reg": self.fg_reg,
-            "registries": self.registries,
-            "components": self.components,
+            "components": {
+                "warehouse": warehouse_summary,
+                "manager": manager_summary,
+                "agents": serialize_agents(self.components["agents"]),
+            },
+            "registries": {
+                rtype: serialize_registry(self.registries[rtype])
+                for rtype in self.REGISTRY_TYPES
+            },
         }
 
     def __repr__(self) -> str:

@@ -7,7 +7,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="fragua",
-    version="0.3.0",
+    version="0.3.1",
     author="SagoDev",
     description="Package for creating ETL environments for data analysis",
     packages=find_packages(where=".", include=["fragua", "fragua.*"]),

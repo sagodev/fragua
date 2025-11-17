@@ -32,3 +32,22 @@ class Warehouse:
         Returns: Dict[str, Storage[Box]]: Stored objects by name.
         """
         return self._warehouse
+
+    def summary(self) -> Dict[str, object]:
+        """
+        Return a JSON-serializable summary of the Warehouse contents.
+
+        Includes:
+            - warehouse name
+            - number of storage items
+            - mapping of storage names -> class name
+        """
+        storages_info: Dict[str, str] = {
+            name: obj.__class__.__name__ for name, obj in self._warehouse.items()
+        }
+
+        return {
+            "warehouse_name": self.warehouse_name,
+            "storage_count": len(self._warehouse),
+            "storages": storages_info,
+        }

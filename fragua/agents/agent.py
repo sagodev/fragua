@@ -6,7 +6,7 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Generic
+from typing import TYPE_CHECKING, Any, Dict, Optional, Generic
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -37,6 +37,51 @@ class Agent(ABC, Generic[ParamsT]):
         self.storage_type: str
         self._operations: list[dict[str, Any]] = []
         self._undo_stack: list[dict[str, Any]] = []
+
+    # ----------------- Agent Summary ----------------- #
+    def summary(self) -> Dict[str, object]:
+        """
+        Return a JSON-serializable summary of the agent state.
+        """
+
+        # ---- Environment info ----
+        env_name = getattr(self.environment, "name", None)
+        manager = getattr(self.environment, "manager", None)
+        manager = manager() if callable(manager) else None
+
+        # ---- Operations (convert timestamps only) ----
+        ops_serialized: list[Dict[str, object]] = []
+        for op in self._operations:
+            ts = op.get("timestamp")
+            ops_serialized.append(
+                {
+                    "action": op.get("action"),
+                    "style": op.get("style_name") or op.get("style"),
+                    "timestamp": ts.isoformat() if ts is not None else None,
+                }
+            )
+
+        # ---- Undo stack (no params) ----
+        undo_serialized: list[Dict[str, object]] = []
+        for item in self._undo_stack:
+            undo_serialized.append(
+                {
+                    "operation": item.get("operation"),
+                    "style": item.get("style"),
+                }
+            )
+
+        return {
+            "agent_name": self.name,
+            "role": getattr(self, "role", None),
+            "action": getattr(self, "action", None),
+            "storage_type": getattr(self, "storage_type", None),
+            "environment_name": env_name,
+            "operation_count": len(self._operations),
+            "operations": ops_serialized,
+            "undo_stack_size": len(self._undo_stack),
+            "undo_stack": undo_serialized,
+        }
 
     # ----------------- Registry Access ----------------- #
     def get_registred_class(self, reg: str, style: str, action: str) -> Any:
