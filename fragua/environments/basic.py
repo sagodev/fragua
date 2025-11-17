@@ -18,7 +18,7 @@ class BasicEnvironment(Environment):
     - 1 Loader
     """
 
-    def __init__(self, name: str, fg_reg: bool):
+    def __init__(self, name: str, fg_reg: bool = False):
         super().__init__(name, env_type="basic", fg_reg=fg_reg)
 
         # Automatically build basic setup
