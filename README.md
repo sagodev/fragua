@@ -1,4 +1,3 @@
-
 # Fragua
 
 **Fragua** es una biblioteca ligera y modular diseñada para construir pipelines ETL/ELT y flujos de procesamiento de datos en Python. Proporciona un conjunto de componentes reutilizables (entornos, agentes, estilos, parámetros y almacenes) para orquestar la extracción, transformación y carga de datos con trazabilidad y buenas prácticas.
@@ -8,10 +7,10 @@
 ## 🚀 ¿Qué es Fragua?
 
 - Fragua ofrece una abstracción sobre tareas de integración de datos basada en tres roles principales (agentes):
-  - Extractor: extrae datos desde distintas fuentes (por ejemplo Excel, CSV, APIs).
-  - Transformer: transforma o enriquece los datos aplicando reglas o modelos.
-  -  Loader: guarda o entrega los resultados en destinos finales (archivos, bases, servicios).
-- Además Fragua integra un `Warehouse` (almacén) y un `WarehouseManager` para almacenar artefactos intermedios con metadatos y un log de movimientos.
+  - **Extractor**: extrae datos desde distintas fuentes (por ejemplo Excel, CSV, APIs).
+  - **Transformer**: transforma o enriquece los datos aplicando reglas o modelos.
+  - **Loader**: guarda o entrega los resultados en destinos finales (archivos, bases, servicios).
+- Además, Fragua integra un `Warehouse` (almacén) y un `WarehouseManager` para almacenar artefactos intermedios con metadatos y un log de movimientos.
 - Es modular: los `styles`, `functions` y `params` se registran y reutilizan dentro de un `Environment`.
 
 ---
@@ -30,18 +29,17 @@
 
 La estructura principal del paquete es:
 
-```
+```text
 fragua/
 ├── agents/        # Extractor, Transformer, Loader, WarehouseManager
 ├── environments/  # Minimal and Basic Environment implementations
-├── functions/     # Funciones reutilizables de extracción/transformación/
+├── functions/     # Funciones reutilizables de extracción/transformación
 ├── params/        # Clases Params para cada style
 ├── styles/        # Implementaciones de styles (excel, report, etc.)
 ├── storages/      # Warehouse, Storage base, tipos (Box, Container)
 ├── utils/         # Logger, metrics, summary, config
-__ init__.py
+└── __init__.py
 ```
-
 
 ---
 
@@ -100,7 +98,7 @@ print(env.summary())
   2. Crea los `Params` en `fragua/params` si necesitas parámetros específicos.
   3. Registra las clases en las constantes de registro correspondientes o usa la API del `Environment` para registrar dinámicamente.
 
-- Para añadir funciones reutilizables: crealas en `fragua/functions` y regístralos.
+- Para añadir funciones reutilizables: créalas en `fragua/functions` y regístralas.
 
 ---
 
