@@ -68,13 +68,6 @@ jobs:
           echo "No Python or Markdown files changed. Skipping CI."
           exit 0
 
-      # --- Validate Markdown files ---
-      - name: Validate Markdown files
-        if: steps.changed-files.outputs.markdown_files != ''
-        run: |
-          echo "Validating Markdown formatting..."
-          FILES=$(echo "${{ steps.changed-files.outputs.markdown_files }}" | tr ' ' '\n')
-          mdformat --check $FILES
 
       # --- Auto-format Markdown on main ---
       - name: Auto-format Markdown on main

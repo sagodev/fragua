@@ -17,7 +17,6 @@ class MinimalEnvironment(Environment):
     def __init__(self, name: str, fg_reg: bool = False):
         super().__init__(name, env_type="minimal", fg_reg=fg_reg)
 
-        # Create only core components
         warehouse = self.create_warehouse(f"{self.name}_warehouse")
         self.create_manager(f"{self.name}_manager", warehouse)
 
