@@ -1,10 +1,6 @@
 # Fragua
 
-Fragua es una biblioteca ligera y modular diseñada para construir
-pipelines ETL/ELT y flujos de procesamiento de datos en Python.
-Proporciona componentes reutilizables como entornos, agentes, estilos,
-parámetros y almacenes para orquestar extracción, transformación y carga
-de datos con trazabilidad y buenas prácticas.
+Fragua es una biblioteca ligera y modular diseñada para construir pipelines ETL/ELT y flujos de procesamiento de datos en Python. Proporciona componentes reutilizables como entornos, agentes, estilos, parámetros y almacenes para orquestar extracción, transformación y carga de datos con trazabilidad y buenas prácticas.
 
 ---
 
@@ -34,6 +30,7 @@ Incluye además un sistema de almacenamiento con:
 ---
 
 ## Estructura del proyecto
+
 ```
 fragua/
 ├── agents/
@@ -51,14 +48,53 @@ fragua/
 ## Instalación
 
 Instala Fragua en modo editable desde la raíz del repositorio:
-```bash 
+
+```bash
 python -m pip install -e .
 ```
+
 Consulta `requirements.txt` para dependencias adicionales.
 
 ---
 
+## Ejemplo de uso
 
+```python
+import fragua as fg
+
+env = fg.create_fragua("fragua_1", "minimal", True)
+env.create_extractor("extractor")
+env.create_transformer("transformer")
+env.create_loader("loader")
+
+extractor = env.get_agent("extractor")
+transformer = env.get_agent("transformer")
+loader = env.get_agent("loader")
+
+extractor.work(
+    "excel",
+    save_as="extracted_data",
+    path="./test_files/input_files/test_data.xlsx",
+    sheet_name=0,
+)
+
+transformer.work(
+    style="report",
+    apply_to="extracted_data",
+    save_as="transformed_data",
+)
+
+loader.work(
+    style="excel",
+    apply_to=["extracted_data", "transformed_data"],
+    destination="./test_files/output_files",
+    file_name="output_file",
+)
+
+print(env.summary())
+```
+
+---
 
 ## Desarrollo
 
@@ -78,9 +114,9 @@ Crear las funciones dentro de `fragua/functions` y registrarlas para su uso en l
 
 **Santiago Lanz**  
 📍 Desarrollador y creador de Fragua  
-🌐 [Portfolio](https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/)  
-💼 [LinkedIn](https://www.linkedin.com/in/santiagolanz/)  
-🐙 [GitHub](https://github.com/SagoDev)
+🌐 Portfolio: <https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/>  
+💼 LinkedIn: <https://www.linkedin.com/in/santiagolanz/>  
+🐙 GitHub: <https://github.com/SagoDev>
 
 ---
 
