@@ -1,35 +1,51 @@
 # Fragua
 
-**Fragua** es una biblioteca ligera y modular diseñada para construir pipelines ETL/ELT y flujos de procesamiento de datos en Python. Proporciona un conjunto de componentes reutilizables (entornos, agentes, estilos, parámetros y almacenes) para orquestar la extracción, transformación y carga de datos con trazabilidad y buenas prácticas.
+**Fragua** es una biblioteca ligera y modular diseñada para construir
+pipelines ETL/ELT y flujos de procesamiento de datos en Python.
+Proporciona componentes reutilizables (entornos, agentes, estilos,
+parámetros y almacenes) para orquestar extracción, transformación y
+carga de datos con trazabilidad y buenas prácticas.
 
----
+------------------------------------------------------------------------
 
 ## 🚀 ¿Qué es Fragua?
 
-- Fragua ofrece una abstracción sobre tareas de integración de datos basada en tres roles principales (agentes):
-  - **Extractor**: extrae datos desde distintas fuentes (por ejemplo Excel, CSV, APIs).
-  - **Transformer**: transforma o enriquece los datos aplicando reglas o modelos.
-  - **Loader**: guarda o entrega los resultados en destinos finales (archivos, bases, servicios).
-- Además, Fragua integra un `Warehouse` (almacén) y un `WarehouseManager` para almacenar artefactos intermedios con metadatos y un log de movimientos.
-- Es modular: los `styles`, `functions` y `params` se registran y reutilizan dentro de un `Environment`.
+Fragua ofrece una abstracción sobre tareas de integración de datos
+basada en tres agentes principales:
 
----
+-   **Extractor**: extrae datos desde distintas fuentes (Excel, CSV,
+    APIs, etc.).
+-   **Transformer**: transforma o enriquece los datos aplicando reglas o
+    modelos.
+-   **Loader**: carga o entrega los resultados en destinos finales
+    (archivos, bases de datos, servicios).
+
+También incluye un sistema de almacenamiento:
+
+-   **Warehouse** y **WarehouseManager** para guardar artefactos
+    intermedios con metadatos y trazabilidad.
+-   Arquitectura modular donde `styles`, `functions` y `params` pueden
+    registrarse dentro de un `Environment`.
+
+------------------------------------------------------------------------
 
 ## 🔧 Características principales
 
-- Modelado de entornos (`Environment`) para aislar y organizar instancias de trabajo.
-- Agentes (`Extractor`, `Transformer`, `Loader`) con pipeline común, registro de operaciones y capacidad de `undo`.
-- Registries para `params`, `functions` y `styles` que facilitan la extensión del sistema.
-- Tipos de almacenamiento (`Storage`, `Box`, `Container`) y `Warehouse` para persistencia y trazabilidad.
-- Utilidades para logging, métricas y resumen del estado de ejecución.
+-   Modelado de entornos (`Environment`) para aislar y organizar
+    instancias de trabajo.
+-   Agentes (`Extractor`, `Transformer`, `Loader`) con pipeline común,
+    capacidad de `undo` y registro de operaciones.
+-   Registries para `params`, `functions` y `styles`.
+-   Múltiples tipos de almacenamiento (`Storage`, `Box`, `Container`) y
+    un `Warehouse` centralizado.
+-   Utilidades integradas para logging, métricas y resúmenes del estado
+    de ejecución.
 
----
+------------------------------------------------------------------------
 
 ## 📁 Estructura del proyecto
 
-La estructura principal del paquete es:
-
-```text
+``` text
 fragua/
 ├── agents/        # Extractor, Transformer, Loader, WarehouseManager
 ├── environments/  # Minimal and Basic Environment implementations
@@ -41,23 +57,23 @@ fragua/
 └── __init__.py
 ```
 
----
+------------------------------------------------------------------------
 
 ## ⚙️ Instalación
 
-Instala el paquete en modo editable desde la raíz del repo:
+Instala Fragua en modo editable desde la raíz del repositorio:
 
-```powershell
+``` bash
 python -m pip install -e .
 ```
 
-Revisa `requirements.txt` para dependencias adicionales.
+Consulta `requirements.txt` para dependencias adicionales.
 
----
+------------------------------------------------------------------------
 
 ## 🚀 Ejemplo de uso
 
-```python
+``` python
 import fragua as fg
 
 env = fg.create_fragua("fragua_1", "minimal", True)
@@ -78,7 +94,11 @@ extractor.work(
 )
 
 # Transformar
-transformer.work(style="report", apply_to="extracted_data", save_as="transformed_data")
+transformer.work(
+    style="report",
+    apply_to="extracted_data",
+    save_as="transformed_data"
+)
 
 # Cargar / exportar
 loader.work(
@@ -91,25 +111,33 @@ loader.work(
 print(env.summary())
 ```
 
+------------------------------------------------------------------------
+
 ## 🛠️ Desarrollo
 
-- Para añadir un nuevo `style` (por ejemplo un nuevo formato de extracción o carga):
-  1. Añade una clase en `fragua/styles` que implemente la interfaz requerida (método `use`).
-  2. Crea los `Params` en `fragua/params` si necesitas parámetros específicos.
-  3. Registra las clases en las constantes de registro correspondientes o usa la API del `Environment` para registrar dinámicamente.
+### Añadir un nuevo `style`
 
-- Para añadir funciones reutilizables: créalas en `fragua/functions` y regístralas.
+1.  Crear una clase en `fragua/styles` que implemente el método `use`.
+2.  Añadir los `Params` necesarios en `fragua/params`.
+3.  Registrar las clases en los registries o mediante la API del
+    `Environment`.
 
----
+### Añadir funciones reutilizables
+
+-   Crear las funciones dentro de `fragua/functions` y registrarlas para
+    su uso en la pipeline.
+
+------------------------------------------------------------------------
 
 ## 🧑‍💻 Autor
 
-**Santiago Lanz**  
-📍 Desarrollador y creador de Fragua  
-🐙 [GitHub - SagoDev](https://github.com/SagoDev)
+**Santiago Lanz**\
+📍 Desarrollador y creador de Fragua\
+🐙 GitHub: https://github.com/SagoDev
 
----
+------------------------------------------------------------------------
 
 ## ⚖️ Licencia
 
-Este proyecto se publica bajo la licencia indicada en el archivo `LICENSE` en la raíz del repositorio.
+Publicado bajo la licencia detallada en el archivo `LICENSE` ubicado en
+la raíz del repositorio.
