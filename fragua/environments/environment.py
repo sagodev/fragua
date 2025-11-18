@@ -210,6 +210,36 @@ class Environment:
                     return True
         raise ValueError(f"Agent '{agent_name}' not found.")
 
+    def update_agent(
+        self,
+        agent_name: str,
+        new_name: Optional[str] = None,
+    ) -> Agent[Any]:
+        """
+        Update an existing agent inside the environment.
+
+        Args:
+            agent_name: Current name of the agent to update.
+            new_name: Optional new name for the agent.
+
+        Returns:
+            The updated Agent instance.
+
+        Raises:
+            ValueError: If agent is not found or new name conflicts with another component.
+        """
+        agent = self.get_agent(agent_name)
+        if agent is None:
+            raise ValueError(f"Agent '{agent_name}' not found.")
+
+        # ---------------------- Update Name ---------------------- #
+        if new_name and new_name != agent_name:
+            self._check_duplicate_name(new_name)
+            setattr(agent, "name", new_name)
+            logger.info("Agent renamed: %s → %s", agent_name, new_name)
+
+        return agent
+
     # ---------------------- Warehouse & Manager ---------------------- #
     def create_warehouse(self, name: Optional[str] = None) -> Warehouse:
         """Create the warehouse for the environment (only one allowed)."""
