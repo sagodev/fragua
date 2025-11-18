@@ -59,7 +59,7 @@ Consulta `requirements.txt` para dependencias adicionales.
 
 ## Ejemplo de uso
 
-``` python
+```
 import fragua as fg
 
 env = fg.create_fragua("fragua_1", "minimal", True)
