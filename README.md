@@ -1,125 +1,122 @@
-# FraguaAPI
+# Fragua
 
-**FraguaAPI** es una interfaz REST desarrollada con **FastAPI** que permite interactuar con la biblioteca [Fragua](https://pypi.org/project/fragua/) de manera sencilla, modular y extensible.  
-Su propósito es ofrecer una capa de comunicación entre servicios o aplicaciones web y la lógica interna de Fragua, permitiendo gestionar *entornos*, *agentes*, *estilos*, *parámetros* a través de endpoints bien definidos.
-
----
-
-## 🚀 Características
-
-- Arquitectura modular basada en FastAPI.
-- Integración directa con la biblioteca `fragua`.
-- Endpoints iniciales para:
-  - **Environments** (`/environments`)
-  - **Agents** (`/agents`)
-  - **Styles** (`/styles`)
-  - **Params** (`/params`)
-- Fácil de extender con servicios personalizados.
-- Sin base de datos (usa la estructura interna de Fragua).
+Fragua es una biblioteca ligera y modular diseñada para construir pipelines ETL/ELT y flujos de procesamiento de datos en Python. Proporciona componentes reutilizables como entornos, agentes, estilos, parámetros y almacenes para orquestar extracción, transformación y carga de datos con trazabilidad y buenas prácticas.
 
 ---
 
-## 🧩 Estructura del proyecto
+## ¿Qué es Fragua?
+
+Fragua ofrece una abstracción sobre tareas de integración de datos basada en tres agentes principales:
+
+- **Extractor**: extrae datos desde distintas fuentes como Excel, CSV o APIs.
+- **Transformer**: transforma o enriquece los datos aplicando reglas o modelos.
+- **Loader**: guarda o entrega los resultados en destinos finales como archivos o bases de datos.
+
+Incluye además un sistema de almacenamiento con:
+
+- **Warehouse** y **WarehouseManager** para guardar artefactos intermedios con metadatos y trazabilidad.
+- Arquitectura modular donde `styles`, `functions` y `params` pueden registrarse dentro de un `Environment`.
+
+---
+
+## Características principales
+
+- Modelado de entornos (`Environment`) para aislar y organizar instancias de trabajo.
+- Agentes (`Extractor`, `Transformer`, `Loader`) con pipeline común, capacidad de `undo` y registro de operaciones.
+- Registries para `params`, `functions` y `styles`.
+- Tipos de almacenamiento (`Storage`, `Box`, `Container`) y un `Warehouse` centralizado.
+- Utilidades integradas para logging, métricas y resúmenes del estado de ejecución.
+
+---
+
+## Estructura del proyecto
 
 ```
-fraguaAPI/
-│
-├── fragua_api/
-│   ├── main.py
-│   ├── routes/
-│   │   ├── environment_routes.py
-│   │   ├── agent_routes.py
-│   │   ├── style_routes.py
-│   │   ├── params_routes.py
-│   ├── models/
-│   │   ├── environment_models.py
-│   │   ├── agent_models.py
-│   │   ├── style_models.py
-│   │   ├── params_models.py
-│   ├── services/
-│   │   ├── environment_service.py
-│   │   ├── agent_service.py
-│   │   ├── style_service.py
-│   │   ├── params_service.py
-│   └── __init__.py
-│
-├── requirements.txt
-└── README.md
+fragua/
+├── agents/
+├── environments/
+├── functions/
+├── params/
+├── styles/
+├── storages/
+├── utils/
+└── __init__.py
 ```
 
 ---
 
-## ⚙️ Instalación y uso
+## Instalación
 
-### 1️⃣ Clonar el repositorio
+Instala Fragua en modo editable desde la raíz del repositorio:
+
 ```bash
-git clone https://github.com/<tu_usuario>/fraguaAPI.git
-cd fraguaAPI
+python -m pip install -e .
 ```
 
-### 2️⃣ Crear entorno virtual (opcional pero recomendado)
-```bash
-python -m venv venv
-source venv/bin/activate   # Linux/Mac
-venv\Scripts\activate      # Windows
-```
+Consulta `requirements.txt` para dependencias adicionales.
 
-### 3️⃣ Instalar dependencias
-```bash
-pip install -r requirements.txt
-```
+---
 
-> ⚠️ Asegúrate de tener instalada la biblioteca base:
-> ```bash
-> pip install fragua
-> ```
+## Ejemplo de uso
 
-### 4️⃣ Ejecutar el servidor
-```bash
-uvicorn fragua_api.main:app --reload
-```
+```python
+import fragua as fg
 
-La API estará disponible en:
-```
-http://localhost:8000
-```
+env = fg.create_fragua("fragua_1", "minimal", True)
+env.create_extractor("extractor")
+env.create_transformer("transformer")
+env.create_loader("loader")
 
-Y la documentación interactiva (Swagger UI) en:
-```
-http://localhost:8000/docs
+extractor = env.get_agent("extractor")
+transformer = env.get_agent("transformer")
+loader = env.get_agent("loader")
+
+extractor.work(
+    "excel",
+    save_as="extracted_data",
+    path="./test_files/input_files/test_data.xlsx",
+    sheet_name=0,
+)
+
+transformer.work(
+    style="report",
+    apply_to="extracted_data",
+    save_as="transformed_data",
+)
+
+loader.work(
+    style="excel",
+    apply_to=["extracted_data", "transformed_data"],
+    destination="./test_files/output_files",
+    file_name="output_file",
+)
+
+print(env.summary())
 ```
 
 ---
 
-## 📘 Ejemplo de uso
+## Desarrollo
+
+### Añadir un nuevo `style`
+
+1. Crear una clase en `fragua/styles` que implemente el método `use`.
+2. Crear los `Params` necesarios en `fragua/params`.
+3. Registrar las clases en los registries o mediante la API del `Environment`.
+
+### Añadir funciones reutilizables
+
+Crear las funciones dentro de `fragua/functions` y registrarlas para su uso en la pipeline.
 
 ---
 
-## 🧠 Futuras mejoras
-
-- Persistencia de datos (SQLite / PostgreSQL).
-- Autenticación y autorización de usuarios.
-- Endpoints avanzados para interacción entre agentes y entornos.
-- Dashboard web o panel de control.
-
----
-
-## 🧑‍💻 Tecnologías utilizadas
-
-- [Python 3.11+](https://www.python.org/)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Uvicorn](https://www.uvicorn.org/)
-- [Fragua](https://pypi.org/project/fragua/)
-
----
-
-## 🧩 Autor
+## Autor
 
 **Santiago Lanz**  
 📍 Desarrollador y creador de Fragua  
-🌐 [Portfolio](https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/)  
-💼 [LinkedIn](https://www.linkedin.com/in/santiagolanz/)  
-🐙 [GitHub](https://github.com/SagoDev)
+🌐 Portfolio: <https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/>  
+💼 LinkedIn: <https://www.linkedin.com/in/santiagolanz/>  
+🐙 GitHub: <https://github.com/SagoDev>
 
 ---
 
