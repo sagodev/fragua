@@ -12,6 +12,16 @@ from fragua.params.params import Params
 class LoadParams(Params):
     """Common parameters for loading agents."""
 
+    data: DataFrame
+    destination: str | None
+
+    purpose: str | None = "Base load parameters shared by all data loading styles."
+
+    FIELD_DESCRIPTIONS = {
+        "data": "Pandas DataFrame containing the data to be loaded.",
+        "destination": "Optional destination identifier (e.g., file path, database name, endpoint)",
+    }
+
     def __init__(
         self, style: str, data: DataFrame, destination: str | None = None
     ) -> None:
@@ -19,12 +29,25 @@ class LoadParams(Params):
         self.data = data
         self.destination = destination
 
-    def describe(self) -> str:
-        return f"LoadParams(role={self.action}, style={self.style}, destination={self.destination})"
-
 
 class ExcelLoadParams(LoadParams):
     """Parameters for Excel load."""
+
+    file_name: str | None
+    sheet_name: str | None
+    index: bool
+    engine: str | None
+
+    purpose = "Parameters required to load data into an Excel file."
+
+    FIELD_DESCRIPTIONS = {
+        "data": "Pandas DataFrame containing the data to be written to Excel.",
+        "destination": "Optional directory or full path where the file will be saved.",
+        "file_name": "Name of the Excel file to create or overwrite.",
+        "sheet_name": "Name of the worksheet where data will be written.",
+        "index": "Whether to write row indices to the Excel file.",
+        "engine": "Optional Excel writer engine (e.g., openpyxl, xlsxwriter).",
+    }
 
     def __init__(
         self,
@@ -41,15 +64,25 @@ class ExcelLoadParams(LoadParams):
         self.index = index
         self.engine = engine
 
-    def describe(self) -> str:
-        return (
-            f"ExcelLoadParams(file_name='{self.file_name}', sheet_name='{self.sheet_name}', "
-            f"index={self.index}, engine='{self.engine}')"
-        )
-
 
 class SQLLoadParams(LoadParams):
     """Parameters for SQL load."""
+
+    table_name: str | None
+    if_exists: str
+    index: bool
+    chunksize: int | None
+
+    purpose = "Parameters required to load data into a SQL database table."
+
+    FIELD_DESCRIPTIONS = {
+        "data": "Pandas DataFrame containing the data to be inserted.",
+        "destination": "Optional database target (e.g., connection alias).",
+        "table_name": "Name of the SQL table where the data will be written.",
+        "if_exists": "Behavior when the table already exists: fail, replace, or append.",
+        "index": "Whether to write row indices to the SQL table.",
+        "chunksize": "Number of rows per batch insert operation.",
+    }
 
     def __init__(
         self,
@@ -66,15 +99,27 @@ class SQLLoadParams(LoadParams):
         self.index = index
         self.chunksize = chunksize
 
-    def describe(self) -> str:
-        return (
-            f"SQLLoadParams(table_name='{self.table_name}', if_exists='{self.if_exists}', "
-            f"index={self.index}, chunksize={self.chunksize})"
-        )
-
 
 class APILoadParams(LoadParams):
     """Parameters for API load."""
+
+    endpoint: str | None
+    method: str
+    headers: Dict[str, str]
+    auth: Dict[str, str]
+    timeout: float
+
+    purpose = "Parameters required to send data to a remote API."
+
+    FIELD_DESCRIPTIONS = {
+        "data": "Pandas DataFrame to be serialized and sent via API request.",
+        "destination": "Optional identifier for the API service.",
+        "endpoint": "URL endpoint where the DataFrame will be submitted.",
+        "method": "HTTP method to use (POST, PUT, etc).",
+        "headers": "HTTP request headers.",
+        "auth": "Authentication parameters (e.g., tokens, API keys).",
+        "timeout": "Maximum number of seconds to wait for the API response.",
+    }
 
     def __init__(
         self,
@@ -92,9 +137,6 @@ class APILoadParams(LoadParams):
         self.headers = headers or {}
         self.auth = auth or {}
         self.timeout = timeout
-
-    def describe(self) -> str:
-        return f"APILoadParams(endpoint='{self.endpoint}', method='{self.method}')"
 
 
 LoadParamsT = TypeVar("LoadParamsT", bound=LoadParams)

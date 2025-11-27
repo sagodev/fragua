@@ -12,16 +12,38 @@ from fragua.params.params import Params
 class TransformParams(Params):
     """Common parameters for transformation agents."""
 
+    data: DataFrame
+
+    purpose: str | None = "Base parameters for all data transformation operations."
+
+    FIELD_DESCRIPTIONS = {
+        "data": "Input DataFrame that will be transformed.",
+    }
+
     def __init__(self, style: str, data: DataFrame) -> None:
         super().__init__(action="transform", style=style)
         self.data = data
 
-    def describe(self) -> str:
-        return f"TransformParams(role={self.action}, style={self.style})"
-
 
 class MLTransformParams(TransformParams):
     """Parameters for machine learning transformations."""
+
+    target_column: str | None
+    categorical_cols: list[str]
+    numeric_cols: list[str]
+    outlier_threshold: float | None
+
+    purpose = (
+        "Transformation parameters used to prepare data for machine learning tasks."
+    )
+
+    FIELD_DESCRIPTIONS = {
+        "data": "Input DataFrame containing the dataset.",
+        "target_column": "Column to be predicted by machine learning models.",
+        "categorical_cols": "List of columns treated as categorical variables.",
+        "numeric_cols": "List of columns treated as numeric variables.",
+        "outlier_threshold": "Threshold used to trim or detect outliers.",
+    }
 
     def __init__(
         self,
@@ -37,16 +59,22 @@ class MLTransformParams(TransformParams):
         self.numeric_cols = numeric_cols or []
         self.outlier_threshold = outlier_threshold
 
-    def describe(self) -> str:
-        return (
-            f"MLTransformParams(target_column='{self.target_column}', "
-            f"categorical_cols={self.categorical_cols}, "
-            f"numeric_cols={self.numeric_cols})"
-        )
-
 
 class ReportTransformParams(TransformParams):
     """Parameters for report generation transformations."""
+
+    format_config: Dict[str, Any]
+    derived_columns: Dict[str, str]
+    rounding_precision: int | None
+
+    purpose = "Parameters used to prepare, derive, and format data for reporting."
+
+    FIELD_DESCRIPTIONS = {
+        "data": "Input DataFrame before formatting.",
+        "format_config": "Rules for formatting the output (alignment, styles, etc).",
+        "derived_columns": "New columns generated using formulas or expressions.",
+        "rounding_precision": "Number of decimal places to round numeric values.",
+    }
 
     def __init__(
         self,
@@ -60,16 +88,22 @@ class ReportTransformParams(TransformParams):
         self.derived_columns = derived_columns or {}
         self.rounding_precision = rounding_precision
 
-    def describe(self) -> str:
-        return (
-            f"ReportTransformParams(format_config={self.format_config}, "
-            f"derived_columns={self.derived_columns}, "
-            f"rounding_precision={self.rounding_precision})"
-        )
-
 
 class AnalysisTransformParams(TransformParams):
     """Parameters for data analysis transformations."""
+
+    groupby_cols: list[str]
+    agg_functions: Dict[str, str]
+    sort_by: list[str]
+
+    purpose = "Parameters for performing analytical operations such as groupby and aggregation."
+
+    FIELD_DESCRIPTIONS = {
+        "data": "Input DataFrame to analyze.",
+        "groupby_cols": "Columns used for grouping the data.",
+        "agg_functions": "Aggregation functions to apply to grouped data.",
+        "sort_by": "Columns used to sort the resulting aggregated data.",
+    }
 
     def __init__(
         self,
@@ -82,12 +116,6 @@ class AnalysisTransformParams(TransformParams):
         self.groupby_cols = groupby_cols or []
         self.agg_functions = agg_functions or {}
         self.sort_by = sort_by or []
-
-    def describe(self) -> str:
-        return (
-            f"AnalysisTransformParams(groupby_cols={self.groupby_cols}, "
-            f"agg_functions={self.agg_functions}, sort_by={self.sort_by})"
-        )
 
 
 TransformParamsT = TypeVar("TransformParamsT", bound=TransformParams)
