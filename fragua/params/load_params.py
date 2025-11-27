@@ -55,7 +55,7 @@ class ExcelLoadParams(LoadParams):
         sheet_name: str | None = None,
         index: bool = False,
         engine: str | None = None,
-    ) -> None:
+    ) -> None:  # pylint: disable=too-many-arguments, too-many-positional-arguments
         super().__init__(style="excel", data=data, destination=destination)
         self.file_name = file_name
         self.sheet_name = sheet_name
@@ -90,7 +90,7 @@ class SQLLoadParams(LoadParams):
         if_exists: str = "fail",
         index: bool = False,
         chunksize: int | None = None,
-    ) -> None:
+    ) -> None:  # pylint: disable=too-many-arguments, too-many-positional-arguments
         super().__init__(style="sql", data=data, destination=destination)
         self.table_name = table_name
         self.if_exists = if_exists
@@ -128,7 +128,7 @@ class APILoadParams(LoadParams):
         headers: Dict[str, str] | None = None,
         auth: Dict[str, str] | None = None,
         timeout: float = 30.0,
-    ) -> None:
+    ) -> None:  # pylint: disable=too-many-arguments, too-many-positional-arguments
         super().__init__(style="api", data=data, destination=destination)
         self.endpoint = endpoint
         self.method = method
