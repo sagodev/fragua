@@ -2,7 +2,7 @@
 Base abstract class for all parameter schemas used by styles in Fragua.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any, Dict, TypeVar
 from fragua.utils.logger import get_logger
 
