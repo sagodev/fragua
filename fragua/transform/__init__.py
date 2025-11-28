@@ -18,7 +18,13 @@ from .transform_functions import (
 )
 
 # ------------------- Extract Styles ------------------- #
-
+from .transform_styles import (
+    TRANSFORM_STYLE_CLASSES,
+    TransformStyle,
+    MLTransformStyle,
+    ReportTransformStyle,
+    AnalysisTransformStyle,
+)
 
 # ------------------- Extract Params ------------------- #
 
@@ -38,4 +44,9 @@ __all__ = [
     "ReportTransformFunction",
     "MLTransformFunction",
     # Extract Styles
+    "TRANSFORM_STYLE_CLASSES",
+    "TransformStyle",
+    "MLTransformStyle",
+    "ReportTransformStyle",
+    "AnalysisTransformStyle",
 ]
