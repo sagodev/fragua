@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fragua.environments.environment import Environment
+from fragua.core.environment import Environment
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)

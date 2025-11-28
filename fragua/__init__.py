@@ -1,22 +1,19 @@
 """Fragua Module."""
 
-# ------------------- Environments ------------------- #
+# ------------------- Environments Module ------------------- #
 from fragua.environments import *
 
-# ------------------- Agents ------------------- #
-from fragua.agents import *
-
-# ------------------- Functions ------------------- #
-from fragua.functions import *
-
-# ------------------- Style ------------------- #
-from fragua.styles import *
-
-# ------------------- Store ------------------- #
-from fragua.storages import *
-
-# ------------------- Params ------------------- #
-from fragua.params import *
-
-# ------------------- Utilities ------------------- #
+# ------------------- Utils Module ------------------- #
 from fragua.utils import *
+
+# ------------------- Core Module ------------------- #
+from .core import *
+
+# ------------------- Extract Module ------------------- #
+from .extract import *
+
+# ------------------- Transform Module ------------------- #
+from .transform import *
+
+# ------------------- Load Module ------------------- #
+from .load import *
