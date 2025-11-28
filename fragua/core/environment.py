@@ -11,18 +11,20 @@ from fragua.extract import (
     EXTRACT_FUNCTION_CLASSES,
     EXTRACT_STYLE_CLASSES,
 )
-from fragua.transform.transformer import Transformer
+from fragua.transform import (
+    Transformer,
+    TRANSFORM_PARAMS_CLASSES,
+    TRANSFORM_FUNCTION_CLASSES,
+    TRANSFORM_STYLE_CLASSES,
+)
 from fragua.load.loader import Loader
 from fragua.params import (
-    TRANSFORM_PARAMS_CLASSES,
     LOAD_PARAMS_CLASSES,
 )
 from fragua.functions import (
-    TRANSFORM_FUNCTION_CLASSES,
     LOAD_FUNCTION_CLASSES,
 )
 from fragua.styles import (
-    TRANSFORM_STYLE_CLASSES,
     LOAD_STYLE_CLASSES,
 )
 from fragua.utils.logger import get_logger
