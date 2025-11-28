@@ -12,7 +12,7 @@ from fragua.extract import (
     EXTRACT_STYLE_CLASSES,
 )
 from fragua.transform.transformer import Transformer
-from fragua.agents.loader import Loader
+from fragua.load.loader import Loader
 from fragua.params import (
     TRANSFORM_PARAMS_CLASSES,
     LOAD_PARAMS_CLASSES,
