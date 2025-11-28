@@ -2,7 +2,8 @@
 
 from typing import Dict
 
-from fragua.extract.params.extract_params import ExtractParams
+from fragua.extract.params.base import ExtractParams
+
 
 from .base import ExtractFunction
 from .extract_functions import (
