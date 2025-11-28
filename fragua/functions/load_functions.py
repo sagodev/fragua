@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Generic
 import pandas as pd
 
 
-from fragua.functions.function import FraguaFunction
+from fragua.core.function import FraguaFunction
 from fragua.params.load_params import (
     ExcelLoadParams,
     ExcelLoadParamsT,

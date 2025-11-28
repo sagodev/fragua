@@ -10,7 +10,7 @@ from pandas.errors import UndefinedVariableError
 from sklearn.preprocessing import MinMaxScaler
 
 
-from fragua.functions.function import FraguaFunction
+from fragua.core.function import FraguaFunction
 from fragua.params.transform_params import (
     TransformParams,
     TransformParamsT,

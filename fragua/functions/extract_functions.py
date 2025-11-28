@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 import requests
 from requests.auth import HTTPBasicAuth
 
-from fragua.functions.function import FraguaFunction
+from fragua.core.function import FraguaFunction
 from fragua.params.extract_params import (
     ExtractParams,
     ExtractParamsT,

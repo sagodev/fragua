@@ -2,11 +2,6 @@
 Reusable Functions Module.
 """
 
-# ------------------- Function class ------------------- #
-from fragua.functions.function import (
-    FraguaFunction,
-)
-
 # ------------------- Extract classes ------------------- #
 from fragua.functions.extract_functions import (
     EXTRACT_FUNCTION_CLASSES,
@@ -34,8 +29,6 @@ from fragua.functions.load_functions import (
 )
 
 __all__ = [
-    # Function class
-    "FraguaFunction",
     # Extract classes
     "EXTRACT_FUNCTION_CLASSES",
     "ExtractFunction",

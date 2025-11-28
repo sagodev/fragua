@@ -10,7 +10,11 @@ This module contains:
 
 from .agent import Agent
 
+from .function import FraguaFunction
+
 __all__ = [
     # Agent Class
     "Agent",
+    # Function class
+    "FraguaFunction",
 ]
