@@ -5,7 +5,7 @@ Base class for all styles used by ETL agents in Fragua.
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Dict, Any
 from fragua.utils.logger import get_logger
-from fragua.params.params import ParamsT
+from fragua.core.params import ParamsT
 
 logger = get_logger(__name__)
 

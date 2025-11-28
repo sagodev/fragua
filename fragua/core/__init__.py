@@ -10,11 +10,16 @@ This module contains:
 
 from .agent import Agent
 
+from .params import Params
+
 from .function import FraguaFunction
+
 
 __all__ = [
     # Agent Class
     "Agent",
+    # Params class
+    "Params",
     # Function class
     "FraguaFunction",
 ]

@@ -5,7 +5,7 @@ Base abstract class for all function schemas used by styles in Fragua.
 from abc import ABC, abstractmethod
 from typing import Any, Generic, Dict
 
-from fragua.params.params import ParamsT
+from fragua.core.params import ParamsT
 
 
 class FraguaFunction(ABC, Generic[ParamsT]):

@@ -1,11 +1,5 @@
 """Fragua ETL Params module."""
 
-# ------------------- Params ------------------- #
-from .params import (
-    Params,
-)
-
-
 # ------------------- Extract Params ------------------- #
 from .extract_params import (
     EXTRACT_PARAMS_CLASSES,
@@ -49,7 +43,6 @@ from .load_params import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    "Params",
     # Extract Params
     "EXTRACT_PARAMS_CLASSES",
     "ExtractParams",

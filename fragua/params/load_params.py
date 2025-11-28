@@ -4,7 +4,7 @@ Load parameters classes for different types of data destinations.
 
 from typing import Dict, TypeVar
 from pandas import DataFrame
-from fragua.params.params import Params
+from fragua.core.params import Params
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
 
