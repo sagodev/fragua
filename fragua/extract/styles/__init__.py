@@ -16,7 +16,7 @@ from .extract_styles import (
     APIExtractStyle,
 )
 
-from .ext_styles_registry import EXTRACT_STYLE_CLASSES
+from .styles_registry import EXTRACT_STYLE_CLASSES
 
 __all__ = [
     "ExtractStyle",

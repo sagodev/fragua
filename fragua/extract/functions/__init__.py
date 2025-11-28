@@ -16,7 +16,7 @@ from .extract_functions import (
     APIExtractFunction,
 )
 
-from .ext_functions_registry import EXTRACT_FUNCTION_CLASSES
+from .functions_registry import EXTRACT_FUNCTION_CLASSES
 
 __all__ = [
     "ExtractFunction",

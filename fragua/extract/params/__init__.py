@@ -26,7 +26,7 @@ from .generic_types import (
     APIExtractParamsT,
 )
 
-from .ext_params_registry import EXTRACT_PARAMS_CLASSES
+from .params_registry import EXTRACT_PARAMS_CLASSES
 
 __all__ = [
     "ExtractParams",
