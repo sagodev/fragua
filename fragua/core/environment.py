@@ -17,14 +17,10 @@ from fragua.transform import (
     TRANSFORM_FUNCTION_CLASSES,
     TRANSFORM_STYLE_CLASSES,
 )
-from fragua.load.loader import Loader
-from fragua.params import (
+from fragua.load import (
+    Loader,
     LOAD_PARAMS_CLASSES,
-)
-from fragua.functions import (
     LOAD_FUNCTION_CLASSES,
-)
-from fragua.styles import (
     LOAD_STYLE_CLASSES,
 )
 from fragua.utils.logger import get_logger
