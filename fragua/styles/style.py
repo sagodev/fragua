@@ -3,7 +3,7 @@ Base class for all styles used by ETL agents in Fragua.
 """
 
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, Dict, Any
 from fragua.utils.logger import get_logger
 from fragua.params.params import ParamsT
 
@@ -16,38 +16,53 @@ class Style(ABC, Generic[ParamsT, ResultT]):
     """
     Abstract base class for all styles in Fragua.
     Defines a standard interface for style operations.
-
     """
 
     def __init__(self, style_name: str):
-        """Initialize the style with a given name and creator."""
         self.style_name = style_name
 
     @abstractmethod
     def _run(self, params: ParamsT) -> ResultT:
-        """
-        Core implementation of the style.
-        """
         raise NotImplementedError
 
     def log_error(self, error: Exception) -> None:
-        """Log an error with the style context."""
+        """log error funciton"""
         logger.error(
             "[%s ERROR] %s: %s", self.__class__.__name__, type(error).__name__, error
         )
 
     def use(self, params: ParamsT) -> ResultT:
-        """
-        Execute the full style pipeline.
-        """
+        """Pipeline for style classes."""
         try:
-            result = self._run(params)
-
-            return result
-
+            return self._run(params)
         except Exception as e:
             self.log_error(e)
             raise
 
+    def summary(self) -> Dict[str, Any]:
+        """
+        Unified format for summarizing a Style.
+        Subclasses should override `summary_fields()` to add custom metadata.
+        """
+
+        return {
+            "type": "style",
+            "class": self.__class__.__name__,
+            "style_name": self.style_name,
+            "fields": self.summary_fields(),
+        }
+
+    @abstractmethod
+    def summary_fields(self) -> Dict[str, Any]:
+        """
+        Subclasses must return a dictionary describing:
+        - purpose
+        - internal functions/pipelines
+        - expected params
+        - behaviour
+        """
+        raise NotImplementedError
+
+    # ------------------------------------------------------------
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} style_name={self.style_name}>"
