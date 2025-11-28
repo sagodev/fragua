@@ -4,7 +4,7 @@ Extract Functions Module.
 This module contains:
 - ExtractFunction base class.
 - Extract CSV, excel, API & SQL Function class.
-- Dict registry with each Params class.({'name': class})
+- Dict registry with each Params class.('name': class)
 """
 
 from .base import ExtractFunction
