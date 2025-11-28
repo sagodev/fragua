@@ -125,7 +125,7 @@ class LoadFunction(FraguaFunction[LoadParamsT], Generic[LoadParamsT]):
     def __init__(self, name: str, params: LoadParamsT) -> None:
         super().__init__(name=name, action="load", params=params)
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "params_type": type(self.params).__name__,
@@ -150,7 +150,7 @@ class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
         write_excel(df, path, self.params.sheet_name or "Sheet1", self.params.index)
         return df
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "params_type": type(self.params).__name__,
