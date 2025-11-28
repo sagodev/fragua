@@ -1,66 +1,95 @@
 # Fragua
 
-Fragua es una biblioteca ligera y modular diseñada para construir pipelines ETL/ELT y flujos de procesamiento de datos en Python. Proporciona componentes reutilizables como entornos, agentes, estilos, parámetros y almacenes para orquestar extracción, transformación y carga de datos con trazabilidad y buenas prácticas.
+Fragua is a lightweight and modular library designed to build ETL/ELT
+pipelines and data processing workflows in Python. It provides reusable
+components such as environments, agents, styles, parameters, and
+storages to orchestrate data extraction, transformation, and loading
+with traceability and best practices.
 
----
+------------------------------------------------------------------------
 
-## ¿Qué es Fragua?
+## What is Fragua?
 
-Fragua ofrece una abstracción sobre tareas de integración de datos basada en tres agentes principales:
+Fragua provides an abstraction layer for data integration tasks based on
+three main agents:
 
-- **Extractor**: extrae datos desde distintas fuentes como Excel, CSV o APIs.
-- **Transformer**: transforma o enriquece los datos aplicando reglas o modelos.
-- **Loader**: guarda o entrega los resultados en destinos finales como archivos o bases de datos.
+- **Extractor**: retrieves data from different sources such as Excel,
+  CSV, or APIs.
+- **Transformer**: transforms or enriches data by applying rules or
+  models.
+- **Loader**: saves or delivers results to final destinations such as
+  files or databases.
 
-Incluye además un sistema de almacenamiento con:
+In addition to the agents, Fragua introduces the concept of **Environments**, 
+which act as isolated workspaces that organize and group all components 
+involved in a pipeline. An `Environment` manages:
 
-- **Warehouse** y **WarehouseManager** para guardar artefactos intermedios con metadatos y trazabilidad.
-- Arquitectura modular donde `styles`, `functions` y `params` pueden registrarse dentro de un `Environment`.
+- Registered agents and their lifecycle.
+- Registries for `styles`, `functions`, and `params`.
+- A dedicated **Warehouse** for storing intermediate or final artifacts.
+- Execution settings, logging configuration, and context boundaries.
 
----
+This design allows you to run multiple pipelines independently, each with 
+its own configuration, state, and stored data.
 
-## Características principales
+Fragua also includes a storage system with:
 
-- Modelado de entornos (`Environment`) para aislar y organizar instancias de trabajo.
-- Agentes (`Extractor`, `Transformer`, `Loader`) con pipeline común, capacidad de `undo` y registro de operaciones.
-- Registries para `params`, `functions` y `styles`.
-- Tipos de almacenamiento (`Storage`, `Box`, `Container`) y un `Warehouse` centralizado.
-- Utilidades integradas para logging, métricas y resúmenes del estado de ejecución.
+- **Warehouse** and **WarehouseManager** to store intermediate artifacts 
+  with metadata and traceability.
+- A modular architecture where `styles`, `functions`, and `params` can 
+  be registered within an `Environment`.
 
----
+------------------------------------------------------------------------
 
-## Estructura del proyecto
+## Key Features
 
-```
-fragua/
-├── agents/
-├── environments/
-├── functions/
-├── params/
-├── styles/
-├── storages/
-├── utils/
-└── __init__.py
-```
+-   Environment modeling (`Environment`) to isolate and organize working
+    instances.
+-   Agents (`Extractor`, `Transformer`, `Loader`) with a common
+    pipeline, `undo` capability, and operation logging.
+-   Registries for `params`, `functions`, and `styles`.
+-   Storage types (`Storage`, `Box`, `Container`) and a centralized
+    `Warehouse`.
+-   Built-in utilities for logging, metrics, and execution state
+    summaries.
 
----
+------------------------------------------------------------------------
 
-## Instalación
+## Project Structure
 
-Instala Fragua en modo editable desde la raíz del repositorio:
+    fragua/
+    ├── agents/
+    ├── environments/
+    ├── functions/
+    ├── params/
+    ├── styles/
+    ├── storages/
+    ├── utils/
+    └── __init__.py
 
-```bash
+------------------------------------------------------------------------
+
+## Installation
+
+Install Fragua in editable mode from the root of the repository:
+
+``` bash
 python -m pip install -e .
 ```
 
-Consulta `requirements.txt` para dependencias adicionales.
+Check `requirements.txt` for additional dependencies.
 
----
+------------------------------------------------------------------------
 
-## Ejemplo de uso
+## Usage Example
 
-```python
+``` python
 import fragua as fg
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent
+INPUT_XLSX = BASE_DIR / "test_files" / "input_files" / "test_data.xlsx"
+OUTPUT_XLSX = BASE_DIR / "test_files" / "output_files"
 
 env = fg.create_fragua("fragua_1", "minimal", True)
 env.create_extractor("extractor")
@@ -90,37 +119,21 @@ loader.work(
     destination="./test_files/output_files",
     file_name="output_file",
 )
-
-print(env.summary())
 ```
 
----
+------------------------------------------------------------------------
 
-## Desarrollo
+## Author
 
-### Añadir un nuevo `style`
+**Santiago Lanz**\
+📍 Developer and creator of Fragua\
+🌐 Portfolio: https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/\
+💼 LinkedIn: https://www.linkedin.com/in/santiagolanz/\
+🐙 GitHub: https://github.com/SagoDev
 
-1. Crear una clase en `fragua/styles` que implemente el método `use`.
-2. Crear los `Params` necesarios en `fragua/params`.
-3. Registrar las clases en los registries o mediante la API del `Environment`.
+------------------------------------------------------------------------
 
-### Añadir funciones reutilizables
+## ⚖️ License
 
-Crear las funciones dentro de `fragua/functions` y registrarlas para su uso en la pipeline.
-
----
-
-## Autor
-
-**Santiago Lanz**  
-📍 Desarrollador y creador de Fragua  
-🌐 Portfolio: <https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/>  
-💼 LinkedIn: <https://www.linkedin.com/in/santiagolanz/>  
-🐙 GitHub: <https://github.com/SagoDev>
-
----
-
-## ⚖️ Licencia
-
-Este proyecto se distribuye bajo la licencia **MIT**.  
-Consulta el archivo `LICENSE` para más detalles.
+This project is distributed under the **MIT** license.\
+See the `LICENSE` file for more details.
