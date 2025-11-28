@@ -9,7 +9,11 @@ This module contains:
 """
 
 # ------------------- Load Functions ------------------- #
-
+from .load_functions import (
+    LOAD_FUNCTION_CLASSES,
+    LoadFunction,
+    ExcelLoadFunction,
+)
 
 # ------------------- Load Styles ------------------- #
 
@@ -26,5 +30,8 @@ __all__ = [
     "Loader",
     # Load Params
     # Load Functions
+    "LOAD_FUNCTION_CLASSES",
+    "LoadFunction",
+    "ExcelLoadFunction",
     # Load Styles
 ]
