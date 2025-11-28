@@ -10,7 +10,7 @@ import copy as py_copy
 from fragua.storages.storage import Storage
 from fragua.utils.logger import get_logger
 
-from fragua.storages.warehouse import Warehouse
+from fragua.core.warehouse import Warehouse
 from fragua.storages.storage_types import Box, STORAGE_CLASSES
 
 logger = get_logger(__name__)

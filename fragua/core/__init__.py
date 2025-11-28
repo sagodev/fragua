@@ -22,6 +22,9 @@ from .function import FraguaFunction
 
 from .manager import WarehouseManager
 
+from .warehouse import Warehouse
+
+
 __all__ = [
     # Environment Class
     "Environment",
@@ -35,4 +38,6 @@ __all__ = [
     "FraguaFunction",
     # Warehouse Manager
     "WarehouseManager",
+    # Warehouse
+    "Warehouse",
 ]

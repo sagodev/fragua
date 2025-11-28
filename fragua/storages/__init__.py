@@ -3,8 +3,6 @@
 # ------------------- Storage class ------------------- #
 from .storage import Storage
 
-# ------------------- Warehouse class ------------------- #
-from .warehouse import Warehouse
 
 # ------------------- Storage types ------------------- #
 from .storage_types import (
@@ -16,8 +14,6 @@ from .storage_types import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    # Warehouse class
-    "Warehouse",
     # Storage class
     "Storage",
     # Storage types
