@@ -8,7 +8,7 @@ This module contains:
 - Transform FraguaFunctions subclasses.
 """
 
-# ------------------- Extract Functions ------------------- #
+# ------------------- Transform Functions ------------------- #
 from .transform_functions import (
     TRANSFORM_FUNCTION_CLASSES,
     TransformFunction,
@@ -17,7 +17,7 @@ from .transform_functions import (
     MLTransformFunction,
 )
 
-# ------------------- Extract Styles ------------------- #
+# ------------------- Transform Styles ------------------- #
 from .transform_styles import (
     TRANSFORM_STYLE_CLASSES,
     TransformStyle,
@@ -26,24 +26,43 @@ from .transform_styles import (
     AnalysisTransformStyle,
 )
 
-# ------------------- Extract Params ------------------- #
-
+# ------------------- Transform Params ------------------- #
+from .transform_params import (
+    TRANSFORM_PARAMS_CLASSES,
+    TransformParams,
+    MLTransformParams,
+    ReportTransformParams,
+    AnalysisTransformParams,
+    TransformParamsT,
+    MLTransformParamsT,
+    ReportTransformParamsT,
+    AnalysisTransformParamsT,
+)
 
 # ------------------- Transformer Agent ------------------- #
 from .transformer import Transformer
 
 
 __all__ = [
-    # Extractor Agent
+    # Transformer Agent
     "Transformer",
-    # Extract Params
-    # Extract Functions
+    # Transform Params
+    "TRANSFORM_PARAMS_CLASSES",
+    "TransformParams",
+    "MLTransformParams",
+    "ReportTransformParams",
+    "AnalysisTransformParams",
+    "TransformParamsT",
+    "MLTransformParamsT",
+    "ReportTransformParamsT",
+    "AnalysisTransformParamsT",
+    # Transform Functions
     "TRANSFORM_FUNCTION_CLASSES",
     "TransformFunction",
     "AnalysisTransformFunction",
     "ReportTransformFunction",
     "MLTransformFunction",
-    # Extract Styles
+    # Transform Styles
     "TRANSFORM_STYLE_CLASSES",
     "TransformStyle",
     "MLTransformStyle",

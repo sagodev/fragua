@@ -14,7 +14,7 @@ from fragua.transform.transform_functions import (
 )
 from fragua.core.style import Style, ResultT
 from fragua.utils.logger import get_logger
-from fragua.params.transform_params import (
+from fragua.transform.transform_params import (
     TransformParams,
     TransformParamsT,
     MLTransformParamsT,

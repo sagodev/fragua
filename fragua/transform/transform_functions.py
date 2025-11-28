@@ -11,7 +11,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 from fragua.core.function import FraguaFunction
-from fragua.params.transform_params import (
+from fragua.transform.transform_params import (
     TransformParams,
     TransformParamsT,
     MLTransformParamsT,

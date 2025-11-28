@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from fragua.core.agent import Agent
 
-from fragua.params.transform_params import TransformParams
+from fragua.transform.transform_params import TransformParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
