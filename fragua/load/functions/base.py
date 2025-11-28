@@ -1,5 +1,5 @@
 """
-Generic LoadFunction for Fragua.
+Generic LoadFunction class.
 """
 
 from typing import Any, Generic
