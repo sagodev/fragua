@@ -16,7 +16,11 @@ from .load_functions import (
 )
 
 # ------------------- Load Styles ------------------- #
-
+from .load_styles import (
+    LOAD_STYLE_CLASSES,
+    LoadStyle,
+    ExcelLoadStyle,
+)
 
 # ------------------- Load Params ------------------- #
 
@@ -34,4 +38,7 @@ __all__ = [
     "LoadFunction",
     "ExcelLoadFunction",
     # Load Styles
+    "LOAD_STYLE_CLASSES",
+    "LoadStyle",
+    "ExcelLoadStyle",
 ]
