@@ -3,7 +3,7 @@ Reusable Extract Functions.
 """
 
 from pathlib import Path
-from typing import Generic, Dict
+from typing import Generic, Dict, Any
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
@@ -28,7 +28,17 @@ class ExtractFunction(FraguaFunction[ExtractParamsT], Generic[ExtractParamsT]):
     def __init__(self, name: str, params: ExtractParamsT) -> None:
         super().__init__(name=name, action="extract", params=params)
 
+    def summary(self) -> Dict[str, Any]:
+        return {
+            "function": self.name,
+            "params_type": type(self.params).__name__,
+            "purpose": "Generic extract function",
+        }
 
+
+# ---------------------------------------------------------------------- #
+# CSV
+# ---------------------------------------------------------------------- #
 class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
     """
     ExtractFunction for CSV files.
@@ -36,6 +46,13 @@ class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
 
     def __init__(self, name: str, params: CSVExtractParamsT) -> None:
         super().__init__(name=name, params=params)
+
+    def summary(self) -> Dict[str, Any]:
+        return {
+            "function": self.name,
+            "params_type": "CSVExtractParams",
+            "purpose": "Extract tabular data from a CSV file",
+        }
 
     def execute(self) -> pd.DataFrame:
         path: Path = self.params.path
@@ -47,6 +64,9 @@ class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
         return pd.read_csv(path_str, **read_kwargs)
 
 
+# ---------------------------------------------------------------------- #
+# Excel
+# ---------------------------------------------------------------------- #
 class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
     """
     ExtractFunction for Excel files.
@@ -54,6 +74,13 @@ class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
 
     def __init__(self, name: str, params: ExcelExtractParamsT) -> None:
         super().__init__(name=name, params=params)
+
+    def summary(self) -> Dict[str, Any]:
+        return {
+            "function": self.name,
+            "params_type": "ExcelExtractParams",
+            "purpose": "Extract data from an Excel spreadsheet",
+        }
 
     def execute(self) -> pd.DataFrame:
         path = self.params.path
@@ -65,6 +92,9 @@ class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
         return pd.read_excel(path_str, sheet_name=self.params.sheet_name, **read_kwargs)
 
 
+# ---------------------------------------------------------------------- #
+# SQL
+# ---------------------------------------------------------------------- #
 class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
     """
     ExtractFunction for SQL databases.
@@ -72,6 +102,13 @@ class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
 
     def __init__(self, name: str, params: SQLExtractParamsT) -> None:
         super().__init__(name=name, params=params)
+
+    def summary(self) -> Dict[str, Any]:
+        return {
+            "function": self.name,
+            "params_type": "SQLExtractParams",
+            "purpose": "Run a SQL query and extract the result as a DataFrame",
+        }
 
     def execute(self) -> pd.DataFrame:
         connection_string = self.params.connection_string
@@ -88,6 +125,9 @@ class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
             engine.dispose()
 
 
+# ---------------------------------------------------------------------- #
+# API
+# ---------------------------------------------------------------------- #
 class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
     """
     ExtractFunction for REST APIs.
@@ -95,6 +135,13 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
 
     def __init__(self, name: str, params: APIExtractParamsT) -> None:
         super().__init__(name=name, params=params)
+
+    def summary(self) -> Dict[str, Any]:
+        return {
+            "function": self.name,
+            "params_type": "APIExtractParams",
+            "purpose": "Fetch JSON data from a REST API",
+        }
 
     def execute(self) -> pd.DataFrame:
         url = self.params.url
@@ -124,6 +171,7 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
         raise ValueError(f"Unexpected API response type: {type(result_data)}")
 
 
+# Registry
 EXTRACT_FUNCTION_CLASSES: Dict[str, type[ExtractFunction[ExtractParams]]] = {
     "csv": CSVExtractFunction,
     "excel": ExcelExtractFunction,
