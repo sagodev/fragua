@@ -1,5 +1,5 @@
 """
-Generic ExtractFunction for Fragua.
+Generic ExtractFunction class.
 """
 
 from typing import Any, Dict, Generic
