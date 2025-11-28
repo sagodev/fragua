@@ -9,7 +9,13 @@ This module contains:
 """
 
 # ------------------- Extract Functions ------------------- #
-
+from .transform_functions import (
+    TRANSFORM_FUNCTION_CLASSES,
+    TransformFunction,
+    AnalysisTransformFunction,
+    ReportTransformFunction,
+    MLTransformFunction,
+)
 
 # ------------------- Extract Styles ------------------- #
 
@@ -26,5 +32,10 @@ __all__ = [
     "Transformer",
     # Extract Params
     # Extract Functions
+    "TRANSFORM_FUNCTION_CLASSES",
+    "TransformFunction",
+    "AnalysisTransformFunction",
+    "ReportTransformFunction",
+    "MLTransformFunction",
     # Extract Styles
 ]

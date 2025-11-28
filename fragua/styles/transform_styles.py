@@ -7,7 +7,7 @@ from typing import Any, Dict, Generic
 
 import pandas as pd
 
-from fragua.functions.transform_functions import (
+from fragua.transform.transform_functions import (
     AnalysisTransformFunction,
     MLTransformFunction,
     ReportTransformFunction,
