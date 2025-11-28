@@ -7,8 +7,16 @@ This module contains:
 - Extract Style subclasses.
 - Extract FraguaFunctions subclasses.
 """
-# ------------------- Extractor Subclass ------------------- #
-from .extractor import Extractor
+
+# ------------------- Extract Functions ------------------- #
+from fragua.extract.extract_functions import (
+    EXTRACT_FUNCTION_CLASSES,
+    ExtractFunction,
+    ExcelExtractFunction,
+    APIExtractFunction,
+    CSVExtractFunction,
+    SQLExtractFunction,
+)
 
 # ------------------- Extract Params ------------------- #
 from .extract_params import (
@@ -25,6 +33,9 @@ from .extract_params import (
     APIExtractParamsT,
 )
 
+# ------------------- Extractor Subclass ------------------- #
+from .extractor import Extractor
+
 __all__ = [
     # Agent subclass
     "Extractor",
@@ -40,4 +51,11 @@ __all__ = [
     "ExcelExtractParamsT",
     "SQLExtractParamsT",
     "APIExtractParamsT",
+    # Extract Functions
+    "EXTRACT_FUNCTION_CLASSES",
+    "ExtractFunction",
+    "ExcelExtractFunction",
+    "APIExtractFunction",
+    "CSVExtractFunction",
+    "SQLExtractFunction",
 ]

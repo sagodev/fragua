@@ -5,7 +5,7 @@ ExtractStyle types for various data extraction methods.
 from typing import Any, Generic, Dict
 import pandas as pd
 
-from fragua.functions.extract_functions import (
+from fragua.extract.extract_functions import (
     APIExtractFunction,
     CSVExtractFunction,
     ExcelExtractFunction,

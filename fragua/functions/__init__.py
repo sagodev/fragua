@@ -2,16 +2,6 @@
 Reusable Functions Module.
 """
 
-# ------------------- Extract classes ------------------- #
-from fragua.functions.extract_functions import (
-    EXTRACT_FUNCTION_CLASSES,
-    ExtractFunction,
-    ExcelExtractFunction,
-    APIExtractFunction,
-    CSVExtractFunction,
-    SQLExtractFunction,
-)
-
 # ------------------- Transform classes ------------------- #
 from fragua.functions.transform_functions import (
     TRANSFORM_FUNCTION_CLASSES,
@@ -29,13 +19,6 @@ from fragua.functions.load_functions import (
 )
 
 __all__ = [
-    # Extract classes
-    "EXTRACT_FUNCTION_CLASSES",
-    "ExtractFunction",
-    "ExcelExtractFunction",
-    "APIExtractFunction",
-    "CSVExtractFunction",
-    "SQLExtractFunction",
     # Transform classes
     "TRANSFORM_FUNCTION_CLASSES",
     "TransformFunction",
