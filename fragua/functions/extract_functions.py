@@ -10,7 +10,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from fragua.core.function import FraguaFunction
-from fragua.params.extract_params import (
+from fragua.extract.extract_params import (
     ExtractParams,
     ExtractParamsT,
     CSVExtractParamsT,
