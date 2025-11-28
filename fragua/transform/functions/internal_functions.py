@@ -1,31 +1,16 @@
-"""
-Reusable Transform Functions.
-"""
+"""Internal Functions For Transform Function Classes."""
 
-from __future__ import annotations
-from typing import Any, Callable, Dict, Generic
 import numpy as np
 import pandas as pd
 from pandas.errors import UndefinedVariableError
 from sklearn.preprocessing import MinMaxScaler
+from fragua.transform.params.generic_types import TransformParamsT
 
-
-from fragua.core.function import FraguaFunction
-from fragua.transform.transform_params import (
-    TransformParams,
-    TransformParamsT,
-    MLTransformParamsT,
-    ReportTransformParamsT,
-    AnalysisTransformParamsT,
-)
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-# ----------------------------- #
-# --- Functions --- #
-# ----------------------------- #
 def fill_missing(params: TransformParamsT) -> TransformParamsT:
     """
     Fill missing values in numeric and categorical columns.
@@ -139,7 +124,7 @@ def add_derived_columns(params: TransformParamsT) -> TransformParamsT:
 
     Args:
         params (TransformParamsT): Parameters containing the DataFrame
-                                  and derived column definitions.
+                                   and derived column definitions.
 
     Returns:
         TransformParamsT: Params object with updated data.
@@ -233,180 +218,3 @@ def sort_dataframe(params: TransformParamsT) -> TransformParamsT:
 
     params.data = df
     return params
-
-
-# ----------------------------- #
-# --- Function Descriptions --- #
-# ----------------------------- #
-FUNCTION_DESCRIPTIONS = {
-    fill_missing: "Fill missing values in numeric and categorical columns.",
-    standardize: "Trim and lowercase all string columns.",
-    encode_categoricals: "Convert categorical columns to dummy variables.",
-    scale_numeric: "Scale numeric columns using MinMaxScaler.",
-    treat_outliers: "Cap outliers using IQR method.",
-    add_derived_columns: "Create derived columns based on expressions.",
-    format_numeric: "Round numeric columns to a given precision.",
-    group_and_aggregate: "Group and aggregate data using columns and agg functions.",
-    sort_dataframe: "Sort the DataFrame by specified columns.",
-}
-
-
-def describe_function(func: Callable[..., Any]) -> str:
-    """Retrive describe of a function."""
-    return FUNCTION_DESCRIPTIONS.get(func, "No description available.")
-
-
-# ----------------------------- #
-# --- Pipelines --- #
-# ----------------------------- #
-class TransformFunction(FraguaFunction[TransformParamsT], Generic[TransformParamsT]):
-    """
-    Represents a Transform function in the Fragua framework.
-    Used to define transformations applied to extracted data.
-    """
-
-    def __init__(self, name: str, params: TransformParamsT) -> None:
-        super().__init__(name=name, action="transform", params=params)
-
-
-class MLTransformFunction(TransformFunction[MLTransformParamsT]):
-    """
-    TransformFunction for ML pipelines.
-    """
-
-    PURPOSE = (
-        "Apply ML-ready transformations including "
-        "cleanup, encoding, outlier treatment, and scaling."
-    )
-
-    STEPS = [
-        fill_missing,
-        standardize,
-        encode_categoricals,
-        treat_outliers,
-        scale_numeric,
-    ]
-
-    def __init__(self, name: str, params: MLTransformParamsT) -> None:
-        super().__init__(name=name, params=params)
-
-    def execute(self) -> pd.DataFrame:
-        for func in self.STEPS:
-            self.params = func(self.params)
-        return self.params.data
-
-    def summary(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-            "steps": [
-                {
-                    "function": func.__name__,
-                    "description": describe_function(func),
-                }
-                for func in self.STEPS
-            ],
-        }
-
-
-class ReportTransformFunction(TransformFunction[ReportTransformParamsT]):
-    """
-    TransformFunction for Report pipelines.
-    """
-
-    PURPOSE = (
-        "Prepare data for reporting by cleaning values,"
-        " standardizing text, adding derived columns, and formatting numbers."
-    )
-
-    STEPS = [
-        fill_missing,
-        standardize,
-        add_derived_columns,
-        format_numeric,
-    ]
-
-    def __init__(self, name: str, params: ReportTransformParamsT) -> None:
-        super().__init__(name=name, params=params)
-
-    def execute(self) -> pd.DataFrame:
-        for func in self.STEPS:
-            self.params = func(self.params)
-        return self.params.data
-
-    def summary(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-            "steps": [
-                {
-                    "function": func.__name__,
-                    "description": describe_function(func),
-                }
-                for func in self.STEPS
-            ],
-        }
-
-
-class AnalysisTransformFunction(TransformFunction[AnalysisTransformParamsT]):
-    """
-    TransformFunction for Analysis pipelines.
-    """
-
-    PURPOSE = (
-        "Prepare datasets for exploratory analysis"
-        " using grouping, aggregation, sorting, and basic cleanup."
-    )
-
-    STEPS = [
-        fill_missing,
-        standardize,
-        group_and_aggregate,
-        sort_dataframe,
-    ]
-
-    def __init__(self, name: str, params: AnalysisTransformParamsT) -> None:
-        super().__init__(name=name, params=params)
-
-    def execute(self) -> pd.DataFrame:
-        for func in self.STEPS:
-            self.params = func(self.params)
-        return self.params.data
-
-    def summary(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-            "steps": [
-                {
-                    "function": func.__name__,
-                    "description": describe_function(func),
-                }
-                for func in self.STEPS
-            ],
-        }
-
-
-# ----------------------------- #
-# --- Registries --- #
-# ----------------------------- #
-TRANSFORM_FUNCTIONS: Dict[str, Callable[..., Any]] = {
-    "fill_missing": fill_missing,
-    "standardize": standardize,
-    "encode_categoricals": encode_categoricals,
-    "scale_numeric": scale_numeric,
-    "treat_outliers": treat_outliers,
-    "add_derived_columns": add_derived_columns,
-    "format_numeric": format_numeric,
-    "group_and_aggregate": group_and_aggregate,
-    "sort_dataframe": sort_dataframe,
-}
-
-TRANSFORM_FUNCTION_CLASSES: Dict[str, type[TransformFunction[TransformParams]]] = {
-    "ml": MLTransformFunction,
-    "report": ReportTransformFunction,
-    "analysis": AnalysisTransformFunction,
-}

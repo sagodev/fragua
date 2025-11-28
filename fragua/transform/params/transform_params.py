@@ -2,27 +2,11 @@
 Transform parameters classes for different types of data transformations.
 """
 
-from typing import Any, Dict, TypeVar
+from typing import Any, Dict
 from pandas import DataFrame
-from fragua.core.params import Params
+from fragua.transform.params.base import TransformParams
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
-
-
-class TransformParams(Params):
-    """Common parameters for transformation agents."""
-
-    data: DataFrame
-
-    purpose: str | None = "Base parameters for all data transformation operations."
-
-    FIELD_DESCRIPTIONS = {
-        "data": "Input DataFrame that will be transformed.",
-    }
-
-    def __init__(self, style: str, data: DataFrame) -> None:
-        super().__init__(action="transform", style=style)
-        self.data = data
 
 
 class MLTransformParams(TransformParams):
@@ -116,17 +100,3 @@ class AnalysisTransformParams(TransformParams):
         self.groupby_cols = groupby_cols or []
         self.agg_functions = agg_functions or {}
         self.sort_by = sort_by or []
-
-
-TransformParamsT = TypeVar("TransformParamsT", bound=TransformParams)
-MLTransformParamsT = TypeVar("MLTransformParamsT", bound=MLTransformParams)
-ReportTransformParamsT = TypeVar("ReportTransformParamsT", bound=ReportTransformParams)
-AnalysisTransformParamsT = TypeVar(
-    "AnalysisTransformParamsT", bound=AnalysisTransformParams
-)
-
-TRANSFORM_PARAMS_CLASSES: Dict[str, type[TransformParams]] = {
-    "ml": MLTransformParams,
-    "report": ReportTransformParams,
-    "analysis": AnalysisTransformParams,
-}
