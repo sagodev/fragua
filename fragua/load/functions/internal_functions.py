@@ -1,24 +1,11 @@
-"""
-Reusable Load Functions.
-"""
+"""Internal Functions For Load Function Classes."""
 
 import os
-from typing import Any, Callable, Dict, Generic
 import pandas as pd
 
-
-from fragua.core.function import FraguaFunction
-from fragua.load.load_params import (
-    ExcelLoadParams,
-    ExcelLoadParamsT,
-    LoadParams,
-    LoadParamsT,
-)
+from fragua.load.params.load_params import ExcelLoadParams
 
 
-# ----------------------------- #
-# --- Excel Helpers --- #
-# ----------------------------- #
 def validate_excel_params(params: ExcelLoadParams) -> None:
     """
     Validate Excel Load parameters.
@@ -95,80 +82,3 @@ def write_excel(df: pd.DataFrame, path: str, sheet_name: str, index: bool) -> No
     else:
         with pd.ExcelWriter(path, engine="openpyxl") as writer:
             df.to_excel(writer, sheet_name=sheet_name, index=index)
-
-
-# ----------------------------- #
-# --- CSV Helpers --- #
-# ----------------------------- #
-
-
-# ----------------------------- #
-# --- SQL Helpers --- #
-# ----------------------------- #
-
-
-# ----------------------------- #
-# --- API Helpers --- #
-# ----------------------------- #
-
-
-# ----------------------------- #
-# --- Pipelines --- #
-# ----------------------------- #
-class LoadFunction(FraguaFunction[LoadParamsT], Generic[LoadParamsT]):
-    """
-    Represents a Load function in the Fragua framework.
-    """
-
-    PURPOSE: str = "Load data into the target destination."
-
-    def __init__(self, name: str, params: LoadParamsT) -> None:
-        super().__init__(name=name, action="load", params=params)
-
-    def summary(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-        }
-
-
-class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
-    """
-    LoadFunction for Excel pipelines.
-    """
-
-    PURPOSE: str = "Export a DataFrame to an Excel file."
-
-    def __init__(self, name: str, params: ExcelLoadParamsT) -> None:
-        super().__init__(name=name, params=params)
-
-    def execute(self) -> pd.DataFrame:
-        validate_excel_params(self.params)
-        path = build_excel_path(self.params)
-        df = convert_datetime_columns(self.params.data)
-        write_excel(df, path, self.params.sheet_name or "Sheet1", self.params.index)
-        return df
-
-    def summary(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-        }
-
-
-# ----------------------------- #
-# --- Registries --- #
-# ----------------------------- #
-
-LOAD_FUNCTIONS: Dict[str, Callable[..., Any]] = {
-    "validate_excel_params": validate_excel_params,
-    "build_excel_path": build_excel_path,
-    "convert_datetime_columns": convert_datetime_columns,
-    "write_excel": write_excel,
-}
-
-LOAD_FUNCTION_CLASSES: Dict[str, type[LoadFunction[LoadParams]]] = {
-    "excel": ExcelLoadFunction,
-}

@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List
 from fragua.core.agent import Agent
 
-from fragua.load.load_params import ExcelLoadParams, LoadParams
-from fragua.storages.storage_types import Box, Container
+from fragua.load.params.load_params import ExcelLoadParams, LoadParams
+from fragua.core.storage import Box, Container
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:

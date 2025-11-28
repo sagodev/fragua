@@ -2,32 +2,12 @@
 Load parameters classes for different types of data destinations.
 """
 
-from typing import Dict, TypeVar
+from typing import Dict
 from pandas import DataFrame
-from fragua.core.params import Params
+
+from fragua.load.params.base import LoadParams
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
-
-
-class LoadParams(Params):
-    """Common parameters for loading agents."""
-
-    data: DataFrame
-    destination: str | None
-
-    purpose: str | None = "Base load parameters shared by all data loading styles."
-
-    FIELD_DESCRIPTIONS = {
-        "data": "Pandas DataFrame containing the data to be loaded.",
-        "destination": "Optional destination identifier (e.g., file path, database name, endpoint)",
-    }
-
-    def __init__(
-        self, style: str, data: DataFrame, destination: str | None = None
-    ) -> None:
-        super().__init__(action="load", style=style)
-        self.data = data
-        self.destination = destination
 
 
 class ExcelLoadParams(LoadParams):
@@ -137,16 +117,3 @@ class APILoadParams(LoadParams):
         self.headers = headers or {}
         self.auth = auth or {}
         self.timeout = timeout
-
-
-LoadParamsT = TypeVar("LoadParamsT", bound=LoadParams)
-ExcelLoadParamsT = TypeVar("ExcelLoadParamsT", bound=ExcelLoadParams)
-SQLLoadParamsT = TypeVar("SQLLoadParamsT", bound=SQLLoadParams)
-APILoadParamsT = TypeVar("APILoadParamsT", bound=APILoadParams)
-
-
-LOAD_PARAMS_CLASSES: Dict[str, type[LoadParams]] = {
-    "excel": ExcelLoadParams,
-    "sql": SQLLoadParams,
-    "api": APILoadParams,
-}
