@@ -3,7 +3,7 @@ Reusable Load Functions.
 """
 
 import os
-from typing import Dict, Generic
+from typing import Any, Callable, Dict, Generic
 import pandas as pd
 
 
@@ -19,8 +19,6 @@ from fragua.params.load_params import (
 # ----------------------------- #
 # --- Excel Helpers --- #
 # ----------------------------- #
-
-
 def validate_excel_params(params: ExcelLoadParams) -> None:
     """
     Validate Excel Load parameters.
@@ -117,21 +115,30 @@ def write_excel(df: pd.DataFrame, path: str, sheet_name: str, index: bool) -> No
 # ----------------------------- #
 # --- Pipelines --- #
 # ----------------------------- #
-
-
 class LoadFunction(FraguaFunction[LoadParamsT], Generic[LoadParamsT]):
     """
     Represents a Load function in the Fragua framework.
     """
 
+    PURPOSE: str = "Load data into the target destination."
+
     def __init__(self, name: str, params: LoadParamsT) -> None:
         super().__init__(name=name, action="load", params=params)
+
+    def summary(self) -> dict:
+        return {
+            "name": self.name,
+            "params_type": type(self.params).__name__,
+            "purpose": self.PURPOSE,
+        }
 
 
 class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
     """
     LoadFunction for Excel pipelines.
     """
+
+    PURPOSE: str = "Export a DataFrame to an Excel file."
 
     def __init__(self, name: str, params: ExcelLoadParamsT) -> None:
         super().__init__(name=name, params=params)
@@ -143,6 +150,24 @@ class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
         write_excel(df, path, self.params.sheet_name or "Sheet1", self.params.index)
         return df
 
+    def summary(self) -> dict:
+        return {
+            "name": self.name,
+            "params_type": type(self.params).__name__,
+            "purpose": self.PURPOSE,
+        }
+
+
+# ----------------------------- #
+# --- Registries --- #
+# ----------------------------- #
+
+LOAD_FUNCTIONS: Dict[str, Callable[..., Any]] = {
+    "validate_excel_params": validate_excel_params,
+    "build_excel_path": build_excel_path,
+    "convert_datetime_columns": convert_datetime_columns,
+    "write_excel": write_excel,
+}
 
 LOAD_FUNCTION_CLASSES: Dict[str, type[LoadFunction[LoadParams]]] = {
     "excel": ExcelLoadFunction,
