@@ -1,6 +1,6 @@
 """Transform Function Registry."""
 
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 from fragua.transform.functions.internal_functions import (
     add_derived_columns,
@@ -55,14 +55,14 @@ TRANSFORM_INTERNAL_FUNCTIONS: Dict[str, dict[str, Any]] = {
 }
 
 
-def get_function_description(func: str) -> str:
+def get_function_description(func: str) -> Any:
     """Retrive describe of a function."""
     return TRANSFORM_INTERNAL_FUNCTIONS[func].get(
         "description", "No description available."
     )
 
 
-def get_function(func: str) -> Callable[..., Any]:
+def get_function(func: str) -> Any:
     """Retrive callable of a function."""
     return TRANSFORM_INTERNAL_FUNCTIONS[func].get("func", "Function not found.")
 
