@@ -1,5 +1,5 @@
 """
-Reusable Extract Functions.
+Extract Functions.
 """
 
 from pathlib import Path
