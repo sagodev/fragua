@@ -5,21 +5,23 @@ from typing import Any, Dict, Optional, Type, List, TypedDict, cast
 from fragua.storages.warehouse import Warehouse
 from fragua.core.agent import Agent
 from fragua.agents.warehouse_manager import WarehouseManager
-from fragua.extract.extractor import Extractor
-from fragua.agents.transformer import Transformer
+from fragua.extract import (
+    Extractor,
+    EXTRACT_PARAMS_CLASSES,
+    EXTRACT_FUNCTION_CLASSES,
+    EXTRACT_STYLE_CLASSES,
+)
+from fragua.transform.transformer import Transformer
 from fragua.agents.loader import Loader
 from fragua.params import (
-    EXTRACT_PARAMS_CLASSES,
     TRANSFORM_PARAMS_CLASSES,
     LOAD_PARAMS_CLASSES,
 )
 from fragua.functions import (
-    EXTRACT_FUNCTION_CLASSES,
     TRANSFORM_FUNCTION_CLASSES,
     LOAD_FUNCTION_CLASSES,
 )
 from fragua.styles import (
-    EXTRACT_STYLE_CLASSES,
     TRANSFORM_STYLE_CLASSES,
     LOAD_STYLE_CLASSES,
 )
