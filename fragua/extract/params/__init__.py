@@ -5,7 +5,7 @@ This module contains:
 - ExtractParams base class.
 - Extract CSV, excel, API & SQL Params class.
 - Generic types for each Params class(e.g. ExtractParamsT).
-- Dict registry with each Params class.({'name': class})
+- Dict registry with each Params class.('name': class)
 """
 
 from .base import ExtractParams
