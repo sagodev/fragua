@@ -2,11 +2,14 @@
 Base classes module.
 
 This module contains:
+- Base Environment class.
 - Base Agent class.
 - Base Params class.
 - Base Style class.
 - Base FraguaFunction class.
 """
+
+from .environment import Environment
 
 from .agent import Agent
 
@@ -18,6 +21,8 @@ from .function import FraguaFunction
 
 
 __all__ = [
+    # Environment Class
+    "Environment",
     # Agent Class
     "Agent",
     # Params Class

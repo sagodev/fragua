@@ -21,7 +21,7 @@ from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
 if TYPE_CHECKING:
-    from fragua.environments.environment import Environment
+    from fragua.core.environment import Environment
 
 logger = get_logger(__name__)
 

@@ -9,7 +9,7 @@ from fragua.params.transform_params import TransformParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
-    from fragua.environments.environment import Environment
+    from fragua.core.environment import Environment
 
 
 logger = get_logger(__name__)

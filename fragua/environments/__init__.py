@@ -1,7 +1,7 @@
 """Fragua environment factory and exports."""
 
 from typing import Dict, Type
-from fragua.environments.environment import Environment
+from fragua.core.environment import Environment
 from fragua.environments.basic import BasicEnvironment
 from fragua.environments.minimal import MinimalEnvironment
 
@@ -42,7 +42,6 @@ def create_fragua(
 
 
 __all__ = [
-    "Environment",
     "MinimalEnvironment",
     "BasicEnvironment",
     "create_fragua",
