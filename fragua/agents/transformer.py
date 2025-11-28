@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-from fragua.agents.agent import Agent
+from fragua.core.agent import Agent
 
 from fragua.params.transform_params import TransformParams
 from fragua.utils.logger import get_logger

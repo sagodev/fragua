@@ -7,3 +7,10 @@ This module contains:
 - Base Style class.
 - Base FraguaFunction class.
 """
+
+from .agent import Agent
+
+__all__ = [
+    # Agent Class
+    "Agent",
+]
