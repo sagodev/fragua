@@ -8,6 +8,8 @@ This module contains:
 - Base Style class.
 - Base FraguaFunction class.
 - Warehouse Manager class.
+- Warehouse class.
+- Storage class.
 """
 
 from .environment import Environment
@@ -23,6 +25,8 @@ from .function import FraguaFunction
 from .manager import WarehouseManager
 
 from .warehouse import Warehouse
+
+from .storage import Storage, Box, Container, STORAGE_CLASSES
 
 
 __all__ = [
@@ -40,4 +44,10 @@ __all__ = [
     "WarehouseManager",
     # Warehouse
     "Warehouse",
+    # Storage
+    "Storage",
+    # Storage Types
+    "STORAGE_CLASSES",
+    "Box",
+    "Container",
 ]

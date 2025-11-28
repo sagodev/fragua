@@ -7,11 +7,10 @@ from typing import Any, TypeAlias, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 import copy as py_copy
 
-from fragua.storages.storage import Storage
-from fragua.utils.logger import get_logger
-
+from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 from fragua.core.warehouse import Warehouse
-from fragua.storages.storage_types import Box, STORAGE_CLASSES
+
+from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

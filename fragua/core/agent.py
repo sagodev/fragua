@@ -13,9 +13,7 @@ import pandas as pd
 
 from fragua.core.manager import WarehouseManager
 from fragua.core.params import Params, ParamsT
-from fragua.storages.storage import Storage
-from fragua.storages.storage_types import Box, STORAGE_CLASSES
-
+from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
