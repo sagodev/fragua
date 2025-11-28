@@ -12,7 +12,7 @@ from fragua.functions.transform_functions import (
     MLTransformFunction,
     ReportTransformFunction,
 )
-from fragua.styles.style import Style, ResultT
+from fragua.core.style import Style, ResultT
 from fragua.utils.logger import get_logger
 from fragua.params.transform_params import (
     TransformParams,

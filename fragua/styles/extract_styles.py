@@ -11,7 +11,7 @@ from fragua.functions.extract_functions import (
     ExcelExtractFunction,
     SQLExtractFunction,
 )
-from fragua.styles.style import Style, ResultT
+from fragua.core.style import Style, ResultT
 from fragua.params.extract_params import (
     ExtractParams,
     ExtractParamsT,

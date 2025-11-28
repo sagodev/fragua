@@ -12,14 +12,18 @@ from .agent import Agent
 
 from .params import Params
 
+from .style import Style
+
 from .function import FraguaFunction
 
 
 __all__ = [
     # Agent Class
     "Agent",
-    # Params class
+    # Params Class
     "Params",
-    # Function class
+    # Style Class
+    "Style",
+    # Function Class
     "FraguaFunction",
 ]

@@ -1,9 +1,5 @@
 """Fragua Styles package."""
 
-# ------------------- Base Style ------------------- #
-from .style import Style
-
-
 # ------------------- Extract Styles ------------------- #
 from .extract_styles import (
     EXTRACT_STYLE_CLASSES,
@@ -33,8 +29,6 @@ from .load_styles import (
 
 # ------------------- __all__ ------------------- #
 __all__ = [
-    # Base Styles
-    "Style",
     "LoadStyle",
     "ExtractStyle",
     "TransformStyle",
