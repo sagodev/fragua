@@ -18,6 +18,16 @@ from fragua.extract.extract_functions import (
     SQLExtractFunction,
 )
 
+# ------------------- Extract Styles ------------------- #
+from ..extract.extract_styles import (
+    EXTRACT_STYLE_CLASSES,
+    ExtractStyle,
+    CSVExtractStyle,
+    ExcelExtractStyle,
+    SQLExtractStyle,
+    APIExtractStyle,
+)
+
 # ------------------- Extract Params ------------------- #
 from .extract_params import (
     EXTRACT_PARAMS_CLASSES,
@@ -33,11 +43,11 @@ from .extract_params import (
     APIExtractParamsT,
 )
 
-# ------------------- Extractor Subclass ------------------- #
+# ------------------- Extractor Agent ------------------- #
 from .extractor import Extractor
 
 __all__ = [
-    # Agent subclass
+    # Extractor Agent
     "Extractor",
     # Extract Params
     "EXTRACT_PARAMS_CLASSES",
@@ -58,4 +68,11 @@ __all__ = [
     "APIExtractFunction",
     "CSVExtractFunction",
     "SQLExtractFunction",
+    # Extract Styles
+    "ExtractStyle",
+    "EXTRACT_STYLE_CLASSES",
+    "CSVExtractStyle",
+    "ExcelExtractStyle",
+    "SQLExtractStyle",
+    "APIExtractStyle",
 ]
