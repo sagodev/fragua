@@ -4,7 +4,7 @@ Extract Styles Module.
 This module contains:
 - ExtractStyle base class.
 - Extract CSV, excel, API & SQL Style class.
-- Dict registry with each Style class.({'name': class})
+- Dict registry with each Style class.('name': class)
 """
 
 from .base import ExtractStyle
