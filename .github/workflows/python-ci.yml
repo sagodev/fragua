@@ -124,7 +124,6 @@ jobs:
             --extension-pkg-whitelist=pydantic \
             --disable=C0103,C0415 \
             $FILES \
-            fragua/params/params.py --disable=R0903
 
       # --- Type check with Mypy ---
       - name: Type checking with mypy
