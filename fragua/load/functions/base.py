@@ -4,7 +4,7 @@ Generic LoadFunction for Fragua.
 
 from typing import Any, Generic
 from fragua.core.function import FraguaFunction
-from fragua.load.params.load_params import LoadParamsT
+from fragua.load.params.generic_types import LoadParamsT
 
 
 class LoadFunction(FraguaFunction[LoadParamsT], Generic[LoadParamsT]):
