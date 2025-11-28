@@ -8,7 +8,7 @@ import pandas as pd
 
 from fragua.load.load_functions import ExcelLoadFunction
 from fragua.core.style import Style, ResultT
-from fragua.params.load_params import (
+from fragua.load.load_params import (
     LoadParams,
     LoadParamsT,
     ExcelLoadParamsT,
