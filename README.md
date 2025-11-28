@@ -58,12 +58,11 @@ Fragua also includes a storage system with:
 ## Project Structure
 
     fragua/
-    ├── agents/
+    ├── core/
     ├── environments/
-    ├── functions/
-    ├── params/
-    ├── styles/
-    ├── storages/
+    ├── extract/
+    ├── load/
+    ├── transform/
     ├── utils/
     └── __init__.py
 
