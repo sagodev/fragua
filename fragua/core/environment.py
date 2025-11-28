@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Type, List, TypedDict, cast
 from fragua.storages.warehouse import Warehouse
 from fragua.core.agent import Agent
 from fragua.agents.warehouse_manager import WarehouseManager
-from fragua.agents.extractor import Extractor
+from fragua.extract.extractor import Extractor
 from fragua.agents.transformer import Transformer
 from fragua.agents.loader import Loader
 from fragua.params import (

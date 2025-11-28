@@ -7,3 +7,10 @@ This module contains:
 - Extract Style subclasses.
 - Extract FraguaFunctions subclasses.
 """
+
+from .extractor import Extractor
+
+__all__ = [
+    # Agent subclass
+    "Extractor",
+]
