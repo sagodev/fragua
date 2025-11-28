@@ -11,7 +11,7 @@ from fragua.load.functions.internal_functions import (
     validate_excel_params,
     write_excel,
 )
-from fragua.load.params.load_params import ExcelLoadParamsT
+from fragua.load.params.generic_types import ExcelLoadParamsT
 
 
 class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
