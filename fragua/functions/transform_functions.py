@@ -251,7 +251,7 @@ FUNCTION_DESCRIPTIONS = {
 }
 
 
-def describe_function(func: Callable) -> str:
+def describe_function(func: Callable[..., Any]) -> str:
     """Retrive describe of a function."""
     return FUNCTION_DESCRIPTIONS.get(func, "No description available.")
 
@@ -295,7 +295,7 @@ class MLTransformFunction(TransformFunction[MLTransformParamsT]):
             self.params = func(self.params)
         return self.params.data
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "params_type": type(self.params).__name__,
@@ -335,7 +335,7 @@ class ReportTransformFunction(TransformFunction[ReportTransformParamsT]):
             self.params = func(self.params)
         return self.params.data
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "params_type": type(self.params).__name__,
@@ -375,7 +375,7 @@ class AnalysisTransformFunction(TransformFunction[AnalysisTransformParamsT]):
             self.params = func(self.params)
         return self.params.data
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "params_type": type(self.params).__name__,
