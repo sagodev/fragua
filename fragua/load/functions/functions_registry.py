@@ -10,7 +10,7 @@ from fragua.load.functions.internal_functions import (
     write_excel,
 )
 from fragua.load.functions.load_functions import ExcelLoadFunction
-from fragua.load.params.load_params import LoadParams
+from fragua.load.params.base import LoadParams
 
 
 LOAD_INTERNAL_FUNCTIONS: Dict[str, Callable[..., Any]] = {
