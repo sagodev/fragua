@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 from fragua.core.agent import Agent
-from fragua.extract.extract_params import ExtractParams
+from fragua.extract.params.extract_params import ExtractParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:

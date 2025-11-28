@@ -2,30 +2,13 @@
 Extract parameters classes for different types of data sources.
 """
 
-from typing import Any, Dict, Union, TypeVar
+from typing import Any, Dict, Union
 from pathlib import Path
-from fragua.core.params import Params
+
+from fragua.extract.params.base import ExtractParams
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
 # pylint: disable=too-many-instance-attributes
-
-
-class ExtractParams(Params):
-    """Common parameters for extraction agents."""
-
-    read_kwargs: Dict[str, Any]
-
-    purpose: str | None = (
-        "Base extraction parameters used across all extract-style agents."
-    )
-
-    FIELD_DESCRIPTIONS = {
-        "read_kwargs": "Additional keyword arguments passed to the data reader.",
-    }
-
-    def __init__(self, style: str, read_kwargs: Dict[str, Any] | None = None) -> None:
-        super().__init__(action="extract", style=style)
-        self.read_kwargs = read_kwargs or {}
 
 
 class CSVExtractParams(ExtractParams):
@@ -136,18 +119,3 @@ class APIExtractParams(ExtractParams):
         self.auth = auth or {}
         self.proxy = proxy or {}
         self.timeout = timeout
-
-
-ExtractParamsT = TypeVar("ExtractParamsT", bound=ExtractParams)
-CSVExtractParamsT = TypeVar("CSVExtractParamsT", bound=CSVExtractParams)
-ExcelExtractParamsT = TypeVar("ExcelExtractParamsT", bound=ExcelExtractParams)
-SQLExtractParamsT = TypeVar("SQLExtractParamsT", bound=SQLExtractParams)
-APIExtractParamsT = TypeVar("APIExtractParamsT", bound=APIExtractParams)
-
-
-EXTRACT_PARAMS_CLASSES: Dict[str, type[ExtractParams]] = {
-    "csv": CSVExtractParams,
-    "excel": ExcelExtractParams,
-    "sql": SQLExtractParams,
-    "api": APIExtractParams,
-}

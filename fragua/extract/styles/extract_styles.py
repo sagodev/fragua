@@ -2,58 +2,25 @@
 ExtractStyle types for various data extraction methods.
 """
 
-from typing import Any, Generic, Dict
+from typing import Any, Dict
 import pandas as pd
 
-from fragua.extract.extract_functions import (
+from fragua.extract.functions.extract_functions import (
     APIExtractFunction,
     CSVExtractFunction,
     ExcelExtractFunction,
     SQLExtractFunction,
 )
-from fragua.core.style import Style, ResultT
-from fragua.extract.extract_params import (
-    ExtractParams,
-    ExtractParamsT,
+from fragua.extract.params import (
     CSVExtractParamsT,
     ExcelExtractParamsT,
     SQLExtractParamsT,
     APIExtractParamsT,
 )
 
-from fragua.utils.logger import get_logger
-
-logger = get_logger(__name__)
+from fragua.extract.styles.base import ExtractStyle
 
 
-# ---------------------------------------------------------------------- #
-# Base ExtractStyle
-# ---------------------------------------------------------------------- #
-class ExtractStyle(Style[ExtractParamsT, ResultT], Generic[ExtractParamsT, ResultT]):
-    """
-    Base class for all extraction styles in Fragua ETL.
-
-    Standard pipeline provided by Style:
-        validate_params -> _run -> validate_result -> postprocess
-    """
-
-    def extract(self, params: ExtractParamsT) -> ResultT:
-        """
-        Base extract method. Should be implemented by subclasses
-        to call the appropriate registered function.
-        """
-        raise NotImplementedError
-
-    def _run(self, params: ExtractParamsT) -> ResultT:
-        logger.debug("Starting ExtractStyle '%s' extraction.", self.style_name)
-        result = self.extract(params)
-        logger.debug("ExtractStyle '%s' extraction completed.", self.style_name)
-        return result
-
-
-# ---------------------------------------------------------------------- #
-# CSV Extraction
-# ---------------------------------------------------------------------- #
 class CSVExtractStyle(ExtractStyle[CSVExtractParamsT, pd.DataFrame]):
     """Extracts data from CSV files."""
 
@@ -74,9 +41,6 @@ class CSVExtractStyle(ExtractStyle[CSVExtractParamsT, pd.DataFrame]):
         }
 
 
-# ---------------------------------------------------------------------- #
-# Excel Extraction
-# ---------------------------------------------------------------------- #
 class ExcelExtractStyle(ExtractStyle[ExcelExtractParamsT, pd.DataFrame]):
     """Extracts data from Excel files."""
 
@@ -98,9 +62,6 @@ class ExcelExtractStyle(ExtractStyle[ExcelExtractParamsT, pd.DataFrame]):
         }
 
 
-# ---------------------------------------------------------------------- #
-# SQL Extraction
-# ---------------------------------------------------------------------- #
 class SQLExtractStyle(ExtractStyle[SQLExtractParamsT, pd.DataFrame]):
     """Extracts data from SQL databases."""
 
@@ -121,9 +82,6 @@ class SQLExtractStyle(ExtractStyle[SQLExtractParamsT, pd.DataFrame]):
         }
 
 
-# ---------------------------------------------------------------------- #
-# API Extraction
-# ---------------------------------------------------------------------- #
 class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
     """Extracts data from REST APIs."""
 
@@ -146,11 +104,3 @@ class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
                 "timeout": "Timeout for request.",
             },
         }
-
-
-EXTRACT_STYLE_CLASSES: Dict[str, type[ExtractStyle[ExtractParams, Any]]] = {
-    "csv": CSVExtractStyle,
-    "excel": ExcelExtractStyle,
-    "sql": SQLExtractStyle,
-    "api": APIExtractStyle,
-}

@@ -3,42 +3,23 @@ Reusable Extract Functions.
 """
 
 from pathlib import Path
-from typing import Generic, Dict, Any
+from typing import Dict, Any
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
 from requests.auth import HTTPBasicAuth
 
-from fragua.core.function import FraguaFunction
-from fragua.extract.extract_params import (
-    ExtractParams,
-    ExtractParamsT,
+
+from fragua.extract.params import (
     CSVExtractParamsT,
     ExcelExtractParamsT,
     SQLExtractParamsT,
     APIExtractParamsT,
 )
 
-
-class ExtractFunction(FraguaFunction[ExtractParamsT], Generic[ExtractParamsT]):
-    """
-    Generic ExtractFunction for Fragua, typed by the specific ExtractParams subclass.
-    """
-
-    def __init__(self, name: str, params: ExtractParamsT) -> None:
-        super().__init__(name=name, action="extract", params=params)
-
-    def summary(self) -> Dict[str, Any]:
-        return {
-            "function": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": "Generic extract function",
-        }
+from fragua.extract.functions import ExtractFunction
 
 
-# ---------------------------------------------------------------------- #
-# CSV
-# ---------------------------------------------------------------------- #
 class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
     """
     ExtractFunction for CSV files.
@@ -64,9 +45,6 @@ class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
         return pd.read_csv(path_str, **read_kwargs)
 
 
-# ---------------------------------------------------------------------- #
-# Excel
-# ---------------------------------------------------------------------- #
 class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
     """
     ExtractFunction for Excel files.
@@ -92,9 +70,6 @@ class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
         return pd.read_excel(path_str, sheet_name=self.params.sheet_name, **read_kwargs)
 
 
-# ---------------------------------------------------------------------- #
-# SQL
-# ---------------------------------------------------------------------- #
 class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
     """
     ExtractFunction for SQL databases.
@@ -125,9 +100,6 @@ class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
             engine.dispose()
 
 
-# ---------------------------------------------------------------------- #
-# API
-# ---------------------------------------------------------------------- #
 class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
     """
     ExtractFunction for REST APIs.
@@ -169,12 +141,3 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
             return pd.json_normalize(result_data, **read_kwargs)
 
         raise ValueError(f"Unexpected API response type: {type(result_data)}")
-
-
-# Registry
-EXTRACT_FUNCTION_CLASSES: Dict[str, type[ExtractFunction[ExtractParams]]] = {
-    "csv": CSVExtractFunction,
-    "excel": ExcelExtractFunction,
-    "sql": SQLExtractFunction,
-    "api": APIExtractFunction,
-}
