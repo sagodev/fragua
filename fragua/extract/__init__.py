@@ -5,7 +5,7 @@ This module contains:
 - Extractor agent module.
 - Extract Params module.
 - Extract Style module.
-- Extract FraguaFunctions module.
+- Extract Functions module.
 """
 
 # ------------------- Extract Functions ------------------- #
