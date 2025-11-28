@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Type, List, TypedDict, cast
 from fragua.storages.warehouse import Warehouse
 from fragua.core.agent import Agent
-from fragua.agents.warehouse_manager import WarehouseManager
+from fragua.core.manager import WarehouseManager
 from fragua.extract import (
     Extractor,
     EXTRACT_PARAMS_CLASSES,

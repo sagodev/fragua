@@ -7,6 +7,7 @@ This module contains:
 - Base Params class.
 - Base Style class.
 - Base FraguaFunction class.
+- Warehouse Manager class.
 """
 
 from .environment import Environment
@@ -19,6 +20,7 @@ from .style import Style
 
 from .function import FraguaFunction
 
+from .manager import WarehouseManager
 
 __all__ = [
     # Environment Class
@@ -31,4 +33,6 @@ __all__ = [
     "Style",
     # Function Class
     "FraguaFunction",
+    # Warehouse Manager
+    "WarehouseManager",
 ]
