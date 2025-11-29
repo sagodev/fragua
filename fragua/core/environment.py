@@ -299,6 +299,18 @@ class Environment:
             raise ValueError(f"Invalid agent type '{agent_type}'.")
         return cast(List[Any], self.components["agents"][agent_type])
 
+    def get_params_registry(self) -> Dict[str, Any]:
+        """Return list of params of the environment"""
+        return self.list_registry_records("params")
+
+    def get_functions_registry(self) -> Dict[str, Any]:
+        """Return list of functions of the environment"""
+        return self.list_registry_records("functions")
+
+    def get_styles_registry(self) -> Dict[str, Any]:
+        """Return list of styles of the environment"""
+        return self.list_registry_records("styles")
+
     # ---------------------- Summary ---------------------- #
 
     def summary(self) -> Dict[str, Any]:
