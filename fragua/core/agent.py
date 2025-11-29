@@ -78,17 +78,6 @@ class Agent(ABC, Generic[ParamsT]):
             "undo_stack": undo_serialized,
         }
 
-    # ----------------- Registry Access ----------------- #
-    def get_registred_class(self, reg: str, style: str, action: str) -> Any:
-        """Retrieve a class object from environment registries."""
-        registry = self.environment.registries.get(reg, {})
-        for a_name, styles in registry.items():
-            if a_name == action:
-                for s_name, cls in styles.items():
-                    if s_name == style:
-                        return cls
-        raise KeyError(f"No class found for registry '{reg}'.")
-
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
         """Determine a string name for the origin of data for metadata."""
@@ -203,9 +192,6 @@ class Agent(ABC, Generic[ParamsT]):
     ) -> None:
         """Common workflow pipeline for agents."""
         style = style.lower()
-        params_instance = params or self.get_registred_class(
-            "params", style, self.action
-        )(**kwargs)
         style_cls = self.get_registred_class("styles", style, self.action)
         stylized_data = style_cls(style).use(params_instance)
         storage = self.create_storage(stylized_data)
