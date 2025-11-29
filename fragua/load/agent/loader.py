@@ -66,7 +66,7 @@ class Loader(Agent[LoadParams]):
         style = style.lower()
 
         # ----------------- Style class -----------------
-        style_cls = self.get_registred_class("styles", style, self.action)
+        style_cls = self.environment.get_one_style(self.action, style)
 
         # ----------------- Create Storage -----------------
         container: Container = self.create_container(apply_to)
@@ -76,7 +76,7 @@ class Loader(Agent[LoadParams]):
 
             # -------- Build params --------
             if params is None:
-                params_cls = self.get_registred_class("params", style, self.action)
+                params_cls = self.environment.get_one_params(self.action, style)
                 kwargs["data"] = container.get_storage(name).data
                 params_instance = params_cls(**kwargs)
             else:
