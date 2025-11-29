@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from typing import Any, Dict, Optional, Type, List, TypedDict, cast
+
 from fragua.core.warehouse import Warehouse
 from fragua.core.agent import Agent
 from fragua.core.manager import WarehouseManager
@@ -286,14 +287,11 @@ class Environment:
         wh = self.components["warehouse"]
         return wh
 
-    def manager(self) -> WarehouseManager:
+    def get_manager(self) -> WarehouseManager | None:
         """Return the warehouse manager instance."""
         mgr = self.components["manager"]
-        if not mgr:
-            raise RuntimeError("WarehouseManager not initialized.")
         return mgr
 
-    def agents(self, agent_type: Optional[str] = None) -> List[Any]:
     def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
         """Return all agents, or agents of a given type."""
         if agent_type is None:
@@ -336,10 +334,8 @@ class Environment:
         warehouse_summary = not_init if warehouse is None else warehouse.summary()
 
         # Manager
-        manager = self.components["manager"]
-        manager_summary = (
-            manager.summary() if manager and hasattr(manager, "summary") else None
-        )
+        manager = self.get_manager()
+        manager_summary = not_init if manager is None else manager.summary()
 
         return {
             "meta": {
