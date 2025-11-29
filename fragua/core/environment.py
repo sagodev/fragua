@@ -158,11 +158,23 @@ class Environment:
         return created
 
     def get_registry_record(
-        self, registry_type: str, name: str
-    ) -> Optional[Dict[str, Any]]:
+        self,
+        registry_type: str,
+        action: str,
+        name: str,
+    ) -> Any | None:
         """Retrieve a record from a registry by name."""
-        self._validate_registry_type(registry_type)
-        return self.registries[registry_type].get(name)
+
+        record = (
+            self.registries[registry_type][action].get(name)
+            if self._validate_registry_type(registry_type)
+            and self._validate_registry_name(
+                self.registries[registry_type][action], name
+            )
+            else None
+        )
+
+        return record
 
     def update_registry_record(
         self, registry_type: str, name: str, data: Dict[str, Any]
