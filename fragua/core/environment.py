@@ -173,7 +173,6 @@ class Environment:
         self,
         agent_type: str,
         name: Optional[str] = None,
-        environment: Optional[Environment] = None,
     ) -> Agent[Any]:
         """Create and register an agent in the environment."""
         agent_type = agent_type.lower()
@@ -187,7 +186,7 @@ class Environment:
             or f"{self.name}_{agent_type}_{len(self.components['agents'][agent_type])+1}"
         )
         self._check_duplicate_name(agent_name)
-        agent = agent_cls(name=agent_name, environment=environment)
+        agent = agent_cls(name=agent_name, environment=self)
         self.components["agents"][agent_type].append(agent)
         logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
         return agent
@@ -269,17 +268,17 @@ class Environment:
     # ---------------------- Shortcuts ---------------------- #
     def create_extractor(self, name: Optional[str] = None) -> Extractor:
         """Shortcut to create an Extractor agent."""
-        return cast(Extractor, self.create_agent("extractor", name, environment=self))
+        return cast(Extractor, self.create_agent("extractor", name))
 
     def create_transformer(self, name: Optional[str] = None) -> Transformer:
         """Shortcut to create a Transformer agent."""
         return cast(
-            Transformer, self.create_agent("transformer", name, environment=self)
+            Transformer, self.create_agent("transformer", name)
         )
 
     def create_loader(self, name: Optional[str] = None) -> Loader:
         """Shortcut to create a Loader agent."""
-        return cast(Loader, self.create_agent("loader", name, environment=self))
+        return cast(Loader, self.create_agent("loader", name))
 
     # ---------------------- Get Helpers ---------------------- #
     def warehouse(self) -> Warehouse:
@@ -297,6 +296,7 @@ class Environment:
         return mgr
 
     def agents(self, agent_type: Optional[str] = None) -> List[Any]:
+    def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
         """Return all agents, or agents of a given type."""
         if agent_type is None:
             return [a for agents in self.components["agents"].values() for a in agents]
