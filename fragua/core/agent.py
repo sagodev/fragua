@@ -156,14 +156,14 @@ class Agent(ABC, Generic[ParamsT]):
     ) -> None:
         """Pipeline for adding an object to warehouse with logging."""
         name = storage_name or getattr(storage, "name", None)
-        manager = self.environment.get_manager()
+        manager = self.environment.get_manager
         if not manager:
             raise RuntimeError("WarehouseManager not initialized.")
         return manager.add(storage=storage, storage_name=name, agent_name=self.name)
 
     def get_from_warehouse(self, storage_name: str) -> Box:
         """Pipeline for retrieving a storage object from warehouse with type checking."""
-        manager = self.environment.get_manager()
+        manager = self.environment.get_manager
         if not manager:
             raise RuntimeError("WarehouseManager not initialized.")
 
