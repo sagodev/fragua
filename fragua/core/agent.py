@@ -192,7 +192,10 @@ class Agent(ABC, Generic[ParamsT]):
     ) -> None:
         """Common workflow pipeline for agents."""
         style = style.lower()
-        style_cls = self.get_registred_class("styles", style, self.action)
+        params_instance = params or self.environment.get_one_params(self.action, style)(
+            **kwargs
+        )
+        style_cls = self.environment.get_one_style(self.action, style)
         stylized_data = style_cls(style).use(params_instance)
         storage = self.create_storage(stylized_data)
         self._generate_operation_metadata(style, storage, params_instance)
