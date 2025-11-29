@@ -126,10 +126,9 @@ class Environment:
         logger.info("Default registries initialized for environment '%s'.", self.name)
         return registries
 
-    def _validate_registry_type(self, registry_type: str) -> None:
+    def _validate_registry_type(self, registry_type: str) -> bool:
         """Check if the registry type is valid."""
-        if registry_type not in self.REGISTRY_TYPES:
-            raise ValueError(f"Invalid registry type '{registry_type}'.")
+        return registry_type in self.REGISTRY_TYPES
 
     # ---------------------- Registry Management ---------------------- #
     def create_registry_record(
