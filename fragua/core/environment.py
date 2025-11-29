@@ -156,21 +156,16 @@ class Environment:
 
     # ---------------------- Registry Management ---------------------- #
     def create_registry_record(
-        self, registry_type: str, name: str, data: Dict[str, Any]
+        self, registry_type: str, action: str, name: str, data: Dict[str, Any]
     ) -> bool:
         """
         Create a new record in a registry.
         Return boolean if record is created succesfully or not.
         """
-        created = (
-            True
-            if self._validate_registry_type(registry_type)
-            and not self._validate_registry_name(self.registries[registry_type], name)
-            else False
-        )
+        created = self._validate_record(registry_type, name, not_exist_name=True)
 
         if created:
-            self.registries[registry_type] = data
+            self.registries[registry_type][action][name] = data
             logger.info("%s created: %s", registry_type.capitalize(), name)
 
         return created
@@ -185,10 +180,7 @@ class Environment:
 
         record = (
             self.registries[registry_type][action].get(name)
-            if self._validate_registry_type(registry_type)
-            and self._validate_registry_name(
-                self.registries[registry_type][action], name
-            )
+            if self._validate_record(registry_type, name)
             else None
         )
 
