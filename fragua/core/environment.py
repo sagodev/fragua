@@ -139,17 +139,23 @@ class Environment:
     # ---------------------- Registry Management ---------------------- #
     def create_registry_record(
         self, registry_type: str, name: str, data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Create a new record in a registry."""
+    ) -> bool:
+        """
+        Create a new record in a registry.
+        Return boolean if record is created succesfully or not.
+        """
+        created = (
+            True
+            if self._validate_registry_type(registry_type)
+            and not self._validate_registry_name(self.registries[registry_type], name)
+            else False
+        )
 
-        self._validate_registry_type(registry_type)
+        if created:
+            self.registries[registry_type] = data
+            logger.info("%s created: %s", registry_type.capitalize(), name)
 
-        registry = self.registries[registry_type]
-        if name in registry:
-            raise ValueError(f"Record '{name}' already exists in {registry_type}.")
-        registry[name] = data
-        logger.info("%s created: %s", registry_type.capitalize(), name)
-        return {name: data}
+        return created
 
     def get_registry_record(
         self, registry_type: str, name: str
