@@ -195,26 +195,21 @@ class Environment:
         return record
 
     def update_registry_record(
-        self, registry_type: str, name: str, data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Update an existing record in a registry."""
-        self._validate_registry_type(registry_type)
-        registry = self.registries[registry_type]
-        if name not in registry:
-            raise ValueError(f"Record '{name}' not found in {registry_type}.")
-        registry[name].update(data)
-        logger.info("%s updated: %s", registry_type.capitalize(), name)
-        return {name: registry[name]}
+        self, registry_type: str, action: str, name: str, data: Dict[str, Any]
+    ) -> bool:
+        """
+        Update an existing record in a registry.
+        Return boolean if record is created succesfully or not.
+        """
 
-    def delete_registry_record(self, registry_type: str, name: str) -> bool:
-        """Delete a record from a registry by name."""
-        self._validate_registry_type(registry_type)
-        registry = self.registries[registry_type]
-        if name not in registry:
-            raise ValueError(f"Record '{name}' not found in {registry_type}.")
-        del registry[name]
-        logger.info("%s deleted: %s", registry_type.capitalize(), name)
-        return True
+        updated = self._validate_record(registry_type, name)
+
+        if updated:
+            self.registries[registry_type][action].update(data)
+            logger.info("%s updated: %s", registry_type.capitalize(), name)
+
+        return updated
+
 
     def list_registry_records(self, registry_type: str) -> Dict[str, Any]:
         """List all records in a registry."""
