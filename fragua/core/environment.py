@@ -130,6 +130,12 @@ class Environment:
         """Check if the registry type is valid."""
         return registry_type in self.REGISTRY_TYPES
 
+    def _validate_registry_name(
+        self, registry: Dict[str, Any], registry_name: str
+    ) -> bool:
+        """Check if registry name is in the registry."""
+        return registry_name in registry
+
     # ---------------------- Registry Management ---------------------- #
     def create_registry_record(
         self, registry_type: str, name: str, data: Dict[str, Any]
