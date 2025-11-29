@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from fragua.core.manager import WarehouseManager
 from fragua.core.params import Params, ParamsT
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
@@ -89,14 +88,6 @@ class Agent(ABC, Generic[ParamsT]):
                     if s_name == style:
                         return cls
         raise KeyError(f"No class found for registry '{reg}'.")
-
-    @property
-    def warehouse_manager(self) -> WarehouseManager:
-        """Access the shared warehouse manager from the environment."""
-        manager = self.environment.get_manager()
-        if not manager:
-            raise RuntimeError("WarehouseManager not initialized.")
-        return manager
 
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
@@ -176,15 +167,19 @@ class Agent(ABC, Generic[ParamsT]):
     ) -> None:
         """Pipeline for adding an object to warehouse with logging."""
         name = storage_name or getattr(storage, "name", None)
-        self.warehouse_manager.add(
-            storage=storage, storage_name=name, agent_name=self.name
-        )
+        manager = self.environment.get_manager()
+        if not manager:
+            raise RuntimeError("WarehouseManager not initialized.")
+        return manager.add(storage=storage, storage_name=name, agent_name=self.name)
 
     def get_from_warehouse(self, storage_name: str) -> Box:
         """Pipeline for retrieving a storage object from warehouse with type checking."""
-        storage = self.warehouse_manager.get(
-            storage_name=storage_name, agent_name=self.name
-        )
+        manager = self.environment.get_manager()
+        if not manager:
+            raise RuntimeError("WarehouseManager not initialized.")
+
+        storage = manager.get(storage_name=storage_name, agent_name=self.name)
+
         if storage is None:
             raise TypeError("Storage not found in warehouse.")
         if not isinstance(storage, Box):
