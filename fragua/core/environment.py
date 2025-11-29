@@ -343,6 +343,20 @@ class Environment:
         """Return list of styles of the environment"""
         return self.list_registry_records("styles")
 
+    def get_one_params(self, action: str, name: str) -> type[Params]:
+        """Return a params class by an given name from the params registry."""
+        return cast(type[Params], self.get_registry_record("params", action, name))
+
+    def get_one_function(self, action: str, name: str) -> type[FraguaFunction]:
+        """Return a function class by an given name from the functions registry."""
+        return cast(
+            type[FraguaFunction], self.get_registry_record("functions", action, name)
+        )
+
+    def get_one_style(self, action: str, name: str) -> type[Style]:
+        """Return a style class by an given name from the styles registry."""
+        return cast(type[Style], self.get_registry_record("styles", action, name))
+
     # ---------------------- Summary ---------------------- #
 
     def summary(self) -> Dict[str, Any]:
