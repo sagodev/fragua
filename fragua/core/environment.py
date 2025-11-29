@@ -355,17 +355,19 @@ class Environment:
             raise ValueError(f"Invalid agent type '{agent_type}'.")
         return cast(List[Any], self.components["agents"][agent_type])
 
-    def get_params(self) -> Dict[str, Any]:
+    def get_params(self) -> Dict[str, type[Params]]:
         """Return list of params of the environment"""
-        return self.list_registry_records("params")
+        return cast(Dict[str, type[Params]], self.list_registry_records("params"))
 
-    def get_functions(self) -> Dict[str, Any]:
+    def get_functions(self) -> Dict[str, type[FraguaFunction]]:
         """Return list of functions of the environment"""
-        return self.list_registry_records("functions")
+        return cast(
+            Dict[str, type[FraguaFunction]], self.list_registry_records("functions")
+        )
 
-    def get_styles(self) -> Dict[str, Any]:
+    def get_styles(self) -> Dict[str, type[Style]]:
         """Return list of styles of the environment"""
-        return self.list_registry_records("styles")
+        return cast(Dict[str, type[Style]], self.list_registry_records("styles"))
 
     def get_one_params(self, action: str, name: str) -> type[Params]:
         """Return a params class by an given name from the params registry."""
