@@ -42,12 +42,10 @@ class Agent(ABC, Generic[ParamsT]):
         Return a JSON-serializable summary of the agent state.
         """
 
-        # ---- Environment info ----
         env_name = getattr(self.environment, "name", None)
         manager = getattr(self.environment, "manager", None)
         manager = manager() if callable(manager) else None
 
-        # ---- Operations (convert timestamps only) ----
         ops_serialized: list[Dict[str, object]] = []
         for op in self._operations:
             ts = op.get("timestamp")
@@ -95,7 +93,10 @@ class Agent(ABC, Generic[ParamsT]):
     @property
     def warehouse_manager(self) -> WarehouseManager:
         """Access the shared warehouse manager from the environment."""
-        return self.environment.manager()
+        manager = self.environment.get_manager()
+        if not manager:
+            raise RuntimeError("WarehouseManager not initialized.")
+        return manager
 
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
@@ -140,7 +141,6 @@ class Agent(ABC, Generic[ParamsT]):
                 "params": params_instance,
             }
         )
-        # Optional: backup for undo
         self._undo_stack.append(
             {"operation": "workflow", "style": style, "params": params_instance}
         )
@@ -154,7 +154,7 @@ class Agent(ABC, Generic[ParamsT]):
         if not self._undo_stack:
             return False
         last = self._undo_stack.pop()
-        # Here you could implement logic to reverse the effects
+
         self._operations = [op for op in self._operations if op != last.get("params")]
         logger.info("Undid last operation: %s", last.get("style"))
         return True
