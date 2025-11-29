@@ -281,11 +281,9 @@ class Environment:
         return cast(Loader, self.create_agent("loader", name))
 
     # ---------------------- Get Helpers ---------------------- #
-    def warehouse(self) -> Warehouse:
+    def get_warehouse(self) -> Warehouse | None:
         """Return the warehouse instance."""
         wh = self.components["warehouse"]
-        if not wh:
-            raise RuntimeError("Warehouse not initialized.")
         return wh
 
     def manager(self) -> WarehouseManager:
@@ -332,11 +330,10 @@ class Environment:
                 ]
             return output
 
+        not_init = "Not initialized."
         # Warehouse
-        warehouse = self.components["warehouse"]
-        warehouse_summary = (
-            warehouse.summary() if warehouse and hasattr(warehouse, "summary") else None
-        )
+        warehouse = self.get_warehouse()
+        warehouse_summary = not_init if warehouse is None else warehouse.summary()
 
         # Manager
         manager = self.components["manager"]
