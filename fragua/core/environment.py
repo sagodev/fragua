@@ -228,7 +228,12 @@ class Environment:
 
     def list_registry_records(self, registry_type: str) -> Dict[str, Any]:
         """List all records in a registry."""
-        self._validate_registry_type(registry_type)
+
+        exist_list = self._validate_registry_type(registry_type)
+
+        if not exist_list:
+            raise RuntimeError("Registry not found.")
+
         return self.registries[registry_type]
 
     # ---------------------- Agent Management ---------------------- #
