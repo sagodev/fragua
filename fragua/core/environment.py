@@ -210,6 +210,21 @@ class Environment:
 
         return updated
 
+    def delete_registry_record(
+        self, registry_type: str, action: str, name: str
+    ) -> bool:
+        """
+        Delete a record from a registry by name.
+        Return boolean if record is created succesfully or not.
+        """
+
+        deleted = self._validate_record(registry_type, name)
+
+        if deleted:
+            self.registries[registry_type][action].pop(name)
+            logger.info("%s deleted: %s", registry_type.capitalize(), name)
+
+        return deleted
 
     def list_registry_records(self, registry_type: str) -> Dict[str, Any]:
         """List all records in a registry."""
