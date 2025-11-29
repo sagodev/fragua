@@ -323,7 +323,46 @@ class Environment:
         logger.info("WarehouseManager created: %s", mgr_name)
         return manager
 
-    # ---------------------- Shortcuts ---------------------- #
+    # ---------------------- Properties ---------------------- #
+    @property
+    def get_warehouse(self) -> Warehouse | None:
+        """Return the warehouse instance."""
+        wh = self.components["warehouse"]
+        return wh
+
+    @property
+    def get_manager(self) -> WarehouseManager | None:
+        """Return the warehouse manager instance."""
+        mgr = self.components["manager"]
+        return mgr
+
+    @property
+    def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
+        """Return all agents, or agents of a given type."""
+        if agent_type is None:
+            return [a for agents in self.components["agents"].values() for a in agents]
+        if agent_type not in self.AGENT_CLASSES:
+            raise ValueError(f"Invalid agent type '{agent_type}'.")
+        return cast(List[Any], self.components["agents"][agent_type])
+
+    @property
+    def get_params(self) -> Dict[str, type[Params]]:
+        """Return list of params of the environment"""
+        return cast(Dict[str, type[Params]], self.list_registry_records("params"))
+
+    @property
+    def get_functions(self) -> Dict[str, type[FraguaFunction]]:
+        """Return list of functions of the environment"""
+        return cast(
+            Dict[str, type[FraguaFunction]], self.list_registry_records("functions")
+        )
+
+    @property
+    def get_styles(self) -> Dict[str, type[Style]]:
+        """Return list of styles of the environment"""
+        return cast(Dict[str, type[Style]], self.list_registry_records("styles"))
+
+    # ---------------------- Create Helpers ---------------------- #
     def create_extractor(self, name: Optional[str] = None) -> Extractor:
         """Shortcut to create an Extractor agent."""
         return cast(Extractor, self.create_agent("extractor", name))
@@ -337,38 +376,6 @@ class Environment:
         return cast(Loader, self.create_agent("loader", name))
 
     # ---------------------- Get Helpers ---------------------- #
-    def get_warehouse(self) -> Warehouse | None:
-        """Return the warehouse instance."""
-        wh = self.components["warehouse"]
-        return wh
-
-    def get_manager(self) -> WarehouseManager | None:
-        """Return the warehouse manager instance."""
-        mgr = self.components["manager"]
-        return mgr
-
-    def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
-        """Return all agents, or agents of a given type."""
-        if agent_type is None:
-            return [a for agents in self.components["agents"].values() for a in agents]
-        if agent_type not in self.AGENT_CLASSES:
-            raise ValueError(f"Invalid agent type '{agent_type}'.")
-        return cast(List[Any], self.components["agents"][agent_type])
-
-    def get_params(self) -> Dict[str, type[Params]]:
-        """Return list of params of the environment"""
-        return cast(Dict[str, type[Params]], self.list_registry_records("params"))
-
-    def get_functions(self) -> Dict[str, type[FraguaFunction]]:
-        """Return list of functions of the environment"""
-        return cast(
-            Dict[str, type[FraguaFunction]], self.list_registry_records("functions")
-        )
-
-    def get_styles(self) -> Dict[str, type[Style]]:
-        """Return list of styles of the environment"""
-        return cast(Dict[str, type[Style]], self.list_registry_records("styles"))
-
     def get_one_params(self, action: str, name: str) -> type[Params]:
         """Return a params class by an given name from the params registry."""
         return cast(type[Params], self.get_registry_record("params", action, name))
