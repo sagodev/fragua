@@ -347,6 +347,15 @@ class Environment:
         manager = self.get_manager()
         manager_summary = not_init if manager is None else manager.summary()
 
+        agents = serialize_agents(self.components["agents"])
+
+        registries = (
+            {
+                rtype: serialize_registry(self.registries[rtype])
+                for rtype in self.REGISTRY_TYPES
+            },
+        )
+
         return {
             "meta": {
                 "class": type(self).__name__,
@@ -358,12 +367,9 @@ class Environment:
             "components": {
                 "warehouse": warehouse_summary,
                 "manager": manager_summary,
-                "agents": serialize_agents(self.components["agents"]),
+                "agents": agents,
             },
-            "registries": {
-                rtype: serialize_registry(self.registries[rtype])
-                for rtype in self.REGISTRY_TYPES
-            },
+            "registries": registries,
         }
 
     def __repr__(self) -> str:
