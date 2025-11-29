@@ -127,7 +127,9 @@ class Environment:
         self, registry_type: str, name: str, data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Create a new record in a registry."""
+
         self._validate_registry_type(registry_type)
+
         registry = self.registries[registry_type]
         if name in registry:
             raise ValueError(f"Record '{name}' already exists in {registry_type}.")
@@ -179,8 +181,7 @@ class Environment:
         agent_type = agent_type.lower()
         if agent_type not in self.AGENT_CLASSES:
             raise ValueError(f"Unknown agent type '{agent_type}'.")
-        if environment is None:
-            raise TypeError("Environment instance required.")
+
         agent_cls = self.AGENT_CLASSES[agent_type]
         agent_name = (
             name
@@ -273,9 +274,7 @@ class Environment:
 
     def create_transformer(self, name: Optional[str] = None) -> Transformer:
         """Shortcut to create a Transformer agent."""
-        return cast(
-            Transformer, self.create_agent("transformer", name)
-        )
+        return cast(Transformer, self.create_agent("transformer", name))
 
     def create_loader(self, name: Optional[str] = None) -> Loader:
         """Shortcut to create a Loader agent."""
@@ -329,11 +328,10 @@ class Environment:
             return output
 
         not_init = "Not initialized."
-        # Warehouse
+
         warehouse = self.get_warehouse()
         warehouse_summary = not_init if warehouse is None else warehouse.summary()
 
-        # Manager
         manager = self.get_manager()
         manager_summary = not_init if manager is None else manager.summary()
 
