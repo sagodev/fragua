@@ -376,19 +376,19 @@ class Environment:
         return cast(Loader, self.create_agent("loader", name))
 
     # ---------------------- Get Helpers ---------------------- #
-    def get_one_params(self, action: str, name: str) -> type[Params]:
+    def get_one_params(self, action: str, name: str) -> Type[Params]:
         """Return a params class by an given name from the params registry."""
-        return cast(type[Params], self.get_registry_record("params", action, name))
+        return cast(Type[Params], self.get_registry_record("params", action, name))
 
-    def get_one_function(self, action: str, name: str) -> type[FraguaFunction]:
+    def get_one_function(self, action: str, name: str) -> Type[FraguaFunction]:
         """Return a function class by an given name from the functions registry."""
         return cast(
-            type[FraguaFunction], self.get_registry_record("functions", action, name)
+            Type[FraguaFunction], self.get_registry_record("functions", action, name)
         )
 
-    def get_one_style(self, action: str, name: str) -> type[Style]:
+    def get_one_style(self, action: str, name: str) -> Type[Style]:
         """Return a style class by an given name from the styles registry."""
-        return cast(type[Style], self.get_registry_record("styles", action, name))
+        return cast(Type[Style], self.get_registry_record("styles", action, name))
 
     # ---------------------- Summary ---------------------- #
 
