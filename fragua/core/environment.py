@@ -74,6 +74,7 @@ class Environment:
         self.warehouse = self._initialize_warehouse()
         self.manager = self._initialize_manager()
         self.registries = self._initialize_registries()
+        self.params = self._initialize_params()
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
         )
@@ -123,6 +124,12 @@ class Environment:
         return registries
 
         """"""
+    def _initialize_params(self) -> Dict[str, Dict[str, Type[Params]]]:
+        """Initialize the environment params class."""
+        params: Dict[str, Dict[str, Type[Params]]] = {}
+
+        logger.info("Default params initialized for environment '%s'.", self.name)
+        return params
     def _initialize_manager(self) -> WarehouseManager:
         """"""
         manager = WarehouseManager(f"{self.name}_manager", self.warehouse)
@@ -321,11 +328,6 @@ class Environment:
             raise ValueError(f"Invalid agent type '{agent_type}'.")
         return cast(List[Any], self.components["agents"][agent_type])
 
-    @property
-    def params(self) -> Dict[str, Type[Params]]:
-        """Return list of params of the environment"""
-        params = self.list_registry_records("params")
-        return cast(Dict[str, Type[Params]], params)
 
     @property
     def functions(self) -> Dict[str, Type[FraguaFunction]]:
@@ -410,6 +412,8 @@ class Environment:
                 rtype: serialize_registry(self.registries[rtype])
                 for rtype in self.REGISTRY_TYPES
             },
+        params = self.params
+        params_summaries = not_init if params is None else serialize_registry(params)
         )
 
         return {
@@ -426,6 +430,7 @@ class Environment:
                 "agents": agents,
             },
             "registries": registries,
+            "params": params_summaries,
         }
 
     def __repr__(self) -> str:
