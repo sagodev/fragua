@@ -75,6 +75,7 @@ class Environment:
         self.manager = self._initialize_manager()
         self.registries = self._initialize_registries()
         self.params = self._initialize_params()
+        self.functions = self._initialize_functions()
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
         )
@@ -130,6 +131,14 @@ class Environment:
 
         logger.info("Default params initialized for environment '%s'.", self.name)
         return params
+    def _initialize_functions(
+        self,
+    ) -> Dict[str, Dict[str, Type[FraguaFunction[Params]]]]:
+        """Initialize the environment functions class."""
+        functions: Dict[str, Dict[str, Type[FraguaFunction[Params]]]] = {}
+
+        logger.info("Default functions initialized for environment '%s'.", self.name)
+        return functions
     def _initialize_manager(self) -> WarehouseManager:
         """"""
         manager = WarehouseManager(f"{self.name}_manager", self.warehouse)
@@ -329,11 +338,6 @@ class Environment:
         return cast(List[Any], self.components["agents"][agent_type])
 
 
-    @property
-    def functions(self) -> Dict[str, Type[FraguaFunction]]:
-        """Return list of functions of the environment"""
-        functions = self.list_registry_records("functions")
-        return cast(Dict[str, Type[FraguaFunction]], functions)
 
     @property
     def styles(self) -> Dict[str, Type[Style]]:
@@ -414,6 +418,10 @@ class Environment:
             },
         params = self.params
         params_summaries = not_init if params is None else serialize_registry(params)
+
+        functions = self.functions
+        functions_summaries = (
+            not_init if functions is None else serialize_registry(functions)
         )
 
         return {
@@ -431,6 +439,7 @@ class Environment:
             },
             "registries": registries,
             "params": params_summaries,
+            "functions": functions_summaries,
         }
 
     def __repr__(self) -> str:
