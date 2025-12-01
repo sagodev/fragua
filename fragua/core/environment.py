@@ -40,7 +40,6 @@ logger = get_logger(__name__)
 class EnvironmentComponents(TypedDict):
     """Components stored inside an environment."""
 
-    warehouse: Optional[Warehouse]
     manager: Optional[WarehouseManager]
     agents: Dict[str, List[Agent[Any]]]
 
@@ -72,10 +71,10 @@ class Environment:
         self.env_type = env_type
         self.fg_reg = fg_reg
         self.components: EnvironmentComponents = {
-            "warehouse": None,
             "manager": None,
             "agents": {atype: [] for atype in self.AGENT_CLASSES},
         }
+        self.warehouse = self._initialize_warehouse()
         self.registries = self._initialize_registries()
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
@@ -124,6 +123,14 @@ class Environment:
             )
         logger.info("Default registries initialized for environment '%s'.", self.name)
         return registries
+
+        """"""
+    def _initialize_warehouse(self) -> Warehouse:
+        """"""
+        warehouse = Warehouse(f"{self.name}_warehouse")
+
+        logger.info("Default warehouse initialized for environment '%s'.", self.name)
+        return warehouse
 
     def _validate_registry_type(self, registry_type: str) -> bool:
         """Check if the registry type is valid."""
@@ -298,16 +305,6 @@ class Environment:
         return agent
 
     # ---------------------- Warehouse & Manager ---------------------- #
-    def create_warehouse(self, name: Optional[str] = None) -> Warehouse:
-        """Create the warehouse for the environment (only one allowed)."""
-        if self.components["warehouse"] is not None:
-            raise RuntimeError("Warehouse already exists.")
-        wh_name = name or f"{self.name}_warehouse"
-        self._check_duplicate_name(wh_name)
-        warehouse = Warehouse(wh_name)
-        self.components["warehouse"] = warehouse
-        logger.info("Warehouse created: %s", wh_name)
-        return warehouse
 
     def create_manager(
         self, name: Optional[str] = None, warehouse: Optional[Warehouse] = None
@@ -324,11 +321,6 @@ class Environment:
         return manager
 
     # ---------------------- Properties ---------------------- #
-    @property
-    def warehouse(self) -> Warehouse | None:
-        """Return the warehouse instance."""
-        wh = self.components["warehouse"]
-        return wh
 
     @property
     def manager(self) -> WarehouseManager | None:
@@ -421,7 +413,7 @@ class Environment:
 
         not_init = "Not initialized."
 
-        warehouse = self.get_warehouse()
+        warehouse = self.warehouse
         warehouse_summary = not_init if warehouse is None else warehouse.summary()
 
         manager = self.get_manager()
