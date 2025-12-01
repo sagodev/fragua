@@ -40,7 +40,6 @@ logger = get_logger(__name__)
 class EnvironmentComponents(TypedDict):
     """Components stored inside an environment."""
 
-    manager: Optional[WarehouseManager]
     agents: Dict[str, List[Agent[Any]]]
 
 
@@ -58,7 +57,6 @@ class Environment:
     }
     REGISTRY_TYPES: List[str] = ["params", "functions", "styles"]
 
-    def __init__(self, name: str, env_type: str = "base", fg_reg: bool = False):
         """
         Initialize the environment.
 
@@ -71,10 +69,10 @@ class Environment:
         self.env_type = env_type
         self.fg_reg = fg_reg
         self.components: EnvironmentComponents = {
-            "manager": None,
             "agents": {atype: [] for atype in self.AGENT_CLASSES},
         }
         self.warehouse = self._initialize_warehouse()
+        self.manager = self._initialize_manager()
         self.registries = self._initialize_registries()
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
@@ -125,6 +123,15 @@ class Environment:
         return registries
 
         """"""
+    def _initialize_manager(self) -> WarehouseManager:
+        """"""
+        manager = WarehouseManager(f"{self.name}_manager", self.warehouse)
+
+        logger.info(
+            "Default warehouse manager initialized for environment '%s'.", self.name
+        )
+        return manager
+
     def _initialize_warehouse(self) -> Warehouse:
         """"""
         warehouse = Warehouse(f"{self.name}_warehouse")
@@ -304,30 +311,7 @@ class Environment:
 
         return agent
 
-    # ---------------------- Warehouse & Manager ---------------------- #
-
-    def create_manager(
-        self, name: Optional[str] = None, warehouse: Optional[Warehouse] = None
-    ) -> WarehouseManager:
-        """Create the warehouse manager (only one allowed)."""
-        if self.components["manager"] is not None:
-            raise RuntimeError("WarehouseManager already exists.")
-        warehouse = warehouse or self.components["warehouse"] or self.create_warehouse()
-        mgr_name = name or f"{self.name}_manager"
-        self._check_duplicate_name(mgr_name)
-        manager = WarehouseManager(mgr_name, warehouse)
-        self.components["manager"] = manager
-        logger.info("WarehouseManager created: %s", mgr_name)
-        return manager
-
     # ---------------------- Properties ---------------------- #
-
-    @property
-    def manager(self) -> WarehouseManager | None:
-        """Return the warehouse manager instance."""
-        mgr = self.components["manager"]
-        return mgr
-
     @property
     def agents(self) -> Dict[str, List[Type[Agent]]] | None:
         """Return all agents, or agents of a given type."""
@@ -416,7 +400,7 @@ class Environment:
         warehouse = self.warehouse
         warehouse_summary = not_init if warehouse is None else warehouse.summary()
 
-        manager = self.get_manager()
+        manager = self.manager
         manager_summary = not_init if manager is None else manager.summary()
 
         agents = serialize_agents(self.components["agents"])
