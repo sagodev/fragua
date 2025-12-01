@@ -76,6 +76,7 @@ class Environment:
         self.registries = self._initialize_registries()
         self.params = self._initialize_params()
         self.functions = self._initialize_functions()
+        self.styles = self._initialize_styles()
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
         )
@@ -139,6 +140,13 @@ class Environment:
 
         logger.info("Default functions initialized for environment '%s'.", self.name)
         return functions
+
+    def _initialize_styles(self) -> Dict[str, Dict[str, Type[Style[Params, Any]]]]:
+        """Initialize the environment styles class."""
+        styles: Dict[str, Dict[str, Type[Style[Params, Any]]]] = {}
+
+        logger.info("Default styles initialized for environment '%s'.", self.name)
+        return styles
     def _initialize_manager(self) -> WarehouseManager:
         """"""
         manager = WarehouseManager(f"{self.name}_manager", self.warehouse)
@@ -336,15 +344,6 @@ class Environment:
         if agent_type not in self.AGENT_CLASSES:
             raise ValueError(f"Invalid agent type '{agent_type}'.")
         return cast(List[Any], self.components["agents"][agent_type])
-
-
-
-    @property
-    def styles(self) -> Dict[str, Type[Style]]:
-        """Return list of styles of the environment"""
-        styles = self.list_registry_records("styles")
-        return cast(Dict[str, Type[Style]], styles)
-
     # ---------------------- Create Helpers ---------------------- #
     def create_extractor(self, name: Optional[str] = None) -> Extractor:
         """Shortcut to create an Extractor agent."""
@@ -423,6 +422,8 @@ class Environment:
         functions_summaries = (
             not_init if functions is None else serialize_registry(functions)
         )
+        styles = self.styles
+        styles_summaries = not_init if styles is None else serialize_registry(styles)
 
         return {
             "meta": {
@@ -440,6 +441,7 @@ class Environment:
             "registries": registries,
             "params": params_summaries,
             "functions": functions_summaries,
+            "styles": styles_summaries,
         }
 
     def __repr__(self) -> str:
