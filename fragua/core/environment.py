@@ -325,19 +325,19 @@ class Environment:
 
     # ---------------------- Properties ---------------------- #
     @property
-    def get_warehouse(self) -> Warehouse | None:
+    def warehouse(self) -> Warehouse | None:
         """Return the warehouse instance."""
         wh = self.components["warehouse"]
         return wh
 
     @property
-    def get_manager(self) -> WarehouseManager | None:
+    def manager(self) -> WarehouseManager | None:
         """Return the warehouse manager instance."""
         mgr = self.components["manager"]
         return mgr
 
     @property
-    def get_agents(self, agent_type: Optional[str] = None) -> List[Any]:
+    def agents(self) -> Dict[str, List[Type[Agent]]] | None:
         """Return all agents, or agents of a given type."""
         if agent_type is None:
             return [a for agents in self.components["agents"].values() for a in agents]
@@ -346,21 +346,22 @@ class Environment:
         return cast(List[Any], self.components["agents"][agent_type])
 
     @property
-    def get_params(self) -> Dict[str, type[Params]]:
+    def params(self) -> Dict[str, Type[Params]]:
         """Return list of params of the environment"""
-        return cast(Dict[str, type[Params]], self.list_registry_records("params"))
+        params = self.list_registry_records("params")
+        return cast(Dict[str, Type[Params]], params)
 
     @property
-    def get_functions(self) -> Dict[str, type[FraguaFunction]]:
+    def functions(self) -> Dict[str, Type[FraguaFunction]]:
         """Return list of functions of the environment"""
-        return cast(
-            Dict[str, type[FraguaFunction]], self.list_registry_records("functions")
-        )
+        functions = self.list_registry_records("functions")
+        return cast(Dict[str, Type[FraguaFunction]], functions)
 
     @property
-    def get_styles(self) -> Dict[str, type[Style]]:
+    def styles(self) -> Dict[str, Type[Style]]:
         """Return list of styles of the environment"""
-        return cast(Dict[str, type[Style]], self.list_registry_records("styles"))
+        styles = self.list_registry_records("styles")
+        return cast(Dict[str, Type[Style]], styles)
 
     # ---------------------- Create Helpers ---------------------- #
     def create_extractor(self, name: Optional[str] = None) -> Extractor:
