@@ -17,10 +17,5 @@ class MinimalEnvironment(Environment):
     def __init__(self, name: str, fg_reg: bool = False):
         super().__init__(name, env_type="minimal", fg_reg=fg_reg)
 
-        warehouse = self.create_warehouse(f"{self.name}_warehouse")
-        self.create_manager(f"{self.name}_manager", warehouse)
-
-        logger.debug(
-            "MinimalEnvironment '%s' initialized with no components.", self.name
-        )
-        logger.info("MinimalEnvironment '%s' is ready for manual setup.", self.name)
+        logger.debug("Minimal environment '%s' initialized.", self.name)
+        logger.info("Minimal environment '%s' is ready for manual setup.", self.name)
