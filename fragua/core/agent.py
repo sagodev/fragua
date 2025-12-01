@@ -6,7 +6,7 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Generic
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -32,8 +32,8 @@ class Agent(ABC, Generic[ParamsT]):
         self.role: str
         self.action: str
         self.storage_type: str
-        self._operations: list[dict[str, Any]] = []
-        self._undo_stack: list[dict[str, Any]] = []
+        self._operations: List[Dict[str, Any]] = []
+        self._undo_stack: List[Dict[str, Any]] = []
 
     # ----------------- Agent Summary ----------------- #
     def summary(self) -> Dict[str, object]:
@@ -156,14 +156,14 @@ class Agent(ABC, Generic[ParamsT]):
     ) -> None:
         """Pipeline for adding an object to warehouse with logging."""
         name = storage_name or getattr(storage, "name", None)
-        manager = self.environment.get_manager
+        manager = self.environment.manager
         if not manager:
             raise RuntimeError("WarehouseManager not initialized.")
         return manager.add(storage=storage, storage_name=name, agent_name=self.name)
 
     def get_from_warehouse(self, storage_name: str) -> Box:
         """Pipeline for retrieving a storage object from warehouse with type checking."""
-        manager = self.environment.get_manager
+        manager = self.environment.manager
         if not manager:
             raise RuntimeError("WarehouseManager not initialized.")
 
@@ -191,13 +191,17 @@ class Agent(ABC, Generic[ParamsT]):
         **kwargs: Any,
     ) -> None:
         """Common workflow pipeline for agents."""
+
         style = style.lower()
-        params_instance = params or self.environment.get_one_params(self.action, style)(
-            **kwargs
-        )
+
+        searched_params = self.environment.get_one_params(self.action, style)
+        params_instance = searched_params(**kwargs) if params is None else params
+
         style_cls = self.environment.get_one_style(self.action, style)
         stylized_data = style_cls(style).use(params_instance)
+
         storage = self.create_storage(stylized_data)
+
         self._generate_operation_metadata(style, storage, params_instance)
         self._add_operation(style, params_instance)
         self.auto_store(style, storage, save_as)
