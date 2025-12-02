@@ -163,10 +163,12 @@ class Environment:
         """
 
         action = action.lower()
-        deleted = self._check_action_type(action)
+
+        deleted = self.agents.delete_entrie(action, agent_name)
+
         if deleted:
-            self.agents.delete_entrie(action, agent_name)
             logger.info("Agent deleted: %s (%s)", agent_name, action)
+
         return deleted
 
     def update_agent(
