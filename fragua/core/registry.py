@@ -1,6 +1,9 @@
 """Base class for all registries of an environment in Fragua."""
 
 from typing import Any, Dict, Optional
+from fragua.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Registry:
