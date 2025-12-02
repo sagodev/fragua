@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Type
 
 from fragua.core.warehouse import Warehouse
 from fragua.core.agent import Agent
@@ -37,8 +37,6 @@ class Environment:
         self.name = name
         self.env_type = env_type
         self.fg_reg = fg_reg
-        self.components: EnvironmentComponents = {
-        }
         self.warehouse = self._initialize_warehouse()
         self.manager = self._initialize_manager()
         self.agents = self._initialize_agents()
@@ -136,8 +134,6 @@ class Environment:
 
         return created
         """Retrieve an agent by name."""
-        for agents in self.components["agents"].values():
-            for agent in agents:
                 if getattr(agent, "name", None) == agent_name:
                     return agent
         return None
@@ -242,12 +238,8 @@ class Environment:
             "name": self.name,
             "type": self.env_type,
             "fg_reg": self.fg_reg,
-            "components": {
-                "warehouse": warehouse_summary,
-                "manager": manager_summary,
-                "agents": agents,
-            },
-            "registries": registries,
+            "warehouse": warehouse_summary,
+            "manager": manager_summary,
             "agents": agents_summaries,
             "params": params_summaries,
             "functions": functions_summaries,
