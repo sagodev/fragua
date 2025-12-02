@@ -133,7 +133,7 @@ class Environment:
     # ---------------------- Agent Management ---------------------- #
     def create_agent(
         self,
-        name: str,
+        agent_name: str,
         action: str,
     ) -> bool:
         """
@@ -143,14 +143,13 @@ class Environment:
 
         action = action.lower()
 
-        created = self._check_action_type(action)
+        new_agent = AGENT_CLASSES[action](agent_name, environment=self)
+        created = self.agents.create_entrie(action, agent_name, new_agent)
 
         if created:
-            agent_cls = AGENT_CLASSES[action]
-            agent_name = name
-            new_agent = agent_cls(name=agent_name, environment=self)
-            self.agents.create_entrie(action, agent_name, new_agent)
-            logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
+            logger.info(
+                "Agent created: %s (%s)", agent_name, new_agent.__class__.__name__
+            )
 
         return created
 
