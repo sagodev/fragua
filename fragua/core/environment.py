@@ -173,26 +173,22 @@ class Environment:
 
     def update_agent(
         self,
+        action: str,
         agent_name: str,
-        new_name: Optional[str] = None,
-    ) -> Agent[Any]:
+        new_name: str,
+    ) -> bool:
         """
         Update an existing agent inside of agents registry.
         Returns a boolean value indicating whether the agent was updated successfully or not.
         """
+        action = action.lower()
 
+        updated = self.agents.update_entrie(action, agent_name, new_name)
 
-        agent = self.get_agent(agent_name)
-        if agent is None:
-            raise ValueError(f"Agent '{agent_name}' not found.")
-
-        # ---------------------- Update Name ---------------------- #
-        if new_name and new_name != agent_name:
-            self._check_duplicate_name(new_name)
-            setattr(agent, "name", new_name)
+        if updated:
             logger.info("Agent renamed: %s → %s", agent_name, new_name)
 
-        return agent
+        return updated
 
     # ---------------------- Create Helpers ---------------------- #
     def create_extractor(self, name: str) -> bool:
