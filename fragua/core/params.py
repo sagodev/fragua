@@ -28,10 +28,6 @@ class Params(ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(role='{self.action}', style='{self.style}')"
 
-    def to_dict(self) -> Dict[str, str]:
-        """Return a dictionary representation of the Params object."""
-        return {"role": self.action, "style": self.style}
-
     def summary(self) -> dict[str, Any]:
         """Return a structured summary of this Params object."""
         fields = {}
