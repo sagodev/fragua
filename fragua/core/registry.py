@@ -58,7 +58,7 @@ class Registry:
         Create a new entrie in registry.
         Return boolean if entrie is created succesfully or not.
         """
-        created = self._validate_entrie(name, not_exist_name=True)
+        created = self._validate_entrie(action, name, not_exist_name=True)
 
         if created:
             self._entries[action][name] = new_entrie
