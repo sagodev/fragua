@@ -20,14 +20,6 @@ class Registry:
         """Ensure no entrie in the registry already has the given name."""
         return not any(name in entries for entries in self._entries.values())
 
-    def set_entries(self, entries: Dict[str, Dict[str, Any]]) -> None:
-        """Set or replace all registry entries."""
-        self._entries = entries
-
-    def get_entries(self) -> Dict[str, Dict[str, Any]]:
-        """Retrive all registry entries."""
-        return self._entries
-
     def _validate_entrie(
         self,
         record_name: str,
@@ -42,6 +34,14 @@ class Registry:
         is_valid_registry = is_valid_name
 
         return is_valid_registry
+
+    def set_entries(self, entries: Dict[str, Dict[str, Any]]) -> None:
+        """Set or replace all registry entries."""
+        self._entries = entries
+
+    def get_entries(self) -> Dict[str, Dict[str, Any]]:
+        """Retrive all registry entries."""
+        return self._entries
 
     def create_entrie(self, action: str, name: str, new_entrie: Dict[str, Any]) -> bool:
         """
