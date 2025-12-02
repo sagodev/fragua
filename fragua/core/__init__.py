@@ -14,6 +14,8 @@ This module contains:
 
 from .environment import Environment
 
+from .registry import Registry
+
 from .agent import Agent
 
 from .params import Params
@@ -32,6 +34,8 @@ from .storage import Storage, Box, Container, STORAGE_CLASSES
 __all__ = [
     # Environment Class
     "Environment",
+    # Registry Class
+    "Registry",
     # Agent Class
     "Agent",
     # Params Class
