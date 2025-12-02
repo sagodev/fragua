@@ -94,9 +94,6 @@ class Environment:
         return warehouse
 
     # ---------------------- Checkers ---------------------- #
-    def _check_action_type(self, action: str) -> bool:
-        """Check if the action type is valid."""
-        return any(action in actions for actions in self.REGISTRY_TYPES)
 
     # ---------------------- Registry Management ---------------------- #
     def add_params(
