@@ -99,7 +99,12 @@ class Environment:
         return any(action in actions for actions in self.REGISTRY_TYPES)
 
     # ---------------------- Registry Management ---------------------- #
+    def add_params(
         self,
+    ) -> None:
+        """fill the environment params."""
+        self.params.set_entries(PARAMS_CLASSES)
+        logger.info("Default params initialized for environment '%s'.", self.name)
 
 
         exist_list = self._validate_registry_type(registry_type)
