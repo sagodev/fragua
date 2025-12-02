@@ -24,6 +24,10 @@ class Registry:
         """Ensure no entrie in the registry already has the given name."""
         return not any(name in entries for entries in self._entries.values())
 
+    def _check_action_type(self, action: str) -> bool:
+        """Check if the action type is valid."""
+        return any(action in actions for actions in ACTION_TYPES)
+
     def _validate_entrie(
         self,
         record_name: str,
