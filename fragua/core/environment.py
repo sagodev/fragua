@@ -121,6 +121,17 @@ class Environment:
         self.functions.set_entries(FUNCTION_CLASSES)
         logger.info("Default function initialized for environment '%s'.", self.name)
 
+    def add_registries(
+        self,
+    ) -> None:
+        """fill the environment registries."""
+        if self.fg_reg:
+            self.add_functions()
+            self.add_params()
+            self.add_styles()
+            logger.info(
+                "Default registries initialized for environment '%s'.", self.name
+            )
 
     # ---------------------- Agent Management ---------------------- #
     def create_agent(
