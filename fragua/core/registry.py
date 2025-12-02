@@ -84,18 +84,19 @@ class Registry:
 
         return record
 
-    def update_entrie(
-        self, action: str, name: str, updated_entrie: Dict[str, Any]
-    ) -> bool:
+    def update_entrie(self, action: str, name: str, new_name: str) -> bool:
         """
-        Update an existing record in a registry.
-        Return boolean if record is updated succesfully or not.
+        Update an existing entrie in a registry.
+        Returns a boolean value indicating whether entrie was updated successfully or not
         """
 
-        updated = self._validate_entrie(name)
+        exist_entrie = self._validate_entrie(action, name)
+        valid_new_name = self._validate_entrie(action, new_name, not_exist_name=True)
+
+        updated = exist_entrie == valid_new_name
 
         if updated:
-            self._entries[action].update(updated_entrie)
+            setattr(self._entries[action][name], "name", new_name)
             logger.info("%s updated: %s", self.name.capitalize(), name)
 
         return updated
