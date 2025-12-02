@@ -41,6 +41,7 @@ class Environment:
         }
         self.warehouse = self._initialize_warehouse()
         self.manager = self._initialize_manager()
+        self.agents = self._initialize_agents()
         self.params = self._initialize_params()
         self.functions = self._initialize_functions()
         self.styles = self._initialize_styles()
@@ -113,26 +114,27 @@ class Environment:
     # ---------------------- Agent Management ---------------------- #
     def create_agent(
         self,
-        agent_type: str,
-        name: Optional[str] = None,
-    ) -> Agent[Any]:
-        """Create and register an agent in the environment."""
-        agent_type = agent_type.lower()
-        if agent_type not in self.AGENT_CLASSES:
-            raise ValueError(f"Unknown agent type '{agent_type}'.")
+        name: str,
+        action: str,
+    ) -> bool:
+        """
+        Create and register an agent in agent registry.
+        Return a boolean if successfully create or not the agent.
+        """
 
-        agent_cls = self.AGENT_CLASSES[agent_type]
-        agent_name = (
-            name
-            or f"{self.name}_{agent_type}_{len(self.components['agents'][agent_type])+1}"
-        )
-        self._check_duplicate_name(agent_name)
-        agent = agent_cls(name=agent_name, environment=self)
-        self.components["agents"][agent_type].append(agent)
-        logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
-        return agent
+        action = action.lower()
+
+        created = self._check_action_type(action)
 
     def get_agent(self, agent_name: str) -> Optional[Agent[Any]]:
+        if created:
+            agent_cls = AGENT_CLASSES[action]
+            agent_name = name
+            new_agent = agent_cls(name=agent_name, environment=self)
+            self.agents.create_entrie(action, agent_name, new_agent)
+            logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
+
+        return created
         """Retrieve an agent by name."""
         for agents in self.components["agents"].values():
             for agent in agents:
@@ -181,17 +183,17 @@ class Environment:
         return agent
 
     # ---------------------- Create Helpers ---------------------- #
-    def create_extractor(self, name: Optional[str] = None) -> Extractor:
+    def create_extractor(self, name: str) -> bool:
         """Shortcut to create an Extractor agent."""
-        return cast(Extractor, self.create_agent("extractor", name))
+        return self.create_agent(name, "extract")
 
-    def create_transformer(self, name: Optional[str] = None) -> Transformer:
+    def create_transformer(self, name: str) -> bool:
         """Shortcut to create a Transformer agent."""
-        return cast(Transformer, self.create_agent("transformer", name))
+        return self.create_agent(name, "transform")
 
-    def create_loader(self, name: Optional[str] = None) -> Loader:
+    def create_loader(self, name: str) -> bool:
         """Shortcut to create a Loader agent."""
-        return cast(Loader, self.create_agent("loader", name))
+        return self.create_agent(name, "load")
 
     # ---------------------- Summary ---------------------- #
 
