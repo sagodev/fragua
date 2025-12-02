@@ -9,11 +9,56 @@ from fragua.core.agent import Agent
 from fragua.core.manager import WarehouseManager
 from fragua.core.registry import Registry
 
-from fragua import AGENT_CLASSES, PARAMS_CLASSES, FUNCTION_CLASSES, STYLE_CLASSES
+
+from fragua.extract import (
+    Extractor,
+    EXTRACT_FUNCTION_CLASSES,
+    EXTRACT_PARAMS_CLASSES,
+    EXTRACT_STYLE_CLASSES,
+)
+
+
+from fragua.load import (
+    Loader,
+    LOAD_FUNCTION_CLASSES,
+    LOAD_PARAMS_CLASSES,
+    LOAD_STYLE_CLASSES,
+)
+
+from fragua.transform import (
+    Transformer,
+    TRANSFORM_FUNCTION_CLASSES,
+    TRANSFORM_PARAMS_CLASSES,
+    TRANSFORM_STYLE_CLASSES,
+)
 
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+AGENT_CLASSES: Dict[str, Type[Agent]] = {
+    "extract": Extractor,
+    "transform": Transformer,
+    "load": Loader,
+}
+
+PARAMS_CLASSES: Dict[str, Dict[str, Any]] = {
+    "extract": EXTRACT_PARAMS_CLASSES,
+    "transform": TRANSFORM_PARAMS_CLASSES,
+    "load": LOAD_PARAMS_CLASSES,
+}
+
+FUNCTION_CLASSES: Dict[str, Dict[str, Any]] = {
+    "extract": EXTRACT_FUNCTION_CLASSES,
+    "transform": TRANSFORM_FUNCTION_CLASSES,
+    "load": LOAD_FUNCTION_CLASSES,
+}
+
+STYLE_CLASSES: Dict[str, Dict[str, Any]] = {
+    "extract": EXTRACT_STYLE_CLASSES,
+    "transform": TRANSFORM_STYLE_CLASSES,
+    "load": LOAD_STYLE_CLASSES,
+}
 
 
 class Environment:
