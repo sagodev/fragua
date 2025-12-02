@@ -56,7 +56,7 @@ class Registry:
     def create_entrie(self, action: str, name: str, new_entrie: Any) -> bool:
         """
         Create a new entrie in registry.
-        Return boolean if entrie is created succesfully or not.
+        Returns a boolean value indicating whether the entrie was created successfully or not.
         """
         created = self._validate_entrie(action, name, not_exist_name=True)
 
@@ -77,7 +77,9 @@ class Registry:
         """
 
         record = (
-            self._entries[action].get(name) if self._validate_entrie(name) else None
+            self._entries[action].get(name)
+            if self._validate_entrie(action, name)
+            else None
         )
 
         return record
