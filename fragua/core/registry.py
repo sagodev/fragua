@@ -13,5 +13,9 @@ class Registry:
         self.name: str = name
         self._entries: Dict[str, Dict[str, Any]] = {} if entries is None else entries
 
+    def get_entries(self) -> Dict[str, Dict[str, Any]]:
+        """Retrive all registry entries."""
+        return self._entries
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}')"
