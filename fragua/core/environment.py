@@ -93,8 +93,6 @@ class Environment:
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
-    # ---------------------- Checkers ---------------------- #
-
     # ---------------------- Registry Management ---------------------- #
     def add_params(
         self,
@@ -138,7 +136,7 @@ class Environment:
     ) -> bool:
         """
         Create and register an agent in agent registry.
-        Return a boolean if successfully create or not the agent.
+        Returns a boolean value indicating whether the agent was created successfully or not.
         """
 
         action = action.lower()
@@ -154,12 +152,16 @@ class Environment:
         return created
 
     def get_agent(self, agent_name: str, action: str) -> Optional[Type[Agent[Any]]]:
-        """Retrieve an agent by name and action."""
+        """Retrieve an agent from agent registry by name and action."""
         agent = self.agents.get_entrie(action, agent_name)
         return agent
 
     def delete_agent(self, agent_name: str, action: str) -> bool:
-        """Remove an agent from the environment."""
+        """
+        Remove an agent from agent registry.
+        Returns a boolean value indicating whether the agent was deleted successfully or not.
+        """
+
         action = action.lower()
         deleted = self._check_action_type(action)
         if deleted:
@@ -173,18 +175,11 @@ class Environment:
         new_name: Optional[str] = None,
     ) -> Agent[Any]:
         """
-        Update an existing agent inside the environment.
-
-        Args:
-            agent_name: Current name of the agent to update.
-            new_name: Optional new name for the agent.
-
-        Returns:
-            The updated Agent instance.
-
-        Raises:
-            ValueError: If agent is not found or new name conflicts with another component.
+        Update an existing agent inside of agents registry.
+        Returns a boolean value indicating whether the agent was updated successfully or not.
         """
+
+
         agent = self.get_agent(agent_name)
         if agent is None:
             raise ValueError(f"Agent '{agent_name}' not found.")
