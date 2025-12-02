@@ -1,7 +1,8 @@
 """Base environment class for Fragua, refactored with docstrings."""
 
 from __future__ import annotations
-from typing import Any, Dict, Optional, Type, List, TypedDict, cast
+
+from typing import Any, Dict, Optional, Type, List, cast
 
 from fragua.core.warehouse import Warehouse
 from fragua.core.agent import Agent
@@ -81,18 +82,6 @@ class Environment:
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
         )
 
-    # ---------------------- Internal Helpers ---------------------- #
-    def _check_duplicate_name(self, name: str) -> None:
-        """Ensure no warehouse, manager, or agent already has the given name."""
-        wh = self.components["warehouse"]
-        mgr = self.components["manager"]
-        if (wh and getattr(wh, "name", None) == name) or (
-            mgr and getattr(mgr, "name", None) == name
-        ):
-            raise ValueError(f"Duplicate name '{name}' already exists in environment.")
-        for agents in self.components["agents"].values():
-            if any(getattr(a, "name", None) == name for a in agents):
-                raise ValueError(f"Duplicate agent name detected: '{name}'.")
 
     def _initialize_registries(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
         """Initialize the environment registries for params, functions, and styles."""
@@ -163,15 +152,16 @@ class Environment:
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
-    def _validate_registry_type(self, registry_type: str) -> bool:
+    # ---------------------- Checkers ---------------------- #
+    def _check_record_name(
+        self, name: str, registry: Dict[str, Dict[str, Any]]
+    ) -> bool:
+        """Ensure no record in the registry already has the given name."""
+        return not any(name in records for records in registry.values())
+
+    def _check_registry_type(self, registry_type: str) -> bool:
         """Check if the registry type is valid."""
         return registry_type in self.REGISTRY_TYPES
-
-    def _validate_record_name(
-        self, registry: Dict[str, Any], registry_name: str
-    ) -> bool:
-        """Check if record name is in the registry."""
-        return registry_name in registry
 
     def _validate_record(
         self,
