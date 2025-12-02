@@ -3,7 +3,7 @@ Base abstract class for all parameter schemas used by styles in Fragua.
 """
 
 from abc import ABC
-from typing import Any, Dict, TypeVar
+from typing import Any, TypeVar
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
