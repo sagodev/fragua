@@ -10,28 +10,15 @@ from fragua.core.manager import WarehouseManager
 from fragua.core.style import Style
 from fragua.core.function import FraguaFunction
 from fragua.core.params import Params
+from fragua.core.registry import Registry
 
+from fragua.extract import Extractor
 
-from fragua.extract import (
-    Extractor,
-    EXTRACT_PARAMS_CLASSES,
-    EXTRACT_FUNCTION_CLASSES,
-    EXTRACT_STYLE_CLASSES,
-)
+from fragua.transform import Transformer
 
-from fragua.transform import (
-    Transformer,
-    TRANSFORM_PARAMS_CLASSES,
-    TRANSFORM_FUNCTION_CLASSES,
-    TRANSFORM_STYLE_CLASSES,
-)
+from fragua.load import Loader
 
-from fragua.load import (
-    Loader,
-    LOAD_PARAMS_CLASSES,
-    LOAD_FUNCTION_CLASSES,
-    LOAD_STYLE_CLASSES,
-)
+from fragua import AGENT_CLASSES, PARAMS_CLASSES, FUNCTION_CLASSES, STYLE_CLASSES
 
 from fragua.utils.logger import get_logger
 
@@ -45,9 +32,9 @@ class EnvironmentComponents(TypedDict):
 
 
 class Environment:
-    """Refactored base environment for Fragua.
+    """Environment class for Fragua.
 
-    Manages warehouse, warehouse manager, agents, and registries.
+    Encapsulates all logic for warehouse, warehouse manager, agents, and registries.
     Provides methods for creation, retrieval, updating, and deletion of all components.
     """
 
@@ -58,6 +45,7 @@ class Environment:
     }
     REGISTRY_TYPES: List[str] = ["params", "functions", "styles"]
 
+    def __init__(self, name: str, env_type: str = "env", fg_reg: bool = False):
         """
         Initialize the environment.
 
@@ -74,7 +62,6 @@ class Environment:
         }
         self.warehouse = self._initialize_warehouse()
         self.manager = self._initialize_manager()
-        self.registries = self._initialize_registries()
         self.params = self._initialize_params()
         self.functions = self._initialize_functions()
         self.styles = self._initialize_styles()
@@ -82,62 +69,30 @@ class Environment:
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
         )
 
-
-    def _initialize_registries(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
-        """Initialize the environment registries for params, functions, and styles."""
-        registries: Dict[str, Dict[str, Dict[str, Any]]] = {
-            rtype: {atype: {} for atype in ["extract", "transform", "load"]}
-            for rtype in self.REGISTRY_TYPES
-        }
-        if self.fg_reg:
-            registries["params"].update(
-                {
-                    "extract": EXTRACT_PARAMS_CLASSES,
-                    "transform": TRANSFORM_PARAMS_CLASSES,
-                    "load": LOAD_PARAMS_CLASSES,
-                }
-            )
-            registries["functions"].update(
-                {
-                    "extract": EXTRACT_FUNCTION_CLASSES,
-                    "transform": TRANSFORM_FUNCTION_CLASSES,
-                    "load": LOAD_FUNCTION_CLASSES,
-                }
-            )
-            registries["styles"].update(
-                {
-                    "extract": EXTRACT_STYLE_CLASSES,
-                    "transform": TRANSFORM_STYLE_CLASSES,
-                    "load": LOAD_STYLE_CLASSES,
-                }
-            )
-        logger.info("Default registries initialized for environment '%s'.", self.name)
-        return registries
-
-        """"""
-    def _initialize_params(self) -> Dict[str, Dict[str, Type[Params]]]:
+    # ---------------------- Initializers ---------------------- #
+    def _initialize_params(self) -> Registry:
         """Initialize the environment params class."""
-        params: Dict[str, Dict[str, Type[Params]]] = {}
+        params = Registry("params", {atype: {} for atype in self.ACTION_TYPES})
 
         logger.info("Default params initialized for environment '%s'.", self.name)
         return params
-    def _initialize_functions(
-        self,
-    ) -> Dict[str, Dict[str, Type[FraguaFunction[Params]]]]:
+
+    def _initialize_functions(self) -> Registry:
         """Initialize the environment functions class."""
-        functions: Dict[str, Dict[str, Type[FraguaFunction[Params]]]] = {}
+
+        functions = Registry("functions", {atype: {} for atype in self.ACTION_TYPES})
 
         logger.info("Default functions initialized for environment '%s'.", self.name)
         return functions
 
-    def _initialize_styles(self) -> Dict[str, Dict[str, Type[Style[Params, Any]]]]:
+    def _initialize_styles(self) -> Registry:
         """Initialize the environment styles class."""
-        styles: Dict[str, Dict[str, Type[Style[Params, Any]]]] = {}
+        styles = Registry("styles", {atype: {} for atype in self.ACTION_TYPES})
 
         logger.info("Default styles initialized for environment '%s'.", self.name)
         return styles
     def _initialize_manager(self) -> WarehouseManager:
-        """"""
+        """Initialize warehouse manager for environment."""
         manager = WarehouseManager(f"{self.name}_manager", self.warehouse)
 
         logger.info(
@@ -146,7 +101,7 @@ class Environment:
         return manager
 
     def _initialize_warehouse(self) -> Warehouse:
-        """"""
+        """Initialize warehouse for environment."""
         warehouse = Warehouse(f"{self.name}_warehouse")
 
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
@@ -313,11 +268,6 @@ class Environment:
 
         agents = serialize_agents(self.components["agents"])
 
-        registries = (
-            {
-                rtype: serialize_registry(self.registries[rtype])
-                for rtype in self.REGISTRY_TYPES
-            },
         params = self.params
         params_summaries = not_init if params is None else serialize_registry(params)
 
