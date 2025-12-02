@@ -114,8 +114,13 @@ class Environment:
         self.styles.set_entries(STYLE_CLASSES)
         logger.info("Default styles initialized for environment '%s'.", self.name)
 
+    def add_functions(
+        self,
+    ) -> None:
+        """fill the environment function."""
+        self.functions.set_entries(FUNCTION_CLASSES)
+        logger.info("Default function initialized for environment '%s'.", self.name)
 
-        return self.registries[registry_type]
 
     # ---------------------- Agent Management ---------------------- #
     def create_agent(
