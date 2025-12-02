@@ -159,18 +159,17 @@ class Environment:
 
     def get_agent(self, agent_name: str, action: str) -> Optional[Type[Agent[Any]]]:
         """Retrieve an agent by name and action."""
-        agent = self.agents.get_entrie(agent_name, action)
+        agent = self.agents.get_entrie(action, agent_name)
         return agent
 
-    def delete_agent(self, agent_name: str) -> bool:
+    def delete_agent(self, agent_name: str, action: str) -> bool:
         """Remove an agent from the environment."""
-        for atype, agents in self.components["agents"].items():
-            for i, agent in enumerate(agents):
-                if getattr(agent, "name", None) == agent_name:
-                    agents.pop(i)
-                    logger.info("Agent deleted: %s (%s)", agent_name, atype)
-                    return True
-        raise ValueError(f"Agent '{agent_name}' not found.")
+        action = action.lower()
+        deleted = self._check_action_type(action)
+        if deleted:
+            self.agents.delete_entrie(action, agent_name)
+            logger.info("Agent deleted: %s (%s)", agent_name, action)
+        return deleted
 
     def update_agent(
         self,
