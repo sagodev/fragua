@@ -30,18 +30,20 @@ class Registry:
 
     def _validate_entrie(
         self,
-        record_name: str,
+        action: str,
+        entrie_name: str,
         not_exist_name: bool = False,
     ) -> bool:
         """Check if a registry is valid."""
 
-        exist_name = self._check_entrie_name(record_name)
+        exist_name = self._check_entrie_name(entrie_name)
+        is_valid_type = self._check_action_type(action)
 
         is_valid_name = exist_name if not_exist_name else not exist_name
 
-        is_valid_registry = is_valid_name
+        is_valid_entrie = is_valid_name == is_valid_type
 
-        return is_valid_registry
+        return is_valid_entrie
 
     def set_entries(self, entries: Dict[str, Dict[str, Any]]) -> None:
         """Set or replace all registry entries."""
