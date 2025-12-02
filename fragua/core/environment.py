@@ -23,12 +23,7 @@ class Environment:
     Provides methods for creation, retrieval, updating, and deletion of all components.
     """
 
-    AGENT_CLASSES: Dict[str, Type[Agent[Any]]] = {
-        "extractor": Extractor,
-        "transformer": Transformer,
-        "loader": Loader,
-    }
-    REGISTRY_TYPES: List[str] = ["params", "functions", "styles"]
+    REGISTRY_TYPES: List[str] = ["params", "functions", "styles", "agents"]
 
     def __init__(self, name: str, env_type: str = "env", fg_reg: bool = False):
         """
@@ -43,7 +38,6 @@ class Environment:
         self.env_type = env_type
         self.fg_reg = fg_reg
         self.components: EnvironmentComponents = {
-            "agents": {atype: [] for atype in self.AGENT_CLASSES},
         }
         self.warehouse = self._initialize_warehouse()
         self.manager = self._initialize_manager()
@@ -76,6 +70,14 @@ class Environment:
 
         logger.info("Default styles initialized for environment '%s'.", self.name)
         return styles
+
+    def _initialize_agents(self) -> Registry:
+        """Initialize the environment agents."""
+        agents = Registry("agents")
+
+        logger.info("Default agents initialized for environment '%s'.", self.name)
+        return agents
+
     def _initialize_manager(self) -> WarehouseManager:
         """Initialize warehouse manager for environment."""
         manager = WarehouseManager(f"{self.name}_manager", self.warehouse)
@@ -178,15 +180,6 @@ class Environment:
 
         return agent
 
-    # ---------------------- Properties ---------------------- #
-    @property
-    def agents(self) -> Dict[str, List[Type[Agent]]] | None:
-        """Return all agents, or agents of a given type."""
-        if agent_type is None:
-            return [a for agents in self.components["agents"].values() for a in agents]
-        if agent_type not in self.AGENT_CLASSES:
-            raise ValueError(f"Invalid agent type '{agent_type}'.")
-        return cast(List[Any], self.components["agents"][agent_type])
     # ---------------------- Create Helpers ---------------------- #
     def create_extractor(self, name: Optional[str] = None) -> Extractor:
         """Shortcut to create an Extractor agent."""
@@ -226,6 +219,8 @@ class Environment:
         manager = self.manager
         manager_summary = not_init if manager is None else manager.summary()
 
+        agents = self.agents
+        agents_summaries = not_init if agents is {} else serialize_registry(agents)
 
         params = self.params
         params_summaries = not_init if params is None else serialize_registry(params)
@@ -251,6 +246,7 @@ class Environment:
                 "agents": agents,
             },
             "registries": registries,
+            "agents": agents_summaries,
             "params": params_summaries,
             "functions": functions_summaries,
             "styles": styles_summaries,
