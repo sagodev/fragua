@@ -43,7 +43,7 @@ class Registry:
         """Retrive all registry entries."""
         return self._entries
 
-    def create_entrie(self, action: str, name: str, new_entrie: Dict[str, Any]) -> bool:
+    def create_entrie(self, action: str, name: str, new_entrie: Any) -> bool:
         """
         Create a new entrie in registry.
         Return boolean if entrie is created succesfully or not.
