@@ -194,10 +194,18 @@ class Agent(ABC, Generic[ParamsT]):
 
         style = style.lower()
 
-        searched_params = self.environment.get_one_params(self.action, style)
+        searched_params = self.environment.params.get_entrie(self.action, style)
+
+        if searched_params is None:
+            raise ValueError("Params class not found.")
+
         params_instance = searched_params(**kwargs) if params is None else params
 
-        style_cls = self.environment.get_one_style(self.action, style)
+        style_cls = self.environment.styles.get_entrie(self.action, style)
+
+        if style_cls is None:
+            raise ValueError("Style class not found.")
+
         stylized_data = style_cls(style).use(params_instance)
 
         storage = self.create_storage(stylized_data)
