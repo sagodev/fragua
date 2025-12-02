@@ -42,5 +42,18 @@ class Registry:
         is_valid_registry = is_valid_name
 
         return is_valid_registry
+
+    def create_entrie(self, action: str, name: str, new_entrie: Dict[str, Any]) -> bool:
+        """
+        Create a new entrie in registry.
+        Return boolean if entrie is created succesfully or not.
+        """
+        created = self._validate_entrie(name, not_exist_name=True)
+
+        if created:
+            self._entries[action][name] = new_entrie
+            logger.info("%s created: %s", self.name.capitalize(), name)
+
+        return created
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}')"
