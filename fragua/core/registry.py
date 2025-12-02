@@ -103,11 +103,11 @@ class Registry:
 
     def delete_entrie(self, action: str, name: str) -> bool:
         """
-        Delete a record from a registry by name.
-        Return boolean if record is created succesfully or not.
+        Delete a entrie from a registry.
+        Returns a boolean value indicating whether entrie was deleted successfully or not.
         """
 
-        deleted = self._validate_entrie(name)
+        deleted = self._validate_entrie(action, name)
 
         if deleted:
             self._entries[action].pop(name)
