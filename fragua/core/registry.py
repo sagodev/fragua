@@ -13,6 +13,10 @@ class Registry:
         self.name: str = name
         self._entries: Dict[str, Dict[str, Any]] = {} if entries is None else entries
 
+    def _check_entrie_name(self, name: str) -> bool:
+        """Ensure no entrie in the registry already has the given name."""
+        return not any(name in entries for entries in self._entries.values())
+
     def set_entries(self, entries: Dict[str, Dict[str, Any]]) -> None:
         """Set or replace all registry entries."""
         self._entries = entries

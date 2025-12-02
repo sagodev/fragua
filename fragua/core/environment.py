@@ -153,12 +153,6 @@ class Environment:
         return warehouse
 
     # ---------------------- Checkers ---------------------- #
-    def _check_record_name(
-        self, name: str, registry: Dict[str, Dict[str, Any]]
-    ) -> bool:
-        """Ensure no record in the registry already has the given name."""
-        return not any(name in records for records in registry.values())
-
     def _check_registry_type(self, registry_type: str) -> bool:
         """Check if the registry type is valid."""
         return registry_type in self.REGISTRY_TYPES
