@@ -1,9 +1,11 @@
 """Base class for all registries of an environment in Fragua."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+ACTION_TYPES: List[str] = ["extract", "transform", "load"]
 
 
 class Registry:
@@ -14,7 +16,9 @@ class Registry:
     ) -> None:
         """Initialize the registry."""
         self.name: str = name
-        self._entries: Dict[str, Dict[str, Any]] = {} if entries is None else entries
+        self._entries: Dict[str, Dict[str, Any]] = (
+            {atype: {} for atype in ACTION_TYPES} if entries is None else entries
+        )
 
     def _check_entrie_name(self, name: str) -> bool:
         """Ensure no entrie in the registry already has the given name."""
@@ -101,6 +105,10 @@ class Registry:
             logger.info("%s deleted: %s", self.name.capitalize(), name)
 
         return deleted
+
+    def get_action_entries(self, action: str) -> Dict[str, Any]:
+        """Retrive entries for a given action."""
+        return self._entries[action] if action in ACTION_TYPES else {}
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}')"
