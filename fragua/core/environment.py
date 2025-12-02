@@ -153,10 +153,9 @@ class Environment:
         return warehouse
 
     # ---------------------- Checkers ---------------------- #
-    def _check_registry_type(self, registry_type: str) -> bool:
-        """Check if the registry type is valid."""
-        return registry_type in self.REGISTRY_TYPES
-
+    def _check_action_type(self, action: str) -> bool:
+        """Check if the action type is valid."""
+        return any(action in actions for actions in self.REGISTRY_TYPES)
 
     # ---------------------- Registry Management ---------------------- #
         self,
