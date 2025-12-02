@@ -87,5 +87,20 @@ class Registry:
             logger.info("%s updated: %s", self.name.capitalize(), name)
 
         return updated
+
+    def delete_entrie(self, action: str, name: str) -> bool:
+        """
+        Delete a record from a registry by name.
+        Return boolean if record is created succesfully or not.
+        """
+
+        deleted = self._validate_entrie(name)
+
+        if deleted:
+            self._entries[action].pop(name)
+            logger.info("%s deleted: %s", self.name.capitalize(), name)
+
+        return deleted
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}')"
