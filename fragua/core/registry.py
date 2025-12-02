@@ -1,9 +1,7 @@
 """Base class for all registries of an environment in Fragua."""
 
 from typing import Any, Dict, List, Optional
-from fragua.utils.logger import get_logger
 
-logger = get_logger(__name__)
 
 ACTION_TYPES: List[str] = ["extract", "transform", "load"]
 
@@ -62,7 +60,6 @@ class Registry:
 
         if created:
             self._entries[action][name] = new_entrie
-            logger.info("%s created: %s", self.name.capitalize(), name)
 
         return created
 
@@ -97,7 +94,6 @@ class Registry:
 
         if updated:
             setattr(self._entries[action][name], "name", new_name)
-            logger.info("%s updated: %s", self.name.capitalize(), name)
 
         return updated
 
@@ -111,7 +107,6 @@ class Registry:
 
         if deleted:
             self._entries[action].pop(name)
-            logger.info("%s deleted: %s", self.name.capitalize(), name)
 
         return deleted
 
