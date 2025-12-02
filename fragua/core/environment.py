@@ -248,16 +248,6 @@ class Environment:
                 }
             return clean
 
-        def serialize_agents(agent_dict: Dict[str, List[Agent[Any]]]) -> Dict[str, Any]:
-            """Serialize all agents by calling agent.summary() if available."""
-            output: Dict[str, Any] = {}
-            for atype, agents in agent_dict.items():
-                output[atype] = [
-                    a.summary() if hasattr(a, "summary") else {"name": a.name}
-                    for a in agents
-                ]
-            return output
-
         not_init = "Not initialized."
 
         warehouse = self.warehouse
