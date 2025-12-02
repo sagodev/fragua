@@ -106,11 +106,14 @@ class Environment:
         self.params.set_entries(PARAMS_CLASSES)
         logger.info("Default params initialized for environment '%s'.", self.name)
 
+    def add_styles(
+        self,
+    ) -> None:
+        """fill the environment styles."""
 
-        exist_list = self._validate_registry_type(registry_type)
+        self.styles.set_entries(STYLE_CLASSES)
+        logger.info("Default styles initialized for environment '%s'.", self.name)
 
-        if not exist_list:
-            raise RuntimeError("Registry not found.")
 
         return self.registries[registry_type]
 
