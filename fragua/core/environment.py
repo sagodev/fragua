@@ -160,21 +160,6 @@ class Environment:
 
     # ---------------------- Registry Management ---------------------- #
         self,
-    def update_registry_record(
-        self, registry_type: str, action: str, name: str, data: Dict[str, Any]
-    ) -> bool:
-        """
-        Update an existing record in a registry.
-        Return boolean if record is created succesfully or not.
-        """
-
-        updated = self._validate_record(registry_type, name)
-
-        if updated:
-            self.registries[registry_type][action].update(data)
-            logger.info("%s updated: %s", registry_type.capitalize(), name)
-
-        return updated
 
     def delete_registry_record(
         self, registry_type: str, action: str, name: str

@@ -71,5 +71,21 @@ class Registry:
         )
 
         return record
+
+    def update_entrie(
+        self, action: str, name: str, updated_entrie: Dict[str, Any]
+    ) -> bool:
+        """
+        Update an existing record in a registry.
+        Return boolean if record is updated succesfully or not.
+        """
+
+        updated = self._validate_entrie(name)
+
+        if updated:
+            self._entries[action].update(updated_entrie)
+            logger.info("%s updated: %s", self.name.capitalize(), name)
+
+        return updated
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}')"
