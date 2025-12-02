@@ -157,23 +157,6 @@ class Environment:
         """Check if the registry type is valid."""
         return registry_type in self.REGISTRY_TYPES
 
-    def _validate_record(
-        self,
-        registry_type: str,
-        registry_name: str,
-        not_exist_name: bool = False,
-    ) -> bool:
-        """Check if a registry is valid."""
-
-        registry = self.registries[registry_type]
-        exist_name = self._validate_record_name(registry, registry_name)
-
-        is_valid_type = self._validate_registry_type(registry_type)
-        is_valid_name = exist_name if not_exist_name else not exist_name
-
-        is_valid_registry = is_valid_type == is_valid_name
-
-        return is_valid_registry
 
     # ---------------------- Registry Management ---------------------- #
     def create_registry_record(

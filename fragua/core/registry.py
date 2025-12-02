@@ -28,5 +28,19 @@ class Registry:
         """Retrive all registry entries."""
         return self._entries
 
+    def _validate_entrie(
+        self,
+        record_name: str,
+        not_exist_name: bool = False,
+    ) -> bool:
+        """Check if a registry is valid."""
+
+        exist_name = self._check_entrie_name(record_name)
+
+        is_valid_name = exist_name if not_exist_name else not exist_name
+
+        is_valid_registry = is_valid_name
+
+        return is_valid_registry
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}')"
