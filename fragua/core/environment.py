@@ -57,7 +57,7 @@ class Environment:
     # ---------------------- Initializers ---------------------- #
     def _initialize_params(self) -> Registry:
         """Initialize the environment params class."""
-        params = Registry("params", {atype: {} for atype in self.ACTION_TYPES})
+        params = Registry("params")
 
         logger.info("Default params initialized for environment '%s'.", self.name)
         return params
@@ -65,14 +65,14 @@ class Environment:
     def _initialize_functions(self) -> Registry:
         """Initialize the environment functions class."""
 
-        functions = Registry("functions", {atype: {} for atype in self.ACTION_TYPES})
+        functions = Registry("functions")
 
         logger.info("Default functions initialized for environment '%s'.", self.name)
         return functions
 
     def _initialize_styles(self) -> Registry:
         """Initialize the environment styles class."""
-        styles = Registry("styles", {atype: {} for atype in self.ACTION_TYPES})
+        styles = Registry("styles")
 
         logger.info("Default styles initialized for environment '%s'.", self.name)
         return styles
