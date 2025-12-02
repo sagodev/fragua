@@ -249,60 +249,61 @@ class Environment:
         return self.create_agent(name, "load")
 
     # ---------------------- Summary ---------------------- #
-
+    @property
     def summary(self) -> Dict[str, Any]:
         """
         Return a JSON-serializable summary of the Environment instance,
         including metadata, components, agents and registries.
         """
 
-        def serialize_registry(reg: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-            """Convert registry class references into JSON-safe values."""
-            clean: Dict[str, Any] = {}
-            for category, items in reg.items():
-                clean[category] = {
-                    name: getattr(cls, "__name__", str(cls))
-                    for name, cls in items.items()
-                }
+        def serialize_registry(registry: Registry):
+            clean = {}
+
+            for action, entries in registry.get_entries().items():
+                clean[action] = {}
+
+                for name, obj in entries.items():
+
+                    # ----- PARAMS -----
+                    if registry.name == "params":
+                        instance = obj(action, name)
+
+                    # ----- STYLES -----
+                    elif registry.name == "styles":
+                        instance = obj(name)
+
+                    # ----- FUNCTIONS -----
+                    elif registry.name == "functions":
+                        params_cls = self.params.get_entrie(action, name)
+
+                        if params_cls is None:
+                            raise ValueError("")
+
+                        params_instance = params_cls(action, name)
+                        instance = obj(name, params_instance)
+
+                    # ----- AGENTS -----
+                    elif registry.name == "agents":
+                        instance = obj
+
+                    # ----- DEFAULT -----
+                    else:
+                        instance = obj()
+
+                    clean[action][name] = instance.summary()
+
             return clean
 
-        not_init = "Not initialized."
-
-        warehouse = self.warehouse
-        warehouse_summary = not_init if warehouse is None else warehouse.summary()
-
-        manager = self.manager
-        manager_summary = not_init if manager is None else manager.summary()
-
-        agents = self.agents
-        agents_summaries = not_init if agents is {} else serialize_registry(agents)
-
-        params = self.params
-        params_summaries = not_init if params is None else serialize_registry(params)
-
-        functions = self.functions
-        functions_summaries = (
-            not_init if functions is None else serialize_registry(functions)
-        )
-        styles = self.styles
-        styles_summaries = not_init if styles is None else serialize_registry(styles)
-
         return {
-            "meta": {
-                "class": type(self).__name__,
-                "module": type(self).__module__,
-            },
-            "name": self.name,
-            "type": self.env_type,
-            "fg_reg": self.fg_reg,
-            "warehouse": warehouse_summary,
-            "manager": manager_summary,
-            "agents": agents_summaries,
-            "params": params_summaries,
-            "functions": functions_summaries,
-            "styles": styles_summaries,
+            "env_name": self.name,
+            "env_type": self.env_type,
+            "warehouse": self.warehouse.summary(),
+            "manager": self.manager.summary(),
+            "params": serialize_registry(self.params),
+            "functions": serialize_registry(self.functions),
+            "styles": serialize_registry(self.styles),
+            "agents": serialize_registry(self.agents),
         }
 
     def __repr__(self) -> str:
-        agent_count = sum(len(lst) for lst in self.components["agents"].values())
-        return f"<Environment name={self.name!r} type={self.env_type!r} agents={agent_count}>"
+        return f"<Environment name={self.name!r} type={self.env_type!r}>"
