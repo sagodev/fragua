@@ -148,7 +148,6 @@ class Environment:
 
         created = self._check_action_type(action)
 
-    def get_agent(self, agent_name: str) -> Optional[Agent[Any]]:
         if created:
             agent_cls = AGENT_CLASSES[action]
             agent_name = name
@@ -157,10 +156,11 @@ class Environment:
             logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
 
         return created
-        """Retrieve an agent by name."""
-                if getattr(agent, "name", None) == agent_name:
-                    return agent
-        return None
+
+    def get_agent(self, agent_name: str, action: str) -> Optional[Type[Agent[Any]]]:
+        """Retrieve an agent by name and action."""
+        agent = self.agents.get_entrie(agent_name, action)
+        return agent
 
     def delete_agent(self, agent_name: str) -> bool:
         """Remove an agent from the environment."""
