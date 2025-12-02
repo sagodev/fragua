@@ -55,5 +55,21 @@ class Registry:
             logger.info("%s created: %s", self.name.capitalize(), name)
 
         return created
+
+    def get_entrie(
+        self,
+        action: str,
+        name: str,
+    ) -> Any | None:
+        """
+        Retrieve a record from a registry by name.
+        If entrie is not in registry return None.
+        """
+
+        record = (
+            self._entries[action].get(name) if self._validate_entrie(name) else None
+        )
+
+        return record
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}')"

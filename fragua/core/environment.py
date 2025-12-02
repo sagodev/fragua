@@ -160,20 +160,6 @@ class Environment:
 
     # ---------------------- Registry Management ---------------------- #
         self,
-        registry_type: str,
-        action: str,
-        name: str,
-    ) -> Any | None:
-        """Retrieve a record from a registry by name."""
-
-        record = (
-            self.registries[registry_type][action].get(name)
-            if self._validate_record(registry_type, name)
-            else None
-        )
-
-        return record
-
     def update_registry_record(
         self, registry_type: str, action: str, name: str, data: Dict[str, Any]
     ) -> bool:
