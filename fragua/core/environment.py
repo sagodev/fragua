@@ -2,33 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Type, List, cast
+from typing import Any, Dict, Optional, List
 
 from fragua.core.warehouse import Warehouse
 from fragua.core.agent import Agent
 from fragua.core.manager import WarehouseManager
-from fragua.core.style import Style
-from fragua.core.function import FraguaFunction
-from fragua.core.params import Params
 from fragua.core.registry import Registry
-
-from fragua.extract import Extractor
-
-from fragua.transform import Transformer
-
-from fragua.load import Loader
 
 from fragua import AGENT_CLASSES, PARAMS_CLASSES, FUNCTION_CLASSES, STYLE_CLASSES
 
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-
-class EnvironmentComponents(TypedDict):
-    """Components stored inside an environment."""
-
-    agents: Dict[str, List[Agent[Any]]]
 
 
 class Environment:
@@ -215,21 +200,6 @@ class Environment:
         """Shortcut to create a Loader agent."""
         return cast(Loader, self.create_agent("loader", name))
 
-    # ---------------------- Get Helpers ---------------------- #
-    def get_one_params(self, action: str, name: str) -> Type[Params]:
-        """Return a params class by an given name from the params registry."""
-        return cast(Type[Params], self.get_registry_record("params", action, name))
-
-    def get_one_function(self, action: str, name: str) -> Type[FraguaFunction]:
-        """Return a function class by an given name from the functions registry."""
-        return cast(
-            Type[FraguaFunction], self.get_registry_record("functions", action, name)
-        )
-
-    def get_one_style(self, action: str, name: str) -> Type[Style]:
-        """Return a style class by an given name from the styles registry."""
-        return cast(Type[Style], self.get_registry_record("styles", action, name))
-
     # ---------------------- Summary ---------------------- #
 
     def summary(self) -> Dict[str, Any]:
@@ -256,7 +226,6 @@ class Environment:
         manager = self.manager
         manager_summary = not_init if manager is None else manager.summary()
 
-        agents = serialize_agents(self.components["agents"])
 
         params = self.params
         params_summaries = not_init if params is None else serialize_registry(params)
