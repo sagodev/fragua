@@ -3,7 +3,7 @@ Extract Functions.
 """
 
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Type
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
@@ -18,6 +18,7 @@ from fragua.extract.params import (
 )
 
 from fragua.extract.functions import ExtractFunction
+from fragua.extract.params.base import ExtractParams
 
 
 class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
@@ -141,3 +142,11 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
             return pd.json_normalize(result_data, **read_kwargs)
 
         raise ValueError(f"Unexpected API response type: {type(result_data)}")
+
+
+EXTRACT_FUNCTION_CLASSES: Dict[str, Type[ExtractFunction[ExtractParams]]] = {
+    "csv": CSVExtractFunction,
+    "excel": ExcelExtractFunction,
+    "sql": SQLExtractFunction,
+    "api": APIExtractFunction,
+}

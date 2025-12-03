@@ -2,7 +2,7 @@
 ExtractStyle types for various data extraction methods.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Type
 import pandas as pd
 
 from fragua.extract.functions.extract_functions import (
@@ -18,6 +18,7 @@ from fragua.extract.params import (
     APIExtractParamsT,
 )
 
+from fragua.extract.params.base import ExtractParams
 from fragua.extract.styles.base import ExtractStyle
 
 
@@ -104,3 +105,11 @@ class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
                 "timeout": "Timeout for request.",
             },
         }
+
+
+EXTRACT_STYLE_CLASSES: Dict[str, Type[ExtractStyle[ExtractParams, Any]]] = {
+    "csv": CSVExtractStyle,
+    "excel": ExcelExtractStyle,
+    "sql": SQLExtractStyle,
+    "api": APIExtractStyle,
+}

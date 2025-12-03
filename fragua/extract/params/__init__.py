@@ -16,6 +16,7 @@ from .extract_params import (
     ExcelExtractParams,
     APIExtractParams,
     SQLExtractParams,
+    EXTRACT_PARAMS_CLASSES,
 )
 
 from .generic_types import (
@@ -26,7 +27,6 @@ from .generic_types import (
     APIExtractParamsT,
 )
 
-from .params_registry import EXTRACT_PARAMS_CLASSES
 
 __all__ = [
     "ExtractParams",

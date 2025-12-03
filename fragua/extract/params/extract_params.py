@@ -2,7 +2,7 @@
 Extract parameters classes for different types of data sources.
 """
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, Type, Union
 from pathlib import Path
 
 from fragua.extract.params.base import ExtractParams
@@ -33,7 +33,7 @@ class CSVExtractParams(ExtractParams):
 class ExcelExtractParams(ExtractParams):
     """Extraction parameters for Excel files."""
 
-    path: Path
+    path: Union[str, Path] | None = None
     sheet_name: Union[str, int]
 
     purpose = "Parameters required to extract data from an Excel file."
@@ -46,12 +46,12 @@ class ExcelExtractParams(ExtractParams):
 
     def __init__(
         self,
-        path: Union[str, Path],
+        path: Union[str, Path] | None = None,
         sheet_name: Union[str, int] = 0,
         read_kwargs: Dict[str, Any] | None = None,
     ) -> None:
         super().__init__(style="excel", read_kwargs=read_kwargs)
-        self.path = Path(path)
+        self.path: Union[str, Path] | None = Path(path) if path is not None else None
         self.sheet_name = sheet_name
 
 
@@ -119,3 +119,11 @@ class APIExtractParams(ExtractParams):
         self.auth = auth or {}
         self.proxy = proxy or {}
         self.timeout = timeout
+
+
+EXTRACT_PARAMS_CLASSES: Dict[str, Type[ExtractParams]] = {
+    "csv": CSVExtractParams,
+    "excel": ExcelExtractParams,
+    "sql": SQLExtractParams,
+    "api": APIExtractParams,
+}
