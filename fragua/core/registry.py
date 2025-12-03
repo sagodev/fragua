@@ -91,7 +91,7 @@ class Registry:
     def get_entrie(
         self,
         name: str,
-        action: Optional[str],
+        action: Optional[str] = None,
     ) -> Any | None:
         """
         Retrieve an entry by name.
