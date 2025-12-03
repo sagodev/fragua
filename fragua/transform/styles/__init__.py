@@ -13,9 +13,8 @@ from .transform_styles import (
     MLTransformStyle,
     ReportTransformStyle,
     AnalysisTransformStyle,
+    TRANSFORM_STYLE_CLASSES,
 )
-
-from .styles_registry import TRANSFORM_STYLE_CLASSES
 
 __all__ = [
     "TransformStyle",
