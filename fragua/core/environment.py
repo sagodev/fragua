@@ -213,9 +213,14 @@ class Environment:
 
         return created
 
-    def get_agent(self, agent_name: str, action: str) -> Optional[Type[Agent[Any]]]:
-        """Retrieve an agent from agent registry by name and action."""
-        agent = self.agents.get_entrie(action, agent_name)
+    def get_agent(
+        self,
+        agent_name: str,
+        action: Optional[str] = None,
+    ) -> Optional[Type[Agent[Any]]]:
+        """Retrieve an agent by name. If action is None, search in ALL actions."""
+
+        agent = self.agents.get_entrie(agent_name, action)
         return agent
 
     def delete_agent(self, agent_name: str, action: str) -> bool:
