@@ -223,13 +223,25 @@ class Environment:
         agent = self.agents.get_entrie(agent_name, action)
         return agent
 
-    def delete_agent(self, agent_name: str, action: str) -> bool:
+    def delete_agent(
+        self,
+        agent_name: str,
+        action: Optional[str] = None,
+    ) -> bool:
         """
-        Remove an agent from agent registry.
-        Returns a boolean value indicating whether the agent was deleted successfully or not.
+        Remove an agent from registry.
+        If action is None, attempts to locate agent automatically.
         """
 
-        action = action.lower()
+        if action is None:
+            entry = self.agents.get_entrie(agent_name, None)
+            if entry is None:
+                return False
+
+            for act, entries in self.agents.get_entries("all").items():
+                if agent_name in entries:
+                    action = act
+                    break
 
         deleted = self.agents.delete_entrie(action, agent_name)
 
