@@ -252,15 +252,24 @@ class Environment:
 
     def update_agent(
         self,
-        action: str,
         agent_name: str,
         new_name: str,
+        action: Optional[str] = None,
     ) -> bool:
         """
-        Update an existing agent inside of agents registry.
-        Returns a boolean value indicating whether the agent was updated successfully or not.
+        Update an existing agent.
+        If action is None, auto-detect which action the agent belongs to.
         """
-        action = action.lower()
+
+        if action is None:
+            entry = self.agents.get_entrie(agent_name, None)
+            if entry is None:
+                return False
+
+            for act, entries in self.agents.get_entries("all").items():
+                if agent_name in entries:
+                    action = act
+                    break
 
         updated = self.agents.update_entrie(action, agent_name, new_name)
 
