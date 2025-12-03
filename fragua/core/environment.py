@@ -197,13 +197,23 @@ class Environment:
         action: str,
     ) -> bool:
         """
-        Create and register an agent in agent registry.
-        Returns a boolean value indicating whether the agent was created successfully or not.
+        Create and register an agent in the agent registry.
+        Action IS required because we need to know which subclass to instantiate.
         """
+
+        agent_classes: Dict[str, Type[Agent]] = {
+            "extract": Extractor,
+            "transform": Transformer,
+            "load": Loader,
+        }
 
         action = action.lower()
 
-        new_agent = AGENT_CLASSES[action](agent_name, environment=self)
+        if action not in ACTION_TYPES:
+            logger.error("Invalid agent action type: %s", action)
+            return False
+
+        new_agent = agent_classes[action](agent_name, environment=self)
         created = self.agents.create_entrie(action, agent_name, new_agent)
 
         if created:
