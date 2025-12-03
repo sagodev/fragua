@@ -2,7 +2,7 @@
 Transform parameters classes for different types of data transformations.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Type
 from pandas import DataFrame
 from fragua.transform.params.base import TransformParams
 
@@ -100,3 +100,10 @@ class AnalysisTransformParams(TransformParams):
         self.groupby_cols = groupby_cols or []
         self.agg_functions = agg_functions or {}
         self.sort_by = sort_by or []
+
+
+TRANSFORM_PARAMS_CLASSES: Dict[str, Type[TransformParams]] = {
+    "ml": MLTransformParams,
+    "report": ReportTransformParams,
+    "analysis": AnalysisTransformParams,
+}
