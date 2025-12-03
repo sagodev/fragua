@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, List, Type
 from fragua.core.warehouse import Warehouse
 from fragua.core.agent import Agent
 from fragua.core.manager import WarehouseManager
-from fragua.core.registry import Registry
+from fragua.core.registry import Registry, ACTION_TYPES
 
 
 from fragua.extract import (
@@ -36,30 +36,6 @@ from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-AGENT_CLASSES: Dict[str, Type[Agent]] = {
-    "extract": Extractor,
-    "transform": Transformer,
-    "load": Loader,
-}
-
-PARAMS_CLASSES: Dict[str, Dict[str, Any]] = {
-    "extract": EXTRACT_PARAMS_CLASSES,
-    "transform": TRANSFORM_PARAMS_CLASSES,
-    "load": LOAD_PARAMS_CLASSES,
-}
-
-FUNCTION_CLASSES: Dict[str, Dict[str, Any]] = {
-    "extract": EXTRACT_FUNCTION_CLASSES,
-    "transform": TRANSFORM_FUNCTION_CLASSES,
-    "load": LOAD_FUNCTION_CLASSES,
-}
-
-STYLE_CLASSES: Dict[str, Dict[str, Any]] = {
-    "extract": EXTRACT_STYLE_CLASSES,
-    "transform": TRANSFORM_STYLE_CLASSES,
-    "load": LOAD_STYLE_CLASSES,
-}
-
 
 class Environment:
     """Environment class for Fragua.
@@ -70,7 +46,7 @@ class Environment:
 
     REGISTRY_TYPES: List[str] = ["params", "functions", "styles", "agents"]
 
-    def __init__(self, name: str, env_type: str = "env", fg_reg: bool = False):
+    def __init__(self, name: str, env_type: str = "base", fg_reg: bool = False):
         """
         Initialize the environment.
 
@@ -138,37 +114,78 @@ class Environment:
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
-    # ---------------------- Registry Management ---------------------- #
-    def add_params(
-        self,
-    ) -> None:
-        """fill the environment params."""
-        self.params.set_entries(PARAMS_CLASSES)
-        logger.info("Default params initialized for environment '%s'.", self.name)
+    # ---------------------- Fragua Custom Registries ---------------------- #
+    def add_fg_params(self) -> None:
+        """Set the environment params registry with instances of Fragua params classes."""
+        new_entries: Dict[str, Dict[str, Any]] = {}
 
-    def add_styles(
-        self,
-    ) -> None:
-        """fill the environment styles."""
+        class_groups = {
+            "extract": EXTRACT_PARAMS_CLASSES,
+            "transform": TRANSFORM_PARAMS_CLASSES,
+            "load": LOAD_PARAMS_CLASSES,
+        }
 
-        self.styles.set_entries(STYLE_CLASSES)
-        logger.info("Default styles initialized for environment '%s'.", self.name)
+        for action, classes in class_groups.items():
+            new_entries[action] = {
+                name: cls(action, name) for name, cls in classes.items()
+            }
 
-    def add_functions(
-        self,
-    ) -> None:
-        """fill the environment function."""
-        self.functions.set_entries(FUNCTION_CLASSES)
-        logger.info("Default function initialized for environment '%s'.", self.name)
+        self.params.set_entries(new_entries)
+        logger.info("Environment params set with Fragua params. '%s'.", self.name)
 
-    def add_registries(
+    def add_fg_styles(self) -> None:
+        """Set the environment styles registry with instances of Fragua style classes."""
+        new_entries: Dict[str, Dict[str, Any]] = {}
+
+        class_groups = {
+            "extract": EXTRACT_STYLE_CLASSES,
+            "transform": TRANSFORM_STYLE_CLASSES,
+            "load": LOAD_STYLE_CLASSES,
+        }
+
+        for action, classes in class_groups.items():
+            new_entries[action] = {name: cls(name) for name, cls in classes.items()}
+
+        self.styles.set_entries(new_entries)
+        logger.info("Environment styles set with Fragua styles. '%s'.", self.name)
+
+    def add_fg_functions(self) -> None:
+        """Set the environment functions registry with instances of Fragua function classes."""
+        new_entries: Dict[str, Dict[str, Any]] = {}
+
+        class_groups = {
+            "extract": EXTRACT_FUNCTION_CLASSES,
+            "transform": TRANSFORM_FUNCTION_CLASSES,
+            "load": LOAD_FUNCTION_CLASSES,
+        }
+
+        for action, classes in class_groups.items():
+            new_entries[action] = {}
+
+            for name, cls in classes.items():
+
+                params_instance = self.params.get_entrie(name, action)
+
+                if params_instance is None:
+                    raise ValueError(
+                        f"Missing param '{name}' for function '{name}' in action '{action}'."
+                    )
+
+                instance = cls(name, params_instance)
+
+                new_entries[action][name] = instance
+
+        self.functions.set_entries(new_entries)
+        logger.info("Environment functions set with Fragua functions. '%s'.", self.name)
+
+    def add_fg_registries(
         self,
     ) -> None:
         """fill the environment registries."""
         if self.fg_reg:
-            self.add_functions()
-            self.add_params()
-            self.add_styles()
+            self.add_fg_params()
+            self.add_fg_functions()
+            self.add_fg_styles()
             logger.info(
                 "Default registries initialized for environment '%s'.", self.name
             )
