@@ -2,7 +2,7 @@
 Load parameters classes for different types of data destinations.
 """
 
-from typing import Dict
+from typing import Dict, Type
 from pandas import DataFrame
 
 from fragua.load.params.base import LoadParams
@@ -117,3 +117,10 @@ class APILoadParams(LoadParams):
         self.headers = headers or {}
         self.auth = auth or {}
         self.timeout = timeout
+
+
+LOAD_PARAMS_CLASSES: Dict[str, Type[LoadParams]] = {
+    "excel": ExcelLoadParams,
+    "sql": SQLLoadParams,
+    "api": APILoadParams,
+}

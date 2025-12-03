@@ -1,6 +1,6 @@
 """Load Functions."""
 
-from typing import Any
+from typing import Any, Dict, Type
 import pandas as pd
 
 
@@ -11,6 +11,7 @@ from fragua.load.functions.internal_functions import (
     validate_excel_params,
     write_excel,
 )
+from fragua.load.params.base import LoadParams
 from fragua.load.params.generic_types import ExcelLoadParamsT
 
 
@@ -37,3 +38,8 @@ class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
             "params_type": type(self.params).__name__,
             "purpose": self.PURPOSE,
         }
+
+
+LOAD_FUNCTION_CLASSES: Dict[str, Type[LoadFunction[LoadParams]]] = {
+    "excel": ExcelLoadFunction,
+}

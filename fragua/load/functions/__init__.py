@@ -10,9 +10,9 @@ This module contains:
 
 from .base import LoadFunction
 
-from .load_functions import ExcelLoadFunction
+from .load_functions import ExcelLoadFunction, LOAD_FUNCTION_CLASSES
+from .internal_functions import LOAD_INTERNAL_FUNCTIONS
 
-from .functions_registry import LOAD_FUNCTION_CLASSES, LOAD_INTERNAL_FUNCTIONS
 
 __all__ = [
     "LoadFunction",

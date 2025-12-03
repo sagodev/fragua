@@ -1,6 +1,7 @@
 """Internal Functions For Load Function Classes."""
 
 import os
+from typing import Any, Callable, Dict
 import pandas as pd
 
 from fragua.load.params.load_params import ExcelLoadParams
@@ -82,3 +83,11 @@ def write_excel(df: pd.DataFrame, path: str, sheet_name: str, index: bool) -> No
     else:
         with pd.ExcelWriter(path, engine="openpyxl") as writer:
             df.to_excel(writer, sheet_name=sheet_name, index=index)
+
+
+LOAD_INTERNAL_FUNCTIONS: Dict[str, Callable[..., Any]] = {
+    "validate_excel_params": validate_excel_params,
+    "build_excel_path": build_excel_path,
+    "convert_datetime_columns": convert_datetime_columns,
+    "write_excel": write_excel,
+}
