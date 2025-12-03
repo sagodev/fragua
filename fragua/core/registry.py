@@ -24,38 +24,63 @@ class Registry:
 
     def _check_action_type(self, action: str) -> bool:
         """Check if the action type is valid."""
-        return any(action in actions for actions in ACTION_TYPES)
+        return action in ACTION_TYPES
 
     def _validate_entrie(
         self,
-        action: str,
+        action: Optional[str],
         entrie_name: str,
         not_exist_name: bool = False,
     ) -> bool:
-        """Check if a registry is valid."""
+        """
+        Validate entry existence.
+        If action is provided, validate only inside that action.
+        If action is None, validate across all actions.
+        """
+        if action is not None:
+            if not self._check_action_type(action):
+                return False
+            exists = entrie_name in self._entries[action]
+        else:
+            exists = any(entrie_name in entries for entries in self._entries.values())
 
-        exist_name = self._check_entrie_name(entrie_name)
-        is_valid_type = self._check_action_type(action)
-
-        is_valid_name = exist_name if not_exist_name else not exist_name
-
-        is_valid_entrie = is_valid_name == is_valid_type
-
-        return is_valid_entrie
+        return not exists if not_exist_name else exists
 
     def set_entries(self, entries: Dict[str, Dict[str, Any]]) -> None:
         """Set or replace all registry entries."""
         self._entries = entries
 
-    def get_entries(self) -> Dict[str, Dict[str, Any]]:
-        """Retrive all registry entries."""
-        return self._entries
+    def get_entries(self, action: Optional[str] = "all") -> Dict[str, Any]:
+        """
+        Retrieve registry entries.
 
-    def create_entrie(self, action: str, name: str, new_entrie: Any) -> bool:
+        - action="all" (default): return full structure {action: {name: entrie}}
+        - action=None: return merged entries {name: entrie}
+        - action="<action>": return entries of a single action
         """
-        Create a new entrie in registry.
-        Returns a boolean value indicating whether the entrie was created successfully or not.
+
+        if action == "all":
+            return self._entries
+
+        if action is None:
+            merged = {}
+            for entries in self._entries.values():
+                merged.update(entries)
+            return merged
+
+        if action in ACTION_TYPES:
+            return self._entries[action]
+
+        return {}
+
+    def create_entrie(self, action: Optional[str], name: str, new_entrie: Any) -> bool:
         """
+        Create a new entry.
+        If action is None → cannot determine target action → return False.
+        """
+        if action is None or not self._check_action_type(action):
+            return False
+
         created = self._validate_entrie(action, name, not_exist_name=True)
 
         if created:
@@ -65,43 +90,61 @@ class Registry:
 
     def get_entrie(
         self,
-        action: str,
         name: str,
+        action: Optional[str],
     ) -> Any | None:
         """
-        Retrieve a record from a registry by name.
-        If entrie is not in registry return None.
+        Retrieve an entry by name.
+        - If `action` is provided, search only within that action.
+        - If `action` is None, search across all actions.
         """
+        if action is not None and self._check_action_type(action):
+            return (
+                self._entries[action].get(name)
+                if self._validate_entrie(action, name)
+                else None
+            )
 
-        record = (
-            self._entries[action].get(name)
-            if self._validate_entrie(action, name)
-            else None
-        )
+        for _, entries in self._entries.items():
+            if name in entries:
+                return entries[name]
 
-        return record
+        return None
 
-    def update_entrie(self, action: str, name: str, new_name: str) -> bool:
+    def update_entrie(self, action: Optional[str], name: str, new_name: str) -> bool:
         """
-        Update an existing entrie in a registry.
-        Returns a boolean value indicating whether entrie was updated successfully or not
+        Update an entrie.
+        If action is None → search the entry in all actions.
         """
+        if action is None:
+            action = next(
+                (act for act, ents in self._entries.items() if name in ents), None
+            )
+            if action is None:
+                return False
 
         exist_entrie = self._validate_entrie(action, name)
         valid_new_name = self._validate_entrie(action, new_name, not_exist_name=True)
 
-        updated = exist_entrie == valid_new_name
+        updated = exist_entrie and valid_new_name
 
         if updated:
             setattr(self._entries[action][name], "name", new_name)
+            self._entries[action][new_name] = self._entries[action].pop(name)
 
         return updated
 
-    def delete_entrie(self, action: str, name: str) -> bool:
+    def delete_entrie(self, action: Optional[str], name: str) -> bool:
         """
-        Delete a entrie from a registry.
-        Returns a boolean value indicating whether entrie was deleted successfully or not.
+        Delete an entrie.
+        If action is None → search in all actions.
         """
+        if action is None:
+            action = next(
+                (act for act, ents in self._entries.items() if name in ents), None
+            )
+            if action is None:
+                return False
 
         deleted = self._validate_entrie(action, name)
 
@@ -110,9 +153,5 @@ class Registry:
 
         return deleted
 
-    def get_action_entries(self, action: str) -> Dict[str, Any]:
-        """Retrive entries for a given action."""
-        return self._entries[action] if action in ACTION_TYPES else {}
-
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}')"
+        return f"{self.__class__.__name__}('{self.name}')"
