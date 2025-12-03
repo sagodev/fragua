@@ -312,38 +312,14 @@ class Environment:
         def serialize_registry(registry: Registry):
             clean = {}
 
-            for action, entries in registry.get_entries().items():
-                clean[action] = {}
+            for action in ACTION_TYPES:
+                entries = registry.get_entries(action)
+                if not entries:
+                    continue
 
-                for name, obj in entries.items():
-
-                    # ----- PARAMS -----
-                    if registry.name == "params":
-                        instance = obj(action, name)
-
-                    # ----- STYLES -----
-                    elif registry.name == "styles":
-                        instance = obj(name)
-
-                    # ----- FUNCTIONS -----
-                    elif registry.name == "functions":
-                        params_cls = self.params.get_entrie(action, name)
-
-                        if params_cls is None:
-                            raise ValueError("")
-
-                        params_instance = params_cls(action, name)
-                        instance = obj(name, params_instance)
-
-                    # ----- AGENTS -----
-                    elif registry.name == "agents":
-                        instance = obj
-
-                    # ----- DEFAULT -----
-                    else:
-                        instance = obj()
-
-                    clean[action][name] = instance.summary()
+                clean[action] = {
+                    name: instance.summary() for name, instance in entries.items()
+                }
 
             return clean
 
