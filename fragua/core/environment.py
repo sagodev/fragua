@@ -100,8 +100,31 @@ class Environment:
         """Initialize the environment functions class."""
 
         functions = Registry("functions")
+        if self.fg_reg:
+            fg_functions = {}
 
-        logger.info("Default functions initialized for environment '%s'.", self.name)
+            class_groups = {
+                "extract": EXTRACT_FUNCTION_CLASSES,
+                "transform": TRANSFORM_FUNCTION_CLASSES,
+                "load": LOAD_FUNCTION_CLASSES,
+            }
+
+            for action, classes in class_groups.items():
+                fg_functions[action] = {}
+
+                for name, cls in classes.items():
+                    params_inst = self.params.get_entrie(name, action)
+                    instance = cls(name, params_inst)
+                    fg_functions[action][name] = instance
+
+            functions = Registry("functions", fg_functions)
+
+        msg = (
+            "Environment functions set with Fragua functions. '%s'."
+            if self.fg_reg
+            else "Default functions initialized for environment '%s'."
+        )
+        logger.info(msg, self.name)
         return functions
 
     def _initialize_styles(self) -> Registry:
@@ -155,35 +178,6 @@ class Environment:
         return warehouse
 
     # ---------------------- Fragua Custom Registries ---------------------- #
-
-    def add_fg_functions(self) -> None:
-        """Set the environment functions registry with instances of Fragua function classes."""
-        new_entries: Dict[str, Dict[str, Any]] = {}
-
-        class_groups = {
-            "extract": EXTRACT_FUNCTION_CLASSES,
-            "transform": TRANSFORM_FUNCTION_CLASSES,
-            "load": LOAD_FUNCTION_CLASSES,
-        }
-
-        for action, classes in class_groups.items():
-            new_entries[action] = {}
-
-            for name, cls in classes.items():
-
-                params_instance = self.params.get_entrie(name, action)
-
-                if params_instance is None:
-                    raise ValueError(
-                        f"Missing param '{name}' for function '{name}' in action '{action}'."
-                    )
-
-                instance = cls(name, params_instance)
-
-                new_entries[action][name] = instance
-
-        self.functions.set_entries(new_entries)
-        logger.info("Environment functions set with Fragua functions. '%s'.", self.name)
 
     def add_fg_registries(
         self,
