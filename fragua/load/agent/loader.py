@@ -67,7 +67,7 @@ class Loader(Agent[LoadParamsT]):
         style = style.lower()
 
         # ----------------- Style class -----------------
-        style_cls = self.environment.get_one_style(self.action, style)
+        style_cls = self.environment.styles.get_entrie(style, self.action)
 
         # ----------------- Create Storage -----------------
         container: Container = self.create_container(apply_to)
@@ -77,7 +77,11 @@ class Loader(Agent[LoadParamsT]):
 
             # -------- Build params --------
             if params is None:
-                params_cls = self.environment.get_one_params(self.action, style)
+                params_cls = self.environment.params.get_entrie(style, self.action)
+
+                if params_cls is None:
+                    raise ValueError("Params class not found.")
+
                 kwargs["data"] = container.get_storage(name).data
                 params_instance = params_cls(**kwargs)
             else:
@@ -89,6 +93,10 @@ class Loader(Agent[LoadParamsT]):
                     params_instance.sheet_name = name
 
             # ----------------- Instantiate the style -----------------
+
+            if style_cls is None:
+                raise ValueError("Style class not found.")
+
             style_instance = style_cls(style)
             style_instance.use(params_instance)
 
