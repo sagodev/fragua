@@ -106,9 +106,29 @@ class Environment:
 
     def _initialize_styles(self) -> Registry:
         """Initialize the environment styles class."""
+
         styles = Registry("styles")
 
-        logger.info("Default styles initialized for environment '%s'.", self.name)
+        if self.fg_reg:
+            fg_styles = {}
+
+            class_groups = {
+                "extract": EXTRACT_STYLE_CLASSES,
+                "transform": TRANSFORM_STYLE_CLASSES,
+                "load": LOAD_STYLE_CLASSES,
+            }
+
+            for action, classes in class_groups.items():
+                fg_styles[action] = {name: cls(name) for name, cls in classes.items()}
+
+            styles = Registry("styles", fg_styles)
+
+        msg = (
+            "Environment styles set with Fragua styles. '%s'."
+            if self.fg_reg
+            else "Default styles initialized for environment '%s'."
+        )
+        logger.info(msg, self.name)
         return styles
 
     def _initialize_agents(self) -> Registry:
@@ -135,22 +155,6 @@ class Environment:
         return warehouse
 
     # ---------------------- Fragua Custom Registries ---------------------- #
-
-    def add_fg_styles(self) -> None:
-        """Set the environment styles registry with instances of Fragua style classes."""
-        new_entries: Dict[str, Dict[str, Any]] = {}
-
-        class_groups = {
-            "extract": EXTRACT_STYLE_CLASSES,
-            "transform": TRANSFORM_STYLE_CLASSES,
-            "load": LOAD_STYLE_CLASSES,
-        }
-
-        for action, classes in class_groups.items():
-            new_entries[action] = {name: cls(name) for name, cls in classes.items()}
-
-        self.styles.set_entries(new_entries)
-        logger.info("Environment styles set with Fragua styles. '%s'.", self.name)
 
     def add_fg_functions(self) -> None:
         """Set the environment functions registry with instances of Fragua function classes."""
