@@ -214,7 +214,7 @@ class Environment:
         self,
         agent_name: str,
         action: Optional[str] = None,
-    ) -> Type[Agent]:
+    ) -> Type[Agent[Any]]:
         """Retrieve an agent by name. If action is None, search in ALL actions."""
 
         agent = self.agents.get_entrie(agent_name, action)
@@ -295,7 +295,7 @@ class Environment:
     def summary(self) -> Dict[str, Any]:
         """
         Return a JSON-serializable summary of the Environment instance,
-        including metadata, components, agents and registries.
+        including summaries from all entities(Manager, Agents, Params, Styles, Functions).
         """
 
         def serialize_registry(registry: Registry):
