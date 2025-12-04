@@ -33,7 +33,7 @@ class CSVExtractParams(ExtractParams):
 class ExcelExtractParams(ExtractParams):
     """Extraction parameters for Excel files."""
 
-    path: Union[str, Path] | None = None
+    path: Union[str, Path]
     sheet_name: Union[str, int]
 
     purpose = "Parameters required to extract data from an Excel file."
@@ -46,12 +46,12 @@ class ExcelExtractParams(ExtractParams):
 
     def __init__(
         self,
-        path: Union[str, Path] | None = None,
+        path: Union[str, Path],
         sheet_name: Union[str, int] = 0,
         read_kwargs: Dict[str, Any] | None = None,
     ) -> None:
         super().__init__(style="excel", read_kwargs=read_kwargs)
-        self.path: Union[str, Path] | None = Path(path) if path is not None else None
+        self.path = Path(path)
         self.sheet_name = sheet_name
 
 
