@@ -177,20 +177,6 @@ class Environment:
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
-    # ---------------------- Fragua Custom Registries ---------------------- #
-
-    def add_fg_registries(
-        self,
-    ) -> None:
-        """fill the environment registries."""
-        if self.fg_reg:
-            self.add_fg_params()
-            self.add_fg_functions()
-            self.add_fg_styles()
-            logger.info(
-                "Default registries initialized for environment '%s'.", self.name
-            )
-
     # ---------------------- Agent Management ---------------------- #
     def create_agent(
         self,

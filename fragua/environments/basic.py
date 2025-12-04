@@ -28,8 +28,6 @@ class BasicEnvironment(Environment):
         self.create_transformer(f"{name}_tfr")
         self.create_loader(f"{name}_ldr")
 
-        self.add_fg_registries()
-
         logger.info(
             "Basic environment '%s' created successfully with warehouse, manager, and 3 agents.",
             self.name,
