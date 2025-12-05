@@ -328,7 +328,7 @@ class Environment:
         If no name is given retrive the first extractor in the registry.
 
         """
-        action: str = "extract"
+        action: str = "transform"
         if agent_name is None:
             first_agent = next(iter(self.agents.get_entries(action).values()))
             agent = first_agent
@@ -346,7 +346,7 @@ class Environment:
         If no name is given retrive the first extractor in the registry.
 
         """
-        action: str = "extract"
+        action: str = "loader"
         if agent_name is None:
             first_agent = next(iter(self.agents.get_entries(action).values()))
             agent = first_agent
