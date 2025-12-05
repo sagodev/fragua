@@ -217,16 +217,15 @@ class Environment:
 
         return created
 
-    def get_agent(
+    def _get_agent(
         self,
         agent_name: str,
         action: Optional[str] = None,
-    ) -> Type[Agent[Any]]:
+    ) -> Type[Agent[Params]] | None:
         """Retrieve an agent by name. If action is None, search in ALL actions."""
 
         agent = self.agents.get_entrie(agent_name, action)
-        if agent is None:
-            raise ValueError("Agent class not found in registry.")
+
         return agent
 
     def delete_agent(
