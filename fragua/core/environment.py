@@ -34,6 +34,7 @@ from fragua.transform import (
     TRANSFORM_STYLE_CLASSES,
 )
 
+from fragua.transform.params.base import TransformParams
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -318,6 +319,25 @@ class Environment:
 
         return cast(Extractor, agent)
 
+    def get_transformer(
+        self, agent_name: str | None = None
+    ) -> Transformer[TransformParams]:
+        """
+        Retrive an extractor agent by a given name.
+        If no name is given retrive the first extractor in the registry.
+
+        """
+        action: str = "extract"
+        if agent_name is None:
+            first_agent = next(iter(self.agents.get_entries(action).values()))
+            agent = first_agent
+        else:
+            agent = self.agents.get_entrie(agent_name, action)
+
+            if agent is None:
+                raise self.agent_not_found(agent_name)
+
+        return cast(Transformer, agent)
     # ---------------------- Summary ---------------------- #
     @property
     def summary(self) -> Dict[str, Any]:
