@@ -27,6 +27,7 @@ from fragua.load import (
     LOAD_STYLE_CLASSES,
 )
 
+from fragua.load.params.base import LoadParams
 from fragua.transform import (
     Transformer,
     TRANSFORM_FUNCTION_CLASSES,
@@ -338,6 +339,25 @@ class Environment:
                 raise self.agent_not_found(agent_name)
 
         return cast(Transformer, agent)
+
+    def get_loader(self, agent_name: str | None = None) -> Loader[LoadParams]:
+        """
+        Retrive an extractor agent by a given name.
+        If no name is given retrive the first extractor in the registry.
+
+        """
+        action: str = "extract"
+        if agent_name is None:
+            first_agent = next(iter(self.agents.get_entries(action).values()))
+            agent = first_agent
+        else:
+            agent = self.agents.get_entrie(agent_name, action)
+
+            if agent is None:
+                raise self.agent_not_found(agent_name)
+
+        return cast(Loader, agent)
+
     # ---------------------- Summary ---------------------- #
     @property
     def summary(self) -> Dict[str, Any]:
