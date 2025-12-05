@@ -84,7 +84,9 @@ class Environment:
             }
 
             for action, classes in class_groups.items():
-                fg_params[action] = {name: cls() for name, cls in classes.items()}
+                fg_params[action] = {
+                    name: cls(action, name) for name, cls in classes.items()
+                }
 
             params = Registry("params", fg_params)
 
