@@ -284,17 +284,17 @@ class Environment:
         return updated
 
     # ---------------------- Create Helpers ---------------------- #
-    def create_extractor(self, name: str) -> bool:
+    def create_extractor(self, agent_name: str) -> bool:
         """Shortcut to create an Extractor agent."""
-        return self.create_agent(name, "extract")
+        return self.create_agent(agent_name, "extract")
 
-    def create_transformer(self, name: str) -> bool:
+    def create_transformer(self, agent_name: str) -> bool:
         """Shortcut to create a Transformer agent."""
-        return self.create_agent(name, "transform")
+        return self.create_agent(agent_name, "transform")
 
-    def create_loader(self, name: str) -> bool:
+    def create_loader(self, agent_name: str) -> bool:
         """Shortcut to create a Loader agent."""
-        return self.create_agent(name, "load")
+        return self.create_agent(agent_name, "load")
 
     # ---------------------- Summary ---------------------- #
     @property
