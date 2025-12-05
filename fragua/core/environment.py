@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, List, Type
+from typing import Any, Dict, Optional, List, Type, cast
 
+from fragua.core.params import Params
 from fragua.core.warehouse import Warehouse
 from fragua.core.agent import Agent
 from fragua.core.manager import WarehouseManager
@@ -18,6 +19,7 @@ from fragua.extract import (
 )
 
 
+from fragua.extract.params.base import ExtractParams
 from fragua.load import (
     Loader,
     LOAD_FUNCTION_CLASSES,
@@ -295,6 +297,26 @@ class Environment:
     def create_loader(self, agent_name: str) -> bool:
         """Shortcut to create a Loader agent."""
         return self.create_agent(agent_name, "load")
+
+    # ---------------------- Get Helpers ---------------------- #
+    def get_extractor(self, agent_name: str | None = None) -> Extractor[ExtractParams]:
+        """
+        Retrive an extractor agent by a given name.
+        If no name is given retrive the first extractor in the registry.
+
+        """
+        action: str = "extract"
+
+        if agent_name is None:
+            first_agent = next(iter(self.agents.get_entries(action).values()))
+            agent = first_agent
+        else:
+            agent = self.agents.get_entrie(agent_name, action)
+
+            if agent is None:
+                raise self.agent_not_found(agent_name)
+
+        return cast(Extractor, agent)
 
     # ---------------------- Summary ---------------------- #
     @property
