@@ -68,6 +68,11 @@ class Environment:
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
         )
 
+    # ---------------------- Error Handle ---------------------- #
+    def agent_not_found(self, agent_name: str) -> ValueError:
+        """Retrive a value error if for"""
+        return ValueError(f"Not agent named {agent_name} found in registry.")
+
     # ---------------------- Initializers ---------------------- #
     def _initialize_params(self) -> Registry:
         """Initialize the environment params class."""
