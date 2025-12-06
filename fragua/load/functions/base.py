@@ -15,7 +15,7 @@ class LoadFunction(FraguaFunction[LoadParamsT], Generic[LoadParamsT]):
     PURPOSE: str = "Load data into the target destination."
 
     def __init__(self, name: str, params: LoadParamsT) -> None:
-        super().__init__(name=name, action="load", params=params)
+        super().__init__(function_name=name, action="load", params=params)
 
     def summary(self) -> dict[str, Any]:
         return {

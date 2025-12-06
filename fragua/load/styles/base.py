@@ -38,7 +38,7 @@ class LoadStyle(Style[LoadParamsT, ResultT], Generic[LoadParamsT, ResultT]):
         raise NotImplementedError("Subclasses must implement load()")
 
     def _run(self, params: LoadParamsT) -> ResultT:
-        logger.debug("Starting LoadStyle '%s' Load.", self.style_name)
+        logger.debug("Starting LoadStyle '%s' Load.", self.name)
         result = self.load(params)
-        logger.debug("LoadStyle '%s' Load completed.", self.style_name)
+        logger.debug("LoadStyle '%s' Load completed.", self.name)
         return result

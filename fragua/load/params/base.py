@@ -34,7 +34,7 @@ class LoadParams(Params):
             fields[name] = desc
 
         return {
-            "name": self.__class__.__name__,
+            "name": self.name,
             "action": self.action,
             "style": self.style,
             "fields": fields,
