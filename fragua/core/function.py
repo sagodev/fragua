@@ -22,15 +22,9 @@ class FraguaFunction(FraguaComponent, Generic[ParamsT]):
         self.action: str = action
         self.params: ParamsT = params
 
-    def summary(self) -> Dict[str, str]:
-        """
-        High-level summary describing the function conceptually.
-        """
-        return {
-            "function": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.purpose,
-        }
+    @abstractmethod
+    def summary(self) -> Dict[str, Any]:
+        """Base function class summary."""
 
     @abstractmethod
     def execute(self) -> Any:

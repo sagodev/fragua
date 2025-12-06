@@ -39,7 +39,7 @@ class Agent(FraguaComponent, Generic[ParamsT]):
     # ----------------- Agent Summary ----------------- #
     def summary(self) -> Dict[str, object]:
         """
-        Return a JSON-serializable summary of the agent state.
+        Base agent summary.
         """
 
         env_name = getattr(self.environment, "name", None)

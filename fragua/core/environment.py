@@ -360,7 +360,7 @@ class Environment(FraguaComponent):
         return cast(Loader, agent)
 
     # ---------------------- Summary ---------------------- #
-    @property
+
     def summary(self) -> Dict[str, Any]:
         """
         Return a JSON-serializable summary of the Environment instance,

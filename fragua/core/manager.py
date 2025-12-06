@@ -39,7 +39,7 @@ class WarehouseManager(FraguaComponent):
 
     def summary(self) -> Dict[str, Any]:
         """
-        Return a JSON-serializable summary of the WarehouseManager state.
+        WarehouseManager summary.
 
         Includes:
             - manager name

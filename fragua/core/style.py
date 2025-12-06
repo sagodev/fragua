@@ -41,10 +41,7 @@ class Style(FraguaComponent, Generic[ParamsT, ResultT]):
             raise
 
     def summary(self) -> Dict[str, Any]:
-        """
-        Unified format for summarizing a Style.
-        Subclasses should override `summary_fields()` to add custom metadata.
-        """
+        """Base style class summary."""
 
         return {
             "type": "style",

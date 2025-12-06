@@ -29,7 +29,7 @@ class Params(FraguaComponent):
 
     @abstractmethod
     def summary(self) -> Dict[str, Any]:
-        """Return a structured summary of this Params object."""
+        """Base params class summary."""
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(role='{self.action}', style='{self.style}')"
