@@ -28,7 +28,7 @@ class TransformStyle(
         raise NotImplementedError
 
     def _run(self, params: TransformParamsT) -> ResultT:
-        logger.debug("Starting TransformStyle '%s' transformation.", self.style_name)
+        logger.debug("Starting TransformStyle '%s' transformation.", self.name)
         result = self.transform(params)
-        logger.debug("TransformStyle '%s' transformation completed.", self.style_name)
+        logger.debug("TransformStyle '%s' transformation completed.", self.name)
         return result
