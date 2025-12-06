@@ -18,6 +18,8 @@ from .environment import Environment
 
 from .registry import Registry
 
+from .section_registry import SectionRegistry
+
 from .entry_section import EntrySection
 
 from .agent import Agent
@@ -42,6 +44,8 @@ __all__ = [
     "Environment",
     # Registry Class
     "Registry",
+    # Section Registry Class
+    "SectionRegistry",
     # Entry Section Class
     "EntrySection",
     # Agent Class
