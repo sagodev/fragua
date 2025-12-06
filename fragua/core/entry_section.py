@@ -1,13 +1,13 @@
 """Entry section class."""
 
-from typing import Any, Dict
+from typing import Type
 from fragua.core.component import FraguaComponent
 
 
 class EntrySection:
     """Wrapper that represents a single entry inside a SectionRegistry."""
 
-    def __init__(self, name: str, component: FraguaComponent) -> None:
+    def __init__(self, name: str, component: Type[FraguaComponent]) -> None:
         """Initialize entry wrapper."""
         self._name = name
         self._component = component
@@ -15,14 +15,6 @@ class EntrySection:
     # ---------------------------------------------------------
     # Properties
     # ---------------------------------------------------------
-
-    @property
-    def summary(self) -> Dict[str, Any]:
-        """Retrieve component summary."""
-        return {
-            "name": self._name,
-            "component": self._component.summary(),
-        }
 
     @property
     def name(self) -> str:
@@ -35,11 +27,11 @@ class EntrySection:
         self._name = new_name
 
     @property
-    def component(self) -> FraguaComponent:
+    def component(self) -> Type[FraguaComponent]:
         """Retrieve component instance."""
         return self._component
 
     @component.setter
-    def component(self, new_component: FraguaComponent) -> None:
+    def component(self, new_component: Type[FraguaComponent]) -> None:
         """Replace component instance."""
         self._component = new_component
