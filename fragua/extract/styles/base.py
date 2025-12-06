@@ -1,5 +1,6 @@
 """Base Extract Style Class."""
 
+from abc import abstractmethod
 from typing import Generic
 from fragua.core.style import ResultT, Style
 from fragua.extract.params.generic_types import ExtractParamsT
@@ -17,6 +18,7 @@ class ExtractStyle(Style[ExtractParamsT, ResultT], Generic[ExtractParamsT, Resul
         validate_params -> _run -> validate_result -> postprocess
     """
 
+    @abstractmethod
     def extract(self, params: ExtractParamsT) -> ResultT:
         """
         Base extract method. Should be implemented by subclasses

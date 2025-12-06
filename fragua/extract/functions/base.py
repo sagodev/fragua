@@ -2,6 +2,7 @@
 Generic ExtractFunction class.
 """
 
+from abc import abstractmethod
 from typing import Any, Dict, Generic
 
 from fragua.core.function import FraguaFunction
@@ -16,9 +17,6 @@ class ExtractFunction(FraguaFunction[ExtractParamsT], Generic[ExtractParamsT]):
     def __init__(self, name: str, params: ExtractParamsT) -> None:
         super().__init__(function_name=name, action="extract", params=params)
 
+    @abstractmethod
     def summary(self) -> Dict[str, Any]:
-        return {
-            "function": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": "Generic extract function",
-        }
+        """Base extract function summary."""

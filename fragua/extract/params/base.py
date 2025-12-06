@@ -1,5 +1,6 @@
 """Extract Params Class."""
 
+from abc import abstractmethod
 from typing import Any, Dict
 
 from fragua.core.params import Params
@@ -22,7 +23,9 @@ class ExtractParams(Params):
         super().__init__(action="extract", style=style)
         self.read_kwargs = read_kwargs or {}
 
+    @abstractmethod
     def summary(self) -> Dict[str, Any]:
+        """Extract base params class summary."""
         fields = {}
 
         for name in self.__annotations__:
