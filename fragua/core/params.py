@@ -2,14 +2,15 @@
 Base abstract class for all parameter schemas used by styles in Fragua.
 """
 
-from abc import ABC, abstractmethod
-from typing import Any, TypeVar
+from abc import abstractmethod
+from typing import Any, Dict, TypeVar
+from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class Params(ABC):
+class Params(FraguaComponent):
     """
     Abstract base configuration class for all Fragua parameter types.
 
@@ -22,15 +23,16 @@ class Params(ABC):
     purpose: str | None = None
 
     def __init__(self, action: str, style: str) -> None:
+        super().__init__(component_name=self.__class__.__name__)
         self.action = action
         self.style = style
 
+    @abstractmethod
+    def summary(self) -> Dict[str, Any]:
+        """Return a structured summary of this Params object."""
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(role='{self.action}', style='{self.style}')"
-
-    @abstractmethod
-    def summary(self) -> dict[str, Any]:
-        """Return a structured summary of this Params object."""
 
 
 ParamsT = TypeVar("ParamsT", bound=Params)

@@ -4,10 +4,11 @@ The StoreManager handles all the logic.
 """
 
 from typing import Dict
+from fragua.core.component import FraguaComponent
 from fragua.core.storage import Storage, Box
 
 
-class Warehouse:
+class Warehouse(FraguaComponent):
     """
     Simple container for Boxes.
     Warehouse manager is responsible for all operations.
@@ -20,7 +21,7 @@ class Warehouse:
         Args:
             warehouse_name (str): Name of the warehouse.
         """
-        self.warehouse_name = warehouse_name
+        super().__init__(component_name=warehouse_name)
         self._warehouse: Dict[str, Storage[Box]] = {}
 
     @property
@@ -46,7 +47,7 @@ class Warehouse:
         }
 
         return {
-            "warehouse_name": self.warehouse_name,
+            "warehouse_name": self.name,
             "storage_count": len(self._warehouse),
             "storages": storages_info,
         }

@@ -4,13 +4,14 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 """
 
 from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional
 from datetime import datetime, timezone
 
 import pandas as pd
 
+from fragua.core.component import FraguaComponent
 from fragua.core.params import Params, ParamsT
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
@@ -23,11 +24,11 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Agent(ABC, Generic[ParamsT]):
+class Agent(FraguaComponent, Generic[ParamsT]):
     """Agent class for ETL agents using shared Environment registries with pipeline helpers."""
 
-    def __init__(self, name: str, environment: Environment) -> None:
-        self.name: str = name
+    def __init__(self, agent_name: str, environment: Environment) -> None:
+        super().__init__(component_name=agent_name)
         self.environment: Environment = environment
         self.role: str
         self.action: str

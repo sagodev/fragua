@@ -7,6 +7,7 @@ from typing import Any, TypeAlias, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 import copy as py_copy
 
+from fragua.core.component import FraguaComponent
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 from fragua.core.warehouse import Warehouse
 
@@ -23,16 +24,16 @@ StorageResult: TypeAlias = Union[
 ]
 
 
-class WarehouseManager:
+class WarehouseManager(FraguaComponent):
     """
     Encapsulates storage management logic for Box objects in a flat Warehouse structure.
     Provides add, get, delete, rename, copy, batch operations,
     metadata search, snapshot, and undo capabilities.
     """
 
-    def __init__(self, name: str, warehouse: Warehouse) -> None:
+    def __init__(self, manager_name: str, warehouse: Warehouse) -> None:
+        super().__init__(component_name=manager_name)
         self.warehouse = warehouse
-        self.name = name
         self._movement_log: List[dict[str, object]] = []
         self._undo_stack: List[dict[str, Any]] = []
 

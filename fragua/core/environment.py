@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, List, Type, cast
 
+from fragua.core.component import FraguaComponent
 from fragua.core.params import Params
 from fragua.core.warehouse import Warehouse
 from fragua.core.agent import Agent
@@ -41,7 +42,7 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Environment:
+class Environment(FraguaComponent):
     """Environment class for Fragua.
 
     Encapsulates all logic for warehouse, warehouse manager, agents, and registries.
@@ -59,7 +60,7 @@ class Environment:
             env_type: Type of the environment.
             fg_reg: If True, populate default Fragua registries (params, functions, styles).
         """
-        self.name = name
+        super().__init__(component_name=name)
         self.env_type = env_type
         self.fg_reg = fg_reg
         self.warehouse = self._initialize_warehouse()

@@ -2,8 +2,9 @@
 Base class for all styles used by ETL agents in Fragua.
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import TypeVar, Generic, Dict, Any
+from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
 from fragua.core.params import ParamsT
 
@@ -12,14 +13,14 @@ logger = get_logger(__name__)
 ResultT = TypeVar("ResultT")
 
 
-class Style(ABC, Generic[ParamsT, ResultT]):
+class Style(FraguaComponent, Generic[ParamsT, ResultT]):
     """
     Abstract base class for all styles in Fragua.
     Defines a standard interface for style operations.
     """
 
     def __init__(self, style_name: str):
-        self.style_name = style_name
+        super().__init__(component_name=style_name)
 
     @abstractmethod
     def _run(self, params: ParamsT) -> ResultT:
@@ -48,7 +49,7 @@ class Style(ABC, Generic[ParamsT, ResultT]):
         return {
             "type": "style",
             "class": self.__class__.__name__,
-            "style_name": self.style_name,
+            "style_name": self.name,
             "fields": self.summary_fields(),
         }
 
@@ -65,4 +66,4 @@ class Style(ABC, Generic[ParamsT, ResultT]):
 
     # ------------------------------------------------------------
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} style_name={self.style_name}>"
+        return f"<{self.__class__.__name__} style_name={self.name}>"

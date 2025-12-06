@@ -3,6 +3,7 @@ Base storage class for all storage objects in Fragua (Wagon, Box, Container).
 """
 
 from typing import Any, Dict, Generic, Optional, TypeVar
+from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -11,10 +12,11 @@ T = TypeVar("T")
 logger = get_logger(__name__)
 
 
-class Storage(Generic[T]):
+class Storage(FraguaComponent, Generic[T]):
     """Core storage unit containing data and unified metadata handling."""
 
     def __init__(self, data: Optional[T] = None) -> None:
+        super().__init__()
         self._data: Optional[T] = data
         self._metadata: dict[str, object] = {}
 
