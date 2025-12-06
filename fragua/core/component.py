@@ -1,6 +1,7 @@
 """Component abstract class."""
 
 from abc import ABC, abstractmethod
+from typing import Any, Dict
 
 
 class FraguaComponent(ABC):
@@ -11,5 +12,5 @@ class FraguaComponent(ABC):
         self.name = component_name
 
     @abstractmethod
-    def _ignore_this(self):
-        """Ignore this class."""
+    def summary(self) -> Dict[str, Any]:
+        """Return a structured summary of this component."""
