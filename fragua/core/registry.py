@@ -1,157 +1,70 @@
 """Base class for all registries of an environment in Fragua."""
 
-from typing import Any, Dict, List, Optional
+from abc import abstractmethod
+from typing import Any, Dict, Optional
+
+from fragua.core.component import FraguaComponent
+from fragua.core.section_registry import SectionRegistry
 
 
-ACTION_TYPES: List[str] = ["extract", "transform", "load"]
+class Registry(FraguaComponent):
+    """Base configuration class for all registry types inside an Environment."""
 
-
-class Registry:
-    """Configuration class for all registries types of an environment."""
-
-    def __init__(
-        self, name: str, entries: Optional[Dict[str, Dict[str, Any]]] = None
-    ) -> None:
+    def __init__(self, registry_name: str) -> None:
         """Initialize the registry."""
-        self.name: str = name
-        self._entries: Dict[str, Dict[str, Any]] = (
-            {atype: {} for atype in ACTION_TYPES} if entries is None else entries
-        )
+        super().__init__(component_name=registry_name)
+        self._sections: Dict[str, SectionRegistry] = {}
 
-    def _check_entrie_name(self, name: str) -> bool:
-        """Ensure no entrie in the registry already has the given name."""
-        return not any(name in entries for entries in self._entries.values())
+    # ---------------------------------------------------------
+    # Validation helpers
+    # ---------------------------------------------------------
 
-    def _check_action_type(self, action: str) -> bool:
-        """Check if the action type is valid."""
-        return action in ACTION_TYPES
+    def _exists(self, key: str) -> bool:
+        """Return True if the section exists."""
+        return key in self._sections
 
-    def _validate_entrie(
-        self,
-        action: Optional[str],
-        entrie_name: str,
-        not_exist_name: bool = False,
-    ) -> bool:
-        """
-        Validate entry existence.
-        If action is provided, validate only inside that action.
-        If action is None, validate across all actions.
-        """
-        if action is not None:
-            if not self._check_action_type(action):
-                return False
-            exists = entrie_name in self._entries[action]
-        else:
-            exists = any(entrie_name in entries for entries in self._entries.values())
+    def _not_exists(self, key: str) -> bool:
+        """Return True if the section does not exist."""
+        return key not in self._sections
 
-        return not exists if not_exist_name else exists
+    # ---------------------------------------------------------
+    # CRUD operations for sections
+    # ---------------------------------------------------------
 
-    def set_entries(self, entries: Dict[str, Dict[str, Any]]) -> None:
-        """Set or replace all registry entries."""
-        self._entries = entries
+    def create_section(self, name: str, section: SectionRegistry) -> bool:
+        """Create a new section."""
+        if self._not_exists(name):
+            self._sections[name] = section
+            return True
+        return False
 
-    def get_entries(self, action: Optional[str] = "all") -> Dict[str, Any]:
-        """
-        Retrieve registry entries.
+    def get_section(self, name: str) -> Optional[SectionRegistry]:
+        """Retrieve a section by name."""
+        return self._sections.get(name)
 
-        - action="all" (default): return full structure {action: {name: entrie}}
-        - action=None: return merged entries {name: entrie}
-        - action="<action>": return entries of a single action
-        """
+    def get_sections(self) -> Dict[str, SectionRegistry]:
+        """Retrieve all registered sections."""
+        return self._sections
 
-        if action == "all":
-            return self._entries
+    def update_section(self, old_name: str, new_name: str) -> bool:
+        """Rename a section."""
+        if self._exists(old_name) and self._not_exists(new_name):
+            self._sections[new_name] = self._sections.pop(old_name)
+            return True
+        return False
 
-        if action is None:
-            merged = {}
-            for entries in self._entries.values():
-                merged.update(entries)
-            return merged
+    def delete_section(self, name: str) -> bool:
+        """Delete a section."""
+        return self._sections.pop(name, None) is not None
 
-        if action in ACTION_TYPES:
-            return self._entries[action]
+    # ---------------------------------------------------------
+    # Summary
+    # ---------------------------------------------------------
+    @abstractmethod
+    def summary(self) -> Dict[str, Any]:
+        """Return a structured summary of this Registry."""
 
-        return {}
-
-    def create_entrie(self, action: Optional[str], name: str, new_entrie: Any) -> bool:
-        """
-        Create a new entry.
-        If action is None → cannot determine target action → return False.
-        """
-        if action is None or not self._check_action_type(action):
-            return False
-
-        created = self._validate_entrie(action, name, not_exist_name=True)
-
-        if created:
-            self._entries[action][name] = new_entrie
-
-        return created
-
-    def get_entrie(
-        self,
-        name: str,
-        action: Optional[str] = None,
-    ) -> Any | None:
-        """
-        Retrieve an entry by name.
-        - If `action` is provided, search only within that action.
-        - If `action` is None, search across all actions.
-        """
-        if action is not None and self._check_action_type(action):
-            return (
-                self._entries[action].get(name)
-                if self._validate_entrie(action, name)
-                else None
-            )
-
-        for _, entries in self._entries.items():
-            if name in entries:
-                return entries[name]
-
-        return None
-
-    def update_entrie(self, action: Optional[str], name: str, new_name: str) -> bool:
-        """
-        Update an entrie.
-        If action is None → search the entry in all actions.
-        """
-        if action is None:
-            action = next(
-                (act for act, ents in self._entries.items() if name in ents), None
-            )
-            if action is None:
-                return False
-
-        exist_entrie = self._validate_entrie(action, name)
-        valid_new_name = self._validate_entrie(action, new_name, not_exist_name=True)
-
-        updated = exist_entrie and valid_new_name
-
-        if updated:
-            setattr(self._entries[action][name], "name", new_name)
-            self._entries[action][new_name] = self._entries[action].pop(name)
-
-        return updated
-
-    def delete_entrie(self, action: Optional[str], name: str) -> bool:
-        """
-        Delete an entrie.
-        If action is None → search in all actions.
-        """
-        if action is None:
-            action = next(
-                (act for act, ents in self._entries.items() if name in ents), None
-            )
-            if action is None:
-                return False
-
-        deleted = self._validate_entrie(action, name)
-
-        if deleted:
-            self._entries[action].pop(name)
-
-        return deleted
+    # ---------------------------------------------------------
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.name}')"
