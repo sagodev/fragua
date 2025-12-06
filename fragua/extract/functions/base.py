@@ -14,7 +14,7 @@ class ExtractFunction(FraguaFunction[ExtractParamsT], Generic[ExtractParamsT]):
     """
 
     def __init__(self, name: str, params: ExtractParamsT) -> None:
-        super().__init__(name=name, action="extract", params=params)
+        super().__init__(function_name=name, action="extract", params=params)
 
     def summary(self) -> Dict[str, Any]:
         return {

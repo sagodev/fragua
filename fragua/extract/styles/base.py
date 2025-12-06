@@ -25,7 +25,7 @@ class ExtractStyle(Style[ExtractParamsT, ResultT], Generic[ExtractParamsT, Resul
         raise NotImplementedError
 
     def _run(self, params: ExtractParamsT) -> ResultT:
-        logger.debug("Starting ExtractStyle '%s' extraction.", self.style_name)
+        logger.debug("Starting ExtractStyle '%s' extraction.", self.name)
         result = self.extract(params)
-        logger.debug("ExtractStyle '%s' extraction completed.", self.style_name)
+        logger.debug("ExtractStyle '%s' extraction completed.", self.name)
         return result
