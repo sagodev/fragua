@@ -12,8 +12,6 @@ class LoadParams(Params):
     data: DataFrame
     destination: str | None
 
-    purpose: str | None = "Base load parameters shared by all data loading styles."
-
     FIELD_DESCRIPTIONS = {
         "data": "Pandas DataFrame containing the data to be loaded.",
         "destination": "Optional destination identifier (e.g., file path, database name, endpoint)",
