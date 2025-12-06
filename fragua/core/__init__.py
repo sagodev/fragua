@@ -18,6 +18,8 @@ from .environment import Environment
 
 from .registry import Registry
 
+from .entry_section import EntrySection
+
 from .agent import Agent
 
 from .params import Params
@@ -40,6 +42,8 @@ __all__ = [
     "Environment",
     # Registry Class
     "Registry",
+    # Entry Section Class
+    "EntrySection",
     # Agent Class
     "Agent",
     # Params Class
