@@ -1,5 +1,6 @@
 """Load Params Class."""
 
+from typing import Any, Dict
 from pandas import DataFrame
 
 from fragua.core.params import Params
@@ -24,3 +25,18 @@ class LoadParams(Params):
         super().__init__(action="load", style=style)
         self.data = data
         self.destination = destination
+
+    def summary(self) -> Dict[str, Any]:
+        fields = {}
+
+        for name in self.__annotations__:
+            desc = self.FIELD_DESCRIPTIONS.get(name, "No description available.")
+            fields[name] = desc
+
+        return {
+            "name": self.__class__.__name__,
+            "action": self.action,
+            "style": self.style,
+            "fields": fields,
+            "purpose": getattr(self, "purpose", None),
+        }
