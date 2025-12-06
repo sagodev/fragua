@@ -12,6 +12,8 @@ This module contains:
 - Storage class.
 """
 
+from .component import FraguaComponent
+
 from .environment import Environment
 
 from .registry import Registry
@@ -32,6 +34,8 @@ from .storage import Storage, Box, Container, STORAGE_CLASSES
 
 
 __all__ = [
+    # Fragua Component Class
+    "FraguaComponent",
     # Environment Class
     "Environment",
     # Registry Class
