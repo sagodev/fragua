@@ -33,6 +33,7 @@ class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
         return df
 
     def summary(self) -> dict[str, Any]:
+        """Excel load class summary."""
         return {
             "name": self.name,
             "params_type": type(self.params).__name__,
