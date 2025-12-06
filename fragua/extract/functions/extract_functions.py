@@ -30,6 +30,8 @@ class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
         super().__init__(name=name, params=params)
 
     def summary(self) -> Dict[str, Any]:
+        """CSV extract function class summary."""
+
         return {
             "function": self.name,
             "params_type": "CSVExtractParams",
@@ -55,6 +57,8 @@ class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
         super().__init__(name=name, params=params)
 
     def summary(self) -> Dict[str, Any]:
+        """Excel extract function class summary."""
+
         return {
             "function": self.name,
             "params_type": "ExcelExtractParams",
@@ -80,6 +84,8 @@ class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
         super().__init__(name=name, params=params)
 
     def summary(self) -> Dict[str, Any]:
+        """SQL extract function class summary."""
+
         return {
             "function": self.name,
             "params_type": "SQLExtractParams",
@@ -110,6 +116,8 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
         super().__init__(name=name, params=params)
 
     def summary(self) -> Dict[str, Any]:
+        """API extract function class summary."""
+
         return {
             "function": self.name,
             "params_type": "APIExtractParams",

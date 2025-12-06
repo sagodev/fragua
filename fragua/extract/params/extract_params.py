@@ -29,6 +29,10 @@ class CSVExtractParams(ExtractParams):
         super().__init__(style="csv", read_kwargs=read_kwargs)
         self.path = Path(path)
 
+    def summary(self) -> Dict[str, Any]:
+        """CSV extract params class summary."""
+        return self.summary()
+
 
 class ExcelExtractParams(ExtractParams):
     """Extraction parameters for Excel files."""
@@ -54,6 +58,10 @@ class ExcelExtractParams(ExtractParams):
         self.path = Path(path)
         self.sheet_name = sheet_name
 
+    def summary(self) -> Dict[str, Any]:
+        """Excel extract params class summary."""
+        return self.summary()
+
 
 class SQLExtractParams(ExtractParams):
     """Extraction parameters for SQL databases."""
@@ -72,6 +80,10 @@ class SQLExtractParams(ExtractParams):
         super().__init__(style="sql")
         self.connection_string = connection_string
         self.query = query
+
+    def summary(self) -> Dict[str, Any]:
+        """SQL extract params class summary."""
+        return self.summary()
 
 
 class APIExtractParams(ExtractParams):
@@ -119,6 +131,10 @@ class APIExtractParams(ExtractParams):
         self.auth = auth or {}
         self.proxy = proxy or {}
         self.timeout = timeout
+
+    def summary(self) -> Dict[str, Any]:
+        """API extract params class summary."""
+        return self.summary()
 
 
 EXTRACT_PARAMS_CLASSES: Dict[str, Type[ExtractParams]] = {
