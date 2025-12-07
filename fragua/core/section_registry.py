@@ -1,6 +1,6 @@
 """Section Registry class."""
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 from fragua.core.entry_section import EntrySection
@@ -14,10 +14,6 @@ class SectionRegistry(ABC):
         self.section_name = section_name
         self._entries: Dict[str, EntrySection] = {}
 
-    # ---------------------------------------------------------
-    # Validation helpers
-    # ---------------------------------------------------------
-
     def _exists(self, key: str) -> bool:
         """Return True if the entry exists."""
         return key in self._entries
@@ -25,10 +21,6 @@ class SectionRegistry(ABC):
     def _not_exists(self, key: str) -> bool:
         """Return True if the entry does not exist."""
         return key not in self._entries
-
-    # ---------------------------------------------------------
-    # CRUD operations
-    # ---------------------------------------------------------
 
     def create_entry(self, name: str, component: Any) -> bool:
         """Create an entry linked to a component."""
@@ -47,9 +39,7 @@ class SectionRegistry(ABC):
         return self._entries
 
     def update_entry(self, old_name: str, new_name: str) -> bool:
-        """
-        Rename an entry.
-        """
+        """Rename an entry."""
         if self._exists(old_name) and self._not_exists(new_name):
             entry = self._entries.pop(old_name)
             entry.name = new_name
@@ -60,3 +50,7 @@ class SectionRegistry(ABC):
     def delete_entry(self, name: str) -> bool:
         """Delete an entry."""
         return self._entries.pop(name, None) is not None
+
+    @abstractmethod
+    def summary(self) -> Dict[str, Any]:
+        """Section registry summary."""
