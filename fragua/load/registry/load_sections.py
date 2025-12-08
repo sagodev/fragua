@@ -24,7 +24,7 @@ class LoadParamsSection(SectionRegistry):
     def _initialize_params(self) -> None:
         """Load all predefined load parameter classes into the section."""
         for name, cls in LOAD_PARAMS_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -32,7 +32,7 @@ class LoadParamsSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
             obj = cls.__new__(cls)
             obj = cast(LoadParams, obj)
             df = pd.DataFrame({})
@@ -55,7 +55,7 @@ class LoadFunctionSection(SectionRegistry):
     def _initialize_functions(self) -> None:
         """Load all predefined load functions into the section."""
         for name, cls in LOAD_FUNCTION_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -63,7 +63,7 @@ class LoadFunctionSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
             df = pd.DataFrame({})
 
             params = LoadParams.__new__(LoadParams)
@@ -91,7 +91,7 @@ class LoadStyleSection(SectionRegistry):
     def _initialize_styles(self) -> None:
         """Load predefined load style classes into the section."""
         for name, cls in LOAD_STYLE_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -99,7 +99,7 @@ class LoadStyleSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
 
             obj = cls.__new__(cls)
             obj = cast(LoadStyle, obj)
@@ -120,7 +120,7 @@ class LoadAgentSection(SectionRegistry):
         """Load agents section summary."""
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
 
             obj = cls.__new__(cls)
             obj = cast(Loader, obj)
