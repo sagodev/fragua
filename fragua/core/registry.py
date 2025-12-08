@@ -1,6 +1,5 @@
 """Base class for all registries of an environment in Fragua."""
 
-from abc import abstractmethod
 from typing import Any, Dict, Optional
 
 from fragua.core.component import FraguaComponent
@@ -23,8 +22,7 @@ class Registry(FraguaComponent):
         """Return True if the section does not exist."""
         return key not in self._sections
 
-    @property
-    def sections(self) -> Dict[str, SectionRegistry]:
+    def get_sections(self) -> Dict[str, SectionRegistry]:
         """Retrieve all registered sections."""
         return self._sections
 
@@ -50,7 +48,6 @@ class Registry(FraguaComponent):
         """Delete a section."""
         return self._sections.pop(name, None) is not None
 
-    @abstractmethod
     def summary(self) -> Dict[str, Any]:
         """
         Collect a structured summary from all extract sections.
