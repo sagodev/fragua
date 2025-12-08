@@ -23,6 +23,11 @@ class Registry(FraguaComponent):
         """Return True if the section does not exist."""
         return key not in self._sections
 
+    @property
+    def sections(self) -> Dict[str, SectionRegistry]:
+        """Retrieve all registered sections."""
+        return self._sections
+
     def create_section(self, name: str, section: SectionRegistry) -> bool:
         """Create a new section."""
         if self._not_exists(name):
@@ -33,10 +38,6 @@ class Registry(FraguaComponent):
     def get_section(self, name: str) -> Optional[SectionRegistry]:
         """Retrieve a section by name."""
         return self._sections.get(name)
-
-    def get_sections(self) -> Dict[str, SectionRegistry]:
-        """Retrieve all registered sections."""
-        return self._sections
 
     def update_section(self, old_name: str, new_name: str) -> bool:
         """Rename a section."""
