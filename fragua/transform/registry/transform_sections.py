@@ -24,7 +24,7 @@ class TransformParamsSection(SectionRegistry):
     def _initialize_params(self) -> None:
         """Transform all predefined transform parameter classes into the section."""
         for name, cls in TRANSFORM_PARAMS_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -32,7 +32,7 @@ class TransformParamsSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
             obj = cls.__new__(cls)
             obj = cast(TransformParams, obj)
             df = pd.DataFrame({})
@@ -55,7 +55,7 @@ class TransformFunctionSection(SectionRegistry):
     def _initialize_functions(self) -> None:
         """Transform all predefined Transform functions into the section."""
         for name, cls in TRANSFORM_FUNCTION_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -63,7 +63,7 @@ class TransformFunctionSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
             df = pd.DataFrame({})
 
             params = TransformParams.__new__(TransformParams)
@@ -91,7 +91,7 @@ class TransformStyleSection(SectionRegistry):
     def _initialize_styles(self) -> None:
         """Transform predefined Transform style classes into the section."""
         for name, cls in TRANSFORM_STYLE_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -99,7 +99,7 @@ class TransformStyleSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
 
             obj = cls.__new__(cls)
             obj = cast(TransformStyle, obj)
@@ -120,7 +120,7 @@ class TransformAgentSection(SectionRegistry):
         """Transform agents section summary."""
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
 
             obj = cls.__new__(cls)
             obj = cast(Transformer, obj)
