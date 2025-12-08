@@ -28,7 +28,7 @@ class SectionRegistry(ABC):
         """Return True if the entry does not exist."""
         return key not in self._entries
 
-    def create_entry(self, name: str, component: Type[FraguaComponent]) -> bool:
+    def create_one(self, name: str, component: Type[FraguaComponent]) -> bool:
         """Create an entry linked to a component."""
 
         if self._not_exists(name):
@@ -36,15 +36,15 @@ class SectionRegistry(ABC):
             return True
         return False
 
-    def get_entry(self, name: str) -> Optional[Type[FraguaComponent]]:
+    def get_one(self, name: str) -> Optional[Type[FraguaComponent]]:
         """Retrieve a specific entry."""
         return self._entries.get(name)
 
-    def get_entries(self) -> Dict[str, Type[FraguaComponent]]:
+    def get_all(self) -> Dict[str, Type[FraguaComponent]]:
         """Retrieve all entries."""
         return self._entries
 
-    def update_entry(self, old_name: str, new_name: str) -> bool:
+    def update_one(self, old_name: str, new_name: str) -> bool:
         """Rename an entry."""
         if self._exists(old_name) and self._not_exists(new_name):
             entry = self._entries.pop(old_name)
@@ -52,7 +52,7 @@ class SectionRegistry(ABC):
             return True
         return False
 
-    def delete_entry(self, name: str) -> bool:
+    def delete_one(self, name: str) -> bool:
         """Delete an entry."""
         return self._entries.pop(name, None) is not None
 
