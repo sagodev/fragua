@@ -1,7 +1,7 @@
 """Extract Registry Class."""
 
 from fragua.core.registry import Registry
-from fragua.extract.registry.extract_section import (
+from fragua.extract.registry.extract_sections import (
     ExtractAgentSection,
     ExtractFunctionSection,
     ExtractParamsSection,

@@ -24,7 +24,7 @@ class ExtractParamsSection(SectionRegistry):
     def _initialize_params(self) -> None:
         """Load all predefined extract parameter classes into the section."""
         for name, cls in EXTRACT_PARAMS_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -32,7 +32,7 @@ class ExtractParamsSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
 
             obj = cls.__new__(cls)
             obj = cast(ExtractParams, obj)
@@ -55,7 +55,7 @@ class ExtractFunctionSection(SectionRegistry):
     def _initialize_functions(self) -> None:
         """Load all predefined extract functions into the section."""
         for name, cls in EXTRACT_FUNCTION_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -63,7 +63,7 @@ class ExtractFunctionSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
 
             params = ExtractParams.__new__(ExtractParams)
             ExtractParams.__init__(params, style=name)
@@ -90,7 +90,7 @@ class ExtractStyleSection(SectionRegistry):
     def _initialize_styles(self) -> None:
         """Load predefined extract style classes into the section."""
         for name, cls in EXTRACT_STYLE_CLASSES.items():
-            self.create_entry(name, cls)
+            self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -98,7 +98,7 @@ class ExtractStyleSection(SectionRegistry):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
 
             obj = cls.__new__(cls)
             obj = cast(ExtractStyle, obj)
@@ -119,7 +119,7 @@ class ExtractAgentSection(SectionRegistry):
         """Extract agents section summary."""
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_entries().items():
+        for name, cls in self.get_all().items():
 
             obj = cls.__new__(cls)
             obj = cast(Extractor, obj)
