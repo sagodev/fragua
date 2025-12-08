@@ -21,7 +21,7 @@ class Loader(Agent[LoadParamsT]):
     """Agent that applies extraction styles to data sources for loading."""
 
     def __init__(self, name: str, environment: Environment):
-        super().__init__(name=name, environment=environment)
+        super().__init__(agent_name=name, environment=environment)
         self.role: str = "loader"
         self.action: str = "load"
         self.storage_type: str = "Container"

@@ -19,7 +19,7 @@ class Transformer(Agent[TransformParamsT]):
     """Agent that applies transform styles to data for transformation."""
 
     def __init__(self, name: str, environment: Environment):
-        super().__init__(name=name, environment=environment)
+        super().__init__(agent_name=name, environment=environment)
         self.role = "transformer"
         self.action = "transform"
         self.storage_type = "Box"

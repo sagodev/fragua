@@ -18,7 +18,7 @@ class Extractor(Agent[ExtractParamsT]):
     """Agent that applies extraction styles to data sources for extraction."""
 
     def __init__(self, name: str, environment: Environment):
-        super().__init__(name=name, environment=environment)
+        super().__init__(agent_name=name, environment=environment)
         self.role = "extractor"
         self.action = "extract"
         self.storage_type = "Box"
