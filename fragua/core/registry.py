@@ -15,10 +15,6 @@ class Registry(FraguaComponent):
         super().__init__(component_name=registry_name)
         self._sections: Dict[str, SectionRegistry] = {}
 
-    # ---------------------------------------------------------
-    # Validation helpers
-    # ---------------------------------------------------------
-
     def _exists(self, key: str) -> bool:
         """Return True if the section exists."""
         return key in self._sections
@@ -26,10 +22,6 @@ class Registry(FraguaComponent):
     def _not_exists(self, key: str) -> bool:
         """Return True if the section does not exist."""
         return key not in self._sections
-
-    # ---------------------------------------------------------
-    # CRUD operations for sections
-    # ---------------------------------------------------------
 
     def create_section(self, name: str, section: SectionRegistry) -> bool:
         """Create a new section."""
@@ -57,12 +49,28 @@ class Registry(FraguaComponent):
         """Delete a section."""
         return self._sections.pop(name, None) is not None
 
-    # ---------------------------------------------------------
-    # Summary
-    # ---------------------------------------------------------
     @abstractmethod
     def summary(self) -> Dict[str, Any]:
-        """Return a structured summary of this Registry."""
+        """
+        Collect a structured summary from all extract sections.
+        Each section must implement its own summary().
+        """
+
+        sections_summary = {}
+
+        for section_name, section in self._sections.items():
+            if hasattr(section, "summary") and callable(section.summary):
+                sections_summary[section_name] = section.summary()
+            else:
+                sections_summary[section_name] = {
+                    "error": "This section does not implement summary()."
+                }
+
+        return {
+            "registry_name": self.name,
+            "type": "extract_registry",
+            "sections": sections_summary,
+        }
 
     # ---------------------------------------------------------
 
