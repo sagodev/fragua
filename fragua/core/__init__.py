@@ -20,7 +20,6 @@ from .registry import Registry
 
 from .section_registry import SectionRegistry
 
-from .entry_section import EntrySection
 
 from .agent import Agent
 
@@ -46,8 +45,6 @@ __all__ = [
     "Registry",
     # Section Registry Class
     "SectionRegistry",
-    # Entry Section Class
-    "EntrySection",
     # Agent Class
     "Agent",
     # Params Class
