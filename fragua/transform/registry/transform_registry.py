@@ -1,5 +1,6 @@
 """Transform Registry Class."""
 
+from typing import cast
 from fragua.core.registry import Registry
 from fragua.transform.registry.transform_sections import (
     TransformAgentSection,
@@ -31,6 +32,26 @@ class TransformRegistry(Registry):
 
         for name_section, cls_section in transform_fg_sections.items():
             self.create_section(name_section, cls_section)
+
+    @property
+    def params(self) -> TransformParamsSection:
+        """Retrive all transform params."""
+        return cast(TransformParamsSection, self.get_sections()["params"])
+
+    @property
+    def functions(self) -> TransformFunctionSection:
+        """Retrive all transform functions."""
+        return cast(TransformFunctionSection, self.get_sections()["functions"])
+
+    @property
+    def styles(self) -> TransformStyleSection:
+        """Retrive all transform styles."""
+        return cast(TransformStyleSection, self.get_sections()["styles"])
+
+    @property
+    def agents(self) -> TransformAgentSection:
+        """Retrive all transform agents."""
+        return cast(TransformAgentSection, self.get_sections()["agents"])
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.name}')"

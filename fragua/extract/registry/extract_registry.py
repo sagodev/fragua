@@ -1,5 +1,6 @@
 """Extract Registry Class."""
 
+from typing import cast
 from fragua.core.registry import Registry
 from fragua.extract.registry.extract_sections import (
     ExtractAgentSection,
@@ -31,6 +32,26 @@ class ExtractRegistry(Registry):
 
         for name_section, cls_section in extract_fg_sections.items():
             self.create_section(name_section, cls_section)
+
+    @property
+    def params(self) -> ExtractParamsSection:
+        """Retrive all extract params."""
+        return cast(ExtractParamsSection, self.get_sections()["params"])
+
+    @property
+    def functions(self) -> ExtractFunctionSection:
+        """Retrive all extract functions."""
+        return cast(ExtractFunctionSection, self.get_sections()["functions"])
+
+    @property
+    def styles(self) -> ExtractStyleSection:
+        """Retrive all extract styles."""
+        return cast(ExtractStyleSection, self.get_sections()["styles"])
+
+    @property
+    def agents(self) -> ExtractAgentSection:
+        """Retrive all extract agents."""
+        return cast(ExtractAgentSection, self.get_sections()["agents"])
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.name}')"
