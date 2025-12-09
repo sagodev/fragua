@@ -19,8 +19,8 @@ class Style(FraguaComponent, Generic[ParamsT, ResultT]):
     Defines a standard interface for style operations.
     """
 
-    def __init__(self, style_name: str):
-        super().__init__(component_name=style_name)
+    def __init__(self):
+        super().__init__(component_name=self.__class__.__name__)
 
     @abstractmethod
     def _run(self, params: ParamsT) -> ResultT:
@@ -45,8 +45,7 @@ class Style(FraguaComponent, Generic[ParamsT, ResultT]):
 
         return {
             "type": "style",
-            "class": self.__class__.__name__,
-            "style_name": self.name,
+            "name": self.__class__.__name__,
             "fields": self.summary_fields(),
         }
 
