@@ -13,15 +13,15 @@ from fragua.transform.functions.function_registry import (
     get_function_description,
     get_function_name,
 )
-from fragua.transform.params.base import TransformParams
-from fragua.transform.params.generic_types import (
-    AnalysisTransformParamsT,
-    MLTransformParamsT,
-    ReportTransformParamsT,
+
+from fragua.transform.params.transform_params import (
+    AnalysisTransformParams,
+    MLTransformParams,
+    ReportTransformParams,
 )
 
 
-class MLTransformFunction(TransformFunction[MLTransformParamsT]):
+class MLTransformFunction(TransformFunction):
     """
     TransformFunction for ML pipelines.
     """
@@ -39,8 +39,9 @@ class MLTransformFunction(TransformFunction[MLTransformParamsT]):
         "scale_numeric",
     ]
 
-    def __init__(self, name: str, params: MLTransformParamsT) -> None:
-        super().__init__(name=name, params=params)
+    def __init__(self, params: MLTransformParams) -> None:
+        super().__init__()
+        self.params = params
 
     def execute(self) -> pd.DataFrame:
         for step in self.STEPS:
@@ -67,7 +68,7 @@ class MLTransformFunction(TransformFunction[MLTransformParamsT]):
         }
 
 
-class ReportTransformFunction(TransformFunction[ReportTransformParamsT]):
+class ReportTransformFunction(TransformFunction):
     """
     TransformFunction for Report pipelines.
     """
@@ -84,8 +85,9 @@ class ReportTransformFunction(TransformFunction[ReportTransformParamsT]):
         "format_numeric",
     ]
 
-    def __init__(self, name: str, params: ReportTransformParamsT) -> None:
-        super().__init__(name=name, params=params)
+    def __init__(self, params: ReportTransformParams) -> None:
+        super().__init__()
+        self.params = params
 
     def execute(self) -> pd.DataFrame:
         for step in self.STEPS:
@@ -112,7 +114,7 @@ class ReportTransformFunction(TransformFunction[ReportTransformParamsT]):
         }
 
 
-class AnalysisTransformFunction(TransformFunction[AnalysisTransformParamsT]):
+class AnalysisTransformFunction(TransformFunction):
     """
     TransformFunction for Analysis pipelines.
     """
@@ -129,8 +131,9 @@ class AnalysisTransformFunction(TransformFunction[AnalysisTransformParamsT]):
         "sort_dataframe",
     ]
 
-    def __init__(self, name: str, params: AnalysisTransformParamsT) -> None:
-        super().__init__(name=name, params=params)
+    def __init__(self, params: AnalysisTransformParams) -> None:
+        super().__init__()
+        self.params = params
 
     def execute(self) -> pd.DataFrame:
         for step in self.STEPS:
@@ -157,7 +160,7 @@ class AnalysisTransformFunction(TransformFunction[AnalysisTransformParamsT]):
         }
 
 
-TRANSFORM_FUNCTION_CLASSES: Dict[str, type[TransformFunction[TransformParams]]] = {
+TRANSFORM_FUNCTION_CLASSES: Dict[str, type[TransformFunction]] = {
     "ml": MLTransformFunction,
     "report": ReportTransformFunction,
     "analysis": AnalysisTransformFunction,

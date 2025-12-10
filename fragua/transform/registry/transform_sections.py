@@ -1,7 +1,6 @@
 """Transform Sections Module."""
 
 from typing import Any, Dict, cast
-import pandas as pd
 from fragua.core.section_registry import SectionRegistry
 from fragua.transform import (
     TRANSFORM_FUNCTION_CLASSES,
@@ -35,8 +34,7 @@ class TransformParamsSection(SectionRegistry):
         for name, cls in self.get_all().items():
             obj = cls.__new__(cls)
             obj = cast(TransformParams, obj)
-            df = pd.DataFrame({})
-            TransformParams.__init__(obj, style=name, data=df)
+            TransformParams.__init__(obj, style=name)
 
             data = obj.summary()
 
@@ -64,10 +62,9 @@ class TransformFunctionSection(SectionRegistry):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, cls in self.get_all().items():
-            df = pd.DataFrame({})
 
             params = TransformParams.__new__(TransformParams)
-            TransformParams.__init__(params, style=name, data=df)
+            TransformParams.__init__(params, style=name)
 
             obj = cls.__new__(cls)
             obj = cast(TransformFunction, obj)
@@ -120,10 +117,9 @@ class TransformAgentSection(SectionRegistry):
         """Transform agents section summary."""
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_all().items():
+        for name, instance in self.get_all().items():
 
-            obj = cls.__new__(cls)
-            obj = cast(Transformer, obj)
+            obj = cast(Transformer, instance)
             data = obj.summary()
 
             result[name] = data

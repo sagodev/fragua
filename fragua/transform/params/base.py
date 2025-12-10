@@ -1,6 +1,7 @@
 """Transform Params Class."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
 from pandas import DataFrame
 
 from fragua.core.params import Params
@@ -9,17 +10,9 @@ from fragua.core.params import Params
 class TransformParams(Params):
     """Common parameters for transformation agents."""
 
-    data: DataFrame
-
-    purpose: str | None = "Base parameters for all data transformation operations."
-
-    FIELD_DESCRIPTIONS = {
-        "data": "Input DataFrame that will be transformed.",
-    }
-
-    def __init__(self, style: str, data: DataFrame) -> None:
+    def __init__(self, style: str, data: Optional[DataFrame] = None) -> None:
         super().__init__(action="transform", style=style)
-        self.data = data
+        self.data = data if data is not None else DataFrame()
 
     def summary(self) -> Dict[str, Any]:
         fields = {}

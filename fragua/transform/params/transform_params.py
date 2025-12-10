@@ -2,7 +2,7 @@
 Transform parameters classes for different types of data transformations.
 """
 
-from typing import Any, Dict, Type
+from typing import Any, Dict, List, Optional, Type
 from pandas import DataFrame
 from fragua.transform.params.base import TransformParams
 
@@ -11,11 +11,6 @@ from fragua.transform.params.base import TransformParams
 
 class MLTransformParams(TransformParams):
     """Parameters for machine learning transformations."""
-
-    target_column: str | None
-    categorical_cols: list[str]
-    numeric_cols: list[str]
-    outlier_threshold: float | None
 
     purpose = (
         "Transformation parameters used to prepare data for machine learning tasks."
@@ -31,25 +26,21 @@ class MLTransformParams(TransformParams):
 
     def __init__(
         self,
-        data: DataFrame,
-        target_column: str | None = None,
-        categorical_cols: list[str] | None = None,
-        numeric_cols: list[str] | None = None,
-        outlier_threshold: float | None = None,
+        data: Optional[DataFrame] = None,
+        target_column: Optional[str] = None,
+        categorical_cols: Optional[List[str]] = None,
+        numeric_cols: Optional[List[str]] = None,
+        outlier_threshold: Optional[float] = None,
     ) -> None:
         super().__init__(style="ml", data=data)
-        self.target_column = target_column
-        self.categorical_cols = categorical_cols or []
-        self.numeric_cols = numeric_cols or []
+        self.target_column = target_column if target_column else ""
+        self.categorical_cols = categorical_cols if categorical_cols else []
+        self.numeric_cols = numeric_cols if numeric_cols else []
         self.outlier_threshold = outlier_threshold
 
 
 class ReportTransformParams(TransformParams):
     """Parameters for report generation transformations."""
-
-    format_config: Dict[str, Any]
-    derived_columns: Dict[str, str]
-    rounding_precision: int | None
 
     purpose = "Parameters used to prepare, derive, and format data for reporting."
 
@@ -62,23 +53,19 @@ class ReportTransformParams(TransformParams):
 
     def __init__(
         self,
-        data: DataFrame,
-        format_config: Dict[str, Any] | None = None,
-        derived_columns: Dict[str, str] | None = None,
-        rounding_precision: int | None = None,
+        data: Optional[DataFrame] = None,
+        format_config: Optional[Dict[str, Any]] = None,
+        derived_columns: Optional[Dict[str, str]] = None,
+        rounding_precision: Optional[int] = None,
     ) -> None:
         super().__init__(style="report", data=data)
-        self.format_config = format_config or {}
-        self.derived_columns = derived_columns or {}
-        self.rounding_precision = rounding_precision
+        self.format_config = format_config if format_config else {}
+        self.derived_columns = derived_columns if derived_columns else {}
+        self.rounding_precision = rounding_precision if rounding_precision else 2
 
 
 class AnalysisTransformParams(TransformParams):
     """Parameters for data analysis transformations."""
-
-    groupby_cols: list[str]
-    agg_functions: Dict[str, str]
-    sort_by: list[str]
 
     purpose = "Parameters for performing analytical operations such as groupby and aggregation."
 
@@ -91,15 +78,15 @@ class AnalysisTransformParams(TransformParams):
 
     def __init__(
         self,
-        data: DataFrame,
-        groupby_cols: list[str] | None = None,
-        agg_functions: Dict[str, str] | None = None,
-        sort_by: list[str] | None = None,
+        data: Optional[DataFrame] = None,
+        groupby_cols: Optional[List[str]] = None,
+        agg_functions: Optional[Dict[str, str]] = None,
+        sort_by: Optional[List[str]] = None,
     ) -> None:
         super().__init__(style="analysis", data=data)
-        self.groupby_cols = groupby_cols or []
-        self.agg_functions = agg_functions or {}
-        self.sort_by = sort_by or []
+        self.groupby_cols = groupby_cols if groupby_cols else []
+        self.agg_functions = agg_functions if agg_functions else {}
+        self.sort_by = sort_by if sort_by else []
 
 
 TRANSFORM_PARAMS_CLASSES: Dict[str, Type[TransformParams]] = {

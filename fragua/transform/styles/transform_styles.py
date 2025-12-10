@@ -25,15 +25,15 @@ class MLTransformStyle(TransformStyle[MLTransformParamsT, pd.DataFrame]):
     """Transform style for machine learning preprocessing."""
 
     def transform(self, params: MLTransformParamsT) -> pd.DataFrame:
-        return MLTransformFunction("transform_ml", params).execute()
+        return MLTransformFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
         return {
-            "style_name": "ml",
+            "style_name": self.__class__.__name__,
             "purpose": "Apply machine learning preprocessing steps.",
             "action": "transform",
             "parameters_type": "MLTransformParams",
-            "pipeline": ["MLTransformFunction"],
+            "function": "MLTransformFunction",
         }
 
 
@@ -41,15 +41,15 @@ class ReportTransformStyle(TransformStyle[ReportTransformParamsT, pd.DataFrame])
     """Transform style for reporting transformations."""
 
     def transform(self, params: ReportTransformParamsT) -> pd.DataFrame:
-        return ReportTransformFunction("transform_report", params).execute()
+        return ReportTransformFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
         return {
-            "style_name": "report",
+            "style_name": self.__class__.__name__,
             "purpose": "Prepare data for reporting.",
             "action": "transform",
             "parameters_type": "ReportTransformParams",
-            "pipeline": ["ReportTransformFunction"],
+            "function": "ReportTransformFunction",
         }
 
 
@@ -57,15 +57,15 @@ class AnalysisTransformStyle(TransformStyle[AnalysisTransformParamsT, pd.DataFra
     """Transform style for data analysis transformations."""
 
     def transform(self, params: AnalysisTransformParamsT) -> pd.DataFrame:
-        return AnalysisTransformFunction("transform_analysis", params).execute()
+        return AnalysisTransformFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
         return {
-            "style_name": "analysis",
+            "style_name": self.__class__.__name__,
             "purpose": "Perform analytical transformations.",
             "action": "transform",
             "parameters_type": "AnalysisTransformParams",
-            "pipeline": ["AnalysisTransformFunction"],
+            "function": "AnalysisTransformFunction",
         }
 
 

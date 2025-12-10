@@ -2,16 +2,13 @@
 Generic TransformFunction class.
 """
 
-from typing import Generic
 from fragua.core.function import FraguaFunction
-from fragua.transform.params.generic_types import TransformParamsT
 
 
-class TransformFunction(FraguaFunction[TransformParamsT], Generic[TransformParamsT]):
+class TransformFunction(FraguaFunction):
     """
-    Represents a Transform function in the Fragua library.
-    Used to define transformations applied to extracted data.
+    Generic transform function class.
     """
 
-    def __init__(self, name: str, params: TransformParamsT) -> None:
-        super().__init__(function_name=name, action="transform", params=params)
+    def __init__(self) -> None:
+        super().__init__(function_name=self.__class__.__name__, action="transform")
