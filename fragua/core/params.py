@@ -20,7 +20,6 @@ class Params(FraguaComponent):
     """
 
     FIELD_DESCRIPTIONS: dict[str, str] = {}
-    purpose: str | None = None
 
     def __init__(self, action: str, style: str) -> None:
         super().__init__(component_name=self.__class__.__name__)
