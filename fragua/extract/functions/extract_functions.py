@@ -10,24 +10,23 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
-from fragua.extract.params import (
-    CSVExtractParamsT,
-    ExcelExtractParamsT,
-    SQLExtractParamsT,
-    APIExtractParamsT,
+from fragua.extract.functions import ExtractFunction
+from fragua.extract.params.extract_params import (
+    APIExtractParams,
+    CSVExtractParams,
+    ExcelExtractParams,
+    SQLExtractParams,
 )
 
-from fragua.extract.functions import ExtractFunction
-from fragua.extract.params.base import ExtractParams
 
-
-class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
+class CSVExtractFunction(ExtractFunction):
     """
     ExtractFunction for CSV files.
     """
 
-    def __init__(self, name: str, params: CSVExtractParamsT) -> None:
-        super().__init__(name=name, params=params)
+    def __init__(self, params: CSVExtractParams) -> None:
+        super().__init__()
+        self.params = params
 
     def summary(self) -> Dict[str, Any]:
         """CSV extract function class summary."""
@@ -39,22 +38,22 @@ class CSVExtractFunction(ExtractFunction[CSVExtractParamsT]):
         }
 
     def execute(self) -> pd.DataFrame:
-        path: Path = self.params.path
+        path = self.params.path
         if not path:
             raise ValueError("'path' is required in params")
 
-        read_kwargs = getattr(self.params, "read_kwargs", {}) or {}
         path_str = str(path) if isinstance(path, Path) else path
-        return pd.read_csv(path_str, **read_kwargs)
+        return pd.read_csv(path_str)
 
 
-class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
+class ExcelExtractFunction(ExtractFunction):
     """
     ExtractFunction for Excel files.
     """
 
-    def __init__(self, name: str, params: ExcelExtractParamsT) -> None:
-        super().__init__(name=name, params=params)
+    def __init__(self, params: ExcelExtractParams) -> None:
+        super().__init__()
+        self.params = params
 
     def summary(self) -> Dict[str, Any]:
         """Excel extract function class summary."""
@@ -70,18 +69,18 @@ class ExcelExtractFunction(ExtractFunction[ExcelExtractParamsT]):
         if not path:
             raise ValueError("'path' is required in params")
 
-        read_kwargs = self.params.read_kwargs or {}
         path_str = str(path) if isinstance(path, Path) else path
-        return pd.read_excel(path_str, sheet_name=self.params.sheet_name, **read_kwargs)
+        return pd.read_excel(path_str, sheet_name=self.params.sheet_name)
 
 
-class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
+class SQLExtractFunction(ExtractFunction):
     """
     ExtractFunction for SQL databases.
     """
 
-    def __init__(self, name: str, params: SQLExtractParamsT) -> None:
-        super().__init__(name=name, params=params)
+    def __init__(self, params: SQLExtractParams) -> None:
+        super().__init__()
+        self.params = params
 
     def summary(self) -> Dict[str, Any]:
         """SQL extract function class summary."""
@@ -98,22 +97,22 @@ class SQLExtractFunction(ExtractFunction[SQLExtractParamsT]):
         if not connection_string or not query:
             raise ValueError("'connection_string' and 'query' are required in params")
 
-        read_kwargs = self.params.read_kwargs or {}
         engine = create_engine(connection_string)
         try:
             with engine.connect() as conn:
-                return pd.read_sql_query(query, conn, **read_kwargs)
+                return pd.read_sql_query(query, conn)
         finally:
             engine.dispose()
 
 
-class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
+class APIExtractFunction(ExtractFunction):
     """
     ExtractFunction for REST APIs.
     """
 
-    def __init__(self, name: str, params: APIExtractParamsT) -> None:
-        super().__init__(name=name, params=params)
+    def __init__(self, params: APIExtractParams) -> None:
+        super().__init__()
+        self.params = params
 
     def summary(self) -> Dict[str, Any]:
         """API extract function class summary."""
@@ -142,17 +141,16 @@ class APIExtractFunction(ExtractFunction[APIExtractParamsT]):
         response.raise_for_status()
 
         result_data = response.json()
-        read_kwargs = self.params.read_kwargs or {}
 
         if isinstance(result_data, list):
-            return pd.DataFrame(result_data, **read_kwargs)
+            return pd.DataFrame(result_data)
         if isinstance(result_data, dict):
-            return pd.json_normalize(result_data, **read_kwargs)
+            return pd.json_normalize(result_data)
 
         raise ValueError(f"Unexpected API response type: {type(result_data)}")
 
 
-EXTRACT_FUNCTION_CLASSES: Dict[str, Type[ExtractFunction[ExtractParams]]] = {
+EXTRACT_FUNCTION_CLASSES: Dict[str, Type[ExtractFunction]] = {
     "csv": CSVExtractFunction,
     "excel": ExcelExtractFunction,
     "sql": SQLExtractFunction,

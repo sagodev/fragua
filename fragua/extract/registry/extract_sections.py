@@ -65,13 +65,9 @@ class ExtractFunctionSection(SectionRegistry):
 
         for name, cls in self.get_all().items():
 
-            params = ExtractParams.__new__(ExtractParams)
-            ExtractParams.__init__(params, style=name)
-
             obj = cls.__new__(cls)
             obj = cast(ExtractFunction, obj)
             obj.name = name
-            obj.params = params
 
             data = obj.summary()
 
@@ -119,10 +115,9 @@ class ExtractAgentSection(SectionRegistry):
         """Extract agents section summary."""
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_all().items():
+        for name, instance in self.get_all().items():
 
-            obj = cls.__new__(cls)
-            obj = cast(Extractor, obj)
+            obj = cast(Extractor, instance)
             data = obj.summary()
 
             result[name] = data

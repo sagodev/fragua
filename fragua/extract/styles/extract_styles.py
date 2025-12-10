@@ -11,71 +11,69 @@ from fragua.extract.functions.extract_functions import (
     ExcelExtractFunction,
     SQLExtractFunction,
 )
-from fragua.extract.params import (
-    CSVExtractParamsT,
-    ExcelExtractParamsT,
-    SQLExtractParamsT,
-    APIExtractParamsT,
-)
 
-from fragua.extract.params.base import ExtractParams
+
+from fragua.extract.params.extract_params import (
+    APIExtractParams,
+    CSVExtractParams,
+    ExcelExtractParams,
+    SQLExtractParams,
+)
 from fragua.extract.styles.base import ExtractStyle
 
 
-class CSVExtractStyle(ExtractStyle[CSVExtractParamsT, pd.DataFrame]):
+class CSVExtractStyle(ExtractStyle):
     """Extracts data from CSV files."""
 
-    def extract(self, params: CSVExtractParamsT) -> pd.DataFrame:
-        return CSVExtractFunction("extract_csv", params).execute()
+    def extract(self, params: CSVExtractParams) -> pd.DataFrame:
+        return CSVExtractFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
         return {
-            "style_name": "csv",
+            "style_name": self.__class__.__name__,
             "purpose": "Extract tabular data from CSV files.",
             "action": "extract",
             "parameters_type": "CSVExtractParams",
-            "pipeline": ["CSVExtractFunction"],
+            "function": "CSVExtractFunction",
             "fields": {
                 "path": "Path to the CSV file.",
-                "read_kwargs": "Additional read_csv() keyword arguments.",
             },
         }
 
 
-class ExcelExtractStyle(ExtractStyle[ExcelExtractParamsT, pd.DataFrame]):
+class ExcelExtractStyle(ExtractStyle):
     """Extracts data from Excel files."""
 
-    def extract(self, params: ExcelExtractParamsT) -> pd.DataFrame:
-        return ExcelExtractFunction("extract_excel", params).execute()
+    def extract(self, params: ExcelExtractParams) -> pd.DataFrame:
+        return ExcelExtractFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
         return {
-            "style_name": "excel",
+            "style_name": self.__class__.__name__,
             "purpose": "Extract structured data from Excel spreadsheets.",
             "action": "extract",
             "parameters_type": "ExcelExtractParams",
-            "pipeline": ["ExcelExtractFunction"],
+            "function": "ExcelExtractFunction",
             "fields": {
                 "path": "Path to the Excel file.",
                 "sheet_name": "Worksheet to load.",
-                "read_kwargs": "Additional pandas read_excel() options.",
             },
         }
 
 
-class SQLExtractStyle(ExtractStyle[SQLExtractParamsT, pd.DataFrame]):
+class SQLExtractStyle(ExtractStyle):
     """Extracts data from SQL databases."""
 
-    def extract(self, params: SQLExtractParamsT) -> pd.DataFrame:
-        return SQLExtractFunction("extract_sql", params).execute()
+    def extract(self, params: SQLExtractParams) -> pd.DataFrame:
+        return SQLExtractFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
         return {
-            "style_name": "sql",
+            "style_name": self.__class__.__name__,
             "purpose": "Extract records from SQL databases using queries.",
             "action": "extract",
             "parameters_type": "SQLExtractParams",
-            "pipeline": ["SQLExtractFunction"],
+            "function": "SQLExtractFunction",
             "fields": {
                 "connection_string": "Database connection string.",
                 "query": "SQL query to execute.",
@@ -83,19 +81,19 @@ class SQLExtractStyle(ExtractStyle[SQLExtractParamsT, pd.DataFrame]):
         }
 
 
-class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
+class APIExtractStyle(ExtractStyle):
     """Extracts data from REST APIs."""
 
-    def extract(self, params: APIExtractParamsT) -> pd.DataFrame:
-        return APIExtractFunction("extract_api", params).execute()
+    def extract(self, params: APIExtractParams) -> pd.DataFrame:
+        return APIExtractFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
         return {
-            "style_name": "api",
+            "style_name": self.__class__.__name__,
             "purpose": "Extract data from REST APIs over HTTP.",
             "action": "extract",
             "parameters_type": "APIExtractParams",
-            "pipeline": ["APIExtractFunction"],
+            "function": "APIExtractFunction",
             "fields": {
                 "url": "Request endpoint.",
                 "method": "HTTP method (GET, POST, etc.).",
@@ -107,7 +105,7 @@ class APIExtractStyle(ExtractStyle[APIExtractParamsT, pd.DataFrame]):
         }
 
 
-EXTRACT_STYLE_CLASSES: Dict[str, Type[ExtractStyle[ExtractParams, Any]]] = {
+EXTRACT_STYLE_CLASSES: Dict[str, Type[ExtractStyle]] = {
     "csv": CSVExtractStyle,
     "excel": ExcelExtractStyle,
     "sql": SQLExtractStyle,
