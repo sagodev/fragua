@@ -187,27 +187,23 @@ class Agent(FraguaComponent, Generic[ParamsT]):
     def _execute_workflow(
         self,
         style: str,
-        save_as: str | None = None,
-        params: Params | None = None,
+        save_as: Optional[str] = None,
+        params: Optional[Params] = None,
         **kwargs: Any,
     ) -> None:
         """Common workflow pipeline for agents."""
 
         style = style.lower()
 
-        searched_params = self.environment.params.get_entrie(style, self.action)
-
-        if searched_params is None:
-            raise ValueError("Params class not found.")
+        action_params = self.environment.build_config(self.action, "params")
+        searched_params = action_params.get_one(style)
 
         params_instance = searched_params(**kwargs) if params is None else params
 
-        style_cls = self.environment.styles.get_entrie(style, self.action)
+        action_style = self.environment.build_config(self.action, "styles")
+        style_cls = action_style.get_one(style)
 
-        if style_cls is None:
-            raise ValueError("Style class not found.")
-
-        stylized_data = style_cls(style).use(params_instance)
+        stylized_data = style_cls().use(params_instance)
 
         storage = self.create_storage(stylized_data)
 
