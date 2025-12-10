@@ -2,41 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, List, Type, cast
+from typing import Any, Dict, List, Type, cast
 
-from fragua.core.component import FraguaComponent
-from fragua.core.params import Params
-from fragua.core.warehouse import Warehouse
 from fragua.core.agent import Agent
+from fragua.core.component import FraguaComponent
+from fragua.core.section_registry import SectionRegistry
+from fragua.core.warehouse import Warehouse
 from fragua.core.manager import WarehouseManager
-from fragua.core.registry import Registry, ACTION_TYPES
 
 
-from fragua.extract import (
-    Extractor,
-    EXTRACT_FUNCTION_CLASSES,
-    EXTRACT_PARAMS_CLASSES,
-    EXTRACT_STYLE_CLASSES,
-)
-
-
+from fragua.extract import Extractor, ExtractRegistry
 from fragua.extract.params.base import ExtractParams
-from fragua.load import (
-    Loader,
-    LOAD_FUNCTION_CLASSES,
-    LOAD_PARAMS_CLASSES,
-    LOAD_STYLE_CLASSES,
-)
 
+
+from fragua.load import Loader, LoadRegistry
 from fragua.load.params.base import LoadParams
-from fragua.transform import (
-    Transformer,
-    TRANSFORM_FUNCTION_CLASSES,
-    TRANSFORM_PARAMS_CLASSES,
-    TRANSFORM_STYLE_CLASSES,
-)
 
+from fragua.transform import Transformer, TransformRegistry
 from fragua.transform.params.base import TransformParams
+
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -50,8 +34,13 @@ class Environment(FraguaComponent):
     """
 
     REGISTRY_TYPES: List[str] = ["params", "functions", "styles", "agents"]
+    AGENT_TYPES: Dict[str, Type[Agent[Any]]] = {
+        "extract": Extractor,
+        "transform": Transformer,
+        "load": Loader,
+    }
 
-    def __init__(self, name: str, env_type: str = "base", fg_reg: bool = False):
+    def __init__(self, env_name: str, env_type: str = "base", fg_reg: bool = False):
         """
         Initialize the environment.
 
@@ -60,18 +49,55 @@ class Environment(FraguaComponent):
             env_type: Type of the environment.
             fg_reg: If True, populate default Fragua registries (params, functions, styles).
         """
-        super().__init__(component_name=name)
+        super().__init__(component_name=env_name)
         self.env_type = env_type
         self.fg_reg = fg_reg
         self.warehouse = self._initialize_warehouse()
         self.manager = self._initialize_manager()
-        self.agents = self._initialize_agents()
-        self.params = self._initialize_params()
-        self.functions = self._initialize_functions()
-        self.styles = self._initialize_styles()
+        self.extract = self._initialize_extract_registry()
+        self.transform = self._initialize_transform_registry()
+        self.load = self._initialize_load_registry()
+
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
         )
+
+    def build_config(
+        self, action: str | None = None, registry: str | None = None
+    ) -> Any:
+        """Retrive config for components management."""
+
+        config: Dict[str, Dict[str, SectionRegistry]] = {
+            "extract": {
+                "agents": self.extract.agents,
+                "params": self.extract.params,
+                "styles": self.extract.styles,
+                "functions": self.extract.functions,
+            },
+            "transform": {
+                "agents": self.transform.agents,
+                "params": self.transform.params,
+                "styles": self.transform.styles,
+                "functions": self.transform.functions,
+            },
+            "load": {
+                "agents": self.load.agents,
+                "params": self.load.params,
+                "styles": self.load.styles,
+                "functions": self.load.functions,
+            },
+        }
+
+        if action and registry:
+            return config[action][registry]
+
+        if action and not registry:
+            return config[action]
+
+        if not action and registry:
+            return {act: registry for act, registry in config.items()}
+
+        return config
 
     # ---------------------- Error Handle ---------------------- #
     def agent_not_found(self, agent_name: str) -> ValueError:
@@ -79,100 +105,6 @@ class Environment(FraguaComponent):
         return ValueError(f"Not agent named {agent_name} found in registry.")
 
     # ---------------------- Initializers ---------------------- #
-    def _initialize_params(self) -> Registry:
-        """Initialize the environment params class."""
-
-        params = Registry("params")
-
-        if self.fg_reg:
-            fg_params = {}
-
-            class_groups = {
-                "extract": EXTRACT_PARAMS_CLASSES,
-                "transform": TRANSFORM_PARAMS_CLASSES,
-                "load": LOAD_PARAMS_CLASSES,
-            }
-
-            for action, classes in class_groups.items():
-                fg_params[action] = {
-                    name: cls(action, name) for name, cls in classes.items()
-                }
-
-            params = Registry("params", fg_params)
-
-        msg = (
-            "Environment params set with Fragua params. '%s'."
-            if self.fg_reg
-            else "Default params initialized for environment '%s'."
-        )
-        logger.info(msg, self.name)
-        return params
-
-    def _initialize_functions(self) -> Registry:
-        """Initialize the environment functions class."""
-
-        functions = Registry("functions")
-        if self.fg_reg:
-            fg_functions = {}
-
-            class_groups = {
-                "extract": EXTRACT_FUNCTION_CLASSES,
-                "transform": TRANSFORM_FUNCTION_CLASSES,
-                "load": LOAD_FUNCTION_CLASSES,
-            }
-
-            for action, classes in class_groups.items():
-                fg_functions[action] = {}
-
-                for name, cls in classes.items():
-                    params_inst = self.params.get_entrie(name, action)
-                    instance = cls(name, params_inst)
-                    fg_functions[action][name] = instance
-
-            functions = Registry("functions", fg_functions)
-
-        msg = (
-            "Environment functions set with Fragua functions. '%s'."
-            if self.fg_reg
-            else "Default functions initialized for environment '%s'."
-        )
-        logger.info(msg, self.name)
-        return functions
-
-    def _initialize_styles(self) -> Registry:
-        """Initialize the environment styles class."""
-
-        styles = Registry("styles")
-
-        if self.fg_reg:
-            fg_styles = {}
-
-            class_groups = {
-                "extract": EXTRACT_STYLE_CLASSES,
-                "transform": TRANSFORM_STYLE_CLASSES,
-                "load": LOAD_STYLE_CLASSES,
-            }
-
-            for action, classes in class_groups.items():
-                fg_styles[action] = {name: cls(name) for name, cls in classes.items()}
-
-            styles = Registry("styles", fg_styles)
-
-        msg = (
-            "Environment styles set with Fragua styles. '%s'."
-            if self.fg_reg
-            else "Default styles initialized for environment '%s'."
-        )
-        logger.info(msg, self.name)
-        return styles
-
-    def _initialize_agents(self) -> Registry:
-        """Initialize the environment agents."""
-        agents = Registry("agents")
-
-        logger.info("Default agents initialized for environment '%s'.", self.name)
-        return agents
-
     def _initialize_manager(self) -> WarehouseManager:
         """Initialize warehouse manager for environment."""
         manager = WarehouseManager(f"{self.name}_manager", self.warehouse)
@@ -189,135 +121,77 @@ class Environment(FraguaComponent):
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
-    # ---------------------- Agent Management ---------------------- #
-    def create_agent(
-        self,
-        agent_name: str,
-        action: str,
-    ) -> bool:
-        """
-        Create and register an agent in the agent registry.
-        Action IS required because we need to know which subclass to instantiate.
-        """
+    def _initialize_extract_registry(self) -> ExtractRegistry:
+        """"""
+        reg_name = "extract"
+        extract_registry = ExtractRegistry(reg_name)
 
-        agent_classes: Dict[str, Type[Agent]] = {
-            "extract": Extractor,
-            "transform": Transformer,
-            "load": Loader,
-        }
+        return extract_registry
 
-        action = action.lower()
+    def _initialize_transform_registry(self) -> TransformRegistry:
+        """"""
+        reg_name = "transform"
+        transform_registry = TransformRegistry(reg_name)
 
-        if action not in ACTION_TYPES:
-            logger.error("Invalid agent action type: %s", action)
-            return False
+        return transform_registry
 
-        new_agent = agent_classes[action](agent_name, environment=self)
-        created = self.agents.create_entrie(action, agent_name, new_agent)
+    def _initialize_load_registry(self) -> LoadRegistry:
+        """"""
+        reg_name = "load"
+        load_registry = LoadRegistry(reg_name)
+
+        return load_registry
+
+    # ---------------------- Create Helpers ---------------------- #
+    def _create_agent(self, action: str, agent_name: str) -> bool:
+        """Retrive an agent by an given name."""
+        registry = "agents"
+        config = self.build_config(registry=registry)
+
+        new_agent = self.AGENT_TYPES[action](agent_name, self)
+        created = config[action][registry].create_one(agent_name, new_agent)
 
         if created:
             logger.info(
                 "Agent created: %s (%s)", agent_name, new_agent.__class__.__name__
             )
-
         return created
 
-    def _get_agent(
-        self,
-        agent_name: str,
-        action: Optional[str] = None,
-    ) -> Type[Agent[Params]] | None:
-        """Retrieve an agent by name. If action is None, search in ALL actions."""
-
-        agent = self.agents.get_entrie(agent_name, action)
-
-        return agent
-
-    def delete_agent(
-        self,
-        agent_name: str,
-        action: Optional[str] = None,
-    ) -> bool:
-        """
-        Remove an agent from registry.
-        If action is None, attempts to locate agent automatically.
-        """
-
-        if action is None:
-            entry = self.agents.get_entrie(agent_name, None)
-            if entry is None:
-                return False
-
-            for act, entries in self.agents.get_entries("all").items():
-                if agent_name in entries:
-                    action = act
-                    break
-
-        deleted = self.agents.delete_entrie(action, agent_name)
-
-        if deleted:
-            logger.info("Agent deleted: %s (%s)", agent_name, action)
-
-        return deleted
-
-    def update_agent(
-        self,
-        agent_name: str,
-        new_name: str,
-        action: Optional[str] = None,
-    ) -> bool:
-        """
-        Update an existing agent.
-        If action is None, auto-detect which action the agent belongs to.
-        """
-
-        if action is None:
-            entry = self.agents.get_entrie(agent_name, None)
-            if entry is None:
-                return False
-
-            for act, entries in self.agents.get_entries("all").items():
-                if agent_name in entries:
-                    action = act
-                    break
-
-        updated = self.agents.update_entrie(action, agent_name, new_name)
-
-        if updated:
-            logger.info("Agent renamed: %s → %s", agent_name, new_name)
-
-        return updated
-
-    # ---------------------- Create Helpers ---------------------- #
     def create_extractor(self, agent_name: str) -> bool:
         """Shortcut to create an Extractor agent."""
-        return self.create_agent(agent_name, "extract")
+        return self._create_agent("extract", agent_name)
 
     def create_transformer(self, agent_name: str) -> bool:
         """Shortcut to create a Transformer agent."""
-        return self.create_agent(agent_name, "transform")
+        return self._create_agent("transform", agent_name)
 
     def create_loader(self, agent_name: str) -> bool:
         """Shortcut to create a Loader agent."""
-        return self.create_agent(agent_name, "load")
+        return self._create_agent("load", agent_name)
 
     # ---------------------- Get Helpers ---------------------- #
+    def _get_agent(self, action: str, agent_name: str | None = None) -> Agent[Any]:
+        """Retrive a agent by a given action and name."""
+        config = self.build_config(registry="agents")
+
+        if agent_name is None:
+            first_agent = next(iter(config[action]["agents"].get_all().values()))
+            agent = first_agent
+        else:
+            agent = config[action]["agents"].get_one(agent_name)
+
+            if agent is None:
+                raise self.agent_not_found(agent_name)
+
+        return cast(Agent, agent)
+
     def get_extractor(self, agent_name: str | None = None) -> Extractor[ExtractParams]:
         """
         Retrive an extractor agent by a given name.
         If no name is given retrive the first extractor in the registry.
 
         """
-        action: str = "extract"
-
-        if agent_name is None:
-            first_agent = next(iter(self.agents.get_entries(action).values()))
-            agent = first_agent
-        else:
-            agent = self.agents.get_entrie(agent_name, action)
-
-            if agent is None:
-                raise self.agent_not_found(agent_name)
+        agent = self._get_agent("extract", agent_name)
 
         return cast(Extractor, agent)
 
@@ -329,15 +203,7 @@ class Environment(FraguaComponent):
         If no name is given retrive the first extractor in the registry.
 
         """
-        action: str = "transform"
-        if agent_name is None:
-            first_agent = next(iter(self.agents.get_entries(action).values()))
-            agent = first_agent
-        else:
-            agent = self.agents.get_entrie(agent_name, action)
-
-            if agent is None:
-                raise self.agent_not_found(agent_name)
+        agent = self._get_agent("transform", agent_name)
 
         return cast(Transformer, agent)
 
@@ -347,15 +213,7 @@ class Environment(FraguaComponent):
         If no name is given retrive the first extractor in the registry.
 
         """
-        action: str = "loader"
-        if agent_name is None:
-            first_agent = next(iter(self.agents.get_entries(action).values()))
-            agent = first_agent
-        else:
-            agent = self.agents.get_entrie(agent_name, action)
-
-            if agent is None:
-                raise self.agent_not_found(agent_name)
+        agent = self._get_agent("load", agent_name)
 
         return cast(Loader, agent)
 
@@ -363,33 +221,18 @@ class Environment(FraguaComponent):
 
     def summary(self) -> Dict[str, Any]:
         """
-        Return a JSON-serializable summary of the Environment instance,
+        Summary of the Environment instance,
         including summaries from all entities(Manager, Agents, Params, Styles, Functions).
         """
-
-        def serialize_registry(registry: Registry):
-            clean = {}
-
-            for action in ACTION_TYPES:
-                entries = registry.get_entries(action)
-                if not entries:
-                    continue
-
-                clean[action] = {
-                    name: instance.summary() for name, instance in entries.items()
-                }
-
-            return clean
 
         return {
             "env_name": self.name,
             "env_type": self.env_type,
             "warehouse": self.warehouse.summary(),
             "manager": self.manager.summary(),
-            "params": serialize_registry(self.params),
-            "functions": serialize_registry(self.functions),
-            "styles": serialize_registry(self.styles),
-            "agents": serialize_registry(self.agents),
+            "extract": self.extract.summary(),
+            "transform": self.transform.summary(),
+            "load": self.load.summary(),
         }
 
     def __repr__(self) -> str:
