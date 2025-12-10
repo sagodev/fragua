@@ -67,7 +67,8 @@ class Loader(Agent[LoadParamsT]):
         style = style.lower()
 
         # ----------------- Style class -----------------
-        style_cls = self.environment.styles.get_entrie(style, self.action)
+        action_style = self.environment.build_config(self.action, "styles")
+        style_cls = action_style.get_one(style)
 
         # ----------------- Create Storage -----------------
         container: Container = self.create_container(apply_to)
@@ -77,13 +78,14 @@ class Loader(Agent[LoadParamsT]):
 
             # -------- Build params --------
             if params is None:
-                params_cls = self.environment.params.get_entrie(style, self.action)
+                action_params = self.environment.build_config(self.action, "params")
+                searched_params = action_params.get_one(style)
 
-                if params_cls is None:
+                if searched_params is None:
                     raise ValueError("Params class not found.")
 
                 kwargs["data"] = container.get_storage(name).data
-                params_instance = params_cls(**kwargs)
+                params_instance = searched_params(**kwargs)
             else:
                 params_instance = params
 
@@ -97,7 +99,7 @@ class Loader(Agent[LoadParamsT]):
             if style_cls is None:
                 raise ValueError("Style class not found.")
 
-            style_instance = style_cls(style)
+            style_instance = style_cls()
             style_instance.use(params_instance)
 
             # ----------------- Generate operation metadata -----------------

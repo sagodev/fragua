@@ -2,7 +2,7 @@
 Load parameters classes for different types of data destinations.
 """
 
-from typing import Dict, Type
+from typing import Dict, Optional, Type
 from pandas import DataFrame
 
 from fragua.load.params.base import LoadParams
@@ -12,11 +12,6 @@ from fragua.load.params.base import LoadParams
 
 class ExcelLoadParams(LoadParams):
     """Parameters for Excel load."""
-
-    file_name: str | None
-    sheet_name: str | None
-    index: bool
-    engine: str | None
 
     purpose = "Parameters required to load data into an Excel file."
 
@@ -31,27 +26,24 @@ class ExcelLoadParams(LoadParams):
 
     def __init__(
         self,
-        data: DataFrame,
-        destination: str | None = None,
-        file_name: str | None = None,
-        sheet_name: str | None = None,
+        data: Optional[DataFrame] = None,
+        destination: Optional[str] = None,
+        file_name: Optional[str] = None,
+        sheet_name: Optional[str] = None,
         index: bool = False,
-        engine: str | None = None,
+        engine: Optional[str] = None,
     ) -> None:
-        super().__init__(style="excel", data=data, destination=destination)
-        self.file_name = file_name
-        self.sheet_name = sheet_name
+        super().__init__(style="excel")
+        self.data = data if data is not None else DataFrame()
+        self.destination = destination if destination else ""
+        self.file_name = file_name if file_name else ""
+        self.sheet_name = sheet_name if sheet_name else ""
         self.index = index
-        self.engine = engine
+        self.engine = engine if engine else ""
 
 
 class SQLLoadParams(LoadParams):
     """Parameters for SQL load."""
-
-    table_name: str | None
-    if_exists: str
-    index: bool
-    chunksize: int | None
 
     purpose = "Parameters required to load data into a SQL database table."
 
@@ -66,15 +58,17 @@ class SQLLoadParams(LoadParams):
 
     def __init__(
         self,
-        data: DataFrame,
-        destination: str | None = None,
-        table_name: str | None = None,
+        data: Optional[DataFrame] = None,
+        destination: Optional[str] = None,
+        table_name: Optional[str] = None,
         if_exists: str = "fail",
         index: bool = False,
-        chunksize: int | None = None,
+        chunksize: Optional[int] = None,
     ) -> None:
-        super().__init__(style="sql", data=data, destination=destination)
-        self.table_name = table_name
+        super().__init__(style="sql")
+        self.data = data if data is not None else DataFrame()
+        self.destination = destination if destination else ""
+        self.table_name = table_name if table_name else ""
         self.if_exists = if_exists
         self.index = index
         self.chunksize = chunksize
@@ -82,12 +76,6 @@ class SQLLoadParams(LoadParams):
 
 class APILoadParams(LoadParams):
     """Parameters for API load."""
-
-    endpoint: str | None
-    method: str
-    headers: Dict[str, str]
-    auth: Dict[str, str]
-    timeout: float
 
     purpose = "Parameters required to send data to a remote API."
 
@@ -103,19 +91,21 @@ class APILoadParams(LoadParams):
 
     def __init__(
         self,
-        data: DataFrame,
-        destination: str | None = None,
-        endpoint: str | None = None,
-        method: str = "POST",
-        headers: Dict[str, str] | None = None,
-        auth: Dict[str, str] | None = None,
+        data: Optional[DataFrame] = None,
+        destination: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        method: Optional[str] = None,
+        headers: Optional[Dict[str, str]] | None = None,
+        auth: Optional[Dict[str, str]] | None = None,
         timeout: float = 30.0,
     ) -> None:
-        super().__init__(style="api", data=data, destination=destination)
-        self.endpoint = endpoint
-        self.method = method
-        self.headers = headers or {}
-        self.auth = auth or {}
+        super().__init__(style="api")
+        self.data = data if data is not None else DataFrame()
+        self.destination = destination if destination else ""
+        self.endpoint = endpoint if endpoint else ""
+        self.method = method if method else "POST"
+        self.headers = headers if headers else {}
+        self.auth = auth if auth else {}
         self.timeout = timeout
 
 

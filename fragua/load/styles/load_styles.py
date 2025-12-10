@@ -19,22 +19,19 @@ class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
     """
 
     def summary_fields(self) -> Dict[str, Any]:
-        base = super().summary_fields()
-        base.update(
-            {
-                "target": "Excel file",
-                "fields": {
-                    "output_path": "Output Excel file path.",
-                    "sheet_name": "Excel sheet where data will be written.",
-                    "index": "Whether to include DataFrame index.",
-                },
-                "function": "load_excel",
-            }
-        )
-        return base
+        return {
+            "style_name": self.__class__.__name__,
+            "target": "Excel file",
+            "fields": {
+                "output_path": "Output Excel file path.",
+                "sheet_name": "Excel sheet where data will be written.",
+                "index": "Whether to include DataFrame index.",
+            },
+            "function": "ExcelLoadFunction",
+        }
 
     def load(self, params: ExcelLoadParamsT) -> pd.DataFrame:
-        return ExcelLoadFunction("load_excel", params).execute()
+        return ExcelLoadFunction(params).execute()
 
 
 # ---------------------------------------------------------------------- #

@@ -11,19 +11,19 @@ from fragua.load.functions.internal_functions import (
     validate_excel_params,
     write_excel,
 )
-from fragua.load.params.base import LoadParams
-from fragua.load.params.generic_types import ExcelLoadParamsT
+from fragua.load.params.load_params import ExcelLoadParams
 
 
-class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
+class ExcelLoadFunction(LoadFunction):
     """
     LoadFunction for Excel pipelines.
     """
 
     PURPOSE: str = "Export a DataFrame to an Excel file."
 
-    def __init__(self, name: str, params: ExcelLoadParamsT) -> None:
-        super().__init__(name=name, params=params)
+    def __init__(self, params: ExcelLoadParams) -> None:
+        super().__init__()
+        self.params = params
 
     def execute(self) -> pd.DataFrame:
         validate_excel_params(self.params)
@@ -41,6 +41,6 @@ class ExcelLoadFunction(LoadFunction[ExcelLoadParamsT]):
         }
 
 
-LOAD_FUNCTION_CLASSES: Dict[str, Type[LoadFunction[LoadParams]]] = {
+LOAD_FUNCTION_CLASSES: Dict[str, Type[LoadFunction]] = {
     "excel": ExcelLoadFunction,
 }

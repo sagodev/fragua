@@ -2,17 +2,13 @@
 Generic LoadFunction class.
 """
 
-from typing import  Generic
 from fragua.core.function import FraguaFunction
-from fragua.load.params.generic_types import LoadParamsT
 
 
-class LoadFunction(FraguaFunction[LoadParamsT], Generic[LoadParamsT]):
+class LoadFunction(FraguaFunction):
     """
-    Represents a Load function in the Fragua framework.
+    Generic load function class.
     """
 
-    PURPOSE: str = "Load data into the target destination."
-
-    def __init__(self, name: str, params: LoadParamsT) -> None:
-        super().__init__(function_name=name, action="load", params=params)
+    def __init__(self) -> None:
+        super().__init__(function_name=self.__class__.__name__, action="load")

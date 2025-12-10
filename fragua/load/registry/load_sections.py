@@ -1,7 +1,6 @@
 """Load Sections Module."""
 
 from typing import Any, Dict, cast
-import pandas as pd
 from fragua.core.section_registry import SectionRegistry
 from fragua.load import (
     LOAD_FUNCTION_CLASSES,
@@ -35,8 +34,7 @@ class LoadParamsSection(SectionRegistry):
         for name, cls in self.get_all().items():
             obj = cls.__new__(cls)
             obj = cast(LoadParams, obj)
-            df = pd.DataFrame({})
-            LoadParams.__init__(obj, style=name, data=df)
+            LoadParams.__init__(obj, style=name)
 
             data = obj.summary()
 
@@ -64,10 +62,9 @@ class LoadFunctionSection(SectionRegistry):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, cls in self.get_all().items():
-            df = pd.DataFrame({})
 
             params = LoadParams.__new__(LoadParams)
-            LoadParams.__init__(params, style=name, data=df)
+            LoadParams.__init__(params, style=name)
 
             obj = cls.__new__(cls)
             obj = cast(LoadFunction, obj)
@@ -120,10 +117,9 @@ class LoadAgentSection(SectionRegistry):
         """Load agents section summary."""
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, cls in self.get_all().items():
+        for name, instance in self.get_all().items():
 
-            obj = cls.__new__(cls)
-            obj = cast(Loader, obj)
+            obj = cast(Loader, instance)
             data = obj.summary()
 
             result[name] = data

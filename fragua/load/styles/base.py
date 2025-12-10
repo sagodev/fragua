@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 
-from typing import Any, Dict, Generic
+from typing import Generic
 from fragua.core.style import ResultT, Style
 from fragua.load.params.generic_types import LoadParamsT
 
@@ -18,16 +18,6 @@ class LoadStyle(Style[LoadParamsT, ResultT], Generic[LoadParamsT, ResultT]):
     Standard pipeline provided by Style:
         validate_params -> _run -> validate_result -> postprocess
     """
-
-    def summary_fields(self) -> Dict[str, Any]:
-        """
-        Returns metadata describing this LoadStyle.
-        Each subclass should extend or override.
-        """
-        return {
-            "style_type": "load",
-            "description": "Handles loading data into external destinations.",
-        }
 
     @abstractmethod
     def load(self, params: LoadParamsT) -> ResultT:
