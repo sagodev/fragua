@@ -3,24 +3,20 @@ Base abstract class for all function schemas used by styles in Fragua.
 """
 
 from abc import abstractmethod
-from typing import Any, Generic, Dict
+from typing import Any, Dict
 
 from fragua.core.component import FraguaComponent
-from fragua.core.params import ParamsT
 
 
-class FraguaFunction(FraguaComponent, Generic[ParamsT]):
+class FraguaFunction(FraguaComponent):
     """
     Represents a generic Fragua function that defines a name,
     an action, and an associated Params instance.
     """
 
-    purpose: str = ""
-
-    def __init__(self, function_name: str, action: str, params: ParamsT) -> None:
+    def __init__(self, function_name: str, action: str) -> None:
         super().__init__(component_name=function_name)
         self.action: str = action
-        self.params: ParamsT = params
 
     @abstractmethod
     def summary(self) -> Dict[str, Any]:
