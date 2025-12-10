@@ -14,8 +14,8 @@ class MinimalEnvironment(Environment):
     without Agents. Useful for flexible or custom setups.
     """
 
-    def __init__(self, name: str, fg_reg: bool = False):
-        super().__init__(name, env_type="minimal", fg_reg=fg_reg)
+    def __init__(self, env_name: str, fg_reg: bool = False):
+        super().__init__(env_name=env_name, env_type="minimal", fg_reg=fg_reg)
 
         logger.debug("Minimal environment '%s' initialized.", self.name)
         logger.info("Minimal environment '%s' is ready for manual setup.", self.name)
