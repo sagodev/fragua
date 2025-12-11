@@ -2,11 +2,11 @@
 
 from typing import cast
 from fragua.core.registry import Registry
-from fragua.transform.registry.transform_sections import (
-    TransformAgentSection,
-    TransformFunctionSection,
-    TransformParamsSection,
-    TransformStyleSection,
+from fragua.transform.registry.transform_sets import (
+    TransformAgentSet,
+    TransformFunctionSet,
+    TransformParamsSet,
+    TransformStyleSet,
 )
 
 
@@ -19,39 +19,39 @@ class TransformRegistry(Registry):
 
     def __init__(self, registry_name: str) -> None:
         super().__init__(registry_name)
-        self._initialize_sections()
+        self._initialize_sets()
 
-    def _initialize_sections(self) -> None:
-        """Initialize transform sections."""
-        transform_fg_sections = {
-            "params": TransformParamsSection(),
-            "styles": TransformStyleSection(),
-            "functions": TransformFunctionSection(),
-            "agents": TransformAgentSection(),
+    def _initialize_sets(self) -> None:
+        """Initialize transform sets."""
+        transform_fg_sets = {
+            "params": TransformParamsSet(),
+            "styles": TransformStyleSet(),
+            "functions": TransformFunctionSet(),
+            "agents": TransformAgentSet(),
         }
 
-        for name_section, cls_section in transform_fg_sections.items():
-            self.create_section(name_section, cls_section)
+        for name_set, cls_set in transform_fg_sets.items():
+            self.create_set(name_set, cls_set)
 
     @property
-    def params(self) -> TransformParamsSection:
+    def params(self) -> TransformParamsSet:
         """Retrive all transform params."""
-        return cast(TransformParamsSection, self.get_sections()["params"])
+        return cast(TransformParamsSet, self.get_sets()["params"])
 
     @property
-    def functions(self) -> TransformFunctionSection:
+    def functions(self) -> TransformFunctionSet:
         """Retrive all transform functions."""
-        return cast(TransformFunctionSection, self.get_sections()["functions"])
+        return cast(TransformFunctionSet, self.get_sets()["functions"])
 
     @property
-    def styles(self) -> TransformStyleSection:
+    def styles(self) -> TransformStyleSet:
         """Retrive all transform styles."""
-        return cast(TransformStyleSection, self.get_sections()["styles"])
+        return cast(TransformStyleSet, self.get_sets()["styles"])
 
     @property
-    def agents(self) -> TransformAgentSection:
+    def agents(self) -> TransformAgentSet:
         """Retrive all transform agents."""
-        return cast(TransformAgentSection, self.get_sections()["agents"])
+        return cast(TransformAgentSet, self.get_sets()["agents"])
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.name}')"

@@ -2,17 +2,17 @@
 
 from .transform_registry import TransformRegistry
 
-from .transform_sections import (
-    TransformStyleSection,
-    TransformAgentSection,
-    TransformParamsSection,
-    TransformFunctionSection,
+from .transform_sets import (
+    TransformStyleSet,
+    TransformAgentSet,
+    TransformParamsSet,
+    TransformFunctionSet,
 )
 
 __all__ = [
     "TransformRegistry",
-    "TransformStyleSection",
-    "TransformAgentSection",
-    "TransformParamsSection",
-    "TransformFunctionSection",
+    "TransformStyleSet",
+    "TransformAgentSet",
+    "TransformParamsSet",
+    "TransformFunctionSet",
 ]

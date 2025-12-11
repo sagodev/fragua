@@ -1,40 +1,42 @@
-"""Load Sections Module."""
+"""Extract Sections Module."""
 
 from typing import Any, Dict, cast
 from fragua.core.registry_set import RegistrySet
-from fragua.load import (
-    LOAD_FUNCTION_CLASSES,
-    LOAD_PARAMS_CLASSES,
-    LOAD_STYLE_CLASSES,
-    LoadStyle,
-    LoadFunction,
-    LoadParams,
-    Loader,
+
+from fragua.extract import (
+    EXTRACT_FUNCTION_CLASSES,
+    EXTRACT_PARAMS_CLASSES,
+    EXTRACT_STYLE_CLASSES,
+    ExtractStyle,
+    ExtractFunction,
+    ExtractParams,
+    Extractor,
 )
 
 
-class LoadParamsSection(RegistrySet):
-    """Section containing load parameters classes."""
+class ExtractParamsSet(RegistrySet):
+    """Section containing extract parameters classes."""
 
     def __init__(self, section_name: str = "params") -> None:
         super().__init__(section_name)
         self._initialize_params()
 
     def _initialize_params(self) -> None:
-        """Load all predefined load parameter classes into the section."""
-        for name, cls in LOAD_PARAMS_CLASSES.items():
+        """Load all predefined extract parameter classes into the section."""
+        for name, cls in EXTRACT_PARAMS_CLASSES.items():
             self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
-        Return a structured summary of all load parameter classes.
+        Return a structured summary of all extract parameter classes.
         """
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, cls in self.get_all().items():
+
             obj = cls.__new__(cls)
-            obj = cast(LoadParams, obj)
-            LoadParams.__init__(obj, style=name)
+            obj = cast(ExtractParams, obj)
+            ExtractParams.__init__(obj, style=name)
 
             data = obj.summary()
 
@@ -43,33 +45,29 @@ class LoadParamsSection(RegistrySet):
         return result
 
 
-class LoadFunctionSection(RegistrySet):
-    """Load functions section."""
+class ExtractFunctionSet(RegistrySet):
+    """Extract functions section."""
 
     def __init__(self, section_name: str = "functions") -> None:
         super().__init__(section_name)
         self._initialize_functions()
 
     def _initialize_functions(self) -> None:
-        """Load all predefined load functions into the section."""
-        for name, cls in LOAD_FUNCTION_CLASSES.items():
+        """Load all predefined extract functions into the section."""
+        for name, cls in EXTRACT_FUNCTION_CLASSES.items():
             self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
-        Return a structured summary of all load functions.
+        Return a structured summary of all extract functions.
         """
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, cls in self.get_all().items():
 
-            params = LoadParams.__new__(LoadParams)
-            LoadParams.__init__(params, style=name)
-
             obj = cls.__new__(cls)
-            obj = cast(LoadFunction, obj)
+            obj = cast(ExtractFunction, obj)
             obj.name = name
-            obj.params = params
 
             data = obj.summary()
 
@@ -78,28 +76,28 @@ class LoadFunctionSection(RegistrySet):
         return result
 
 
-class LoadStyleSection(RegistrySet):
-    """Section that stores all load style classes."""
+class ExtractStyleSet(RegistrySet):
+    """Section that stores all extract style classes."""
 
     def __init__(self, section_name: str = "styles") -> None:
         super().__init__(section_name)
         self._initialize_styles()
 
     def _initialize_styles(self) -> None:
-        """Load predefined load style classes into the section."""
-        for name, cls in LOAD_STYLE_CLASSES.items():
+        """Load predefined extract style classes into the section."""
+        for name, cls in EXTRACT_STYLE_CLASSES.items():
             self.create_one(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
-        Summary of all load style classes.
+        Summary of all extract style classes.
         """
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, cls in self.get_all().items():
 
             obj = cls.__new__(cls)
-            obj = cast(LoadStyle, obj)
+            obj = cast(ExtractStyle, obj)
             data = obj.summary()
 
             result[name] = data
@@ -107,19 +105,19 @@ class LoadStyleSection(RegistrySet):
         return result
 
 
-class LoadAgentSection(RegistrySet):
-    """Load agents section."""
+class ExtractAgentSet(RegistrySet):
+    """Extract agents section."""
 
     def __init__(self, section_name="agents"):
         super().__init__(section_name)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """Load agents section summary."""
+        """Extract agents section summary."""
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
 
-            obj = cast(Loader, instance)
+            obj = cast(Extractor, instance)
             data = obj.summary()
 
             result[name] = data

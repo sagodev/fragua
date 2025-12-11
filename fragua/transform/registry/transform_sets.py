@@ -1,4 +1,4 @@
-"""Transform Sections Module."""
+"""Transform Sets Module."""
 
 from typing import Any, Dict, cast
 from fragua.core.registry_set import RegistrySet
@@ -13,15 +13,15 @@ from fragua.transform import (
 )
 
 
-class TransformParamsSection(RegistrySet):
-    """Section containing transform parameters classes."""
+class TransformParamsSet(RegistrySet):
+    """Set containing transform parameters classes."""
 
-    def __init__(self, section_name: str = "params") -> None:
-        super().__init__(section_name)
+    def __init__(self, set_name: str = "params") -> None:
+        super().__init__(set_name)
         self._initialize_params()
 
     def _initialize_params(self) -> None:
-        """Transform all predefined transform parameter classes into the section."""
+        """Transform all predefined transform parameter classes into the set."""
         for name, cls in TRANSFORM_PARAMS_CLASSES.items():
             self.create_one(name, cls)
 
@@ -43,15 +43,15 @@ class TransformParamsSection(RegistrySet):
         return result
 
 
-class TransformFunctionSection(RegistrySet):
-    """Transform functions section."""
+class TransformFunctionSet(RegistrySet):
+    """Transform functions set."""
 
-    def __init__(self, section_name: str = "functions") -> None:
-        super().__init__(section_name)
+    def __init__(self, set_name: str = "functions") -> None:
+        super().__init__(set_name)
         self._initialize_functions()
 
     def _initialize_functions(self) -> None:
-        """Transform all predefined Transform functions into the section."""
+        """Transform all predefined Transform functions into the set."""
         for name, cls in TRANSFORM_FUNCTION_CLASSES.items():
             self.create_one(name, cls)
 
@@ -78,15 +78,15 @@ class TransformFunctionSection(RegistrySet):
         return result
 
 
-class TransformStyleSection(RegistrySet):
-    """Section that stores all Transform style classes."""
+class TransformStyleSet(RegistrySet):
+    """Set that stores all Transform style classes."""
 
-    def __init__(self, section_name: str = "styles") -> None:
-        super().__init__(section_name)
+    def __init__(self, set_name: str = "styles") -> None:
+        super().__init__(set_name)
         self._initialize_styles()
 
     def _initialize_styles(self) -> None:
-        """Transform predefined Transform style classes into the section."""
+        """Transform predefined Transform style classes into the set."""
         for name, cls in TRANSFORM_STYLE_CLASSES.items():
             self.create_one(name, cls)
 
@@ -107,14 +107,14 @@ class TransformStyleSection(RegistrySet):
         return result
 
 
-class TransformAgentSection(RegistrySet):
-    """Transform agents section."""
+class TransformAgentSet(RegistrySet):
+    """Transform agents set."""
 
-    def __init__(self, section_name="agents"):
-        super().__init__(section_name)
+    def __init__(self, set_name="agents"):
+        super().__init__(set_name)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """Transform agents section summary."""
+        """Transform agents set summary."""
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():

@@ -12,62 +12,62 @@ class Registry(FraguaComponent):
     def __init__(self, registry_name: str) -> None:
         """Initialize the registry."""
         super().__init__(component_name=registry_name)
-        self._sections: Dict[str, RegistrySet] = {}
+        self._set: Dict[str, RegistrySet] = {}
 
     def _exists(self, key: str) -> bool:
-        """Return True if the section exists."""
-        return key in self._sections
+        """Return True if the registry set exists."""
+        return key in self._set
 
     def _not_exists(self, key: str) -> bool:
-        """Return True if the section does not exist."""
-        return key not in self._sections
+        """Return True if the registry set does not exist."""
+        return key not in self._set
 
-    def get_sections(self) -> Dict[str, RegistrySet]:
+    def get_sets(self) -> Dict[str, RegistrySet]:
         """Retrieve all registered sections."""
-        return self._sections
+        return self._set
 
-    def create_section(self, name: str, section: RegistrySet) -> bool:
-        """Create a new section."""
+    def create_set(self, name: str, registry_set: RegistrySet) -> bool:
+        """Create a new registry set."""
         if self._not_exists(name):
-            self._sections[name] = section
+            self._set[name] = registry_set
             return True
         return False
 
-    def get_section(self, name: str) -> Optional[RegistrySet]:
-        """Retrieve a section by name."""
-        return self._sections.get(name)
+    def get_set(self, name: str) -> Optional[RegistrySet]:
+        """Retrieve a registry set by name."""
+        return self._set.get(name)
 
-    def update_section(self, old_name: str, new_name: str) -> bool:
-        """Rename a section."""
+    def update_set(self, old_name: str, new_name: str) -> bool:
+        """Rename a registry set."""
         if self._exists(old_name) and self._not_exists(new_name):
-            self._sections[new_name] = self._sections.pop(old_name)
+            self._set[new_name] = self._set.pop(old_name)
             return True
         return False
 
-    def delete_section(self, name: str) -> bool:
-        """Delete a section."""
-        return self._sections.pop(name, None) is not None
+    def delete_set(self, name: str) -> bool:
+        """Delete a registry set."""
+        return self._set.pop(name, None) is not None
 
     def summary(self) -> Dict[str, Any]:
         """
-        Collect a structured summary from all extract sections.
-        Each section must implement its own summary().
+        Collect a structured summary from all extract sets.
+        Each registry set must implement its own summary().
         """
 
         sections_summary = {}
 
-        for section_name, section in self._sections.items():
-            if hasattr(section, "summary") and callable(section.summary):
-                sections_summary[section_name] = section.summary()
+        for section_name, registry_set in self._set.items():
+            if hasattr(registry_set, "summary") and callable(registry_set.summary):
+                sections_summary[section_name] = registry_set.summary()
             else:
                 sections_summary[section_name] = {
-                    "error": "This section does not implement summary()."
+                    "error": "This registry set does not implement summary()."
                 }
 
         return {
             "registry_name": self.name,
             "type": "extract_registry",
-            "sections": sections_summary,
+            "sets": sections_summary,
         }
 
     # ---------------------------------------------------------

@@ -2,17 +2,17 @@
 
 from .extract_registry import ExtractRegistry
 
-from .extract_sections import (
-    ExtractStyleSection,
-    ExtractAgentSection,
-    ExtractParamsSection,
-    ExtractFunctionSection,
+from .extract_sets import (
+    ExtractStyleSet,
+    ExtractAgentSet,
+    ExtractParamsSet,
+    ExtractFunctionSet,
 )
 
 __all__ = [
     "ExtractRegistry",
-    "ExtractStyleSection",
-    "ExtractAgentSection",
-    "ExtractParamsSection",
-    "ExtractFunctionSection",
+    "ExtractStyleSet",
+    "ExtractAgentSet",
+    "ExtractParamsSet",
+    "ExtractFunctionSet",
 ]
