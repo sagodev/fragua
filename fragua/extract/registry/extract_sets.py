@@ -1,7 +1,7 @@
 """Extract Sections Module."""
 
 from typing import Any, Dict, cast
-from fragua.core.registry_set import RegistrySet
+from fragua.core.set import FraguaSet
 
 from fragua.extract import (
     EXTRACT_FUNCTION_CLASSES,
@@ -14,7 +14,7 @@ from fragua.extract import (
 )
 
 
-class ExtractParamsSet(RegistrySet):
+class ExtractParamsSet(FraguaSet):
     """Section containing extract parameters classes."""
 
     def __init__(self, section_name: str = "params") -> None:
@@ -45,7 +45,7 @@ class ExtractParamsSet(RegistrySet):
         return result
 
 
-class ExtractFunctionSet(RegistrySet):
+class ExtractFunctionSet(FraguaSet):
     """Extract functions section."""
 
     def __init__(self, section_name: str = "functions") -> None:
@@ -76,7 +76,7 @@ class ExtractFunctionSet(RegistrySet):
         return result
 
 
-class ExtractStyleSet(RegistrySet):
+class ExtractStyleSet(FraguaSet):
     """Section that stores all extract style classes."""
 
     def __init__(self, section_name: str = "styles") -> None:
@@ -105,7 +105,7 @@ class ExtractStyleSet(RegistrySet):
         return result
 
 
-class ExtractAgentSet(RegistrySet):
+class ExtractAgentSet(FraguaSet):
     """Extract agents section."""
 
     def __init__(self, section_name="agents"):

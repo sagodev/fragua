@@ -1,7 +1,7 @@
 """Load Sets Module."""
 
 from typing import Any, Dict, cast
-from fragua.core.registry_set import RegistrySet
+from fragua.core.set import FraguaSet
 from fragua.load import (
     LOAD_FUNCTION_CLASSES,
     LOAD_PARAMS_CLASSES,
@@ -13,7 +13,7 @@ from fragua.load import (
 )
 
 
-class LoadParamsSet(RegistrySet):
+class LoadParamsSet(FraguaSet):
     """Set containing load parameters classes."""
 
     def __init__(self, set_name: str = "params") -> None:
@@ -43,7 +43,7 @@ class LoadParamsSet(RegistrySet):
         return result
 
 
-class LoadFunctionSet(RegistrySet):
+class LoadFunctionSet(FraguaSet):
     """Load functions set."""
 
     def __init__(self, set_name: str = "functions") -> None:
@@ -78,7 +78,7 @@ class LoadFunctionSet(RegistrySet):
         return result
 
 
-class LoadStyleSet(RegistrySet):
+class LoadStyleSet(FraguaSet):
     """Set that stores all load style classes."""
 
     def __init__(self, set_name: str = "styles") -> None:
@@ -107,7 +107,7 @@ class LoadStyleSet(RegistrySet):
         return result
 
 
-class LoadAgentSet(RegistrySet):
+class LoadAgentSet(FraguaSet):
     """Load agents set."""
 
     def __init__(self, set_name="agents"):

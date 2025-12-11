@@ -1,7 +1,7 @@
 """Transform Sets Module."""
 
 from typing import Any, Dict, cast
-from fragua.core.registry_set import RegistrySet
+from fragua.core.set import FraguaSet
 from fragua.transform import (
     TRANSFORM_FUNCTION_CLASSES,
     TRANSFORM_PARAMS_CLASSES,
@@ -13,7 +13,7 @@ from fragua.transform import (
 )
 
 
-class TransformParamsSet(RegistrySet):
+class TransformParamsSet(FraguaSet):
     """Set containing transform parameters classes."""
 
     def __init__(self, set_name: str = "params") -> None:
@@ -43,7 +43,7 @@ class TransformParamsSet(RegistrySet):
         return result
 
 
-class TransformFunctionSet(RegistrySet):
+class TransformFunctionSet(FraguaSet):
     """Transform functions set."""
 
     def __init__(self, set_name: str = "functions") -> None:
@@ -78,7 +78,7 @@ class TransformFunctionSet(RegistrySet):
         return result
 
 
-class TransformStyleSet(RegistrySet):
+class TransformStyleSet(FraguaSet):
     """Set that stores all Transform style classes."""
 
     def __init__(self, set_name: str = "styles") -> None:
@@ -107,7 +107,7 @@ class TransformStyleSet(RegistrySet):
         return result
 
 
-class TransformAgentSet(RegistrySet):
+class TransformAgentSet(FraguaSet):
     """Transform agents set."""
 
     def __init__(self, set_name="agents"):
