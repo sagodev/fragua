@@ -3,16 +3,19 @@
 from typing import Any, Dict, Optional
 
 from fragua.core.component import FraguaComponent
-from fragua.core.registry_set import RegistrySet
+from fragua.core.set import FraguaSet
 
 
-class Registry(FraguaComponent):
-    """Base configuration class for all registry types inside an Environment."""
+class FraguaRegistry(FraguaComponent):
+    """
+    Fragua registry class.
+    This class handle management for fragua sets.
+    """
 
     def __init__(self, registry_name: str) -> None:
         """Initialize the registry."""
         super().__init__(component_name=registry_name)
-        self._set: Dict[str, RegistrySet] = {}
+        self._set: Dict[str, FraguaSet] = {}
 
     def _exists(self, key: str) -> bool:
         """Return True if the registry set exists."""
@@ -22,18 +25,18 @@ class Registry(FraguaComponent):
         """Return True if the registry set does not exist."""
         return key not in self._set
 
-    def get_sets(self) -> Dict[str, RegistrySet]:
+    def get_sets(self) -> Dict[str, FraguaSet]:
         """Retrieve all registered sections."""
         return self._set
 
-    def create_set(self, name: str, registry_set: RegistrySet) -> bool:
+    def create_set(self, name: str, registry_set: FraguaSet) -> bool:
         """Create a new registry set."""
         if self._not_exists(name):
             self._set[name] = registry_set
             return True
         return False
 
-    def get_set(self, name: str) -> Optional[RegistrySet]:
+    def get_set(self, name: str) -> Optional[FraguaSet]:
         """Retrieve a registry set by name."""
         return self._set.get(name)
 

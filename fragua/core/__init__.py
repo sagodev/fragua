@@ -16,10 +16,11 @@ from .component import FraguaComponent
 
 from .environment import Environment
 
-from .registry import Registry
+from .registry import FraguaRegistry
 
-from .registry_set import RegistrySet
+from .set import FraguaSet
 
+from .actions import FraguaActions
 
 from .agent import Agent
 
@@ -39,12 +40,14 @@ from .storage import Storage, Box, Container, STORAGE_CLASSES
 __all__ = [
     # Fragua Component Class
     "FraguaComponent",
+    # Actions Class
+    "FraguaActions",
     # Environment Class
     "Environment",
     # Registry Class
-    "Registry",
-    # Section Registry Class
-    "RegistrySet",
+    "FraguaRegistry",
+    # Section Fragua Class
+    "FraguaSet",
     # Agent Class
     "Agent",
     # Params Class

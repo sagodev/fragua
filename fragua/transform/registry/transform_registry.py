@@ -1,7 +1,7 @@
 """Transform Registry Class."""
 
 from typing import cast
-from fragua.core.registry import Registry
+from fragua.core.registry import FraguaRegistry
 from fragua.transform.registry.transform_sets import (
     TransformAgentSet,
     TransformFunctionSet,
@@ -10,7 +10,7 @@ from fragua.transform.registry.transform_sets import (
 )
 
 
-class TransformRegistry(Registry):
+class TransformRegistry(FraguaRegistry):
     """
     Transform Registry Class.
     This class registry contains the functions, params, styles

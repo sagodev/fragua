@@ -1,7 +1,7 @@
 """Extract Registry Class."""
 
 from typing import cast
-from fragua.core.registry import Registry
+from fragua.core.registry import FraguaRegistry
 from fragua.extract.registry.extract_sets import (
     ExtractAgentSet,
     ExtractFunctionSet,
@@ -10,7 +10,7 @@ from fragua.extract.registry.extract_sets import (
 )
 
 
-class ExtractRegistry(Registry):
+class ExtractRegistry(FraguaRegistry):
     """
     Extract Registry Class.
     This class registry contains the functions, params, styles

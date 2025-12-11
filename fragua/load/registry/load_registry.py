@@ -1,7 +1,7 @@
 """Load Registry Class."""
 
 from typing import cast
-from fragua.core.registry import Registry
+from fragua.core.registry import FraguaRegistry
 from fragua.load.registry.load_sets import (
     LoadAgentSet,
     LoadFunctionSet,
@@ -10,7 +10,7 @@ from fragua.load.registry.load_sets import (
 )
 
 
-class LoadRegistry(Registry):
+class LoadRegistry(FraguaRegistry):
     """
     Load Registry Class.
     This class registry contains the functions, params, styles
