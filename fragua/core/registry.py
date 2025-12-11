@@ -1,6 +1,6 @@
 """Base class for all registries of an environment in Fragua."""
 
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from fragua.core.component import FraguaComponent
 from fragua.core.set import FraguaSet
@@ -50,28 +50,6 @@ class FraguaRegistry(FraguaComponent):
     def delete_set(self, name: str) -> bool:
         """Delete a registry set."""
         return self._set.pop(name, None) is not None
-
-    def summary(self) -> Dict[str, Any]:
-        """
-        Collect a structured summary from all extract sets.
-        Each registry set must implement its own summary().
-        """
-
-        sections_summary = {}
-
-        for section_name, registry_set in self._set.items():
-            if hasattr(registry_set, "summary") and callable(registry_set.summary):
-                sections_summary[section_name] = registry_set.summary()
-            else:
-                sections_summary[section_name] = {
-                    "error": "This registry set does not implement summary()."
-                }
-
-        return {
-            "registry_name": self.name,
-            "type": "extract_registry",
-            "sets": sections_summary,
-        }
 
     # ---------------------------------------------------------
 
