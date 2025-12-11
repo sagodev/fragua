@@ -1,4 +1,4 @@
-"""Section Registry class."""
+"""Set Registry class."""
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Type
@@ -7,15 +7,15 @@ from fragua.core.component import FraguaComponent
 
 
 class RegistrySet(ABC):
-    """Section registry class."""
+    """Set registry class."""
 
     def __init__(
         self,
-        section_name: str,
+        set_name: str,
         entries: Optional[Dict[str, Type[FraguaComponent]]] = None,
     ):
-        """Initialize section registry."""
-        self.section_name = section_name
+        """Initialize set registry."""
+        self.set_name = set_name
         self._entries: Dict[str, Type[FraguaComponent]] = (
             {} if entries is None else entries
         )
@@ -58,4 +58,4 @@ class RegistrySet(ABC):
 
     @abstractmethod
     def summary(self) -> Dict[str, Any]:
-        """Section registry summary."""
+        """Set registry summary."""
