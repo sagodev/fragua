@@ -1,7 +1,7 @@
 """Load Sections Module."""
 
 from typing import Any, Dict, cast
-from fragua.core.section_registry import SectionRegistry
+from fragua.core.registry_set import RegistrySet
 from fragua.load import (
     LOAD_FUNCTION_CLASSES,
     LOAD_PARAMS_CLASSES,
@@ -13,7 +13,7 @@ from fragua.load import (
 )
 
 
-class LoadParamsSection(SectionRegistry):
+class LoadParamsSection(RegistrySet):
     """Section containing load parameters classes."""
 
     def __init__(self, section_name: str = "params") -> None:
@@ -43,7 +43,7 @@ class LoadParamsSection(SectionRegistry):
         return result
 
 
-class LoadFunctionSection(SectionRegistry):
+class LoadFunctionSection(RegistrySet):
     """Load functions section."""
 
     def __init__(self, section_name: str = "functions") -> None:
@@ -78,7 +78,7 @@ class LoadFunctionSection(SectionRegistry):
         return result
 
 
-class LoadStyleSection(SectionRegistry):
+class LoadStyleSection(RegistrySet):
     """Section that stores all load style classes."""
 
     def __init__(self, section_name: str = "styles") -> None:
@@ -107,7 +107,7 @@ class LoadStyleSection(SectionRegistry):
         return result
 
 
-class LoadAgentSection(SectionRegistry):
+class LoadAgentSection(RegistrySet):
     """Load agents section."""
 
     def __init__(self, section_name="agents"):

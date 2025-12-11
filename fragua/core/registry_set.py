@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Type
 from fragua.core.component import FraguaComponent
 
 
-class SectionRegistry(ABC):
+class RegistrySet(ABC):
     """Section registry class."""
 
     def __init__(

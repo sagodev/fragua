@@ -1,7 +1,7 @@
 """Transform Sections Module."""
 
 from typing import Any, Dict, cast
-from fragua.core.section_registry import SectionRegistry
+from fragua.core.registry_set import RegistrySet
 from fragua.transform import (
     TRANSFORM_FUNCTION_CLASSES,
     TRANSFORM_PARAMS_CLASSES,
@@ -13,7 +13,7 @@ from fragua.transform import (
 )
 
 
-class TransformParamsSection(SectionRegistry):
+class TransformParamsSection(RegistrySet):
     """Section containing transform parameters classes."""
 
     def __init__(self, section_name: str = "params") -> None:
@@ -43,7 +43,7 @@ class TransformParamsSection(SectionRegistry):
         return result
 
 
-class TransformFunctionSection(SectionRegistry):
+class TransformFunctionSection(RegistrySet):
     """Transform functions section."""
 
     def __init__(self, section_name: str = "functions") -> None:
@@ -78,7 +78,7 @@ class TransformFunctionSection(SectionRegistry):
         return result
 
 
-class TransformStyleSection(SectionRegistry):
+class TransformStyleSection(RegistrySet):
     """Section that stores all Transform style classes."""
 
     def __init__(self, section_name: str = "styles") -> None:
@@ -107,7 +107,7 @@ class TransformStyleSection(SectionRegistry):
         return result
 
 
-class TransformAgentSection(SectionRegistry):
+class TransformAgentSection(RegistrySet):
     """Transform agents section."""
 
     def __init__(self, section_name="agents"):

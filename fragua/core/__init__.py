@@ -18,7 +18,7 @@ from .environment import Environment
 
 from .registry import Registry
 
-from .section_registry import SectionRegistry
+from .registry_set import RegistrySet
 
 
 from .agent import Agent
@@ -44,7 +44,7 @@ __all__ = [
     # Registry Class
     "Registry",
     # Section Registry Class
-    "SectionRegistry",
+    "RegistrySet",
     # Agent Class
     "Agent",
     # Params Class

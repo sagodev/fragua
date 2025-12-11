@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Type, cast
 
 from fragua.core.agent import Agent
 from fragua.core.component import FraguaComponent
-from fragua.core.section_registry import SectionRegistry
+from fragua.core.registry_set import RegistrySet
 from fragua.core.warehouse import Warehouse
 from fragua.core.manager import WarehouseManager
 
@@ -66,8 +66,7 @@ class Environment(FraguaComponent):
         self, action: str | None = None, registry: str | None = None
     ) -> Any:
         """Retrive config for components management."""
-
-        config: Dict[str, Dict[str, SectionRegistry]] = {
+        config: Dict[str, Dict[str, RegistrySet]] = {
             "extract": {
                 "agents": self.extract.agents,
                 "params": self.extract.params,
@@ -95,7 +94,7 @@ class Environment(FraguaComponent):
             return config[action]
 
         if not action and registry:
-            return {act: registry for act, registry in config.items()}
+            return {act: registries[registry] for act, registries in config.items()}
 
         return config
 

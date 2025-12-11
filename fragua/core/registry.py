@@ -3,7 +3,7 @@
 from typing import Any, Dict, Optional
 
 from fragua.core.component import FraguaComponent
-from fragua.core.section_registry import SectionRegistry
+from fragua.core.registry_set import RegistrySet
 
 
 class Registry(FraguaComponent):
@@ -12,7 +12,7 @@ class Registry(FraguaComponent):
     def __init__(self, registry_name: str) -> None:
         """Initialize the registry."""
         super().__init__(component_name=registry_name)
-        self._sections: Dict[str, SectionRegistry] = {}
+        self._sections: Dict[str, RegistrySet] = {}
 
     def _exists(self, key: str) -> bool:
         """Return True if the section exists."""
@@ -22,18 +22,18 @@ class Registry(FraguaComponent):
         """Return True if the section does not exist."""
         return key not in self._sections
 
-    def get_sections(self) -> Dict[str, SectionRegistry]:
+    def get_sections(self) -> Dict[str, RegistrySet]:
         """Retrieve all registered sections."""
         return self._sections
 
-    def create_section(self, name: str, section: SectionRegistry) -> bool:
+    def create_section(self, name: str, section: RegistrySet) -> bool:
         """Create a new section."""
         if self._not_exists(name):
             self._sections[name] = section
             return True
         return False
 
-    def get_section(self, name: str) -> Optional[SectionRegistry]:
+    def get_section(self, name: str) -> Optional[RegistrySet]:
         """Retrieve a section by name."""
         return self._sections.get(name)
 
