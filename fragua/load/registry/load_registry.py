@@ -1,6 +1,6 @@
 """Load Registry Class."""
 
-from typing import cast
+from typing import Any, Dict, cast
 from fragua.core.registry import FraguaRegistry
 from fragua.load.registry.load_sets import (
     LoadAgentSet,
@@ -17,16 +17,16 @@ class LoadRegistry(FraguaRegistry):
     and agent related to load action.
     """
 
-    def __init__(self, registry_name: str) -> None:
+    def __init__(self, registry_name: str, fg_config: bool) -> None:
         super().__init__(registry_name)
-        self._initialize_sets()
+        self._initialize_sets(fg_config)
 
-    def _initialize_sets(self) -> None:
+    def _initialize_sets(self, fg_config: bool) -> None:
         """Initialize load sets."""
         load_fg_sets = {
-            "params": LoadParamsSet(),
-            "styles": LoadStyleSet(),
-            "functions": LoadFunctionSet(),
+            "params": LoadParamsSet(fg_config),
+            "styles": LoadStyleSet(fg_config),
+            "functions": LoadFunctionSet(fg_config),
             "agents": LoadAgentSet(),
         }
 
@@ -52,6 +52,18 @@ class LoadRegistry(FraguaRegistry):
     def agents(self) -> LoadAgentSet:
         """Retrive all load agents."""
         return cast(LoadAgentSet, self.get_sets()["agents"])
+
+    def summary(self) -> Dict[str, Any]:
+        """
+        Load registry summary.
+        """
+
+        return {
+            "params": self.params.summary(),
+            "functions": self.functions.summary(),
+            "styles": self.styles.summary(),
+            "agents": self.agents.summary(),
+        }
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.name}')"

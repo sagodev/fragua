@@ -1,6 +1,6 @@
 """Transform Registry Class."""
 
-from typing import cast
+from typing import Any, Dict, cast
 from fragua.core.registry import FraguaRegistry
 from fragua.transform.registry.transform_sets import (
     TransformAgentSet,
@@ -17,16 +17,16 @@ class TransformRegistry(FraguaRegistry):
     and agent related to transform action.
     """
 
-    def __init__(self, registry_name: str) -> None:
+    def __init__(self, registry_name: str, fg_config: bool) -> None:
         super().__init__(registry_name)
-        self._initialize_sets()
+        self._initialize_sets(fg_config)
 
-    def _initialize_sets(self) -> None:
+    def _initialize_sets(self, fg_config: bool) -> None:
         """Initialize transform sets."""
         transform_fg_sets = {
-            "params": TransformParamsSet(),
-            "styles": TransformStyleSet(),
-            "functions": TransformFunctionSet(),
+            "params": TransformParamsSet(fg_config),
+            "styles": TransformStyleSet(fg_config),
+            "functions": TransformFunctionSet(fg_config),
             "agents": TransformAgentSet(),
         }
 
@@ -52,6 +52,18 @@ class TransformRegistry(FraguaRegistry):
     def agents(self) -> TransformAgentSet:
         """Retrive all transform agents."""
         return cast(TransformAgentSet, self.get_sets()["agents"])
+
+    def summary(self) -> Dict[str, Any]:
+        """
+        Transform registry summary.
+        """
+
+        return {
+            "params": self.params.summary(),
+            "functions": self.functions.summary(),
+            "styles": self.styles.summary(),
+            "agents": self.agents.summary(),
+        }
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.name}')"

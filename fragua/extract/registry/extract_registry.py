@@ -1,6 +1,6 @@
 """Extract Registry Class."""
 
-from typing import cast
+from typing import Any, Dict, cast
 from fragua.core.registry import FraguaRegistry
 from fragua.extract.registry.extract_sets import (
     ExtractAgentSet,
@@ -17,16 +17,16 @@ class ExtractRegistry(FraguaRegistry):
     and agent related to extract action.
     """
 
-    def __init__(self, registry_name: str) -> None:
+    def __init__(self, registry_name: str, fg_config: bool) -> None:
         super().__init__(registry_name)
-        self._initialize_sets()
+        self._initialize_sets(fg_config)
 
-    def _initialize_sets(self) -> None:
+    def _initialize_sets(self, fg_config: bool) -> None:
         """Initialize extract sets."""
         extract_fg_sets = {
-            "params": ExtractParamsSet(),
-            "styles": ExtractStyleSet(),
-            "functions": ExtractFunctionSet(),
+            "params": ExtractParamsSet(fg_config),
+            "styles": ExtractStyleSet(fg_config),
+            "functions": ExtractFunctionSet(fg_config),
             "agents": ExtractAgentSet(),
         }
 
@@ -52,6 +52,18 @@ class ExtractRegistry(FraguaRegistry):
     def agents(self) -> ExtractAgentSet:
         """Retrive all extract agents."""
         return cast(ExtractAgentSet, self.get_sets()["agents"])
+
+    def summary(self) -> Dict[str, Any]:
+        """
+        Extract registry summary.
+        """
+
+        return {
+            "params": self.params.summary(),
+            "functions": self.functions.summary(),
+            "styles": self.styles.summary(),
+            "agents": self.agents.summary(),
+        }
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.name}')"
