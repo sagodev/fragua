@@ -3,7 +3,7 @@ Extract Functions.
 """
 
 from pathlib import Path
-from typing import Dict, Any, Type
+from typing import Dict, Any, Optional, Type
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
@@ -51,9 +51,9 @@ class ExcelExtractFunction(ExtractFunction):
     ExtractFunction for Excel files.
     """
 
-    def __init__(self, params: ExcelExtractParams) -> None:
+    def __init__(self, params: Optional[ExcelExtractParams] = None) -> None:
         super().__init__()
-        self.params = params
+        self.params = ExcelExtractParams() if params is None else params
 
     def summary(self) -> Dict[str, Any]:
         """Excel extract function class summary."""
@@ -78,9 +78,9 @@ class SQLExtractFunction(ExtractFunction):
     ExtractFunction for SQL databases.
     """
 
-    def __init__(self, params: SQLExtractParams) -> None:
+    def __init__(self, params: Optional[SQLExtractParams] = None) -> None:
         super().__init__()
-        self.params = params
+        self.params = SQLExtractParams() if params is None else params
 
     def summary(self) -> Dict[str, Any]:
         """SQL extract function class summary."""
@@ -110,9 +110,9 @@ class APIExtractFunction(ExtractFunction):
     ExtractFunction for REST APIs.
     """
 
-    def __init__(self, params: APIExtractParams) -> None:
+    def __init__(self, params: Optional[APIExtractParams] = None) -> None:
         super().__init__()
-        self.params = params
+        self.params = APIExtractParams() if params is None else params
 
     def summary(self) -> Dict[str, Any]:
         """API extract function class summary."""

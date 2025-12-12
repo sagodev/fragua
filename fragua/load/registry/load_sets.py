@@ -25,7 +25,8 @@ class LoadParamsSet(FraguaSet):
         """Load all predefined load parameter classes into the set."""
         if self.fg_config:
             for name, cls in LOAD_PARAMS_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(LoadParams, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -35,12 +36,9 @@ class LoadParamsSet(FraguaSet):
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-                obj = cls.__new__(cls)
-                obj = cast(LoadParams, obj)
+                obj = cast(LoadParams, cls)
                 LoadParams.__init__(obj, style=name)
-
                 data = obj.summary()
-
                 result[name] = data
 
         return result
@@ -58,7 +56,8 @@ class LoadFunctionSet(FraguaSet):
         """Load all predefined load functions into the set."""
         if self.fg_config:
             for name, cls in LOAD_FUNCTION_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(LoadParams, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -68,17 +67,9 @@ class LoadFunctionSet(FraguaSet):
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-
-                params = LoadParams.__new__(LoadParams)
-                LoadParams.__init__(params, style=name)
-
-                obj = cls.__new__(cls)
-                obj = cast(LoadFunction, obj)
+                obj = cast(LoadFunction, cls)
                 obj.name = name
-                obj.params = params
-
                 data = obj.summary()
-
                 result[name] = data
 
         return result
@@ -96,7 +87,8 @@ class LoadStyleSet(FraguaSet):
         """Load predefined load style classes into the set."""
         if self.fg_config:
             for name, cls in LOAD_STYLE_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(LoadStyle, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -106,11 +98,8 @@ class LoadStyleSet(FraguaSet):
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-
-                obj = cls.__new__(cls)
-                obj = cast(LoadStyle, obj)
+                obj = cast(LoadStyle, cls)
                 data = obj.summary()
-
                 result[name] = data
 
         return result
@@ -129,10 +118,8 @@ class LoadAgentSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-
             obj = cast(Loader, instance)
             data = obj.summary()
-
             result[name] = data
 
         return result

@@ -3,6 +3,7 @@ Generic TransformFunction class.
 """
 
 from fragua.core.function import FraguaFunction
+from fragua.transform.params.base import TransformParams
 
 
 class TransformFunction(FraguaFunction):

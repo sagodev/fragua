@@ -26,7 +26,8 @@ class ExtractParamsSet(FraguaSet):
         """Load all predefined extract parameter classes into the section."""
         if self.fg_config:
             for name, cls in EXTRACT_PARAMS_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(ExtractParams, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -37,8 +38,7 @@ class ExtractParamsSet(FraguaSet):
         if self.fg_config:
             for name, cls in self.get_all().items():
 
-                obj = cls.__new__(cls)
-                obj = cast(ExtractParams, obj)
+                obj = cast(ExtractParams, cls)
                 ExtractParams.__init__(obj, style=name)
 
                 data = obj.summary()
@@ -60,7 +60,8 @@ class ExtractFunctionSet(FraguaSet):
         """Load all predefined extract functions into the section."""
         if self.fg_config:
             for name, cls in EXTRACT_FUNCTION_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(ExtractFunction, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -71,10 +72,8 @@ class ExtractFunctionSet(FraguaSet):
         if self.fg_config:
             for name, cls in self.get_all().items():
 
-                obj = cls.__new__(cls)
-                obj = cast(ExtractFunction, obj)
+                obj = cast(ExtractFunction, cls)
                 obj.name = name
-
                 data = obj.summary()
 
                 result[name] = data
@@ -94,7 +93,8 @@ class ExtractStyleSet(FraguaSet):
         """Load predefined extract style classes into the section."""
         if self.fg_config:
             for name, cls in EXTRACT_STYLE_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(ExtractStyle, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -105,8 +105,7 @@ class ExtractStyleSet(FraguaSet):
         if self.fg_config:
             for name, cls in self.get_all().items():
 
-                obj = cls.__new__(cls)
-                obj = cast(ExtractStyle, obj)
+                obj = cast(ExtractStyle, cls)
                 data = obj.summary()
 
                 result[name] = data
@@ -122,7 +121,7 @@ class ExtractAgentSet(FraguaSet):
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
-        Summary of all extract agents.
+        Summary of all extract agentsclasses.
         """
         result: Dict[str, Dict[str, Any]] = {}
 

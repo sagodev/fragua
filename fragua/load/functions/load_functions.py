@@ -1,6 +1,6 @@
 """Load Functions."""
 
-from typing import Any, Dict, Type
+from typing import Any, Dict, Optional, Type
 import pandas as pd
 
 
@@ -21,9 +21,9 @@ class ExcelLoadFunction(LoadFunction):
 
     PURPOSE: str = "Export a DataFrame to an Excel file."
 
-    def __init__(self, params: ExcelLoadParams) -> None:
+    def __init__(self, params: Optional[ExcelLoadParams] = None) -> None:
         super().__init__()
-        self.params = params
+        self.params = ExcelLoadParams() if params is None else params
 
     def execute(self) -> pd.DataFrame:
         validate_excel_params(self.params)

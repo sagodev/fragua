@@ -25,7 +25,8 @@ class TransformParamsSet(FraguaSet):
         """Transform all predefined transform parameter classes into the set."""
         if self.fg_config:
             for name, cls in TRANSFORM_PARAMS_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(TransformParams, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -35,12 +36,9 @@ class TransformParamsSet(FraguaSet):
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-                obj = cls.__new__(cls)
-                obj = cast(TransformParams, obj)
+                obj = cast(TransformParams, cls)
                 TransformParams.__init__(obj, style=name)
-
                 data = obj.summary()
-
                 result[name] = data
 
         return result
@@ -58,7 +56,8 @@ class TransformFunctionSet(FraguaSet):
         """Transform all predefined Transform functions into the set."""
         if self.fg_config:
             for name, cls in TRANSFORM_FUNCTION_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(TransformFunction, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -68,17 +67,9 @@ class TransformFunctionSet(FraguaSet):
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-
-                params = TransformParams.__new__(TransformParams)
-                TransformParams.__init__(params, style=name)
-
-                obj = cls.__new__(cls)
-                obj = cast(TransformFunction, obj)
+                obj = cast(TransformFunction, cls)
                 obj.name = name
-                obj.params = params
-
                 data = obj.summary()
-
                 result[name] = data
 
         return result
@@ -96,7 +87,8 @@ class TransformStyleSet(FraguaSet):
         """Transform predefined Transform style classes into the set."""
         if self.fg_config:
             for name, cls in TRANSFORM_STYLE_CLASSES.items():
-                self.create_one(name, cls)
+                cls = cast(TransformStyle, cls)
+                self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -106,11 +98,8 @@ class TransformStyleSet(FraguaSet):
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-
-                obj = cls.__new__(cls)
-                obj = cast(TransformStyle, obj)
+                obj = cast(TransformStyle, cls)
                 data = obj.summary()
-
                 result[name] = data
 
         return result
@@ -127,10 +116,8 @@ class TransformAgentSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-
             obj = cast(Transformer, instance)
             data = obj.summary()
-
             result[name] = data
 
         return result

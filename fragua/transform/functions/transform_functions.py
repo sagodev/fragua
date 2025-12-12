@@ -3,7 +3,7 @@ Transform Functions.
 """
 
 from __future__ import annotations
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pandas as pd
 
@@ -39,9 +39,9 @@ class MLTransformFunction(TransformFunction):
         "scale_numeric",
     ]
 
-    def __init__(self, params: MLTransformParams) -> None:
+    def __init__(self, params: Optional[MLTransformParams] = None) -> None:
         super().__init__()
-        self.params = params
+        self.params = MLTransformParams() if params is None else params
 
     def execute(self) -> pd.DataFrame:
         for step in self.STEPS:
@@ -85,9 +85,9 @@ class ReportTransformFunction(TransformFunction):
         "format_numeric",
     ]
 
-    def __init__(self, params: ReportTransformParams) -> None:
+    def __init__(self, params: Optional[ReportTransformParams] = None) -> None:
         super().__init__()
-        self.params = params
+        self.params = ReportTransformParams() if params is None else params
 
     def execute(self) -> pd.DataFrame:
         for step in self.STEPS:
@@ -131,9 +131,9 @@ class AnalysisTransformFunction(TransformFunction):
         "sort_dataframe",
     ]
 
-    def __init__(self, params: AnalysisTransformParams) -> None:
+    def __init__(self, params: Optional[AnalysisTransformParams] = None) -> None:
         super().__init__()
-        self.params = params
+        self.params = AnalysisTransformParams() if params is None else params
 
     def execute(self) -> pd.DataFrame:
         for step in self.STEPS:
