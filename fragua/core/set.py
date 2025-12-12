@@ -1,7 +1,7 @@
 """Fragua Set class."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from fragua.core.component import FraguaComponent
 
@@ -15,11 +15,11 @@ class FraguaSet(ABC):
     def __init__(
         self,
         set_name: str,
-        components: Optional[Dict[str, Type[FraguaComponent]]] = None,
+        components: Optional[Dict[str, FraguaComponent]] = None,
     ):
         """Initialize set."""
         self.set_name = set_name
-        self._components: Dict[str, Type[FraguaComponent]] = (
+        self._components: Dict[str, FraguaComponent] = (
             {} if components is None else components
         )
 
@@ -31,23 +31,23 @@ class FraguaSet(ABC):
         """Return True if the component does not exist."""
         return key not in self._components
 
-    def create_one(self, name: str, component: Type[FraguaComponent]) -> bool:
-        """Create an component linked to a component."""
+    def add(self, name: str, component: FraguaComponent) -> bool:
+        """Add an new component."""
 
         if self._not_exists(name):
             self._components[name] = component
             return True
         return False
 
-    def get_one(self, name: str) -> Optional[Type[FraguaComponent]]:
+    def get_one(self, name: str) -> Optional[FraguaComponent]:
         """Retrieve a specific component."""
         return self._components.get(name)
 
-    def get_all(self) -> Dict[str, Type[FraguaComponent]]:
+    def get_all(self) -> Dict[str, FraguaComponent]:
         """Retrieve all components."""
         return self._components
 
-    def update_one(self, old_name: str, new_name: str) -> bool:
+    def update(self, old_name: str, new_name: str) -> bool:
         """Rename an component."""
         if self._exists(old_name) and self._not_exists(new_name):
             component = self._components.pop(old_name)
