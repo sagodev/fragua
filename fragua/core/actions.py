@@ -13,13 +13,13 @@ class FraguaActions(FraguaComponent):
     This class contain ETL registries.
     """
 
-    def __init__(self, fg_config: bool):
+    def __init__(self, fg_config: bool) -> None:
         """Initialize Fragua action component."""
         super().__init__(component_name="fragua_actions")
+        self.fg_config = fg_config
         self._extract = self._initialize_extract_registry()
         self._transform = self._initialize_transform_registry()
         self._load = self._initialize_load_registry()
-        self.fg_config = fg_config
 
     def _initialize_extract_registry(self) -> ExtractRegistry:
         """"""
