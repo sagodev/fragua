@@ -26,19 +26,10 @@ class Style(FraguaComponent, Generic[ParamsT, ResultT]):
     def _run(self, params: ParamsT) -> ResultT:
         raise NotImplementedError
 
-    def log_error(self, error: Exception) -> None:
-        """log error funciton"""
-        logger.error(
-            "[%s ERROR] %s: %s", self.__class__.__name__, type(error).__name__, error
-        )
-
     def use(self, params: ParamsT) -> ResultT:
         """Pipeline for style classes."""
-        try:
-            return self._run(params)
-        except Exception as e:
-            self.log_error(e)
-            raise
+
+        return self._run(params)
 
     def summary(self) -> Dict[str, Any]:
         """Base style class summary."""
