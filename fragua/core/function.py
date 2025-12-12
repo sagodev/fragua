@@ -3,7 +3,7 @@ Base abstract class for all function schemas used by styles in Fragua.
 """
 
 from abc import abstractmethod
-from typing import Any, Dict
+from typing import Any
 
 from fragua.core.component import FraguaComponent
 
@@ -17,10 +17,6 @@ class FraguaFunction(FraguaComponent):
     def __init__(self, function_name: str, action: str) -> None:
         super().__init__(component_name=function_name)
         self.action: str = action
-
-    @abstractmethod
-    def summary(self) -> Dict[str, Any]:
-        """Base function class summary."""
 
     @abstractmethod
     def execute(self) -> Any:
