@@ -18,8 +18,8 @@ class TransformParamsSet(FraguaSet):
 
     def __init__(self, fg_config: bool, set_name: str = "params") -> None:
         super().__init__(set_name)
-        self._initialize_params()
         self.fg_config = fg_config
+        self._initialize_params()
 
     def _initialize_params(self) -> None:
         """Transform all predefined transform parameter classes into the set."""
