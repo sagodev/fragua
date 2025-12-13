@@ -1,6 +1,6 @@
 """Extract Sections Module."""
 
-from typing import Any, Dict, cast
+from typing import Any, Dict, Type, cast
 from fragua.core.set import FraguaSet
 
 from fragua.extract import (
@@ -37,13 +37,10 @@ class ExtractParamsSet(FraguaSet):
 
         if self.fg_config:
             for name, cls in self.get_all().items():
+                cls = cast(Type[ExtractParams], cls)
+                obj = cls(name)
 
-                obj = cast(ExtractParams, cls)
-                ExtractParams.__init__(obj, style=name)
-
-                data = obj.summary()
-
-                result[name] = data
+                result[name] = obj.summary()
 
         return result
 
@@ -72,8 +69,8 @@ class ExtractFunctionSet(FraguaSet):
         if self.fg_config:
             for name, cls in self.get_all().items():
 
-                obj = cast(ExtractFunction, cls)
-                obj.name = name
+                cls = cast(Type[ExtractFunction], cls)
+                obj = cls()
                 data = obj.summary()
 
                 result[name] = data
@@ -105,7 +102,8 @@ class ExtractStyleSet(FraguaSet):
         if self.fg_config:
             for name, cls in self.get_all().items():
 
-                obj = cast(ExtractStyle, cls)
+                cls = cast(Type[ExtractStyle], cls)
+                obj = cls()
                 data = obj.summary()
 
                 result[name] = data
