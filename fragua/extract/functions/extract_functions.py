@@ -24,9 +24,9 @@ class CSVExtractFunction(ExtractFunction):
     ExtractFunction for CSV files.
     """
 
-    def __init__(self, params: CSVExtractParams) -> None:
+    def __init__(self, params: Optional[CSVExtractParams] = None) -> None:
         super().__init__()
-        self.params = params
+        self.params = CSVExtractParams() if params is None else params
 
     def summary(self) -> Dict[str, Any]:
         """CSV extract function class summary."""
