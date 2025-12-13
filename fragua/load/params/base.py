@@ -14,9 +14,10 @@ class LoadParams(Params):
     def summary(self) -> Dict[str, Any]:
         fields = {}
 
-        for name in self.__annotations__:
-            desc = self.FIELD_DESCRIPTIONS.get(name, "No description available.")
-            fields[name] = desc
+        for name in self.FIELD_DESCRIPTIONS:
+            fields[name] = self.FIELD_DESCRIPTIONS.get(
+                name, "No description available."
+            )
 
         return {
             "name": self.name,
