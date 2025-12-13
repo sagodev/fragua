@@ -1,6 +1,6 @@
 """Transform Sets Module."""
 
-from typing import Any, Dict, cast
+from typing import Any, Dict, Type, cast
 from fragua.core.set import FraguaSet
 from fragua.transform import (
     TRANSFORM_FUNCTION_CLASSES,
@@ -22,24 +22,21 @@ class TransformParamsSet(FraguaSet):
         self._initialize_params()
 
     def _initialize_params(self) -> None:
-        """Transform all predefined transform parameter classes into the set."""
+        """Load all predefined transform parameter classes into the set."""
         if self.fg_config:
             for name, cls in TRANSFORM_PARAMS_CLASSES.items():
                 cls = cast(TransformParams, cls)
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Return a structured summary of all Transform parameter classes.
-        """
+        """Return a structured summary of all Transform parameter classes."""
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-                obj = cast(TransformParams, cls)
-                TransformParams.__init__(obj, style=name)
-                data = obj.summary()
-                result[name] = data
+                cls = cast(Type[TransformParams], cls)
+                obj = cls(name)
+                result[name] = obj.summary()
 
         return result
 
@@ -53,24 +50,21 @@ class TransformFunctionSet(FraguaSet):
         self._initialize_functions()
 
     def _initialize_functions(self) -> None:
-        """Transform all predefined Transform functions into the set."""
+        """Load all predefined Transform functions into the set."""
         if self.fg_config:
             for name, cls in TRANSFORM_FUNCTION_CLASSES.items():
                 cls = cast(TransformFunction, cls)
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Return a structured summary of all Transform functions.
-        """
+        """Return a structured summary of all Transform functions."""
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-                obj = cast(TransformFunction, cls)
-                obj.name = name
-                data = obj.summary()
-                result[name] = data
+                cls = cast(Type[TransformFunction], cls)
+                obj = cls()
+                result[name] = obj.summary()
 
         return result
 
@@ -84,23 +78,21 @@ class TransformStyleSet(FraguaSet):
         self._initialize_styles()
 
     def _initialize_styles(self) -> None:
-        """Transform predefined Transform style classes into the set."""
+        """Load predefined Transform style classes into the set."""
         if self.fg_config:
             for name, cls in TRANSFORM_STYLE_CLASSES.items():
                 cls = cast(TransformStyle, cls)
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Summary of all Transform style classes.
-        """
+        """Summary of all Transform style classes."""
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-                obj = cast(TransformStyle, cls)
-                data = obj.summary()
-                result[name] = data
+                cls = cast(Type[TransformStyle], cls)
+                obj = cls()
+                result[name] = obj.summary()
 
         return result
 
