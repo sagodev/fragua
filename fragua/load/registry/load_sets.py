@@ -1,6 +1,6 @@
 """Load Sets Module."""
 
-from typing import Any, Dict, cast
+from typing import Any, Dict, Type, cast
 from fragua.core.set import FraguaSet
 from fragua.load import (
     LOAD_FUNCTION_CLASSES,
@@ -29,17 +29,14 @@ class LoadParamsSet(FraguaSet):
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Summary of all load params classes.
-        """
+        """Summary of all load params classes."""
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-                obj = cast(LoadParams, cls)
-                LoadParams.__init__(obj, style=name)
-                data = obj.summary()
-                result[name] = data
+                cls = cast(Type[LoadParams], cls)
+                obj = cls(name)
+                result[name] = obj.summary()
 
         return result
 
@@ -56,21 +53,18 @@ class LoadFunctionSet(FraguaSet):
         """Load all predefined load functions into the set."""
         if self.fg_config:
             for name, cls in LOAD_FUNCTION_CLASSES.items():
-                cls = cast(LoadParams, cls)
+                cls = cast(LoadFunction, cls)
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Summary of all load functions.
-        """
+        """Summary of all load functions."""
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-                obj = cast(LoadFunction, cls)
-                obj.name = name
-                data = obj.summary()
-                result[name] = data
+                cls = cast(Type[LoadFunction], cls)
+                obj = cls()
+                result[name] = obj.summary()
 
         return result
 
@@ -91,16 +85,14 @@ class LoadStyleSet(FraguaSet):
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Summary of all load style classes.
-        """
+        """Summary of all load style classes."""
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
             for name, cls in self.get_all().items():
-                obj = cast(LoadStyle, cls)
-                data = obj.summary()
-                result[name] = data
+                cls = cast(Type[LoadStyle], cls)
+                obj = cls()
+                result[name] = obj.summary()
 
         return result
 
