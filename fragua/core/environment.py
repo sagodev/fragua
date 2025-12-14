@@ -8,8 +8,8 @@ from fragua.core.agent import FraguaAgent
 from fragua.core.component import FraguaComponent
 from fragua.core.actions import FraguaActions
 from fragua.core.set import FraguaSet
-from fragua.core.warehouse import Warehouse
-from fragua.core.manager import WarehouseManager
+from fragua.core.warehouse import FraguaWarehouse
+from fragua.core.manager import FraguaManager
 
 from fragua.extract import Extractor
 from fragua.extract.registry.extract_registry import ExtractRegistry
@@ -75,18 +75,18 @@ class Environment(FraguaComponent):
         return ValueError("Agent not found.")
 
     # ---------------------- Initializers ---------------------- #
-    def _initialize_manager(self) -> WarehouseManager:
+    def _initialize_manager(self) -> FraguaManager:
         """Initialize warehouse manager for environment."""
-        manager = WarehouseManager(f"{self.name}_manager", self.warehouse)
+        manager = FraguaManager(f"{self.name}_manager", self.warehouse)
 
         logger.info(
             "Default warehouse manager initialized for environment '%s'.", self.name
         )
         return manager
 
-    def _initialize_warehouse(self) -> Warehouse:
+    def _initialize_warehouse(self) -> FraguaWarehouse:
         """Initialize warehouse for environment."""
-        warehouse = Warehouse(f"{self.name}_warehouse")
+        warehouse = FraguaWarehouse(f"{self.name}_warehouse")
 
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse

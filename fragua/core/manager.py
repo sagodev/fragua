@@ -1,5 +1,5 @@
 """
-WarehouseManager class in Fragua.
+FraguaManager class in Fragua.
 Handles all logic for adding, getting, removing, and listing storages.
 """
 
@@ -9,7 +9,7 @@ import copy as py_copy
 
 from fragua.core.component import FraguaComponent
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
-from fragua.core.warehouse import Warehouse
+from fragua.core.warehouse import FraguaWarehouse
 
 from fragua.utils.logger import get_logger
 
@@ -24,14 +24,14 @@ StorageResult: TypeAlias = Union[
 ]
 
 
-class WarehouseManager(FraguaComponent):
+class FraguaManager(FraguaComponent):
     """
     Encapsulates storage management logic for Box objects in a flat Warehouse structure.
     Provides add, get, delete, rename, copy, batch operations,
     metadata search, snapshot, and undo capabilities.
     """
 
-    def __init__(self, manager_name: str, warehouse: Warehouse) -> None:
+    def __init__(self, manager_name: str, warehouse: FraguaWarehouse) -> None:
         super().__init__(component_name=manager_name)
         self.warehouse = warehouse
         self._movement_log: List[dict[str, object]] = []
@@ -39,7 +39,7 @@ class WarehouseManager(FraguaComponent):
 
     def summary(self) -> Dict[str, Any]:
         """
-        WarehouseManager summary.
+        FraguaManager summary.
 
         Includes:
             - manager name

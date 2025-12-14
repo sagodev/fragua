@@ -13,7 +13,7 @@ class BasicEnvironment(Environment):
     """
     Predefined environment with the essential Fragua setup:
     - 1 Warehouse
-    - 1 WarehouseManager
+    - 1 FraguaManager
     - 1 Extractor
     - 1 Transformer
     - 1 Loader

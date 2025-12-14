@@ -8,7 +8,7 @@ from fragua.core.component import FraguaComponent
 from fragua.core.storage import Storage, Box
 
 
-class Warehouse(FraguaComponent):
+class FraguaWarehouse(FraguaComponent):
     """
     Simple container for Boxes.
     Warehouse manager is responsible for all operations.

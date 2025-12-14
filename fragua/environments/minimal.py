@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 class MinimalEnvironment(Environment):
     """
-    A minimal Environment subclass that starts only with a Warehouse and WarehouseManager, but
+    A minimal Environment subclass that starts only with a Warehouse and FraguaManager, but
     without Agents. Useful for flexible or custom setups.
     """
 

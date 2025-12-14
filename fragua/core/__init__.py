@@ -30,9 +30,9 @@ from .style import FraguaStyle
 
 from .function import FraguaFunction
 
-from .manager import WarehouseManager
+from .manager import FraguaManager
 
-from .warehouse import Warehouse
+from .warehouse import FraguaWarehouse
 
 from .storage import Storage, Box, Container, STORAGE_CLASSES
 
@@ -57,9 +57,9 @@ __all__ = [
     # Function Class
     "FraguaFunction",
     # Warehouse Manager
-    "WarehouseManager",
+    "FraguaManager",
     # Warehouse
-    "Warehouse",
+    "FraguaWarehouse",
     # Storage
     "Storage",
     # Storage Types
