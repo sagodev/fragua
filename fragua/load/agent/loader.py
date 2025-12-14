@@ -1,4 +1,10 @@
-"""Loader Class."""
+"""
+Loader Agent Class.
+
+Defines the Loader agent responsible for applying load styles to
+stored Box objects and persisting their data into target destinations
+(e.g. files, databases, external systems).
+"""
 
 from __future__ import annotations
 
@@ -18,17 +24,44 @@ logger = get_logger(__name__)
 
 
 class Loader(FraguaAgent):
-    """Agent that applies extraction styles to data sources for loading."""
+    """
+    Loader agent responsible for executing load workflows.
+
+    This agent:
+    - retrieves Box objects from the Warehouse
+    - groups them into a Container
+    - resolves load styles and parameters
+    - executes the load operation for each stored object
+    """
 
     def __init__(self, name: str, environment: Environment):
+        """
+        _toggleLoader agent initialization.
+
+                Args:
+                    name (str): Agent identifier.
+                    environment (Environment): Active Fragua environment.
+        """
         super().__init__(agent_name=name, environment=environment)
         self.role: str = "loader"
         self.action: str = "load"
         self.storage_type: str = "Container"
 
     def create_container(self, content: Union[str, List[str]]) -> Container:
-        """Create and fill a Container using stored Box objects."""
+        """
+        Create a Container populated with Box objects from the warehouse.
 
+        Args:
+            content (Union[str, List[str]]): One or more Box names
+                to retrieve from the warehouse.
+
+        Returns:
+            Container: A container holding the resolved Box objects.
+
+        Raises:
+            TypeError: If the created storage is not a Container or
+                if any resolved object is not a Box.
+        """
         container = self.create_storage(data=None)
 
         if not isinstance(container, Container):
@@ -60,13 +93,26 @@ class Loader(FraguaAgent):
         **kwargs: Any,
     ) -> None:
         """
-        Execute the loader workflow for one or multiple stored objects.
+        Execute a load workflow for one or more stored Box objects.
 
-        This method loads one or more Box objects from the warehouse into
-        a Container and applies the selected load style to each storage
-        using the resolved parameters.
+        Workflow steps:
+            1. Resolve the load style.
+            2. Collect Box objects into a Container.
+            3. Resolve or instantiate load parameters.
+            4. Apply the load style to each Box's data.
+            5. Register the operation in the agent log.
+
+        Args:
+            style (str): Load style identifier (e.g. "excel", "sql").
+            apply_to (Union[str, list[str]]): Name(s) of Box objects
+                to be loaded.
+            save_as (Optional[str]): Optional storage alias (reserved).
+            params (Optional[LoadParamsT]): Explicit load parameters.
+            **kwargs: Additional keyword arguments used to build params.
+
+        Raises:
+            TypeError: If required arguments are missing or invalid.
         """
-
         if apply_to is None:
             raise TypeError("Missing required attribute: 'apply_to'.")
 
