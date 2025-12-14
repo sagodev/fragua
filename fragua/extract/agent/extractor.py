@@ -15,9 +15,25 @@ logger = get_logger(__name__)
 
 
 class Extractor(FraguaAgent):
-    """Agent that applies extraction styles to data sources for extraction."""
+    """
+    Agent responsible for executing extraction workflows in Fragua.
+
+    The Extractor applies extraction styles to external data sources
+    (files, databases, APIs, etc.) and produces Box storage objects
+    containing raw extracted data.
+
+    This agent does not perform transformations or loading operations;
+    its sole responsibility is data acquisition.
+    """
 
     def __init__(self, name: str, environment: Environment):
+        """
+        Initialize the Extractor agent.
+
+        Args:
+            name: Logical name of the agent.
+            environment: Active Fragua environment instance.
+        """
         super().__init__(agent_name=name, environment=environment)
         self.role = "extractor"
         self.action = "extract"
@@ -33,6 +49,22 @@ class Extractor(FraguaAgent):
         **kwargs: Any,
     ) -> None:
         """
-        Execute the extraction workflow using an ExtractParams instance.
+        Execute an extraction workflow using a registered extract style.
+
+        This method orchestrates the execution of an extraction style
+        through the underlying agent workflow, producing a Box that
+        can be stored in the Warehouse.
+
+        Args:
+            style: Name of the extraction style to apply.
+            apply_to: Optional source identifier(s) to extract from.
+            save_as: Optional target name under which the extracted
+                Box will be stored in the Warehouse.
+            params: ExtractParams instance defining configuration
+                for the extraction process.
+            **kwargs: Additional style-specific parameters.
+
+        Returns:
+            None
         """
         self._execute_workflow(style, save_as, params, **kwargs)

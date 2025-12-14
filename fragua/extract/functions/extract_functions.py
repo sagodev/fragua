@@ -1,5 +1,9 @@
 """
-Extract Functions.
+Concrete extraction function implementations.
+
+This module provides ExtractFunction implementations for common
+data sources such as CSV files, Excel spreadsheets, SQL databases,
+and REST APIs.
 """
 
 from pathlib import Path
@@ -21,16 +25,30 @@ from fragua.extract.params.extract_params import (
 
 class CSVExtractFunction(ExtractFunction):
     """
-    ExtractFunction for CSV files.
+    Extraction function for CSV files.
+
+    Reads a CSV file from disk and returns its contents as a pandas
+    DataFrame.
     """
 
     def __init__(self, params: Optional[CSVExtractParams] = None) -> None:
+        """
+        Initialize the CSV extract function.
+
+        Args:
+            params: Optional CSVExtractParams instance. If not provided,
+                a default instance is created.
+        """
         super().__init__()
         self.params = CSVExtractParams() if params is None else params
 
     def summary(self) -> Dict[str, Any]:
-        """CSV extract function class summary."""
+        """
+        Return a structured summary of the CSV extract function.
 
+        Returns:
+            Dictionary describing the function purpose and parameter type.
+        """
         return {
             "function": self.name,
             "params_type": "CSVExtractParams",
@@ -38,6 +56,18 @@ class CSVExtractFunction(ExtractFunction):
         }
 
     def execute(self) -> pd.DataFrame:
+        """
+        Execute the CSV extraction.
+
+        Reads the CSV file defined in the params and loads it into
+        a pandas DataFrame.
+
+        Returns:
+            A pandas DataFrame containing the extracted data.
+
+        Raises:
+            ValueError: If the 'path' parameter is not provided.
+        """
         path = self.params.path
         if not path:
             raise ValueError("'path' is required in params")
@@ -48,16 +78,26 @@ class CSVExtractFunction(ExtractFunction):
 
 class ExcelExtractFunction(ExtractFunction):
     """
-    ExtractFunction for Excel files.
+    Extraction function for Excel files.
+
+    Loads data from an Excel spreadsheet into a pandas DataFrame.
     """
 
     def __init__(self, params: Optional[ExcelExtractParams] = None) -> None:
+        """
+        Initialize the Excel extract function.
+
+        Args:
+            params: Optional ExcelExtractParams instance. If not provided,
+                a default instance is created.
+        """
         super().__init__()
         self.params = ExcelExtractParams() if params is None else params
 
     def summary(self) -> Dict[str, Any]:
-        """Excel extract function class summary."""
-
+        """
+        Return a structured summary of the Excel extract function.
+        """
         return {
             "function": self.name,
             "params_type": "ExcelExtractParams",
@@ -65,6 +105,15 @@ class ExcelExtractFunction(ExtractFunction):
         }
 
     def execute(self) -> pd.DataFrame:
+        """
+        Execute the Excel extraction.
+
+        Returns:
+            A pandas DataFrame containing the extracted spreadsheet data.
+
+        Raises:
+            ValueError: If the 'path' parameter is not provided.
+        """
         path = self.params.path
         if not path:
             raise ValueError("'path' is required in params")
@@ -75,16 +124,27 @@ class ExcelExtractFunction(ExtractFunction):
 
 class SQLExtractFunction(ExtractFunction):
     """
-    ExtractFunction for SQL databases.
+    Extraction function for SQL databases.
+
+    Executes a SQL query against a database and returns the result
+    as a pandas DataFrame.
     """
 
     def __init__(self, params: Optional[SQLExtractParams] = None) -> None:
+        """
+        Initialize the SQL extract function.
+
+        Args:
+            params: Optional SQLExtractParams instance. If not provided,
+                a default instance is created.
+        """
         super().__init__()
         self.params = SQLExtractParams() if params is None else params
 
     def summary(self) -> Dict[str, Any]:
-        """SQL extract function class summary."""
-
+        """
+        Return a structured summary of the SQL extract function.
+        """
         return {
             "function": self.name,
             "params_type": "SQLExtractParams",
@@ -92,6 +152,16 @@ class SQLExtractFunction(ExtractFunction):
         }
 
     def execute(self) -> pd.DataFrame:
+        """
+        Execute the SQL extraction.
+
+        Returns:
+            A pandas DataFrame containing the query results.
+
+        Raises:
+            ValueError: If 'connection_string' or 'query' parameters
+                are not provided.
+        """
         connection_string = self.params.connection_string
         query = self.params.query
         if not connection_string or not query:
@@ -107,16 +177,27 @@ class SQLExtractFunction(ExtractFunction):
 
 class APIExtractFunction(ExtractFunction):
     """
-    ExtractFunction for REST APIs.
+    Extraction function for REST APIs.
+
+    Performs an HTTP request and converts the JSON response into
+    a pandas DataFrame.
     """
 
     def __init__(self, params: Optional[APIExtractParams] = None) -> None:
+        """
+        Initialize the API extract function.
+
+        Args:
+            params: Optional APIExtractParams instance. If not provided,
+                a default instance is created.
+        """
         super().__init__()
         self.params = APIExtractParams() if params is None else params
 
     def summary(self) -> Dict[str, Any]:
-        """API extract function class summary."""
-
+        """
+        Return a structured summary of the API extract function.
+        """
         return {
             "function": self.name,
             "params_type": "APIExtractParams",
@@ -124,6 +205,20 @@ class APIExtractFunction(ExtractFunction):
         }
 
     def execute(self) -> pd.DataFrame:
+        """
+        Execute the API extraction.
+
+        Sends an HTTP request based on the configured parameters
+        and normalizes the JSON response into a DataFrame.
+
+        Returns:
+            A pandas DataFrame containing the API response data.
+
+        Raises:
+            ValueError: If the 'url' parameter is not provided.
+            ValueError: If the API response format is unsupported.
+            requests.HTTPError: If the HTTP request fails.
+        """
         url = self.params.url
         if not url:
             raise ValueError("'url' is required in params")

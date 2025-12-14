@@ -1,5 +1,10 @@
 """
-ExtractStyle types for various data extraction methods.
+Concrete ExtractStyle implementations for different data sources.
+
+Each ExtractStyle coordinates a specific extraction workflow by:
+- receiving typed ExtractParams
+- delegating execution to the corresponding ExtractFunction
+- returning extracted data as a pandas DataFrame
 """
 
 from typing import Any, Dict, Type
@@ -11,8 +16,6 @@ from fragua.extract.functions.extract_functions import (
     ExcelExtractFunction,
     SQLExtractFunction,
 )
-
-
 from fragua.extract.params.base import ExtractParams
 from fragua.extract.params.extract_params import (
     APIExtractParams,
@@ -24,12 +27,29 @@ from fragua.extract.styles.base import ExtractStyle
 
 
 class CSVExtractStyle(ExtractStyle):
-    """Extracts data from CSV files."""
+    """
+    Extraction style for CSV-based data sources.
+
+    Orchestrates CSV data extraction by delegating execution
+    to CSVExtractFunction using CSVExtractParams.
+    """
 
     def extract(self, params: CSVExtractParams) -> pd.DataFrame:
+        """
+        Extract tabular data from a CSV file.
+
+        Args:
+            params (CSVExtractParams): Parameters defining the CSV source.
+
+        Returns:
+            pd.DataFrame: Extracted tabular data.
+        """
         return CSVExtractFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
+        """
+        Return metadata describing this extract style.
+        """
         return {
             "style_name": self.__class__.__name__,
             "purpose": "Extract tabular data from CSV files.",
@@ -37,18 +57,35 @@ class CSVExtractStyle(ExtractStyle):
             "parameters_type": "CSVExtractParams",
             "function": "CSVExtractFunction",
             "fields": {
-                "path": "Path to the CSV file.",
+                "path": "Filesystem path to the CSV file.",
             },
         }
 
 
 class ExcelExtractStyle(ExtractStyle):
-    """Extracts data from Excel files."""
+    """
+    Extraction style for Excel-based data sources.
+
+    Coordinates extraction from Excel spreadsheets via
+    ExcelExtractFunction and ExcelExtractParams.
+    """
 
     def extract(self, params: ExcelExtractParams) -> pd.DataFrame:
+        """
+        Extract structured data from an Excel spreadsheet.
+
+        Args:
+            params (ExcelExtractParams): Parameters defining the Excel source.
+
+        Returns:
+            pd.DataFrame: Extracted worksheet data.
+        """
         return ExcelExtractFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
+        """
+        Return metadata describing this extract style.
+        """
         return {
             "style_name": self.__class__.__name__,
             "purpose": "Extract structured data from Excel spreadsheets.",
@@ -56,19 +93,36 @@ class ExcelExtractStyle(ExtractStyle):
             "parameters_type": "ExcelExtractParams",
             "function": "ExcelExtractFunction",
             "fields": {
-                "path": "Path to the Excel file.",
-                "sheet_name": "Worksheet to load.",
+                "path": "Filesystem path to the Excel file.",
+                "sheet_name": "Worksheet name or index to load.",
             },
         }
 
 
 class SQLExtractStyle(ExtractStyle):
-    """Extracts data from SQL databases."""
+    """
+    Extraction style for SQL database sources.
+
+    Orchestrates query-based extraction using SQLExtractFunction
+    and SQLExtractParams.
+    """
 
     def extract(self, params: SQLExtractParams) -> pd.DataFrame:
+        """
+        Execute a SQL query and extract its result set.
+
+        Args:
+            params (SQLExtractParams): Parameters defining database connection and query.
+
+        Returns:
+            pd.DataFrame: Query result as a DataFrame.
+        """
         return SQLExtractFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
+        """
+        Return metadata describing this extract style.
+        """
         return {
             "style_name": self.__class__.__name__,
             "purpose": "Extract records from SQL databases using queries.",
@@ -76,19 +130,36 @@ class SQLExtractStyle(ExtractStyle):
             "parameters_type": "SQLExtractParams",
             "function": "SQLExtractFunction",
             "fields": {
-                "connection_string": "Database connection string.",
+                "connection_string": "Database connection URL.",
                 "query": "SQL query to execute.",
             },
         }
 
 
 class APIExtractStyle(ExtractStyle):
-    """Extracts data from REST APIs."""
+    """
+    Extraction style for REST API data sources.
+
+    Coordinates HTTP-based extraction workflows using
+    APIExtractFunction and APIExtractParams.
+    """
 
     def extract(self, params: APIExtractParams) -> pd.DataFrame:
+        """
+        Fetch and normalize data from a REST API endpoint.
+
+        Args:
+            params (APIExtractParams): Parameters defining the API request.
+
+        Returns:
+            pd.DataFrame: Extracted API response data.
+        """
         return APIExtractFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
+        """
+        Return metadata describing this extract style.
+        """
         return {
             "style_name": self.__class__.__name__,
             "purpose": "Extract data from REST APIs over HTTP.",
@@ -96,12 +167,12 @@ class APIExtractStyle(ExtractStyle):
             "parameters_type": "APIExtractParams",
             "function": "APIExtractFunction",
             "fields": {
-                "url": "Request endpoint.",
+                "url": "Full API endpoint URL.",
                 "method": "HTTP method (GET, POST, etc.).",
-                "headers": "Request headers.",
+                "headers": "HTTP request headers.",
                 "params": "URL query parameters.",
-                "data": "Request body.",
-                "timeout": "Timeout for request.",
+                "data": "Request body payload.",
+                "timeout": "Maximum request timeout in seconds.",
             },
         }
 
