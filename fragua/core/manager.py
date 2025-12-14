@@ -26,12 +26,30 @@ StorageResult: TypeAlias = Union[
 
 class FraguaManager(FraguaComponent):
     """
-    Encapsulates storage management logic for Box objects in a flat Warehouse structure.
-    Provides add, get, delete, rename, copy, batch operations,
-    metadata search, snapshot, and undo capabilities.
+    Central coordinator for managing Storage objects within a FraguaWarehouse.
+
+    The FraguaManager encapsulates all operational logic for Box-based storages,
+    providing a controlled API to add, retrieve, delete, rename, copy, and
+    batch-process storage objects.
+
+    In addition, it offers:
+        - movement logging with timestamps
+        - undo capabilities for destructive operations
+        - metadata-based search
+        - snapshotting of warehouse state
+
+    This class does not persist data itself; it orchestrates interactions
+    with the underlying Warehouse.
     """
 
     def __init__(self, manager_name: str, warehouse: FraguaWarehouse) -> None:
+        """
+        Initialize the manager and bind it to a Warehouse.
+
+        Args:
+            manager_name: Logical name of the manager instance.
+            warehouse: Warehouse instance to operate on.
+        """
         super().__init__(component_name=manager_name)
         self.warehouse = warehouse
         self._movement_log: List[dict[str, object]] = []
@@ -39,19 +57,18 @@ class FraguaManager(FraguaComponent):
 
     def summary(self) -> Dict[str, Any]:
         """
-        FraguaManager summary.
+        Return a structured summary of the manager state.
 
         Includes:
             - manager name
-            - warehouse name
-            - number of storages
-            - storage names and their types
+            - associated warehouse name
+            - number of stored objects
+            - mapping of storage names to their types
             - full movement log
-            - counters (log size, undo size)
+            - counters for log entries and undo stack size
         """
         warehouse_name = getattr(self.warehouse, "warehouse_name", None)
 
-        # Map each storage name to its class name
         storages_info: Dict[str, str] = {
             name: obj.__class__.__name__ for name, obj in self.warehouse.data.items()
         }
@@ -68,7 +85,17 @@ class FraguaManager(FraguaComponent):
 
     # ------------------- Movement Logging ------------------- #
     def _log_movement(self, /, **movement_log: Any) -> None:
-        """Records a movement in the internal log."""
+        """
+        Record an operation performed on the warehouse.
+
+        Each movement entry captures:
+            - timestamp with timezone
+            - operation type
+            - affected storage name
+            - agent name (if any)
+            - success flag
+            - optional contextual details
+        """
         now = datetime.now().astimezone()
         date_str = now.date().isoformat()
         time_str = now.time().strftime("%H:%M:%S")
@@ -90,9 +117,9 @@ class FraguaManager(FraguaComponent):
             "details": movement_log.get("details") or {},
         }
         self._movement_log.append(entry)
+
         logger.info(
-            "[%s] Movement logged by '%s': %s '%s' by agent '%s' at %s %s %s",
-            self.name,
+            "[%s] Movement logged: %s '%s' by agent '%s' at %s %s %s",
             self.name,
             movement_log.get("operation"),
             movement_log.get("storage_name"),
@@ -104,10 +131,10 @@ class FraguaManager(FraguaComponent):
 
     def get_movements_log(self) -> List[dict[str, object]]:
         """
-        Return a copy of the movements log.
+        Return a snapshot of the movement log.
 
         Returns:
-            List[dict[str, object]]: List of movement entries.
+            A list of logged warehouse operations.
         """
         return self._movement_log.copy()
 
@@ -119,7 +146,21 @@ class FraguaManager(FraguaComponent):
         agent_name: Optional[str] = None,
         overwrite: bool = False,
     ) -> None:
-        """Add a Box to the Warehouse with logging and undo support."""
+        """
+        Add a Box to the Warehouse.
+
+        This operation:
+            - validates storage type
+            - optionally overwrites existing entries
+            - registers undo information
+            - logs the operation outcome
+
+        Args:
+            storage: Storage instance to add.
+            storage_name: Target name within the warehouse.
+            agent_name: Name of the agent performing the operation.
+            overwrite: Whether to replace an existing storage.
+        """
         storage_type = storage.__class__.__name__.lower()
         try:
             if storage_name is None:
@@ -139,19 +180,13 @@ class FraguaManager(FraguaComponent):
                 )
                 return
 
-            # Backup for undo
-            if old_obj:
-                self._undo_stack.append(
-                    {
-                        "operation": "add",
-                        "name": storage_name,
-                        "backup": py_copy.deepcopy(old_obj),
-                    }
-                )
-            else:
-                self._undo_stack.append(
-                    {"operation": "add", "name": storage_name, "backup": None}
-                )
+            self._undo_stack.append(
+                {
+                    "operation": "add",
+                    "name": storage_name,
+                    "backup": py_copy.deepcopy(old_obj) if old_obj else None,
+                }
+            )
 
             self.warehouse.data[storage_name] = storage
             self._log_movement(
@@ -188,23 +223,29 @@ class FraguaManager(FraguaComponent):
             if isinstance(obj, classes)
         }
 
+    # ----------------------------- Get ----------------------------- #
     def get(
         self,
         agent_name: str,
         storage_type: StorageType = "all",
         storage_name: str = "all",
     ) -> Optional[StorageResult]:
-        """Pipeline method for getting storage objects."""
+        """
+        Retrieve one or more storage objects from the Warehouse.
+
+        Args:
+            agent_name: Name of the requesting agent.
+            storage_type: Type filter ("box" or "all").
+            storage_name: Specific storage name or "all".
+
+        Returns:
+            A single storage, a mapping of storages, or None.
+        """
         try:
             if storage_name != "all":
-                # Single object or None
-                result: Optional[Storage[Box]] = self._get_one(
-                    storage_name, storage_type
-                )
+                result = self._get_one(storage_name, storage_type)
             else:
-                # Dict of objects
-                result_dict: Dict[str, Storage[Box]] = self._get_all(storage_type)
-                result = result_dict  # type: ignore
+                result = self._get_all(storage_type)  # type: ignore
 
             self._log_movement(
                 operation="get",
@@ -256,22 +297,29 @@ class FraguaManager(FraguaComponent):
             del self.warehouse.data[name]
         return to_delete
 
+    # ----------------------------- Delete ----------------------------- #
     def delete(
         self, storage_type: StorageType, storage_name: str = "all"
     ) -> Union[Optional[Storage[Box]], Dict[str, Storage[Box]]]:
-        """Pipeline method for deleting storage objects with undo support."""
+        """
+        Remove one or more storage objects from the Warehouse.
+
+        Deleted objects are backed up internally, enabling undo.
+
+        Args:
+            storage_type: Type filter ("box" or "all").
+            storage_name: Specific name or "all".
+
+        Returns:
+            The removed storage(s), if any.
+        """
         try:
             if storage_name != "all":
-                removed: Optional[Storage[Box]] = self._delete_one(
-                    storage_name, storage_type
-                )
+                removed = self._delete_one(storage_name, storage_type)
                 count_removed = 1 if removed else 0
             else:
-                removed_dict: Dict[str, Storage[Box]] = self._delete_multiple(
-                    storage_type
-                )
-                removed = removed_dict  # type: ignore
-                count_removed = len(removed_dict)
+                removed = self._delete_multiple(storage_type)  # type: ignore
+                count_removed = len(removed)
 
             self._log_movement(
                 operation="delete",
@@ -293,11 +341,17 @@ class FraguaManager(FraguaComponent):
             )
             raise
 
-    # ----------------------------- Additional Functionalities ----------------------------- #
+    # ----------------------------- Utilities ----------------------------- #
     def rename(self, old_name: str, new_name: str) -> bool:
-        """Rename a storage object if it exists."""
+        """
+        Rename an existing storage object.
+
+        Returns:
+            True if the rename succeeded, False otherwise.
+        """
         if old_name not in self.warehouse.data or new_name in self.warehouse.data:
             return False
+
         self.warehouse.data[new_name] = self.warehouse.data.pop(old_name)
         self._log_movement(
             operation="rename",
@@ -310,10 +364,16 @@ class FraguaManager(FraguaComponent):
         return True
 
     def copy(self, storage_name: str, new_name: str) -> bool:
-        """Duplicate a storage object if it exists and new_name is free."""
+        """
+        Create a deep copy of an existing storage object.
+
+        Returns:
+            True if the copy succeeded, False otherwise.
+        """
         obj = self.warehouse.data.get(storage_name)
         if not obj or new_name in self.warehouse.data:
             return False
+
         self.warehouse.data[new_name] = py_copy.deepcopy(obj)
         self._log_movement(
             operation="copy",
@@ -328,12 +388,19 @@ class FraguaManager(FraguaComponent):
     def batch_add(
         self, items: Dict[str, Storage[Box]], overwrite: bool = False
     ) -> None:
-        """Add multiple storage objects at once."""
+        """
+        Add multiple storage objects in a single operation.
+        """
         for name, obj in items.items():
             self.add(obj, storage_name=name, overwrite=overwrite)
 
     def search_by_metadata(self, key: str, value: Any) -> Dict[str, Storage[Box]]:
-        """Search objects by metadata key/value."""
+        """
+        Search storage objects by metadata key-value match.
+
+        Returns:
+            A mapping of matching storage names to objects.
+        """
         return {
             name: obj
             for name, obj in self.warehouse.data.items()
@@ -341,15 +408,24 @@ class FraguaManager(FraguaComponent):
         }
 
     def snapshot(self) -> Dict[str, Storage[Box]]:
-        """Return a shallow copy of the warehouse state."""
+        """
+        Capture a shallow snapshot of the current warehouse state.
+        """
         return self.warehouse.data.copy()
 
     def undo_last_action(self) -> bool:
-        """Undo the last add or delete action."""
+        """
+        Revert the most recent add or delete operation.
+
+        Returns:
+            True if an action was successfully undone, False otherwise.
+        """
         if not self._undo_stack:
             return False
+
         last = self._undo_stack.pop()
         op, name, backup = last["operation"], last["name"], last["backup"]
+
         if op == "add":
             if backup:
                 self.warehouse.data[name] = backup
@@ -357,6 +433,7 @@ class FraguaManager(FraguaComponent):
                 self.warehouse.data.pop(name, None)
         elif op == "delete" and backup:
             self.warehouse.data[name] = backup
+
         self._log_movement(
             operation="undo",
             storage_type="box",

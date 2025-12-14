@@ -1,6 +1,5 @@
 """
 Lightweight in-memory store structure.
-The StoreManager handles all the logic.
 """
 
 from typing import Dict
@@ -10,16 +9,21 @@ from fragua.core.storage import Storage, Box
 
 class FraguaWarehouse(FraguaComponent):
     """
-    Simple container for Boxes.
-    Warehouse manager is responsible for all operations.
+    Lightweight in-memory container for persisted storage objects.
+
+    FraguaWarehouse acts as a passive data holder for Storage instances
+    (typically Boxes). All mutation and access logic is delegated to the
+    WarehouseManager, making this class responsible only for state
+    representation and introspection.
     """
 
     def __init__(self, warehouse_name: str = "warehouse") -> None:
         """
-        Initialize a warehouse.
+        Initialize the warehouse container.
 
         Args:
-            warehouse_name (str): Name of the warehouse.
+            warehouse_name: Identifier used to reference this warehouse
+                within the environment.
         """
         super().__init__(component_name=warehouse_name)
         self._warehouse: Dict[str, Storage[Box]] = {}
@@ -27,20 +31,29 @@ class FraguaWarehouse(FraguaComponent):
     @property
     def data(self) -> Dict[str, Storage[Box]]:
         """
-        Expose the raw internal storage mapping.
+        Expose the internal storage mapping.
 
-        Returns: Dict[str, Storage[Box]]: Stored objects by name.
+        This property provides read access to the raw mapping of storage
+        names to Storage instances. Mutation should be performed
+        exclusively through the WarehouseManager.
+
+        Returns:
+            A dictionary mapping storage names to Storage[Box] instances.
         """
         return self._warehouse
 
     def summary(self) -> Dict[str, object]:
         """
-        Return a JSON-serializable summary of the Warehouse contents.
+        Generate a structured summary of the warehouse contents.
 
-        Includes:
-            - warehouse name
-            - number of storage items
-            - mapping of storage names -> class name
+        The summary is JSON-serializable and intended for diagnostics,
+        observability, and debugging.
+
+        Returns:
+            A dictionary containing:
+                - warehouse_name: Name of the warehouse
+                - storage_count: Number of stored items
+                - storages: Mapping of storage names to storage class names
         """
         storages_info: Dict[str, str] = {
             name: obj.__class__.__name__ for name, obj in self._warehouse.items()

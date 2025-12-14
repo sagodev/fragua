@@ -26,9 +26,28 @@ logger = get_logger(__name__)
 
 
 class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
-    """Agent class for ETL agents using shared Environment registries with pipeline helpers."""
+    """
+    Base class for ETL agents operating within a shared Fragua Environment.
+
+    A FraguaAgent encapsulates the execution logic of a single ETL role
+    (extract, transform, or load) and provides a standardized workflow
+    including parameter resolution, style execution, storage handling,
+    metadata generation, operation logging, undo support, and warehouse
+    persistence.
+
+    The agent relies on Environment registries to dynamically resolve
+    styles, parameters, and storage implementations.
+    """
 
     def __init__(self, agent_name: str, environment: Environment) -> None:
+        """
+        Initialize the agent with a name and an execution environment.
+
+        Args:
+            agent_name: Unique identifier for the agent.
+            environment: Shared Environment instance providing registries,
+                warehouse manager, and configuration.
+        """
         super().__init__(component_name=agent_name)
         self.environment: Environment = environment
         self.role: str
@@ -40,7 +59,14 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
     # ----------------- Agent Summary ----------------- #
     def summary(self) -> Dict[str, object]:
         """
-        Base agent summary.
+        Generate a structured summary of the agent state and execution history.
+
+        The summary includes agent metadata, environment context, a serialized
+        view of executed operations, and the current undo stack state.
+
+        Returns:
+            A dictionary containing agent identification, configuration,
+            execution metrics, operation history, and undo information.
         """
 
         env_name = getattr(self.environment, "name", None)
@@ -58,7 +84,6 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
                 }
             )
 
-        # ---- Undo stack (no params) ----
         undo_serialized: list[Dict[str, object]] = []
         for item in self._undo_stack:
             undo_serialized.append(
@@ -82,7 +107,19 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
 
     # ----------------- Helpers ----------------- #
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
-        """Determine a string name for the origin of data for metadata."""
+        """
+        Infer a human-readable origin name for metadata generation.
+
+        The origin may represent a storage object, file path, DataFrame,
+        or any object exposing a `path` or `data` attribute.
+
+        Args:
+            origin: Source object used to infer origin metadata.
+
+        Returns:
+            A string representing the origin name, or None if it cannot
+            be determined.
+        """
         origin_name = None
         match origin:
             case Storage():
@@ -97,6 +134,15 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         return origin_name
 
     def _generate_storage_name(self, style_name: str) -> str:
+        """
+        Generate a default storage name based on style and agent action.
+
+        Args:
+            style_name: Executed style identifier.
+
+        Returns:
+            A standardized storage name string.
+        """
         return f"{style_name}_{self.action}_data"
 
     def _instantiate_params(
@@ -106,24 +152,23 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         **kwargs: Any,
     ) -> FraguaParams:
         """
-        Resolve and instantiate parameters for a given style.
+        Resolve and instantiate parameter objects for a given style.
 
-        If a Params instance is provided, it is returned as-is.
-        Otherwise, the corresponding Params class is retrieved from
-        the Environment and instantiated using the provided keyword arguments.
+        If an explicit Params instance is provided, it is returned unchanged.
+        Otherwise, the Params class is resolved from the Environment registry
+        and instantiated using the supplied keyword arguments.
 
         Args:
-            style: Style name used to resolve the Params class.
-            params: Optional Params instance.
-            **kwargs: Keyword arguments for Params instantiation.
+            style: Style identifier used to resolve the Params class.
+            params: Optional pre-instantiated Params object.
+            **kwargs: Keyword arguments for Params construction.
 
         Returns:
             An instantiated Params object.
 
         Raises:
-            ValueError: If the Params class cannot be resolved.
+            ValueError: If no Params class is registered for the given style.
         """
-
         if params is not None:
             return params
 
@@ -137,18 +182,17 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
 
     def _instantiate_style(self, style: str) -> FraguaStyle:
         """
-        Resolve and instantiate a style for the given action.
+        Resolve and instantiate a style implementation for the agent action.
 
         Args:
-            style: Style name to resolve.
+            style: Style identifier to resolve.
 
         Returns:
-            An instantiated style object.
+            An instantiated FraguaStyle object.
 
         Raises:
             ValueError: If the style class cannot be resolved.
         """
-
         style_cls = cast(
             Type[FraguaStyle], self.environment.get_style(self.action, style)
         )
@@ -161,7 +205,17 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
     def _generate_operation_metadata(
         self, style_name: str, storage: Storage[Any], origin: Any
     ) -> None:
-        """Attach metadata to a storage object."""
+        """
+        Generate and attach operation metadata to a storage object.
+
+        Metadata captures contextual information such as origin, style,
+        and operation type to support traceability and auditing.
+
+        Args:
+            style_name: Executed style identifier.
+            storage: Storage instance receiving the metadata.
+            origin: Source object used to infer origin metadata.
+        """
         origin_name = self._determine_origin_name(origin)
         metadata = generate_metadata(
             storage=storage,
@@ -173,6 +227,13 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
 
     # ----------------- Operations Logging ----------------- #
     def _add_operation(self, style: str, params_instance: FraguaParams) -> None:
+        """
+        Record an executed operation and register it for undo support.
+
+        Args:
+            style: Executed style identifier.
+            params_instance: Parameters used during execution.
+        """
         self._operations.append(
             {
                 "action": self.action,
@@ -186,22 +247,44 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         )
 
     def get_operations(self) -> pd.DataFrame:
-        """Return a DataFrame with all recorded operations done by the agent."""
+        """
+        Retrieve the execution history as a pandas DataFrame.
+
+        Returns:
+            A DataFrame containing all recorded operations.
+        """
         return pd.DataFrame(self._operations)
 
     def undo_last_operation(self) -> bool:
-        """Undo the last workflow operation."""
+        """
+        Undo the most recent workflow operation.
+
+        Returns:
+            True if an operation was successfully undone, False if no
+            operations were available.
+        """
         if not self._undo_stack:
             return False
-        last = self._undo_stack.pop()
 
+        last = self._undo_stack.pop()
         self._operations = [op for op in self._operations if op != last.get("params")]
         logger.info("Undid last operation: %s", last.get("style"))
         return True
 
     # ----------------- Storage Management ----------------- #
     def create_storage(self, data: Any) -> Storage[Any]:
-        """Create a storage type for a given data."""
+        """
+        Instantiate a storage object based on the agent storage type.
+
+        Args:
+            data: Data to be wrapped by the storage.
+
+        Returns:
+            A Storage instance.
+
+        Raises:
+            TypeError: If the storage type is invalid or not registered.
+        """
         storage_cls = STORAGE_CLASSES.get(self.storage_type)
         if not storage_cls:
             raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
@@ -214,7 +297,16 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
     def add_to_warehouse(
         self, storage: Storage[Box], storage_name: str | None = None
     ) -> None:
-        """Pipeline for adding an object to warehouse with logging."""
+        """
+        Persist a storage object into the warehouse.
+
+        Args:
+            storage: Storage instance to persist.
+            storage_name: Optional explicit name for the storage.
+
+        Raises:
+            RuntimeError: If the WarehouseManager is not initialized.
+        """
         name = storage_name or getattr(storage, "name", None)
         manager = self.environment.manager
         if not manager:
@@ -222,7 +314,19 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         return manager.add(storage=storage, storage_name=name, agent_name=self.name)
 
     def get_from_warehouse(self, storage_name: str) -> Box:
-        """Pipeline for retrieving a storage object from warehouse with type checking."""
+        """
+        Retrieve a storage object from the warehouse with type validation.
+
+        Args:
+            storage_name: Name of the storage to retrieve.
+
+        Returns:
+            A Box instance.
+
+        Raises:
+            RuntimeError: If the WarehouseManager is not initialized.
+            TypeError: If the storage is missing or of an invalid type.
+        """
         manager = self.environment.manager
         if not manager:
             raise RuntimeError("WarehouseManager not initialized.")
@@ -238,7 +342,14 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
     def auto_store(
         self, style: str, storage: Storage[Box], save_as: str | None = None
     ) -> None:
-        """Add a storage object automatically using pipeline helpers."""
+        """
+        Automatically persist storage using a generated or provided name.
+
+        Args:
+            style: Executed style identifier.
+            storage: Storage instance to persist.
+            save_as: Optional explicit storage name.
+        """
         name = save_as or self._generate_storage_name(style)
         self.add_to_warehouse(storage, name)
 
@@ -251,22 +362,28 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         **kwargs: Any,
     ) -> None:
         """
-        Execute the common workflow pipeline for an agent.
+        Execute the standardized agent workflow pipeline.
 
-        This method orchestrates parameter resolution, style execution,
-        storage creation, metadata attachment, logging, and persistence.
+        This pipeline performs:
+        - Parameter resolution
+        - Style instantiation and execution
+        - Storage creation
+        - Metadata generation
+        - Operation logging
+        - Warehouse persistence
+
+        Args:
+            style: Style identifier to execute.
+            save_as: Optional explicit name for persisted storage.
+            params: Optional pre-instantiated Params object.
+            **kwargs: Parameters forwarded to Params instantiation.
         """
-
         style = style.lower()
 
-        # -------- Instantiate components --------
         params_instance = self._instantiate_params(style, params, **kwargs)
         style_instance = self._instantiate_style(style)
 
-        # -------- Execute style --------
         stylized_data = style_instance.use(params_instance)
-
-        # -------- Storage pipeline --------
         storage = self.create_storage(stylized_data)
 
         self._generate_operation_metadata(style, storage, params_instance)
@@ -284,5 +401,10 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         params: Optional[FraguaParamsT] = None,
         **kwargs: Any,
     ) -> None:
-        """Execute the agent's task."""
+        """
+        Execute the agent-specific task.
+
+        Concrete agents must implement this method to define how styles
+        are applied and how the workflow is triggered.
+        """
         self._execute_workflow(style, save_as, params, **kwargs)
