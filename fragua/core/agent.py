@@ -6,7 +6,7 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Type, cast
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -15,6 +15,7 @@ from fragua.core.component import FraguaComponent
 from fragua.core.params import Params, ParamsT
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
+from fragua.core.style import Style
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -97,6 +98,60 @@ class Agent(FraguaComponent, Generic[ParamsT]):
 
     def _generate_storage_name(self, style_name: str) -> str:
         return f"{style_name}_{self.action}_data"
+
+    def _instantiate_params(
+        self,
+        style: str,
+        params: Optional[Params],
+        **kwargs: Any,
+    ) -> Params:
+        """
+        Resolve and instantiate parameters for a given style.
+
+        If a Params instance is provided, it is returned as-is.
+        Otherwise, the corresponding Params class is retrieved from
+        the Environment and instantiated using the provided keyword arguments.
+
+        Args:
+            style: Style name used to resolve the Params class.
+            params: Optional Params instance.
+            **kwargs: Keyword arguments for Params instantiation.
+
+        Returns:
+            An instantiated Params object.
+
+        Raises:
+            ValueError: If the Params class cannot be resolved.
+        """
+
+        if params is not None:
+            return params
+
+        params_cls = cast(Type[Params], self.environment.get_param(self.action, style))
+        if params_cls is None:
+            raise ValueError(f"Params not found for style '{style}'.")
+
+        return params_cls(**kwargs)
+
+    def _instantiate_style(self, style: str) -> Style:
+        """
+        Resolve and instantiate a style for the given action.
+
+        Args:
+            style: Style name to resolve.
+
+        Returns:
+            An instantiated style object.
+
+        Raises:
+            ValueError: If the style class cannot be resolved.
+        """
+
+        style_cls = cast(Type[Style], self.environment.get_style(self.action, style))
+        if style_cls is None:
+            raise ValueError(f"Style not found: '{style}'.")
+
+        return style_cls()
 
     # ----------------- Metadata ----------------- #
     def _generate_operation_metadata(
@@ -191,20 +246,23 @@ class Agent(FraguaComponent, Generic[ParamsT]):
         params: Optional[Params] = None,
         **kwargs: Any,
     ) -> None:
-        """Common workflow pipeline for agents."""
+        """
+        Execute the common workflow pipeline for an agent.
+
+        This method orchestrates parameter resolution, style execution,
+        storage creation, metadata attachment, logging, and persistence.
+        """
 
         style = style.lower()
 
-        action_params = self.environment.build_config(self.action, "params")
-        searched_params = action_params.get_one(style)
+        # -------- Instantiate components --------
+        params_instance = self._instantiate_params(style, params, **kwargs)
+        style_instance = self._instantiate_style(style)
 
-        params_instance = searched_params(**kwargs) if params is None else params
+        # -------- Execute style --------
+        stylized_data = style_instance.use(params_instance)
 
-        action_style = self.environment.build_config(self.action, "styles")
-        style_cls = action_style.get_one(style)
-
-        stylized_data = style_cls().use(params_instance)
-
+        # -------- Storage pipeline --------
         storage = self.create_storage(stylized_data)
 
         self._generate_operation_metadata(style, storage, params_instance)
