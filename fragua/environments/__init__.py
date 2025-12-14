@@ -21,6 +21,8 @@ def create_fragua(
     Args:
         name (str): Environment name.
         env_type (str): Environment type ("basic", "minimal", ...).
+        fg_config (bool): If True set default config to initialize
+                        default fragua components(params, functions, styles).
 
     Returns:
         Environment: Instantiated and configured environment.
