@@ -4,17 +4,18 @@ from typing import Any, Dict, Optional
 
 from pandas import DataFrame
 
-from fragua.core.params import Params
+from fragua.core.params import FraguaParams
 
 
-class TransformParams(Params):
-    """Common parameters for transformation agents."""
+class TransformParams(FraguaParams):
+    """Base transform params class."""
 
     def __init__(self, style: str, data: Optional[DataFrame] = None) -> None:
         super().__init__(action="transform", style=style)
         self.data = data if data is not None else DataFrame()
 
     def summary(self) -> Dict[str, Any]:
+        """Transform params class summary."""
         fields = {}
 
         for name in self.FIELD_DESCRIPTIONS:

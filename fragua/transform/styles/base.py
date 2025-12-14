@@ -2,32 +2,27 @@
 
 from abc import abstractmethod
 from typing import Generic
-from fragua.core.style import ResultT, Style
+from fragua.core.style import FraguaStyle
 from fragua.transform.params.generic_types import TransformParamsT
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class TransformStyle(
-    Style[TransformParamsT, ResultT], Generic[TransformParamsT, ResultT]
-):
+class TransformStyle(FraguaStyle, Generic[TransformParamsT]):
     """
     Base class for all transformation styles in Fragua ETL.
-
-    Standard pipeline provided by Style:
-        validate_params -> _run -> validate_result -> postprocess
     """
 
     @abstractmethod
-    def transform(self, params: TransformParamsT) -> ResultT:
+    def transform(self, params: TransformParamsT):
         """
         Base transform method. Should be implemented by subclasses
         to call the appropriate registered function.
         """
         raise NotImplementedError
 
-    def _run(self, params: TransformParamsT) -> ResultT:
+    def _run(self, params: TransformParamsT):
         logger.debug("Starting TransformStyle '%s' transformation.", self.name)
         result = self.transform(params)
         logger.debug("TransformStyle '%s' transformation completed.", self.name)

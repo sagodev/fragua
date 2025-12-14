@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-from fragua.core.agent import Agent
+from typing import TYPE_CHECKING, Any, Optional, Union
+from fragua.core.agent import FraguaAgent
 
 from fragua.transform.params.generic_types import TransformParamsT
 from fragua.utils.logger import get_logger
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Transformer(Agent[TransformParamsT]):
+class Transformer(FraguaAgent):
     """Agent that applies transform styles to data for transformation."""
 
     def __init__(self, name: str, environment: Environment):
@@ -28,9 +28,9 @@ class Transformer(Agent[TransformParamsT]):
         self,
         /,
         style: str,
-        apply_to: str | list[str] | None = None,
-        save_as: str | None = None,
-        params: TransformParamsT | None = None,
+        apply_to: Union[str | list[str], None] = None,
+        save_as: Optional[str] = None,
+        params: Optional[TransformParamsT] = None,
         **kwargs: Any,
     ) -> None:
         """Execute the agent's task using the action and style defined by transformer role."""

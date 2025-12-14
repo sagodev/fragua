@@ -12,19 +12,19 @@ from fragua.transform.functions.transform_functions import (
 )
 
 from fragua.transform.params.base import TransformParams
-from fragua.transform.params.generic_types import (
-    AnalysisTransformParamsT,
-    MLTransformParamsT,
-    ReportTransformParamsT,
+from fragua.transform.params.transform_params import (
+    AnalysisTransformParams,
+    MLTransformParams,
+    ReportTransformParams,
 )
 
 from fragua.transform.styles.base import TransformStyle
 
 
-class MLTransformStyle(TransformStyle[MLTransformParamsT, pd.DataFrame]):
+class MLTransformStyle(TransformStyle):
     """Transform style for machine learning preprocessing."""
 
-    def transform(self, params: MLTransformParamsT) -> pd.DataFrame:
+    def transform(self, params: MLTransformParams) -> pd.DataFrame:
         return MLTransformFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
@@ -37,10 +37,10 @@ class MLTransformStyle(TransformStyle[MLTransformParamsT, pd.DataFrame]):
         }
 
 
-class ReportTransformStyle(TransformStyle[ReportTransformParamsT, pd.DataFrame]):
+class ReportTransformStyle(TransformStyle):
     """Transform style for reporting transformations."""
 
-    def transform(self, params: ReportTransformParamsT) -> pd.DataFrame:
+    def transform(self, params: ReportTransformParams) -> pd.DataFrame:
         return ReportTransformFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
@@ -53,10 +53,10 @@ class ReportTransformStyle(TransformStyle[ReportTransformParamsT, pd.DataFrame])
         }
 
 
-class AnalysisTransformStyle(TransformStyle[AnalysisTransformParamsT, pd.DataFrame]):
+class AnalysisTransformStyle(TransformStyle):
     """Transform style for data analysis transformations."""
 
-    def transform(self, params: AnalysisTransformParamsT) -> pd.DataFrame:
+    def transform(self, params: AnalysisTransformParams) -> pd.DataFrame:
         return AnalysisTransformFunction(params).execute()
 
     def summary_fields(self) -> Dict[str, Any]:
@@ -69,7 +69,7 @@ class AnalysisTransformStyle(TransformStyle[AnalysisTransformParamsT, pd.DataFra
         }
 
 
-TRANSFORM_STYLE_CLASSES: Dict[str, Type[TransformStyle[TransformParams, Any]]] = {
+TRANSFORM_STYLE_CLASSES: Dict[str, Type[TransformStyle[TransformParams]]] = {
     "ml": MLTransformStyle,
     "report": ReportTransformStyle,
     "analysis": AnalysisTransformStyle,
