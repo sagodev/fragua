@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-from fragua.core.agent import Agent
+from typing import TYPE_CHECKING, Any, Optional, Union
+from fragua.core.agent import FraguaAgent
 from fragua.extract.params.generic_types import ExtractParamsT
 from fragua.utils.logger import get_logger
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Extractor(Agent[ExtractParamsT]):
+class Extractor(FraguaAgent):
     """Agent that applies extraction styles to data sources for extraction."""
 
     def __init__(self, name: str, environment: Environment):
@@ -27,9 +27,9 @@ class Extractor(Agent[ExtractParamsT]):
         self,
         /,
         style: str,
-        apply_to: str | list[str] | None = None,
-        save_as: str | None = None,
-        params: ExtractParamsT | None = None,
+        apply_to: Union[str, list[str], None] = None,
+        save_as: Optional[str] = None,
+        params: Optional[ExtractParamsT] = None,
         **kwargs: Any,
     ) -> None:
         """

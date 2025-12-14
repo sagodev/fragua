@@ -2,17 +2,17 @@
 
 from typing import Any, Dict
 
-from fragua.core.params import Params
+from fragua.core.params import FraguaParams
 
 
-class ExtractParams(Params):
-    """Generic extract params class."""
+class ExtractParams(FraguaParams):
+    """Base extract params class."""
 
     def __init__(self, style: str) -> None:
         super().__init__(action="extract", style=style)
 
     def summary(self) -> Dict[str, Any]:
-        """Extract base params class summary."""
+        """Extract params class summary."""
         fields = {}
 
         for name in self.FIELD_DESCRIPTIONS:

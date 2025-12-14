@@ -13,6 +13,7 @@ from fragua.extract.functions.extract_functions import (
 )
 
 
+from fragua.extract.params.base import ExtractParams
 from fragua.extract.params.extract_params import (
     APIExtractParams,
     CSVExtractParams,
@@ -105,7 +106,7 @@ class APIExtractStyle(ExtractStyle):
         }
 
 
-EXTRACT_STYLE_CLASSES: Dict[str, Type[ExtractStyle]] = {
+EXTRACT_STYLE_CLASSES: Dict[str, Type[ExtractStyle[ExtractParams]]] = {
     "csv": CSVExtractStyle,
     "excel": ExcelExtractStyle,
     "sql": SQLExtractStyle,
