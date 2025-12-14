@@ -3,17 +3,15 @@ Base class for all styles used by ETL agents in Fragua.
 """
 
 from abc import abstractmethod
-from typing import TypeVar, Generic, Dict, Any
+from typing import Generic, Dict, Any
 from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
-from fragua.core.params import ParamsT
+from fragua.core.params import FraguaParamsT
 
 logger = get_logger(__name__)
 
-ResultT = TypeVar("ResultT")
 
-
-class Style(FraguaComponent, Generic[ParamsT, ResultT]):
+class FraguaStyle(FraguaComponent, Generic[FraguaParamsT]):
     """
     Abstract base class for all styles in Fragua.
     Defines a standard interface for style operations.
@@ -23,10 +21,10 @@ class Style(FraguaComponent, Generic[ParamsT, ResultT]):
         super().__init__(component_name=self.__class__.__name__)
 
     @abstractmethod
-    def _run(self, params: ParamsT) -> ResultT:
+    def _run(self, params: FraguaParamsT):
         raise NotImplementedError
 
-    def use(self, params: ParamsT) -> ResultT:
+    def use(self, params: FraguaParamsT):
         """Pipeline for style classes."""
 
         return self._run(params)

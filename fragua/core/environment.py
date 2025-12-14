@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Type, cast
 
-from fragua.core.agent import Agent
+from fragua.core.agent import FraguaAgent
 from fragua.core.component import FraguaComponent
 from fragua.core.actions import FraguaActions
 from fragua.core.set import FraguaSet
@@ -12,7 +12,6 @@ from fragua.core.warehouse import Warehouse
 from fragua.core.manager import WarehouseManager
 
 from fragua.extract import Extractor
-from fragua.extract.params.base import ExtractParams
 from fragua.extract.registry.extract_registry import ExtractRegistry
 from fragua.extract.registry.extract_sets import (
     ExtractAgentSet,
@@ -22,7 +21,6 @@ from fragua.extract.registry.extract_sets import (
 )
 
 from fragua.load import Loader
-from fragua.load.params.base import LoadParams
 from fragua.load.registry.load_registry import LoadRegistry
 from fragua.load.registry.load_sets import (
     LoadAgentSet,
@@ -32,7 +30,6 @@ from fragua.load.registry.load_sets import (
 )
 
 from fragua.transform import Transformer
-from fragua.transform.params.base import TransformParams
 from fragua.transform.registry.transform_registry import TransformRegistry
 from fragua.transform.registry.transform_sets import (
     TransformAgentSet,
@@ -232,9 +229,9 @@ class Environment(FraguaComponent):
             ValueError: If the provided action type is invalid.
         """
 
-        def _build_agent() -> Agent:
+        def _build_agent() -> FraguaAgent:
             """Instantiate the correct agent class based on action."""
-            class_map: Dict[str, Type[Agent[Any]]] = {
+            class_map: Dict[str, Type[FraguaAgent[Any]]] = {
                 "extract": Extractor,
                 "transform": Transformer,
                 "load": Loader,
@@ -246,7 +243,7 @@ class Environment(FraguaComponent):
 
             return agent_class(agent_name, self)
 
-        def _register_agent(agent: Agent) -> bool:
+        def _register_agent(agent: FraguaAgent) -> bool:
             """Register the agent into the corresponding set."""
 
             type_set = self.agents.get(action)
@@ -269,7 +266,7 @@ class Environment(FraguaComponent):
 
     def get_agent(
         self, action: str, agent_name: Optional[str] = None
-    ) -> Optional[Agent]:
+    ) -> Optional[FraguaAgent]:
         """
         Retrieve an agent by action type and optional agent name.
 
@@ -298,11 +295,11 @@ class Environment(FraguaComponent):
 
             return agents_set.get_one(agent_name)
 
-        def _validate_agent(agent: Any) -> Optional[Agent]:
+        def _validate_agent(agent: Any) -> Optional[FraguaAgent]:
             """Validate and safely cast the agent to Agent type."""
             if agent is None:
                 return None
-            return cast(Agent, agent)
+            return cast(FraguaAgent, agent)
 
         agent = _set_agent()
 
@@ -842,9 +839,7 @@ class Environment(FraguaComponent):
         created = self.create_agent("load", agent_name)
         return created
 
-    def get_extractor(
-        self, agent_name: Optional[str] = None
-    ) -> Extractor[ExtractParams]:
+    def get_extractor(self, agent_name: Optional[str] = None) -> Extractor:
         """
         Retrieve an Extractor agent by name.
 
@@ -868,9 +863,7 @@ class Environment(FraguaComponent):
 
         return cast(Extractor, extractor)
 
-    def get_transformer(
-        self, agent_name: str | None = None
-    ) -> Transformer[TransformParams]:
+    def get_transformer(self, agent_name: str | None = None) -> Transformer:
         """
         Retrieve a Transformer agent by name.
 
@@ -894,7 +887,7 @@ class Environment(FraguaComponent):
 
         return cast(Transformer, transformer)
 
-    def get_loader(self, agent_name: str | None = None) -> Loader[LoadParams]:
+    def get_loader(self, agent_name: str | None = None) -> Loader:
         """
         Retrieve a Loader agent by name.
 

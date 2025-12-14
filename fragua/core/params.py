@@ -10,7 +10,7 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Params(FraguaComponent):
+class FraguaParams(FraguaComponent):
     """
     Abstract base configuration class for all Fragua parameter types.
 
@@ -34,4 +34,4 @@ class Params(FraguaComponent):
         return f"{self.__class__.__name__}(role='{self.action}', style='{self.style}')"
 
 
-ParamsT = TypeVar("ParamsT", bound=Params)
+FraguaParamsT = TypeVar("FraguaParamsT", bound=FraguaParams)

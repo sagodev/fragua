@@ -12,10 +12,10 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from fragua.core.component import FraguaComponent
-from fragua.core.params import Params, ParamsT
+from fragua.core.params import FraguaParams, FraguaParamsT
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
-from fragua.core.style import Style
+from fragua.core.style import FraguaStyle
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Agent(FraguaComponent, Generic[ParamsT]):
+class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
     """Agent class for ETL agents using shared Environment registries with pipeline helpers."""
 
     def __init__(self, agent_name: str, environment: Environment) -> None:
@@ -102,9 +102,9 @@ class Agent(FraguaComponent, Generic[ParamsT]):
     def _instantiate_params(
         self,
         style: str,
-        params: Optional[Params],
+        params: Optional[FraguaParams],
         **kwargs: Any,
-    ) -> Params:
+    ) -> FraguaParams:
         """
         Resolve and instantiate parameters for a given style.
 
@@ -127,13 +127,15 @@ class Agent(FraguaComponent, Generic[ParamsT]):
         if params is not None:
             return params
 
-        params_cls = cast(Type[Params], self.environment.get_param(self.action, style))
+        params_cls = cast(
+            Type[FraguaParams], self.environment.get_param(self.action, style)
+        )
         if params_cls is None:
             raise ValueError(f"Params not found for style '{style}'.")
 
         return params_cls(**kwargs)
 
-    def _instantiate_style(self, style: str) -> Style:
+    def _instantiate_style(self, style: str) -> FraguaStyle:
         """
         Resolve and instantiate a style for the given action.
 
@@ -147,7 +149,9 @@ class Agent(FraguaComponent, Generic[ParamsT]):
             ValueError: If the style class cannot be resolved.
         """
 
-        style_cls = cast(Type[Style], self.environment.get_style(self.action, style))
+        style_cls = cast(
+            Type[FraguaStyle], self.environment.get_style(self.action, style)
+        )
         if style_cls is None:
             raise ValueError(f"Style not found: '{style}'.")
 
@@ -168,7 +172,7 @@ class Agent(FraguaComponent, Generic[ParamsT]):
         add_metadata_to_storage(storage, metadata)
 
     # ----------------- Operations Logging ----------------- #
-    def _add_operation(self, style: str, params_instance: Params) -> None:
+    def _add_operation(self, style: str, params_instance: FraguaParams) -> None:
         self._operations.append(
             {
                 "action": self.action,
@@ -243,7 +247,7 @@ class Agent(FraguaComponent, Generic[ParamsT]):
         self,
         style: str,
         save_as: Optional[str] = None,
-        params: Optional[Params] = None,
+        params: Optional[FraguaParams] = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -277,7 +281,7 @@ class Agent(FraguaComponent, Generic[ParamsT]):
         style: str,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
-        params: ParamsT | None = None,
+        params: Optional[FraguaParamsT] = None,
         **kwargs: Any,
     ) -> None:
         """Execute the agent's task."""

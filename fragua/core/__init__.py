@@ -12,9 +12,9 @@ This module contains:
 - Storage class.
 """
 
-from .component import FraguaComponent
-
 from .environment import Environment
+
+from .component import FraguaComponent
 
 from .registry import FraguaRegistry
 
@@ -22,11 +22,11 @@ from .set import FraguaSet
 
 from .actions import FraguaActions
 
-from .agent import Agent
+from .agent import FraguaAgent
 
-from .params import Params
+from .params import FraguaParams
 
-from .style import Style
+from .style import FraguaStyle
 
 from .function import FraguaFunction
 
@@ -49,11 +49,11 @@ __all__ = [
     # Section Fragua Class
     "FraguaSet",
     # Agent Class
-    "Agent",
+    "FraguaAgent",
     # Params Class
-    "Params",
+    "FraguaParams",
     # Style Class
-    "Style",
+    "FraguaStyle",
     # Function Class
     "FraguaFunction",
     # Warehouse Manager
