@@ -6,13 +6,12 @@ from typing import Any, Dict, Type
 import pandas as pd
 
 from fragua.load.functions.load_functions import ExcelLoadFunction
-
 from fragua.load.params.base import LoadParams
-from fragua.load.params.generic_types import ExcelLoadParamsT
+from fragua.load.params.load_params import ExcelLoadParams
 from fragua.load.styles.base import LoadStyle
 
 
-class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
+class ExcelLoadStyle(LoadStyle):
     """
     LoadStyle for exporting data to Excel files.
     Uses registered functions for pipeline steps.
@@ -30,7 +29,7 @@ class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
             "function": "ExcelLoadFunction",
         }
 
-    def load(self, params: ExcelLoadParamsT) -> pd.DataFrame:
+    def load(self, params: ExcelLoadParams) -> pd.DataFrame:
         return ExcelLoadFunction(params).execute()
 
 
@@ -39,6 +38,6 @@ class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT, pd.DataFrame]):
 # ---------------------------------------------------------------------- #
 # No implementations yet.
 
-LOAD_STYLE_CLASSES: Dict[str, Type[LoadStyle[LoadParams, Any]]] = {
+LOAD_STYLE_CLASSES: Dict[str, Type[LoadStyle[LoadParams]]] = {
     "excel": ExcelLoadStyle,
 }

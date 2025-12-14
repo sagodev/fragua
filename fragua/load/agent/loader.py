@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List
-from fragua.core.agent import Agent
+from typing import TYPE_CHECKING, Any, List, Optional, Union
+from fragua.core.agent import FraguaAgent
 
 from fragua.load.params.generic_types import LoadParamsT
 from fragua.load.params.load_params import ExcelLoadParams
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Loader(Agent[LoadParamsT]):
+class Loader(FraguaAgent):
     """Agent that applies extraction styles to data sources for loading."""
 
     def __init__(self, name: str, environment: Environment):
@@ -26,7 +26,7 @@ class Loader(Agent[LoadParamsT]):
         self.action: str = "load"
         self.storage_type: str = "Container"
 
-    def create_container(self, content: str | List[str]) -> Container:
+    def create_container(self, content: Union[str, List[str]]) -> Container:
         """Create and fill a Container using stored Box objects."""
 
         container = self.create_storage(data=None)
@@ -54,9 +54,9 @@ class Loader(Agent[LoadParamsT]):
         self,
         /,
         style: str,
-        apply_to: str | list[str] | None = None,
-        save_as: str | None = None,
-        params: LoadParamsT | None = None,
+        apply_to: Union[str | list[str], None] = None,
+        save_as: Optional[str] = None,
+        params: Optional[LoadParamsT] = None,
         **kwargs: Any,
     ) -> None:
         """

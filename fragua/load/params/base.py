@@ -2,16 +2,17 @@
 
 from typing import Any, Dict
 
-from fragua.core.params import Params
+from fragua.core.params import FraguaParams
 
 
-class LoadParams(Params):
-    """Common parameters for loading agents."""
+class LoadParams(FraguaParams):
+    """Base load params class."""
 
     def __init__(self, style: str) -> None:
         super().__init__(action="load", style=style)
 
     def summary(self) -> Dict[str, Any]:
+        """Load params class summary."""
         fields = {}
 
         for name in self.FIELD_DESCRIPTIONS:
