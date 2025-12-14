@@ -59,48 +59,43 @@ class Loader(Agent[LoadParamsT]):
         params: LoadParamsT | None = None,
         **kwargs: Any,
     ) -> None:
-        """Execute the agent's task using the action and style defined by loader role."""
+        """
+        Execute the loader workflow for one or multiple stored objects.
+
+        This method loads one or more Box objects from the warehouse into
+        a Container and applies the selected load style to each storage
+        using the resolved parameters.
+        """
 
         if apply_to is None:
-            raise TypeError("Missing required attribute: 'content'.")
+            raise TypeError("Missing required attribute: 'apply_to'.")
 
         style = style.lower()
 
-        # ----------------- Style class -----------------
-        action_style = self.environment.build_config(self.action, "styles")
-        style_cls = action_style.get_one(style)
+        # -------- Resolve style --------
+        style_instance = self._instantiate_style(style)
 
-        # ----------------- Create Storage -----------------
+        # -------- Create container --------
         container: Container = self.create_container(apply_to)
 
-        # ----------------- Apply Style for each storage -----------------
+        # -------- Apply style to each storage --------
         for name in container.list_storages():
+            box = container.get_storage(name)
 
-            # -------- Build params --------
+            # -------- Resolve params --------
             if params is None:
-                action_params = self.environment.build_config(self.action, "params")
-                searched_params = action_params.get_one(style)
-
-                if searched_params is None:
-                    raise ValueError("Params class not found.")
-
-                kwargs["data"] = container.get_storage(name).data
-                params_instance = searched_params(**kwargs)
+                kwargs["data"] = box.data
+                params_instance = self._instantiate_params(style, None, **kwargs)
             else:
                 params_instance = params
 
-            # -------- Assign sheet_name based on storage name --------
+            # -------- Excel-specific adjustment --------
             if isinstance(params_instance, ExcelLoadParams):
-                if getattr(params_instance, "sheet_name", None) in (None, ""):
+                if not getattr(params_instance, "sheet_name", None):
                     params_instance.sheet_name = name
 
-            # ----------------- Instantiate the style -----------------
-
-            if style_cls is None:
-                raise ValueError("Style class not found.")
-
-            style_instance = style_cls()
+            # -------- Execute style --------
             style_instance.use(params_instance)
 
-            # ----------------- Generate operation metadata -----------------
+            # -------- Log operation --------
             self._add_operation(style, params_instance)
