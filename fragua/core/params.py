@@ -2,51 +2,82 @@
 Base abstract class for all parameter schemas used by styles in Fragua.
 """
 
-from abc import ABC
 from typing import Any, Dict, TypeVar
+from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class Params(ABC):
-    """
-    Abstract base configuration class for all Fragua parameter types.
+# pylint: disable=too-few-public-methods
 
-    Attributes:
-        action (str): Defines the agent action such as "extract", "transform", or "load".
-        style (str): Defines the style or data source type (e.g., "csv", "excel", "sql", "api").
+
+class FraguaParams(FraguaComponent):
+    """
+    Abstract base class for all parameter schemas used by Fragua styles.
+
+    FraguaParams defines the configuration contract required by styles
+    during ETL execution. Each concrete Params implementation represents
+    a validated, self-describing configuration object associated with
+    a specific action and style.
+
+    Params objects are responsible for encapsulating configuration
+    values, providing structured summaries, and exposing field-level
+    descriptions for documentation and introspection.
     """
 
     FIELD_DESCRIPTIONS: dict[str, str] = {}
-    purpose: str | None = None
 
     def __init__(self, action: str, style: str) -> None:
+        """
+        Initialize the Params schema with an action and style.
+
+        Args:
+            action: ETL action scope where the params are applicable
+                (e.g., "extract", "transform", "load").
+            style: Style identifier associated with these parameters
+                (e.g., "csv", "excel", "sql", "api").
+        """
+        super().__init__(component_name=self.__class__.__name__)
         self.action = action
         self.style = style
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(role='{self.action}', style='{self.style}')"
+    def summary(self) -> Dict[str, Any]:
+        """
+        Return a structured summary of the parameters.
 
-    def to_dict(self) -> Dict[str, str]:
-        """Return a dictionary representation of the Params object."""
-        return {"role": self.action, "style": self.style}
+        The summary includes:
+        - parameter class name
+        - associated action and style
+        - declared fields and their descriptions
+        - optional functional purpose
 
-    def summary(self) -> dict[str, Any]:
-        """Return a structured summary of this Params object."""
+        Returns:
+            Dict[str, Any]: Serializable summary representation.
+        """
         fields = {}
 
-        for name in self.__annotations__:
-            desc = self.FIELD_DESCRIPTIONS.get(name, "No description available.")
-            fields[name] = desc
+        for name in self.FIELD_DESCRIPTIONS:
+            fields[name] = self.FIELD_DESCRIPTIONS.get(
+                name, "No description available."
+            )
 
         return {
-            "name": self.__class__.__name__,
+            "name": self.name,
             "action": self.action,
             "style": self.style,
             "fields": fields,
             "purpose": getattr(self, "purpose", None),
         }
 
+    def __repr__(self) -> str:
+        """
+        Return a concise string representation of the Params instance.
 
-ParamsT = TypeVar("ParamsT", bound=Params)
+        Returns:
+            A string identifying the Params class, action, and style.
+        """
+        return f"{self.__class__.__name__}(role='{self.action}', style='{self.style}')"
+
+
+FraguaParamsT = TypeVar("FraguaParamsT", bound=FraguaParams)

@@ -1,52 +1,72 @@
 """
 Lightweight in-memory store structure.
-The StoreManager handles all the logic.
 """
 
 from typing import Dict
+from fragua.core.component import FraguaComponent
 from fragua.core.storage import Storage, Box
 
 
-class Warehouse:
+class FraguaWarehouse(FraguaComponent):
     """
-    Simple container for Boxes.
-    Warehouse manager is responsible for all operations.
+    Lightweight in-memory container for persisted storage objects.
+
+    FraguaWarehouse acts as a passive data holder for Storage instances
+    (typically Boxes). All mutation and access logic is delegated to the
+    WarehouseManager, making this class responsible only for state
+    representation and introspection.
     """
 
     def __init__(self, warehouse_name: str = "warehouse") -> None:
         """
-        Initialize a warehouse.
+        Initialize the warehouse container.
 
         Args:
-            warehouse_name (str): Name of the warehouse.
+            warehouse_name: Identifier used to reference this warehouse
+                within the environment.
         """
-        self.warehouse_name = warehouse_name
+        super().__init__(component_name=warehouse_name)
         self._warehouse: Dict[str, Storage[Box]] = {}
 
     @property
     def data(self) -> Dict[str, Storage[Box]]:
         """
-        Expose the raw internal storage mapping.
+        Expose the internal storage mapping.
 
-        Returns: Dict[str, Storage[Box]]: Stored objects by name.
+        This property provides read access to the raw mapping of storage
+        names to Storage instances. Mutation should be performed
+        exclusively through the WarehouseManager.
+
+        Returns:
+            A dictionary mapping storage names to Storage[Box] instances.
         """
         return self._warehouse
 
     def summary(self) -> Dict[str, object]:
         """
-        Return a JSON-serializable summary of the Warehouse contents.
+        Return a structured summary of the warehouse.
 
-        Includes:
-            - warehouse name
-            - number of storage items
-            - mapping of storage names -> class name
+        This summary exposes high-level information about the warehouse
+        and its current contents, and is primarily intended for:
+
+        - System diagnostics
+        - Runtime observability
+        - Debugging and introspection
+        - Environment and registry summaries
+
+        Returns:
+            Dict([str, object]):
+                A dictionary containing:
+                - warehouse_name (str): Identifier of the warehouse
+                - storage_count (int): Total number of stored objects
+                - storages (Dict[str, str]): Mapping of storage keys to class names
         """
         storages_info: Dict[str, str] = {
             name: obj.__class__.__name__ for name, obj in self._warehouse.items()
         }
 
         return {
-            "warehouse_name": self.warehouse_name,
+            "warehouse_name": self.name,
             "storage_count": len(self._warehouse),
             "storages": storages_info,
         }

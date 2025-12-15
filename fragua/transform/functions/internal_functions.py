@@ -1,5 +1,12 @@
-"""Internal Functions For Transform Function Classes."""
+"""
+Internal transformation functions used by TransformFunction pipelines.
 
+Each function operates over a TransformParams instance, mutating
+its internal DataFrame and returning the same params object to
+allow sequential pipeline execution.
+"""
+
+from typing import Any, Dict
 import numpy as np
 import pandas as pd
 from pandas.errors import UndefinedVariableError
@@ -15,11 +22,18 @@ def fill_missing(params: TransformParamsT) -> TransformParamsT:
     """
     Fill missing values in numeric and categorical columns.
 
+    Numeric columns are filled using the strategy defined in
+    `params.numeric_fill` (default: mean). Categorical columns
+    are filled using `params.categorical_fill` (default: "unknown").
+
     Args:
-        params (TransformParamsT): Parameters containing the DataFrame and strategy attributes.
+        params (TransformParamsT):
+            Transformation parameters containing the input DataFrame
+            and optional fill strategies.
 
     Returns:
-        TransformParamsT: Params object with updated data.
+        TransformParamsT:
+            Parameters object with missing values resolved.
     """
     df = params.data.copy()
     numeric_fill = getattr(params, "numeric_fill", "mean")
@@ -39,14 +53,20 @@ def fill_missing(params: TransformParamsT) -> TransformParamsT:
 
 def standardize(params: TransformParamsT) -> TransformParamsT:
     """
-    Standardize string columns by trimming and lowering case.
+    Standardize string columns for consistency.
+
+    Applies trimming and lowercase normalization to all object-type
+    columns to ensure uniform textual representation.
 
     Args:
-        params (TransformParamsT): Parameters containing the DataFrame.
+        params (TransformParamsT):
+            Transformation parameters containing the input DataFrame.
 
     Returns:
-        TransformParamsT: Params object with updated data.
+        TransformParamsT:
+            Parameters object with standardized string columns.
     """
+
     df = params.data.copy()
     for col in df.select_dtypes(include="object").columns:
         df[col] = df[col].astype(str).str.strip().str.lower()
@@ -59,12 +79,18 @@ def encode_categoricals(params: TransformParamsT) -> TransformParamsT:
     """
     Encode categorical columns into dummy variables.
 
+    All object-type columns are converted using one-hot encoding.
+    Columns are expanded using pandas.get_dummies.
+
     Args:
-        params (TransformParamsT): Parameters containing the DataFrame.
+        params (TransformParamsT):
+            Transformation parameters containing the input DataFrame.
 
     Returns:
-        TransformParamsT: Params object with updated data.
+        TransformParamsT:
+            Parameters object with encoded categorical features.
     """
+
     df = params.data.copy()
     cat_cols = df.select_dtypes(include="object").columns
     if len(cat_cols) > 0:
@@ -76,14 +102,20 @@ def encode_categoricals(params: TransformParamsT) -> TransformParamsT:
 
 def scale_numeric(params: TransformParamsT) -> TransformParamsT:
     """
-    Scale numeric columns using MinMaxScaler.
+    Scale numeric columns to a normalized range.
+
+    Applies Min-Max scaling to all numeric columns, transforming
+    values to the [0, 1] range.
 
     Args:
-        params (TransformParamsT): Parameters containing the DataFrame.
+        params (TransformParamsT):
+            Transformation parameters containing the input DataFrame.
 
     Returns:
-        TransformParamsT: Params object with updated data.
+        TransformParamsT:
+            Parameters object with scaled numeric columns.
     """
+
     df = params.data.copy()
     num_cols = df.select_dtypes(include="number").columns
     if len(num_cols) > 0:
@@ -98,12 +130,19 @@ def treat_outliers(params: TransformParamsT) -> TransformParamsT:
     """
     Cap outliers in numeric columns using the IQR method.
 
+    Values outside the interquartile range are clipped based on
+    the factor defined in `params.outlier_threshold` (default: 1.5).
+
     Args:
-        params (TransformParamsT): Parameters containing the DataFrame and outlier threshold.
+        params (TransformParamsT):
+            Transformation parameters containing the input DataFrame
+            and optional outlier threshold.
 
     Returns:
-        TransformParamsT: Params object with updated data.
+        TransformParamsT:
+            Parameters object with capped numeric outliers.
     """
+
     df = params.data.copy()
     factor = getattr(params, "outlier_threshold", 1.5) or 1.5
     num_cols = df.select_dtypes(include="number").columns
@@ -122,13 +161,21 @@ def add_derived_columns(params: TransformParamsT) -> TransformParamsT:
     """
     Add derived or computed columns to the DataFrame.
 
+    Derived columns may be defined through expressions in
+    `params.derived_columns`. If no definitions are provided and
+    both `quantity` and `price` columns exist, a default `total`
+    column is computed.
+
     Args:
-        params (TransformParamsT): Parameters containing the DataFrame
-                                   and derived column definitions.
+        params (TransformParamsT):
+            Transformation parameters containing the input DataFrame
+            and optional derived column expressions.
 
     Returns:
-        TransformParamsT: Params object with updated data.
+        TransformParamsT:
+            Parameters object with derived columns added.
     """
+
     df = params.data.copy()
     derived = getattr(params, "derived_columns", None)
 
@@ -151,14 +198,21 @@ def add_derived_columns(params: TransformParamsT) -> TransformParamsT:
 
 def format_numeric(params: TransformParamsT) -> TransformParamsT:
     """
-    Format numeric columns by rounding to a given precision.
+    Format numeric columns by rounding values.
+
+    Numeric columns are rounded according to the precision defined
+    in `params.rounding_precision` (default: 2).
 
     Args:
-        params TransformParamsT): Parameters containing the DataFrame and rounding precision.
+        params (TransformParamsT):
+            Transformation parameters containing the input DataFrame
+            and rounding precision.
 
     Returns:
-        TransformParamsT: Params object with updated data.
+        TransformParamsT:
+            Parameters object with formatted numeric values.
     """
+
     df = params.data.copy()
     precision = getattr(params, "rounding_precision", 2) or 2
     for col in df.select_dtypes(include="number").columns:
@@ -171,14 +225,23 @@ def format_numeric(params: TransformParamsT) -> TransformParamsT:
 
 def group_and_aggregate(params: TransformParamsT) -> TransformParamsT:
     """
-    Group and aggregate data based on provided columns and aggregation functions.
+    Group and aggregate data based on provided configuration.
+
+    Groups the DataFrame using `params.groupby_cols` and applies
+    aggregation functions defined in `params.agg_functions`.
+    If no aggregation functions are provided, a default sum
+    aggregation is applied.
 
     Args:
-        params (TransformParamsT): Parameters containing DataFrame, groupby_cols, and agg_functions.
+        params (TransformParamsT):
+            Transformation parameters containing grouping and
+            aggregation definitions.
 
     Returns:
-        TransformParamsT: Params object with grouped and aggregated data.
+        TransformParamsT:
+            Parameters object with grouped and aggregated data.
     """
+
     df = params.data.copy()
     groupby_cols = getattr(params, "groupby_cols", []) or []
     agg_functions = getattr(params, "agg_functions", {}) or {}
@@ -201,14 +264,20 @@ def group_and_aggregate(params: TransformParamsT) -> TransformParamsT:
 
 def sort_dataframe(params: TransformParamsT) -> TransformParamsT:
     """
-    Sort DataFrame by specified columns.
+    Sort the DataFrame by specified columns.
+
+    Sorting is applied using the columns defined in
+    `params.sort_by`, preserving default ascending order.
 
     Args:
-        params (TransformParamsT): Parameters containing DataFrame and sort_by attribute.
+        params (TransformParamsT):
+            Transformation parameters containing sorting configuration.
 
     Returns:
-        TransformParamsT: Params object with sorted data.
+        TransformParamsT:
+            Parameters object with sorted data.
     """
+
     df = params.data.copy()
     sort_by = getattr(params, "sort_by", []) or []
 
@@ -218,3 +287,90 @@ def sort_dataframe(params: TransformParamsT) -> TransformParamsT:
 
     params.data = df
     return params
+
+
+TRANSFORM_INTERNAL_FUNCTIONS: Dict[str, dict[str, Any]] = {
+    "fill_missing": {
+        "func": fill_missing,
+        "description": "Fill missing values in numeric and categorical columns.",
+    },
+    "standardize": {
+        "func": standardize,
+        "description": "Trim and lowercase all string columns.",
+    },
+    "encode_categoricals": {
+        "func": encode_categoricals,
+        "description": "Convert categorical columns to dummy variables.",
+    },
+    "scale_numeric": {
+        "func": scale_numeric,
+        "description": "Scale numeric columns using MinMaxScaler.",
+    },
+    "treat_outliers": {
+        "func": treat_outliers,
+        "description": "Cap outliers using IQR method.",
+    },
+    "add_derived_columns": {
+        "func": add_derived_columns,
+        "description": "Create derived columns based on expressions.",
+    },
+    "format_numeric": {
+        "func": format_numeric,
+        "description": "Round numeric columns to a given precision.",
+    },
+    "group_and_aggregate": {
+        "func": group_and_aggregate,
+        "description": "Group and aggregate data using columns and agg functions.",
+    },
+    "sort_dataframe": {
+        "func": sort_dataframe,
+        "description": "Sort the DataFrame by specified columns.",
+    },
+}
+
+
+def get_function_description(func: str) -> Any:
+    """
+    Retrieve the human-readable description of a transform function.
+
+    Args:
+        func (str): Name of the registered transform function.
+
+    Returns:
+        Any: Description text if available, otherwise a fallback message.
+    """
+
+    return TRANSFORM_INTERNAL_FUNCTIONS[func].get(
+        "description", "No description available."
+    )
+
+
+def get_function(func: str) -> Any:
+    """
+    Retrieve the callable associated with a registered transform function.
+
+    Args:
+        func (str): Name of the registered transform function.
+
+    Returns:
+        Any: Callable function if found, otherwise a fallback value.
+    """
+
+    return TRANSFORM_INTERNAL_FUNCTIONS[func].get("func", "Function not found.")
+
+
+def get_function_name(func: str) -> str:
+    """
+    Resolve and validate the name of a registered transform function.
+
+    Args:
+        func (str): Function identifier.
+
+    Returns:
+        str: Validated function name or fallback message.
+    """
+
+    if func in TRANSFORM_INTERNAL_FUNCTIONS:
+        return func
+
+    return "Function not found."

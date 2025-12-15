@@ -12,38 +12,54 @@ This module contains:
 - Storage class.
 """
 
-from .environment import Environment
+from .environment import FraguaEnvironment
 
-from .agent import Agent
+from .component import FraguaComponent
 
-from .params import Params
+from .registry import FraguaRegistry
 
-from .style import Style
+from .set import FraguaSet
+
+from .actions import FraguaActions
+
+from .agent import FraguaAgent
+
+from .params import FraguaParams
+
+from .style import FraguaStyle
 
 from .function import FraguaFunction
 
-from .manager import WarehouseManager
+from .manager import FraguaManager
 
-from .warehouse import Warehouse
+from .warehouse import FraguaWarehouse
 
 from .storage import Storage, Box, Container, STORAGE_CLASSES
 
 
 __all__ = [
+    # Fragua Component Class
+    "FraguaComponent",
+    # Actions Class
+    "FraguaActions",
     # Environment Class
-    "Environment",
+    "FraguaEnvironment",
+    # Registry Class
+    "FraguaRegistry",
+    # Section Fragua Class
+    "FraguaSet",
     # Agent Class
-    "Agent",
+    "FraguaAgent",
     # Params Class
-    "Params",
+    "FraguaParams",
     # Style Class
-    "Style",
+    "FraguaStyle",
     # Function Class
     "FraguaFunction",
     # Warehouse Manager
-    "WarehouseManager",
+    "FraguaManager",
     # Warehouse
-    "Warehouse",
+    "FraguaWarehouse",
     # Storage
     "Storage",
     # Storage Types

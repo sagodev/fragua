@@ -14,9 +14,9 @@ from .extract_styles import (
     ExcelExtractStyle,
     SQLExtractStyle,
     APIExtractStyle,
+    EXTRACT_STYLE_CLASSES,
 )
 
-from .styles_registry import EXTRACT_STYLE_CLASSES
 
 __all__ = [
     "ExtractStyle",

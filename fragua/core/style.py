@@ -2,67 +2,108 @@
 Base class for all styles used by ETL agents in Fragua.
 """
 
-from abc import ABC, abstractmethod
-from typing import TypeVar, Generic, Dict, Any
+from abc import abstractmethod
+from typing import Generic, Dict, Any
+
+from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
-from fragua.core.params import ParamsT
+from fragua.core.params import FraguaParamsT
 
 logger = get_logger(__name__)
 
-ResultT = TypeVar("ResultT")
 
-
-class Style(ABC, Generic[ParamsT, ResultT]):
+class FraguaStyle(FraguaComponent, Generic[FraguaParamsT]):
     """
     Abstract base class for all styles in Fragua.
-    Defines a standard interface for style operations.
+
+    A FraguaStyle encapsulates a concrete data-processing strategy
+    executed by an agent during an ETL workflow. Styles are responsible
+    for applying a specific behavior using a validated Params schema
+    and returning the resulting data to be persisted or further processed.
     """
 
-    def __init__(self, style_name: str):
-        self.style_name = style_name
+    def __init__(self) -> None:
+        """
+        Initialize the style component.
+
+        The component name is automatically derived from the class name.
+        """
+        super().__init__(component_name=self.__class__.__name__)
 
     @abstractmethod
-    def _run(self, params: ParamsT) -> ResultT:
+    def _run(self, params: FraguaParamsT) -> Any:
+        """
+        Execute the core logic of the style.
+
+        This method contains the actual implementation and must be
+        provided by concrete subclasses.
+
+        Args:
+            params: Params instance containing validated configuration
+                required by the style.
+
+        Returns:
+            The data produced by the style execution.
+
+        Raises:
+            NotImplementedError: If not implemented by a subclass.
+        """
         raise NotImplementedError
 
-    def log_error(self, error: Exception) -> None:
-        """log error funciton"""
-        logger.error(
-            "[%s ERROR] %s: %s", self.__class__.__name__, type(error).__name__, error
-        )
+    def use(self, params: FraguaParamsT) -> Any:
+        """
+        Execute the style using the standard execution pipeline.
 
-    def use(self, params: ParamsT) -> ResultT:
-        """Pipeline for style classes."""
-        try:
-            return self._run(params)
-        except Exception as e:
-            self.log_error(e)
-            raise
+        This public method acts as the stable entry point for agents
+        and delegates execution to the internal `_run` implementation.
+
+        Args:
+            params: Params instance containing the configuration for
+                the style execution.
+
+        Returns:
+            The data produced by the style execution.
+        """
+        return self._run(params)
 
     def summary(self) -> Dict[str, Any]:
         """
-        Unified format for summarizing a Style.
-        Subclasses should override `summary_fields()` to add custom metadata.
-        """
+        Generate a structured summary describing the style.
 
+        The summary includes the style type, name, and detailed
+        field-level information provided by the concrete implementation.
+
+        Returns:
+            A dictionary representing the style summary.
+        """
         return {
             "type": "style",
-            "class": self.__class__.__name__,
-            "style_name": self.style_name,
+            "name": self.__class__.__name__,
             "fields": self.summary_fields(),
         }
 
     @abstractmethod
     def summary_fields(self) -> Dict[str, Any]:
         """
-        Subclasses must return a dictionary describing:
-        - purpose
-        - internal functions/pipelines
-        - expected params
-        - behaviour
+        Describe the behavior and expectations of the style.
+
+        Implementations should return a dictionary detailing:
+        - Purpose and intent of the style
+        - Internal functions or pipelines involved
+        - Expected Params schema and key fields
+        - Execution behavior and side effects
+
+        Returns:
+            A dictionary describing the style characteristics.
         """
         raise NotImplementedError
 
     # ------------------------------------------------------------
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__} style_name={self.style_name}>"
+        """
+        Return a concise string representation of the style.
+
+        Returns:
+            A string identifying the style class and name.
+        """
+        return f"<{self.__class__.__name__} style_name={self.name}>"

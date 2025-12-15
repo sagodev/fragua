@@ -1,23 +1,27 @@
 """Extract Params Class."""
 
-from typing import Any, Dict
-
-from fragua.core.params import Params
+from fragua.core.params import FraguaParams
 
 
-class ExtractParams(Params):
-    """Common parameters for extraction agents."""
+# pylint: disable=too-few-public-methods
 
-    read_kwargs: Dict[str, Any]
 
-    purpose: str | None = (
-        "Base extraction parameters used across all extract-style agents."
-    )
+class ExtractParams(FraguaParams):
+    """
+    Base parameter class for all extraction configurations.
 
-    FIELD_DESCRIPTIONS = {
-        "read_kwargs": "Additional keyword arguments passed to the data reader.",
-    }
+    This class provides the common structure and summary behavior
+    shared by all extract parameter schemas. Concrete extraction
+    parameter classes should extend this class and define their
+    specific fields and descriptions.
+    """
 
-    def __init__(self, style: str, read_kwargs: Dict[str, Any] | None = None) -> None:
+    def __init__(self, style: str) -> None:
+        """
+        Initialize extract parameters for a specific extraction style.
+
+        Args:
+            style: Identifier of the extraction style (e.g. "csv",
+                "excel", "sql", "api").
+        """
         super().__init__(action="extract", style=style)
-        self.read_kwargs = read_kwargs or {}

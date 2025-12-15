@@ -1,368 +1,1079 @@
 """Base environment class for Fragua, refactored with docstrings."""
 
 from __future__ import annotations
-from typing import Any, Dict, Optional, Type, List, TypedDict, cast
-from fragua.core.warehouse import Warehouse
-from fragua.core.agent import Agent
-from fragua.core.manager import WarehouseManager
-from fragua.extract import (
-    Extractor,
-    EXTRACT_PARAMS_CLASSES,
-    EXTRACT_FUNCTION_CLASSES,
-    EXTRACT_STYLE_CLASSES,
+
+from typing import Any, Dict, Optional, Type, cast
+
+from fragua.core.agent import FraguaAgent
+from fragua.core.component import FraguaComponent
+from fragua.core.actions import FraguaActions
+from fragua.core.params import FraguaParams
+from fragua.core.set import FraguaSet
+from fragua.core.warehouse import FraguaWarehouse
+from fragua.core.manager import FraguaManager
+
+from fragua.extract import Extractor
+from fragua.extract.params.base import ExtractParams
+from fragua.extract.registry.extract_registry import ExtractRegistry
+from fragua.extract.registry.extract_sets import (
+    ExtractAgentSet,
+    ExtractFunctionSet,
+    ExtractParamsSet,
+    ExtractStyleSet,
 )
-from fragua.transform import (
-    Transformer,
-    TRANSFORM_PARAMS_CLASSES,
-    TRANSFORM_FUNCTION_CLASSES,
-    TRANSFORM_STYLE_CLASSES,
+
+from fragua.load import Loader
+from fragua.load.params.base import LoadParams
+from fragua.load.registry.load_registry import LoadRegistry
+from fragua.load.registry.load_sets import (
+    LoadAgentSet,
+    LoadFunctionSet,
+    LoadParamsSet,
+    LoadStyleSet,
 )
-from fragua.load import (
-    Loader,
-    LOAD_PARAMS_CLASSES,
-    LOAD_FUNCTION_CLASSES,
-    LOAD_STYLE_CLASSES,
+
+from fragua.transform import Transformer
+from fragua.transform.params.base import TransformParams
+from fragua.transform.registry.transform_registry import TransformRegistry
+from fragua.transform.registry.transform_sets import (
+    TransformAgentSet,
+    TransformFunctionSet,
+    TransformParamsSet,
+    TransformStyleSet,
 )
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-
-class EnvironmentComponents(TypedDict):
-    """Components stored inside an environment."""
-
-    warehouse: Optional[Warehouse]
-    manager: Optional[WarehouseManager]
-    agents: Dict[str, List[Agent[Any]]]
+# pylint: disable=too-many-lines
+# pylint: disable=too-many-public-methods
 
 
-class Environment:
-    """Refactored base environment for Fragua.
+class FraguaEnvironment(FraguaComponent):
+    """
+    Core environment abstraction for Fragua.
 
-    Manages warehouse, warehouse manager, agents, and registries.
-    Provides methods for creation, retrieval, updating, and deletion of all components.
+    This class represents the top-level orchestration layer of the framework.
+    It encapsulates and coordinates all fundamental components, including
+    the warehouse, warehouse manager, action registries, and agents.
+
+    The Environment is responsible for initializing, exposing, and managing
+    the lifecycle of all ETL-related components within a given execution context.
     """
 
-    AGENT_CLASSES: Dict[str, Type[Agent[Any]]] = {
-        "extractor": Extractor,
-        "transformer": Transformer,
-        "loader": Loader,
-    }
-    REGISTRY_TYPES: List[str] = ["params", "functions", "styles"]
-
-    def __init__(self, name: str, env_type: str = "base", fg_reg: bool = False):
+    def __init__(self, env_name: str, env_type: str = "base", fg_config: bool = False):
         """
-        Initialize the environment.
+        Initialize a Fragua execution environment.
+
+        This constructor bootstraps all core components required for
+        ETL operations, including the warehouse, its manager, and
+        the action registries (extract, transform, load).
 
         Args:
-            name: Name of the environment.
-            env_type: Type of the environment.
-            fg_reg: If True, populate default Fragua registries (params, functions, styles).
+            env_name (str):
+                Logical name of the environment instance.
+            env_type (str):
+                Environment classification or variant.
+                Defaults to "base".
+            fg_config (bool):
+                Enables the default Fragua configuration.
+                When True, built-in components such as parameters,
+                functions, styles, and agents are automatically registered.
         """
-        self.name = name
+
+        super().__init__(component_name=env_name)
         self.env_type = env_type
-        self.fg_reg = fg_reg
-        self.components: EnvironmentComponents = {
-            "warehouse": None,
-            "manager": None,
-            "agents": {atype: [] for atype in self.AGENT_CLASSES},
-        }
-        self.registries = self._initialize_registries()
+        self.fg_config = fg_config
+        self.warehouse = self._initialize_warehouse()
+        self.manager = self._initialize_manager()
+        self.actions = self._initialize_actions()
+
         logger.debug(
             "Environment '%s' initialized (type=%s).", self.name, self.env_type
         )
 
-    # ---------------------- Internal Helpers ---------------------- #
-    def _check_duplicate_name(self, name: str) -> None:
-        """Ensure no warehouse, manager, or agent already has the given name."""
-        wh = self.components["warehouse"]
-        mgr = self.components["manager"]
-        if (wh and getattr(wh, "name", None) == name) or (
-            mgr and getattr(mgr, "name", None) == name
-        ):
-            raise ValueError(f"Duplicate name '{name}' already exists in environment.")
-        for agents in self.components["agents"].values():
-            if any(getattr(a, "name", None) == name for a in agents):
-                raise ValueError(f"Duplicate agent name detected: '{name}'.")
+    # ---------------------- Error Handle ---------------------- #
+    def agent_not_found(self) -> ValueError:
+        """
+        Generate a standardized error for missing agents.
 
-    def _initialize_registries(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
-        """Initialize the environment registries for params, functions, and styles."""
-        registries: Dict[str, Dict[str, Dict[str, Any]]] = {
-            rtype: {atype: {} for atype in ["extract", "transform", "load"]}
-            for rtype in self.REGISTRY_TYPES
-        }
-        if self.fg_reg:
-            registries["params"].update(
-                {
-                    "extract": EXTRACT_PARAMS_CLASSES,
-                    "transform": TRANSFORM_PARAMS_CLASSES,
-                    "load": LOAD_PARAMS_CLASSES,
-                }
-            )
-            registries["functions"].update(
-                {
-                    "extract": EXTRACT_FUNCTION_CLASSES,
-                    "transform": TRANSFORM_FUNCTION_CLASSES,
-                    "load": LOAD_FUNCTION_CLASSES,
-                }
-            )
-            registries["styles"].update(
-                {
-                    "extract": EXTRACT_STYLE_CLASSES,
-                    "transform": TRANSFORM_STYLE_CLASSES,
-                    "load": LOAD_STYLE_CLASSES,
-                }
-            )
-        logger.info("Default registries initialized for environment '%s'.", self.name)
-        return registries
+        Returns:
+            ValueError:
+                Exception indicating that the requested agent
+                does not exist within the current environment.
+        """
 
-    def _validate_registry_type(self, registry_type: str) -> None:
-        """Check if the registry type is valid."""
-        if registry_type not in self.REGISTRY_TYPES:
-            raise ValueError(f"Invalid registry type '{registry_type}'.")
+        return ValueError("Agent not found.")
 
-    # ---------------------- Registry Management ---------------------- #
-    def create_registry_record(
-        self, registry_type: str, name: str, data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Create a new record in a registry."""
-        self._validate_registry_type(registry_type)
-        registry = self.registries[registry_type]
-        if name in registry:
-            raise ValueError(f"Record '{name}' already exists in {registry_type}.")
-        registry[name] = data
-        logger.info("%s created: %s", registry_type.capitalize(), name)
-        return {name: data}
+    # ---------------------- Initializers ---------------------- #
+    def _initialize_manager(self) -> FraguaManager:
+        """
+        Initialize the warehouse manager for the environment.
 
-    def get_registry_record(
-        self, registry_type: str, name: str
-    ) -> Optional[Dict[str, Any]]:
-        """Retrieve a record from a registry by name."""
-        self._validate_registry_type(registry_type)
-        return self.registries[registry_type].get(name)
+        The warehouse manager acts as the coordination layer between
+        agents and the underlying warehouse, controlling access,
+        execution flow, and resource usage.
 
-    def update_registry_record(
-        self, registry_type: str, name: str, data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Update an existing record in a registry."""
-        self._validate_registry_type(registry_type)
-        registry = self.registries[registry_type]
-        if name not in registry:
-            raise ValueError(f"Record '{name}' not found in {registry_type}.")
-        registry[name].update(data)
-        logger.info("%s updated: %s", registry_type.capitalize(), name)
-        return {name: registry[name]}
+        Returns:
+            FraguaManager:
+                Fully initialized warehouse manager instance.
+        """
 
-    def delete_registry_record(self, registry_type: str, name: str) -> bool:
-        """Delete a record from a registry by name."""
-        self._validate_registry_type(registry_type)
-        registry = self.registries[registry_type]
-        if name not in registry:
-            raise ValueError(f"Record '{name}' not found in {registry_type}.")
-        del registry[name]
-        logger.info("%s deleted: %s", registry_type.capitalize(), name)
-        return True
+        manager = FraguaManager(f"{self.name}_manager", self.warehouse)
 
-    def list_registry_records(self, registry_type: str) -> Dict[str, Any]:
-        """List all records in a registry."""
-        self._validate_registry_type(registry_type)
-        return self.registries[registry_type]
-
-    # ---------------------- Agent Management ---------------------- #
-    def create_agent(
-        self,
-        agent_type: str,
-        name: Optional[str] = None,
-        environment: Optional[Environment] = None,
-    ) -> Agent[Any]:
-        """Create and register an agent in the environment."""
-        agent_type = agent_type.lower()
-        if agent_type not in self.AGENT_CLASSES:
-            raise ValueError(f"Unknown agent type '{agent_type}'.")
-        if environment is None:
-            raise TypeError("Environment instance required.")
-        agent_cls = self.AGENT_CLASSES[agent_type]
-        agent_name = (
-            name
-            or f"{self.name}_{agent_type}_{len(self.components['agents'][agent_type])+1}"
+        logger.info(
+            "Default warehouse manager initialized for environment '%s'.", self.name
         )
-        self._check_duplicate_name(agent_name)
-        agent = agent_cls(name=agent_name, environment=environment)
-        self.components["agents"][agent_type].append(agent)
-        logger.info("Agent created: %s (%s)", agent_name, agent_cls.__name__)
-        return agent
+        return manager
 
-    def get_agent(self, agent_name: str) -> Optional[Agent[Any]]:
-        """Retrieve an agent by name."""
-        for agents in self.components["agents"].values():
-            for agent in agents:
-                if getattr(agent, "name", None) == agent_name:
-                    return agent
-        return None
+    def _initialize_warehouse(self) -> FraguaWarehouse:
+        """
+        Initialize the warehouse for the environment.
 
-    def delete_agent(self, agent_name: str) -> bool:
-        """Remove an agent from the environment."""
-        for atype, agents in self.components["agents"].items():
-            for i, agent in enumerate(agents):
-                if getattr(agent, "name", None) == agent_name:
-                    agents.pop(i)
-                    logger.info("Agent deleted: %s (%s)", agent_name, atype)
-                    return True
-        raise ValueError(f"Agent '{agent_name}' not found.")
+        The warehouse serves as the central data container where
+        intermediate and final datasets are stored during
+        extract, transform, and load operations.
+
+        Returns:
+            FraguaWarehouse:
+                Initialized warehouse instance bound to this environment.
+        """
+
+        warehouse = FraguaWarehouse(f"{self.name}_warehouse")
+
+        logger.info("Default warehouse initialized for environment '%s'.", self.name)
+        return warehouse
+
+    def _initialize_actions(self) -> FraguaActions:
+        """
+        Initialize action registries for the environment.
+
+        This method sets up all action-specific registries
+        (extract, transform, load), optionally preloading
+        default Fragua components when fg_config is enabled.
+
+        Returns:
+            FraguaActions:
+                Container holding all action registries.
+        """
+
+        actions = FraguaActions(self.fg_config)
+        logger.info("Default actions initialized for environment '%s'.", self.name)
+        return actions
+
+    # ---------------------- Helper Properties ---------------------- #
+    @property
+    def extract(self) -> ExtractRegistry:
+        """
+        Access the Extract action registry.
+
+        Returns:
+            ExtractRegistry:
+                Registry containing all extract-related components
+                (agents, params, functions, and styles).
+        """
+        return self.actions.extract
+
+    @property
+    def transform(self) -> TransformRegistry:
+        """
+        Access the Transform action registry.
+
+        Returns:
+            TransformRegistry:
+                Registry containing all transform-related components
+                (agents, params, functions, and styles).
+        """
+        return self.actions.transform
+
+    @property
+    def load(self) -> LoadRegistry:
+        """
+        Access the Load action registry.
+
+        Returns:
+            LoadRegistry:
+                Registry containing all load-related components
+                (agents, params, functions, and styles).
+        """
+        return self.actions.load
+
+    @property
+    def extract_agents(self) -> ExtractAgentSet:
+        """
+        Retrieve the set of extract agents.
+
+        Returns:
+            ExtractAgentSet:
+                Registered agents responsible for extract operations.
+        """
+        return self.extract.agents
+
+    @property
+    def extract_params(self) -> ExtractParamsSet:
+        """
+        Retrieve the set of extract parameter classes.
+
+        Returns:
+            ExtractParamsSet:
+                Parameter definitions used by extract styles and functions.
+        """
+        return self.extract.params
+
+    @property
+    def extract_functions(self) -> ExtractFunctionSet:
+        """
+        Retrieve the set of extract functions.
+
+        Returns:
+            ExtractFunctionSet:
+                Callable units implementing extract logic.
+        """
+        return self.extract.functions
+
+    @property
+    def extract_styles(self) -> ExtractStyleSet:
+        """
+        Retrieve the set of extract styles.
+
+        Returns:
+            ExtractStyleSet:
+                Styles that orchestrate extract functions and parameters.
+        """
+        return self.extract.styles
+
+    @property
+    def transform_agents(self) -> TransformAgentSet:
+        """
+        Retrieve the set of transform agents.
+
+        Returns:
+            TransformAgentSet:
+                Agents responsible for transform operations.
+        """
+        return self.transform.agents
+
+    @property
+    def transform_params(self) -> TransformParamsSet:
+        """
+        Retrieve the set of transform parameter classes.
+
+        Returns:
+            TransformParamsSet:
+                Parameter definitions used during transformations.
+        """
+        return self.transform.params
+
+    @property
+    def transform_functions(self) -> TransformFunctionSet:
+        """
+        Retrieve the set of transform functions.
+
+        Returns:
+            TransformFunctionSet:
+                Functions implementing transformation logic.
+        """
+        return self.transform.functions
+
+    @property
+    def transform_styles(self) -> TransformStyleSet:
+        """
+        Retrieve the set of transform styles.
+
+        Returns:
+            TransformStyleSet:
+                Styles coordinating transform functions and parameters.
+        """
+        return self.transform.styles
+
+    @property
+    def load_agents(self) -> LoadAgentSet:
+        """
+        Retrieve the set of load agents.
+
+        Returns:
+            LoadAgentSet:
+                Agents responsible for load operations.
+        """
+        return self.load.agents
+
+    @property
+    def load_params(self) -> LoadParamsSet:
+        """
+        Retrieve the set of load parameter classes.
+
+        Returns:
+            LoadParamsSet:
+                Parameter definitions used for load operations.
+        """
+        return self.load.params
+
+    @property
+    def load_functions(self) -> LoadFunctionSet:
+        """
+        Retrieve the set of load functions.
+
+        Returns:
+            LoadFunctionSet:
+                Functions implementing load logic.
+        """
+        return self.load.functions
+
+    @property
+    def load_styles(self) -> LoadStyleSet:
+        """
+        Retrieve the set of load styles.
+
+        Returns:
+            LoadStyleSet:
+                Styles coordinating load functions and parameters.
+        """
+        return self.load.styles
+
+    @property
+    def params(self) -> Dict[str, FraguaSet]:
+        """
+        Retrieve all parameter sets grouped by action.
+
+        Returns:
+            Dict[str, FraguaSet]:
+                Mapping of action name to its corresponding params set.
+        """
+        return {
+            "extract": self.extract_params,
+            "transform": self.transform_params,
+            "load": self.load_params,
+        }
+
+    @property
+    def functions(self) -> Dict[str, FraguaSet]:
+        """
+        Retrieve all function sets grouped by action.
+
+        Returns:
+            Dict[str, FraguaSet]:
+                Mapping of action name to its corresponding functions set.
+        """
+        return {
+            "extract": self.extract_functions,
+            "transform": self.transform_functions,
+            "load": self.load_functions,
+        }
+
+    @property
+    def agents(self) -> Dict[str, FraguaSet]:
+        """
+        Retrieve all agent sets grouped by action.
+
+        Returns:
+            Dict([str, FraguaSet]):
+                Mapping of action name to its corresponding agents set.
+        """
+        return {
+            "extract": self.extract_agents,
+            "transform": self.transform_agents,
+            "load": self.load_agents,
+        }
+
+    @property
+    def styles(self) -> Dict[str, FraguaSet]:
+        """
+        Retrieve all style sets grouped by action.
+
+        Returns:
+            Dict([str, FraguaSet]):
+                Mapping of action name to its corresponding styles set.
+        """
+        return {
+            "extract": self.extract_styles,
+            "transform": self.transform_styles,
+            "load": self.load_styles,
+        }
+
+    # ----------------------Agents Management ---------------------- #
+    def create_agent(self, action: str, agent_name: str) -> bool:
+        """
+        Create and register a new agent for a given action.
+
+        This method instantiates the appropriate Agent subclass based on the
+        provided action type and registers it into the corresponding agent set.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            agent_name: Name to assign to the new agent.
+
+        Returns:
+            True if the agent was successfully created and registered,
+            False if an agent with the same name already exists.
+
+        Raises:
+            ValueError: If the provided action type is invalid.
+        """
+
+        def _build_agent() -> FraguaAgent[FraguaParams]:
+            """Instantiate the correct agent class based on action."""
+            class_map: Dict[str, Type[FraguaAgent[FraguaParams]]] = {
+                "extract": Extractor,
+                "transform": Transformer,
+                "load": Loader,
+            }
+
+            agent_class = class_map.get(action)
+            if agent_class is None:
+                raise ValueError(f"Invalid action type: {action}")
+
+            return agent_class(agent_name, self)
+
+        def _register_agent(agent: FraguaAgent[FraguaParams]) -> bool:
+            """Register the agent into the corresponding set."""
+
+            type_set = self.agents.get(action)
+            if type_set is None:
+                return False
+
+            return type_set.add(agent_name, agent)
+
+        new_agent = _build_agent()
+        created = _register_agent(new_agent)
+
+        if created:
+            logger.info(
+                "Agent created: %s (%s)",
+                agent_name,
+                new_agent.__class__.__name__,
+            )
+
+        return created
+
+    def get_agent(
+        self, action: str, agent_name: Optional[str] = None
+    ) -> Optional[FraguaAgent[FraguaParams]]:
+        """
+        Retrieve an agent by action type and optional agent name.
+
+        If an agent name is provided, the method returns the matching agent
+        from the specified action registry. If no name is provided, the
+        first registered agent for that action is returned.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            agent_name: Optional name of the agent to retrieve.
+
+        Returns:
+            The requested Agent instance if found, otherwise None.
+        """
+
+        def _set_agent() -> Optional[Any]:
+            """Select agent object based on action and agent name."""
+
+            agents_set = self.agents.get(action)
+            if agents_set is None:
+                return None
+
+            if agent_name is None:
+                agents = agents_set.get_all()
+                return next(iter(agents.values()), None)
+
+            return agents_set.get_one(agent_name)
+
+        def _validate_agent(agent: Any) -> Optional[FraguaAgent[FraguaParams]]:
+            """Validate and safely cast the agent to Agent type."""
+            if agent is None:
+                return None
+            return cast(FraguaAgent[FraguaParams], agent)
+
+        agent = _set_agent()
+
+        return _validate_agent(agent)
 
     def update_agent(
         self,
-        agent_name: str,
-        new_name: Optional[str] = None,
-    ) -> Agent[Any]:
+        action: str,
+        old_name: str,
+        new_name: str,
+    ) -> bool:
         """
-        Update an existing agent inside the environment.
+        Rename an existing agent within a specific action.
 
         Args:
-            agent_name: Current name of the agent to update.
-            new_name: Optional new name for the agent.
+            action: Action type ("extract", "transform", "load").
+            old_name: Current agent name.
+            new_name: New agent name.
 
         Returns:
-            The updated Agent instance.
-
-        Raises:
-            ValueError: If agent is not found or new name conflicts with another component.
+            True if the agent was successfully renamed, False otherwise.
         """
-        agent = self.get_agent(agent_name)
-        if agent is None:
-            raise ValueError(f"Agent '{agent_name}' not found.")
 
-        # ---------------------- Update Name ---------------------- #
-        if new_name and new_name != agent_name:
-            self._check_duplicate_name(new_name)
-            setattr(agent, "name", new_name)
-            logger.info("Agent renamed: %s → %s", agent_name, new_name)
+        agents_set = self.agents.get(action)
+        if agents_set is None:
+            raise ValueError(f"Invalid action type: {action}")
 
-        return agent
+        updated = agents_set.update(old_name, new_name)
 
-    # ---------------------- Warehouse & Manager ---------------------- #
-    def create_warehouse(self, name: Optional[str] = None) -> Warehouse:
-        """Create the warehouse for the environment (only one allowed)."""
-        if self.components["warehouse"] is not None:
-            raise RuntimeError("Warehouse already exists.")
-        wh_name = name or f"{self.name}_warehouse"
-        self._check_duplicate_name(wh_name)
-        warehouse = Warehouse(wh_name)
-        self.components["warehouse"] = warehouse
-        logger.info("Warehouse created: %s", wh_name)
-        return warehouse
+        if not updated:
+            raise self.agent_not_found()
 
-    def create_manager(
-        self, name: Optional[str] = None, warehouse: Optional[Warehouse] = None
-    ) -> WarehouseManager:
-        """Create the warehouse manager (only one allowed)."""
-        if self.components["manager"] is not None:
-            raise RuntimeError("WarehouseManager already exists.")
-        warehouse = warehouse or self.components["warehouse"] or self.create_warehouse()
-        mgr_name = name or f"{self.name}_manager"
-        self._check_duplicate_name(mgr_name)
-        manager = WarehouseManager(mgr_name, warehouse)
-        self.components["manager"] = manager
-        logger.info("WarehouseManager created: %s", mgr_name)
-        return manager
-
-    # ---------------------- Shortcuts ---------------------- #
-    def create_extractor(self, name: Optional[str] = None) -> Extractor:
-        """Shortcut to create an Extractor agent."""
-        return cast(Extractor, self.create_agent("extractor", name, environment=self))
-
-    def create_transformer(self, name: Optional[str] = None) -> Transformer:
-        """Shortcut to create a Transformer agent."""
-        return cast(
-            Transformer, self.create_agent("transformer", name, environment=self)
+        logger.info(
+            "Agent renamed: %s -> %s (%s)",
+            old_name,
+            new_name,
+            action,
         )
 
-    def create_loader(self, name: Optional[str] = None) -> Loader:
-        """Shortcut to create a Loader agent."""
-        return cast(Loader, self.create_agent("loader", name, environment=self))
+        return updated
 
-    # ---------------------- Get Helpers ---------------------- #
-    def warehouse(self) -> Warehouse:
-        """Return the warehouse instance."""
-        wh = self.components["warehouse"]
-        if not wh:
-            raise RuntimeError("Warehouse not initialized.")
-        return wh
+    def delete_agent(self, action: str, agent_name: str) -> bool:
+        """
+        Delete an existing agent from a specific action.
 
-    def manager(self) -> WarehouseManager:
-        """Return the warehouse manager instance."""
-        mgr = self.components["manager"]
-        if not mgr:
-            raise RuntimeError("WarehouseManager not initialized.")
-        return mgr
+        Args:
+            action: Action type ("extract", "transform", "load").
+            agent_name: Name of the agent to delete.
 
-    def agents(self, agent_type: Optional[str] = None) -> List[Any]:
-        """Return all agents, or agents of a given type."""
-        if agent_type is None:
-            return [a for agents in self.components["agents"].values() for a in agents]
-        if agent_type not in self.AGENT_CLASSES:
-            raise ValueError(f"Invalid agent type '{agent_type}'.")
-        return cast(List[Any], self.components["agents"][agent_type])
+        Returns:
+            True if the agent was successfully deleted.
+        """
+
+        agents_set = self.agents.get(action)
+        if agents_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        deleted = agents_set.delete_one(agent_name)
+
+        if not deleted:
+            raise self.agent_not_found()
+
+        logger.info(
+            "Agent deleted: %s (%s)",
+            agent_name,
+            action,
+        )
+
+        return deleted
+
+    # ----------------------Functions Management ---------------------- #
+    def create_function(
+        self,
+        action: str,
+        function_name: str,
+        function: FraguaComponent,
+    ) -> bool:
+        """
+        Register a new function in the corresponding action registry.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            function_name: Name to assign to the function.
+            function: Function component to register.
+
+        Returns:
+            True if the function was successfully registered,
+            False if a function with the same name already exists.
+
+        Raises:
+            ValueError: If the provided action type is invalid.
+        """
+
+        functions_set = self.functions.get(action)
+        if functions_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        created = functions_set.add(function_name, function)
+
+        if created:
+            logger.info(
+                "Function registered: %s (%s)",
+                function_name,
+                action,
+            )
+
+        return created
+
+    def get_function(
+        self,
+        action: str,
+        function_name: Optional[str] = None,
+    ) -> Optional[FraguaComponent]:
+        """
+        Retrieve a function by action type and optional name.
+
+        If a function name is provided, the method returns the matching
+        function from the specified action registry. If no name is provided,
+        the first registered function is returned.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            function_name: Optional name of the function to retrieve.
+
+        Returns:
+            The requested function if found, otherwise None.
+        """
+
+        functions_set = self.functions.get(action)
+        if functions_set is None:
+            return None
+
+        if function_name is None:
+            functions = functions_set.get_all()
+            return next(iter(functions.values()), None)
+
+        return functions_set.get_one(function_name)
+
+    def update_function(
+        self,
+        action: str,
+        old_name: str,
+        new_name: str,
+    ) -> bool:
+        """
+        Rename an existing function within a specific action.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            old_name: Current function name.
+            new_name: New function name.
+
+        Returns:
+            True if the function was successfully renamed.
+
+        Raises:
+            ValueError: If the action is invalid or the function is not found.
+        """
+
+        functions_set = self.functions.get(action)
+        if functions_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        updated = functions_set.update(old_name, new_name)
+
+        if not updated:
+            raise ValueError("Function not found.")
+
+        logger.info(
+            "Function renamed: %s -> %s (%s)",
+            old_name,
+            new_name,
+            action,
+        )
+
+        return updated
+
+    def delete_function(self, action: str, function_name: str) -> bool:
+        """
+            Delete a function from a specific action registry.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            function_name: Name of the function to delete.
+
+        Returns:
+            True if the function was successfully deleted.
+
+        Raises:
+            ValueError: If the action is invalid or the function is not found.
+        """
+
+        functions_set = self.functions.get(action)
+        if functions_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        deleted = functions_set.delete_one(function_name)
+
+        if not deleted:
+            raise ValueError("Function not found.")
+
+        logger.info(
+            "Function deleted: %s (%s)",
+            function_name,
+            action,
+        )
+
+        return deleted
+
+    # ----------------------Styles Management ---------------------- #
+    def create_style(
+        self,
+        action: str,
+        style_name: str,
+        style: FraguaComponent,
+    ) -> bool:
+        """
+        Register a new style in the corresponding action registry.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            style_name: Name to assign to the style.
+            style: Style component to register.
+
+        Returns:
+            True if the style was successfully registered,
+            False if a style with the same name already exists.
+
+        Raises:
+            ValueError: If the provided action type is invalid.
+        """
+
+        styles_set = self.styles.get(action)
+        if styles_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        created = styles_set.add(style_name, style)
+
+        if created:
+            logger.info(
+                "Style registered: %s (%s)",
+                style_name,
+                action,
+            )
+
+        return created
+
+    def get_style(
+        self,
+        action: str,
+        style_name: Optional[str] = None,
+    ) -> Optional[FraguaComponent]:
+        """
+        Retrieve a style by action type and optional name.
+
+        If a style name is provided, the method returns the matching
+        style from the specified action registry. If no name is provided,
+        the first registered style is returned.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            style_name: Optional name of the style to retrieve.
+
+        Returns:
+            The requested style if found, otherwise None.
+        """
+
+        styles_set = self.styles.get(action)
+        if styles_set is None:
+            return None
+
+        if style_name is None:
+            styles = styles_set.get_all()
+            return next(iter(styles.values()), None)
+
+        return styles_set.get_one(style_name)
+
+    def update_style(
+        self,
+        action: str,
+        old_name: str,
+        new_name: str,
+    ) -> bool:
+        """
+        Rename an existing style within a specific action.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            old_name: Current style name.
+            new_name: New style name.
+
+        Returns:
+            True if the style was successfully renamed.
+
+        Raises:
+            ValueError: If the action is invalid or the style is not found.
+        """
+
+        styles_set = self.styles.get(action)
+        if styles_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        updated = styles_set.update(old_name, new_name)
+
+        if not updated:
+            raise ValueError("Style not found.")
+
+        logger.info(
+            "Style renamed: %s -> %s (%s)",
+            old_name,
+            new_name,
+            action,
+        )
+
+        return updated
+
+    def delete_style(self, action: str, style_name: str) -> bool:
+        """
+        Delete a style from a specific action registry.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            style_name: Name of the style to delete.
+
+        Returns:
+            True if the style was successfully deleted.
+
+        Raises:
+            ValueError: If the action is invalid or the style is not found.
+        """
+
+        styles_set = self.styles.get(action)
+        if styles_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        deleted = styles_set.delete_one(style_name)
+
+        if not deleted:
+            raise ValueError("Style not found.")
+
+        logger.info(
+            "Style deleted: %s (%s)",
+            style_name,
+            action,
+        )
+
+        return deleted
+
+    # ----------------------Params Management ---------------------- #
+    def create_param(
+        self,
+        action: str,
+        param_name: str,
+        param: FraguaComponent,
+    ) -> bool:
+        """
+        Register a new parameter in the corresponding action registry.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            param_name: Name to assign to the parameter.
+            param: Parameter component to register.
+
+        Returns:
+            True if the parameter was successfully registered,
+            False if a parameter with the same name already exists.
+
+        Raises:
+            ValueError: If the provided action type is invalid.
+        """
+
+        params_set = self.params.get(action)
+        if params_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        created = params_set.add(param_name, param)
+
+        if created:
+            logger.info(
+                "Parameter registered: %s (%s)",
+                param_name,
+                action,
+            )
+
+        return created
+
+    def get_param(
+        self,
+        action: str,
+        param_name: Optional[str] = None,
+    ) -> Optional[FraguaComponent]:
+        """
+        Retrieve a parameter by action type and optional name.
+
+        If a parameter name is provided, the method returns the matching
+        parameter from the specified action registry. If no name is provided,
+        the first registered parameter is returned.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            param_name: Optional name of the parameter to retrieve.
+
+        Returns:
+            The requested parameter if found, otherwise None.
+        """
+
+        params_set = self.params.get(action)
+        if params_set is None:
+            return None
+
+        if param_name is None:
+            params = params_set.get_all()
+            return next(iter(params.values()), None)
+
+        return params_set.get_one(param_name)
+
+    def update_param(
+        self,
+        action: str,
+        old_name: str,
+        new_name: str,
+    ) -> bool:
+        """
+        Rename an existing parameter within a specific action.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            old_name: Current parameter name.
+            new_name: New parameter name.
+
+        Returns:
+            True if the parameter was successfully renamed.
+
+        Raises:
+            ValueError: If the action is invalid or the parameter is not found.
+        """
+
+        params_set = self.params.get(action)
+        if params_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        updated = params_set.update(old_name, new_name)
+
+        if not updated:
+            raise ValueError("Parameter not found.")
+
+        logger.info(
+            "Parameter renamed: %s -> %s (%s)",
+            old_name,
+            new_name,
+            action,
+        )
+
+        return updated
+
+    def delete_param(self, action: str, param_name: str) -> bool:
+        """
+        Delete a parameter from a specific action registry.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            param_name: Name of the parameter to delete.
+
+        Returns:
+            True if the parameter was successfully deleted.
+
+        Raises:
+            ValueError: If the action is invalid or the parameter is not found.
+        """
+
+        params_set = self.params.get(action)
+        if params_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        deleted = params_set.delete_one(param_name)
+
+        if not deleted:
+            raise ValueError("Parameter not found.")
+
+        logger.info(
+            "Parameter deleted: %s (%s)",
+            param_name,
+            action,
+        )
+
+        return deleted
+
+    # ----------------------Shortcut functions ---------------------- #
+    def get_extractor(
+        self, agent_name: Optional[str] = None
+    ) -> Extractor[ExtractParams]:
+        """
+        Retrieve an Extractor agent by name.
+
+        If an agent name is provided, the method returns the matching Extractor
+        from the extract registry. If no name is provided, the first registered
+        Extractor is returned.
+
+        Args:
+            agent_name: Optional name of the Extractor agent to retrieve.
+
+        Returns:
+            The requested Extractor agent.
+
+        Raises:
+            ValueError: If no Extractor agent is found.
+        """
+        extractor = self.get_agent("extract", agent_name)
+
+        if extractor is None:
+            self.agent_not_found()
+
+        return cast(Extractor[ExtractParams], extractor)
+
+    def get_transformer(
+        self, agent_name: str | None = None
+    ) -> Transformer[TransformParams]:
+        """
+        Retrieve a Transformer agent by name.
+
+        If an agent name is provided, the method returns the matching Transformer
+        from the transform registry. If no name is provided, the first registered
+        Transformer is returned.
+
+        Args:
+            agent_name: Optional name of the Transformer agent to retrieve.
+
+        Returns:
+            The requested Transformer agent.
+
+        Raises:
+            ValueError: If no Transformer agent is found.
+        """
+        transformer = self.get_agent("transform", agent_name)
+
+        if transformer is None:
+            self.agent_not_found()
+
+        return cast(Transformer[TransformParams], transformer)
+
+    def get_loader(self, agent_name: str | None = None) -> Loader[LoadParams]:
+        """
+        Retrieve a Loader agent by name.
+
+        If an agent name is provided, the method returns the matching Loader
+        from the load registry. If no name is provided, the first registered
+        Loader is returned.
+
+        Args:
+            agent_name: Optional name of the Loader agent to retrieve.
+
+        Returns:
+            The requested Loader agent.
+
+        Raises:
+            ValueError: If no Loader agent is found.
+        """
+
+        loader = self.get_agent("load", agent_name)
+
+        if loader is None:
+            self.agent_not_found()
+
+        return cast(Loader[LoadParams], loader)
 
     # ---------------------- Summary ---------------------- #
 
     def summary(self) -> Dict[str, Any]:
         """
-        Return a JSON-serializable summary of the Environment instance,
-        including metadata, components, agents and registries.
+        Return a structured summary of the Environment instance.
+
+        This summary aggregates high-level metadata and detailed
+        information from all core environment components, including:
+
+        - Environment identity (name and type)
+        - Warehouse state and configuration
+        - Warehouse manager summary
+        - Action registries (extract, transform, load), each including
+        their respective agents, parameters, functions, and styles
+
+        Returns:
+            Dict([str, Any]):
+                A hierarchical dictionary representing the complete
+                environment configuration and registered components.
         """
 
-        def serialize_registry(reg: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-            """Convert registry class references into JSON-safe values."""
-            clean: Dict[str, Any] = {}
-            for category, items in reg.items():
-                clean[category] = {
-                    name: getattr(cls, "__name__", str(cls))
-                    for name, cls in items.items()
-                }
-            return clean
-
-        def serialize_agents(agent_dict: Dict[str, List[Agent[Any]]]) -> Dict[str, Any]:
-            """Serialize all agents by calling agent.summary() if available."""
-            output: Dict[str, Any] = {}
-            for atype, agents in agent_dict.items():
-                output[atype] = [
-                    a.summary() if hasattr(a, "summary") else {"name": a.name}
-                    for a in agents
-                ]
-            return output
-
-        # Warehouse
-        warehouse = self.components["warehouse"]
-        warehouse_summary = (
-            warehouse.summary() if warehouse and hasattr(warehouse, "summary") else None
-        )
-
-        # Manager
-        manager = self.components["manager"]
-        manager_summary = (
-            manager.summary() if manager and hasattr(manager, "summary") else None
-        )
-
         return {
-            "meta": {
-                "class": type(self).__name__,
-                "module": type(self).__module__,
-            },
-            "name": self.name,
-            "type": self.env_type,
-            "fg_reg": self.fg_reg,
-            "components": {
-                "warehouse": warehouse_summary,
-                "manager": manager_summary,
-                "agents": serialize_agents(self.components["agents"]),
-            },
-            "registries": {
-                rtype: serialize_registry(self.registries[rtype])
-                for rtype in self.REGISTRY_TYPES
-            },
+            "env_name": self.name,
+            "env_type": self.env_type,
+            "warehouse": self.warehouse.summary(),
+            "manager": self.manager.summary(),
+            "actions": self.actions.summary(),
         }
 
     def __repr__(self) -> str:
-        agent_count = sum(len(lst) for lst in self.components["agents"].values())
-        return f"<Environment name={self.name!r} type={self.env_type!r} agents={agent_count}>"
+        return f"<Environment name={self.name!r} type={self.env_type!r}>"

@@ -15,6 +15,7 @@ from .load_params import (
     ExcelLoadParams,
     APILoadParams,
     SQLLoadParams,
+    LOAD_PARAMS_CLASSES,
 )
 
 from .generic_types import (
@@ -24,7 +25,6 @@ from .generic_types import (
     APILoadParamsT,
 )
 
-from .params_registry import LOAD_PARAMS_CLASSES
 
 __all__ = [
     "LoadParams",

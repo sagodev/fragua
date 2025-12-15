@@ -14,9 +14,9 @@ from .extract_functions import (
     ExcelExtractFunction,
     SQLExtractFunction,
     APIExtractFunction,
+    EXTRACT_FUNCTION_CLASSES,
 )
 
-from .functions_registry import EXTRACT_FUNCTION_CLASSES
 
 __all__ = [
     "ExtractFunction",

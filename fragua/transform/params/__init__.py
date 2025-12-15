@@ -14,9 +14,9 @@ from .transform_params import (
     MLTransformParams,
     ReportTransformParams,
     AnalysisTransformParams,
+    TRANSFORM_PARAMS_CLASSES,
 )
 
-from .params_registry import TRANSFORM_PARAMS_CLASSES
 
 from .generic_types import (
     TransformParamsT,

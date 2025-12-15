@@ -1,26 +1,30 @@
-"""Load Params Class."""
+"""
+Base LoadParams class.
 
-from pandas import DataFrame
+Defines the common structure and behavior for all load
+parameter objects used in Fragua ETL pipelines.
+"""
 
-from fragua.core.params import Params
+from fragua.core.params import FraguaParams
+
+# pylint: disable=too-few-public-methods
 
 
-class LoadParams(Params):
-    """Common parameters for loading agents."""
+class LoadParams(FraguaParams):
+    """
+    Base class for load parameters.
 
-    data: DataFrame
-    destination: str | None
+    LoadParams objects encapsulate all configuration values required
+    by a load style and its underlying function to persist data
+    into an external destination.
+    """
 
-    purpose: str | None = "Base load parameters shared by all data loading styles."
+    def __init__(self, style: str) -> None:
+        """
+        Initialize load parameters.
 
-    FIELD_DESCRIPTIONS = {
-        "data": "Pandas DataFrame containing the data to be loaded.",
-        "destination": "Optional destination identifier (e.g., file path, database name, endpoint)",
-    }
-
-    def __init__(
-        self, style: str, data: DataFrame, destination: str | None = None
-    ) -> None:
+        Args:
+            style (str):
+                Load style identifier associated with this parameter set.
+        """
         super().__init__(action="load", style=style)
-        self.data = data
-        self.destination = destination

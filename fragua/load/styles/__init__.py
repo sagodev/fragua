@@ -9,11 +9,8 @@ This module contains:
 
 from .base import LoadStyle
 
-from .load_styles import (
-    ExcelLoadStyle,
-)
+from .load_styles import ExcelLoadStyle, LOAD_STYLE_CLASSES
 
-from .styles_registry import LOAD_STYLE_CLASSES
 
 __all__ = [
     "LoadStyle",
