@@ -330,10 +330,18 @@ class FraguaManager(FraguaComponent):
                 removed = self._delete_one(storage_name, storage_type)
                 count_removed = 1 if removed else 0
 
-            else:
-                removed_all = self._delete_multiple(storage_type)
-                removed = removed_all
-                count_removed = len(removed_all)
+                self._log_movement(
+                    operation="delete",
+                    storage_type=storage_type,
+                    storage_name=storage_name,
+                    agent_name=None,
+                    success=bool(count_removed),
+                    details={"removed_count": count_removed},
+                )
+                return removed
+
+            removed_all = self._delete_multiple(storage_type)
+            count_removed = len(removed_all)
 
             self._log_movement(
                 operation="delete",
@@ -343,7 +351,7 @@ class FraguaManager(FraguaComponent):
                 success=bool(count_removed),
                 details={"removed_count": count_removed},
             )
-            return removed
+            return removed_all
 
         except Exception as e:
             self._log_movement(
