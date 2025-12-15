@@ -131,7 +131,7 @@ class ExtractAgentSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            agent = cast(Extractor, instance)
+            agent = cast(Extractor[ExtractParams], instance)
             result[name] = agent.summary()
 
         return result

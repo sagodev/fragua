@@ -220,8 +220,7 @@ class APIExtractFunction(ExtractFunction):
             requests.HTTPError: If the HTTP request fails.
         """
         url = self.params.url
-        if not url:
-            raise ValueError("'url' is required in params")
+        assert url is not None, "'url' is required in params"
 
         response = requests.request(
             method=self.params.method.upper(),
@@ -239,10 +238,11 @@ class APIExtractFunction(ExtractFunction):
 
         if isinstance(result_data, list):
             return pd.DataFrame(result_data)
+
         if isinstance(result_data, dict):
             return pd.json_normalize(result_data)
 
-        raise ValueError(f"Unexpected API response type: {type(result_data)}")  # type: ignore
+        raise ValueError(f"Unexpected API response type: {type(result_data)}")
 
 
 EXTRACT_FUNCTION_CLASSES: Dict[str, Type[ExtractFunction]] = {

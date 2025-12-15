@@ -13,6 +13,7 @@ from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.manager import FraguaManager
 
 from fragua.extract import Extractor
+from fragua.extract.params.base import ExtractParams
 from fragua.extract.registry.extract_registry import ExtractRegistry
 from fragua.extract.registry.extract_sets import (
     ExtractAgentSet,
@@ -22,6 +23,7 @@ from fragua.extract.registry.extract_sets import (
 )
 
 from fragua.load import Loader
+from fragua.load.params.base import LoadParams
 from fragua.load.registry.load_registry import LoadRegistry
 from fragua.load.registry.load_sets import (
     LoadAgentSet,
@@ -31,6 +33,7 @@ from fragua.load.registry.load_sets import (
 )
 
 from fragua.transform import Transformer
+from fragua.transform.params.base import TransformParams
 from fragua.transform.registry.transform_registry import TransformRegistry
 from fragua.transform.registry.transform_sets import (
     TransformAgentSet,
@@ -966,7 +969,9 @@ class FraguaEnvironment(FraguaComponent):
         return deleted
 
     # ----------------------Shortcut functions ---------------------- #
-    def get_extractor(self, agent_name: Optional[str] = None) -> Extractor:
+    def get_extractor(
+        self, agent_name: Optional[str] = None
+    ) -> Extractor[ExtractParams]:
         """
         Retrieve an Extractor agent by name.
 
@@ -988,9 +993,11 @@ class FraguaEnvironment(FraguaComponent):
         if extractor is None:
             self.agent_not_found()
 
-        return cast(Extractor, extractor)
+        return cast(Extractor[ExtractParams], extractor)
 
-    def get_transformer(self, agent_name: str | None = None) -> Transformer:
+    def get_transformer(
+        self, agent_name: str | None = None
+    ) -> Transformer[TransformParams]:
         """
         Retrieve a Transformer agent by name.
 
@@ -1012,9 +1019,9 @@ class FraguaEnvironment(FraguaComponent):
         if transformer is None:
             self.agent_not_found()
 
-        return cast(Transformer, transformer)
+        return cast(Transformer[TransformParams], transformer)
 
-    def get_loader(self, agent_name: str | None = None) -> Loader:
+    def get_loader(self, agent_name: str | None = None) -> Loader[LoadParams]:
         """
         Retrieve a Loader agent by name.
 
@@ -1037,7 +1044,7 @@ class FraguaEnvironment(FraguaComponent):
         if loader is None:
             self.agent_not_found()
 
-        return cast(Loader, loader)
+        return cast(Loader[LoadParams], loader)
 
     # ---------------------- Summary ---------------------- #
 

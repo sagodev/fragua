@@ -328,10 +328,13 @@ class FraguaManager(FraguaComponent):
         try:
             if storage_name != "all":
                 removed = self._delete_one(storage_name, storage_type)
-                count_removed = 1 if removed else 0
+                count_removed = 1 if removed is not None else 0
             else:
-                removed = self._delete_multiple(storage_type)  # type: ignore
-                count_removed = len(removed)
+                removed_all: Dict[str, Storage[Box]] = self._delete_multiple(
+                    storage_type
+                )
+                count_removed = len(removed_all)
+                removed = removed_all
 
             self._log_movement(
                 operation="delete",
@@ -342,6 +345,7 @@ class FraguaManager(FraguaComponent):
                 details={"removed_count": count_removed},
             )
             return removed
+
         except Exception as e:
             self._log_movement(
                 operation="delete",

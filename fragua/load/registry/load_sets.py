@@ -203,7 +203,7 @@ class LoadAgentSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(Loader, instance)
+            obj = cast(Loader[LoadParams], instance)
             result[name] = obj.summary()
 
         return result
