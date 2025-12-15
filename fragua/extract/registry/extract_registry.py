@@ -105,7 +105,7 @@ class ExtractRegistry(FraguaRegistry):
         Returns:
             Dict([str, Any]):
                 A dictionary with the following structure:
-                - params (dict): Summary of the extract params set 
+                - params (dict): Summary of the extract params set
                 - functions (dict): Summary of extract functions set
                 - styles (dict): Summary of the extract styles set
                 - agents (dict): Summary of the extract agents set
