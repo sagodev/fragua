@@ -90,32 +90,25 @@ BASE_DIR = Path(__file__).parent
 INPUT_XLSX = BASE_DIR / "test_files" / "input_files" / "test_data.xlsx"
 OUTPUT_XLSX = BASE_DIR / "test_files" / "output_files"
 
-env = fg.create_fragua("fragua_1", "minimal", True)
-env.create_extractor("extractor")
-env.create_transformer("transformer")
-env.create_loader("loader")
+env_1 = fg.create_fragua(env_name="fragua_1", env_type="minimal", fg_config=True)
+env_1.create_agent("extract", "extractor")
+env_1.create_agent("transform", "transformer")
+env_1.create_agent("load", "loader")
 
-extractor = env.get_agent("extractor")
-transformer = env.get_agent("transformer")
-loader = env.get_agent("loader")
+extractor = env_1.get_extractor("extractor")
+transformer = env_1.get_transformer("transformer")
+loader = env_1.get_loader("loader")
 
-extractor.work(
-    "excel",
-    save_as="extracted_data",
-    path="./test_files/input_files/test_data.xlsx",
-    sheet_name=0,
-)
+extractor.work(style="excel", save_as="extracted_data", path=INPUT_XLSX)
 
 transformer.work(
-    style="report",
-    apply_to="extracted_data",
-    save_as="transformed_data",
+    style="report", apply_to="extracted_data", save_as="transformed_data"
 )
 
 loader.work(
     style="excel",
     apply_to=["extracted_data", "transformed_data"],
-    destination="./test_files/output_files",
+    destination=OUTPUT_XLSX,
     file_name="output_file",
 )
 ```
