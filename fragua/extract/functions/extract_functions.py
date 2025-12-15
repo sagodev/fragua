@@ -239,7 +239,7 @@ class APIExtractFunction(ExtractFunction):
 
         if isinstance(result_data, list):
             return pd.DataFrame(result_data)
-        if isinstance(result_data, dict):
+        elif isinstance(result_data, dict):
             return pd.json_normalize(result_data)
         else:
             raise ValueError(f"Unexpected API response type: {type(result_data)}")
