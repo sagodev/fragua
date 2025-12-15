@@ -116,9 +116,3 @@ class ExtractRegistry(FraguaRegistry):
             "styles": self.styles.summary(),
             "agents": self.agents.summary(),
         }
-
-    def __repr__(self) -> str:
-        """
-        Return a string representation of the ExtractRegistry instance.
-        """
-        return f"{self.__class__.__name__}('{self.name}')"
