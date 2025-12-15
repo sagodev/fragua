@@ -20,7 +20,7 @@ from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
 if TYPE_CHECKING:
-    from fragua.core.environment import Environment
+    from fragua.core.environment import FraguaEnvironment
 
 logger = get_logger(__name__)
 
@@ -39,7 +39,7 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
     styles, parameters, and storage implementations.
     """
 
-    def __init__(self, agent_name: str, environment: Environment) -> None:
+    def __init__(self, agent_name: str, environment: FraguaEnvironment) -> None:
         """
         Initialize the agent with a name and an execution environment.
 
@@ -49,7 +49,7 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
                 warehouse manager, and configuration.
         """
         super().__init__(component_name=agent_name)
-        self.environment: Environment = environment
+        self.environment: FraguaEnvironment = environment
         self.role: str
         self.action: str
         self.storage_type: str

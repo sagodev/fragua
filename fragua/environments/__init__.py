@@ -1,12 +1,12 @@
 """Fragua environment factory and exports."""
 
 from typing import Dict, Type
-from fragua.core.environment import Environment
+from fragua.core.environment import FraguaEnvironment
 from fragua.environments.basic import BasicEnvironment
 from fragua.environments.minimal import MinimalEnvironment
 
 # Registry of available environment types
-ENVIRONMENT_TYPES: Dict[str, Type[Environment]] = {
+ENVIRONMENT_TYPES: Dict[str, Type[FraguaEnvironment]] = {
     "minimal": MinimalEnvironment,
     "basic": BasicEnvironment,
 }
@@ -14,7 +14,7 @@ ENVIRONMENT_TYPES: Dict[str, Type[Environment]] = {
 
 def create_fragua(
     env_name: str, env_type: str = "basic", fg_config: bool = False
-) -> Environment:
+) -> FraguaEnvironment:
     """
     Create a Fragua environment with a specific configuration.
 

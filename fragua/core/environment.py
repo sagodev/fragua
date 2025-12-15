@@ -42,8 +42,8 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class Environment(FraguaComponent):
     """Environment class for Fragua.
+class FraguaEnvironment(FraguaComponent):
 
     Encapsulates all logic for warehouse, warehouse manager, agents, and registries.
     Provides methods for creation, retrieval, updating, and deletion of all components.

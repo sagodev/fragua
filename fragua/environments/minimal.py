@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from fragua.core.environment import Environment
+from fragua.core.environment import FraguaEnvironment
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class MinimalEnvironment(Environment):
+class MinimalEnvironment(FraguaEnvironment):
     """
     A minimal Environment subclass that starts only with a Warehouse and FraguaManager, but
     without Agents. Useful for flexible or custom setups.

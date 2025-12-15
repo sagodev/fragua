@@ -12,7 +12,7 @@ This module contains:
 - Storage class.
 """
 
-from .environment import Environment
+from .environment import FraguaEnvironment
 
 from .component import FraguaComponent
 
@@ -43,7 +43,7 @@ __all__ = [
     # Actions Class
     "FraguaActions",
     # Environment Class
-    "Environment",
+    "FraguaEnvironment",
     # Registry Class
     "FraguaRegistry",
     # Section Fragua Class
