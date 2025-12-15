@@ -43,6 +43,7 @@ logger = get_logger(__name__)
 
 # pylint: disable=too-many-lines
 
+
 class FraguaEnvironment(FraguaComponent):
     """
     Core environment abstraction for Fragua.
