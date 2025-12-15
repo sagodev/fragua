@@ -13,7 +13,7 @@ class FraguaComponent(ABC):
     structured summary that exposes their current state and metadata
     for introspection, debugging, and documentation purposes.
     """
-
+    # pylint: disable=too-few-public-methods
     def __init__(self, component_name: str):
         """
         Initialize the component with a unique name.

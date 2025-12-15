@@ -5,8 +5,6 @@ Defines the common structure and behavior for all load
 parameter objects used in Fragua ETL pipelines.
 """
 
-from typing import Any, Dict
-
 from fragua.core.params import FraguaParams
 
 
@@ -28,31 +26,3 @@ class LoadParams(FraguaParams):
                 Load style identifier associated with this parameter set.
         """
         super().__init__(action="load", style=style)
-
-    def summary(self) -> Dict[str, Any]:
-        """
-        Return a structured summary of the load parameters.
-
-        The summary includes:
-        - parameter class name
-        - associated action and style
-        - declared fields and their descriptions
-        - optional functional purpose
-
-        Returns:
-            Dict[str, Any]: Serializable summary representation.
-        """
-        fields = {}
-
-        for name in self.FIELD_DESCRIPTIONS:
-            fields[name] = self.FIELD_DESCRIPTIONS.get(
-                name, "No description available."
-            )
-
-        return {
-            "name": self.name,
-            "action": self.action,
-            "style": self.style,
-            "fields": fields,
-            "purpose": getattr(self, "purpose", None),
-        }

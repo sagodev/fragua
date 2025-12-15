@@ -6,7 +6,7 @@ Each instance encapsulates a DataFrame and style-specific attributes
 used by TransformFunction and TransformStyle pipelines.
 """
 
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from pandas import DataFrame
 
@@ -34,34 +34,3 @@ class TransformParams(FraguaParams):
         """
         super().__init__(action="transform", style=style)
         self.data = data if data is not None else DataFrame()
-
-    def summary(self) -> Dict[str, Any]:
-        """
-        Generate a structured summary of the transform parameters.
-
-        The summary includes:
-        - parameter name
-        - action type (transform)
-        - style identifier
-        - field descriptions
-        - optional purpose metadata
-
-        Returns:
-            Dict[str, Any]:
-                Dictionary representation suitable for inspection
-                and automated documentation.
-        """
-        fields: Dict[str, str] = {}
-
-        for name in self.FIELD_DESCRIPTIONS:
-            fields[name] = self.FIELD_DESCRIPTIONS.get(
-                name, "No description available."
-            )
-
-        return {
-            "name": self.name,
-            "action": self.action,
-            "style": self.style,
-            "fields": fields,
-            "purpose": getattr(self, "purpose", None),
-        }

@@ -2,7 +2,6 @@
 Base abstract class for all parameter schemas used by styles in Fragua.
 """
 
-from abc import abstractmethod
 from typing import Any, Dict, TypeVar
 from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
@@ -40,18 +39,33 @@ class FraguaParams(FraguaComponent):
         self.action = action
         self.style = style
 
-    @abstractmethod
     def summary(self) -> Dict[str, Any]:
         """
-        Return a structured summary of the parameter configuration.
+        Return a structured summary of the parameters.
 
-        Implementations should return serializable configuration data
-        only and may leverage FIELD_DESCRIPTIONS to provide human-readable
-        context for each parameter.
+        The summary includes:
+        - parameter class name
+        - associated action and style
+        - declared fields and their descriptions
+        - optional functional purpose
 
         Returns:
-            A dictionary representing the parameter summary.
+            Dict[str, Any]: Serializable summary representation.
         """
+        fields = {}
+
+        for name in self.FIELD_DESCRIPTIONS:
+            fields[name] = self.FIELD_DESCRIPTIONS.get(
+                name, "No description available."
+            )
+
+        return {
+            "name": self.name,
+            "action": self.action,
+            "style": self.style,
+            "fields": fields,
+            "purpose": getattr(self, "purpose", None),
+        }
 
     def __repr__(self) -> str:
         """
