@@ -110,9 +110,11 @@ class ExtractRegistry(FraguaRegistry):
                 - styles (dict): Summary of the extract styles set
                 - agents (dict): Summary of the extract agents set
         """
-        return {
+        extract_summaries = {
             "params": self.params.summary(),
             "functions": self.functions.summary(),
             "styles": self.styles.summary(),
             "agents": self.agents.summary(),
         }
+
+        return extract_summaries

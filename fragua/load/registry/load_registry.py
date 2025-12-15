@@ -119,9 +119,10 @@ class LoadRegistry(FraguaRegistry):
                 - styles (dict): Summary of the load styles set
                 - agents (dict): Summary of the load agents set
         """
-        return {
+        load_summaries = {
             "params": self.params.summary(),
             "functions": self.functions.summary(),
             "styles": self.styles.summary(),
             "agents": self.agents.summary(),
         }
+        return load_summaries

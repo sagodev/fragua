@@ -125,9 +125,10 @@ class TransformRegistry(FraguaRegistry):
                 - agents (dict): Summary of the transform agents set
 
         """
-        return {
+        transform_summaries = {
             "params": self.params.summary(),
             "functions": self.functions.summary(),
             "styles": self.styles.summary(),
             "agents": self.agents.summary(),
         }
+        return transform_summaries
