@@ -105,7 +105,7 @@ class ExtractRegistry(FraguaRegistry):
         Returns:
             Dict([str, Any]):
                 A dictionary with the following structure:
-                - params (dict): Summary of the extract params set
+                - params (dict): Summary of the extract params set 
                 - functions (dict): Summary of extract functions set
                 - styles (dict): Summary of the extract styles set
                 - agents (dict): Summary of the extract agents set
@@ -119,6 +119,6 @@ class ExtractRegistry(FraguaRegistry):
 
     def __repr__(self) -> str:
         """
-        Return a developer-friendly string representation.
+        Return a string representation of the ExtractRegistry instance.
         """
         return f"{self.__class__.__name__}('{self.name}')"

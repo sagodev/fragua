@@ -11,6 +11,7 @@ from pandas import DataFrame
 from fragua.transform.params.base import TransformParams
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
+# pylint: disable=too-few-public-methods
 
 
 class MLTransformParams(TransformParams):

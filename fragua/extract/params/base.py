@@ -3,6 +3,9 @@
 from fragua.core.params import FraguaParams
 
 
+# pylint: disable=too-few-public-methods
+
+
 class ExtractParams(FraguaParams):
     """
     Base parameter class for all extraction configurations.

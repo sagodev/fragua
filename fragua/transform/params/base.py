@@ -12,6 +12,8 @@ from pandas import DataFrame
 
 from fragua.core.params import FraguaParams
 
+# pylint: disable=too-few-public-methods
+
 
 class TransformParams(FraguaParams):
     """

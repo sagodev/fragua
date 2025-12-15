@@ -42,6 +42,7 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 # pylint: disable=too-many-lines
+# pylint: disable=too-many-public-methods
 
 
 class FraguaEnvironment(FraguaComponent):

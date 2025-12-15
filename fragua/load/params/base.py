@@ -7,6 +7,8 @@ parameter objects used in Fragua ETL pipelines.
 
 from fragua.core.params import FraguaParams
 
+# pylint: disable=too-few-public-methods
+
 
 class LoadParams(FraguaParams):
     """

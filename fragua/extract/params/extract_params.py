@@ -13,6 +13,7 @@ from fragua.extract.params.base import ExtractParams
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
 # pylint: disable=too-many-instance-attributes
+# pylint: disable=too-few-public-methods
 
 
 class CSVExtractParams(ExtractParams):

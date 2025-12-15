@@ -9,6 +9,9 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+# pylint: disable=too-few-public-methods
+
+
 class FraguaParams(FraguaComponent):
     """
     Abstract base class for all parameter schemas used by Fragua styles.

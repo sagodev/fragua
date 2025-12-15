@@ -134,10 +134,6 @@ class TransformRegistry(FraguaRegistry):
 
     def __repr__(self) -> str:
         """
-        Return a readable string representation of the registry.
-
-        Returns:
-            str:
-                Registry class name and assigned registry name.
+        Return a string representation of the TransformRegistry instance.
         """
         return f"{self.__class__.__name__}('{self.name}')"

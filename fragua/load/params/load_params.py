@@ -11,6 +11,7 @@ from pandas import DataFrame
 from fragua.load.params.base import LoadParams
 
 # pylint: disable=too-many-arguments, too-many-positional-arguments
+# pylint: disable=too-few-public-methods
 
 
 class ExcelLoadParams(LoadParams):
