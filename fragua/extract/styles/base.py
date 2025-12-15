@@ -1,7 +1,7 @@
 """Base Extract Style Class."""
 
 from abc import abstractmethod
-from typing import Generic
+from typing import Any, Generic
 
 from fragua.core.style import FraguaStyle
 from fragua.extract.params.generic_types import ExtractParamsT
@@ -10,7 +10,7 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ExtractStyle(FraguaStyle, Generic[ExtractParamsT]):
+class ExtractStyle(FraguaStyle[ExtractParamsT], Generic[ExtractParamsT]):
     """
     Abstract base class for all extraction styles in Fragua.
 
@@ -21,7 +21,7 @@ class ExtractStyle(FraguaStyle, Generic[ExtractParamsT]):
     """
 
     @abstractmethod
-    def extract(self, params: ExtractParamsT):
+    def extract(self, params: ExtractParamsT) -> Any:
         """
         Execute the extraction logic for this style.
 
@@ -38,7 +38,7 @@ class ExtractStyle(FraguaStyle, Generic[ExtractParamsT]):
         """
         raise NotImplementedError
 
-    def _run(self, params: ExtractParamsT):
+    def _run(self, params: ExtractParamsT) -> Any:
         """
         Internal execution hook invoked by the FraguaStyle pipeline.
 

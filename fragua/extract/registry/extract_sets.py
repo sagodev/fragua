@@ -1,6 +1,6 @@
 """Extract Sections Module."""
 
-from typing import Any, Dict, Type, cast
+from typing import Any, Dict, cast
 from fragua.core.set import FraguaSet
 
 from fragua.extract import (
@@ -32,8 +32,8 @@ class ExtractParamsSet(FraguaSet):
             return
 
         for name, cls in EXTRACT_PARAMS_CLASSES.items():
-            cls = cast(ExtractParams, cls)
-            self.add(name, cls)
+            instance = cls(name)
+            self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -41,12 +41,8 @@ class ExtractParamsSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        if not self.fg_config:
-            return result
-
-        for name, cls in self.get_all().items():
-            cls = cast(Type[ExtractParams], cls)
-            obj = cls(name)
+        for name, instance in self.get_all().items():
+            obj = cast(ExtractParams, instance)
             result[name] = obj.summary()
 
         return result
@@ -70,8 +66,8 @@ class ExtractFunctionSet(FraguaSet):
             return
 
         for name, cls in EXTRACT_FUNCTION_CLASSES.items():
-            cls = cast(ExtractFunction, cls)
-            self.add(name, cls)
+            instance = cls()
+            self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -79,12 +75,8 @@ class ExtractFunctionSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        if not self.fg_config:
-            return result
-
-        for name, cls in self.get_all().items():
-            cls = cast(Type[ExtractFunction], cls)
-            obj = cls()
+        for name, instance in self.get_all().items():
+            obj = cast(ExtractFunction, instance)
             result[name] = obj.summary()
 
         return result
@@ -108,8 +100,8 @@ class ExtractStyleSet(FraguaSet):
             return
 
         for name, cls in EXTRACT_STYLE_CLASSES.items():
-            cls = cast(ExtractStyle, cls)
-            self.add(name, cls)
+            instance = cls()
+            self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -117,12 +109,8 @@ class ExtractStyleSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        if not self.fg_config:
-            return result
-
-        for name, cls in self.get_all().items():
-            cls = cast(Type[ExtractStyle], cls)
-            obj = cls()
+        for name, instance in self.get_all().items():
+            obj = cast(ExtractStyle[Any], instance)
             result[name] = obj.summary()
 
         return result
@@ -142,8 +130,8 @@ class ExtractAgentSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        for name, agent in self.get_all().items():
-            agent = cast(Extractor, agent)
+        for name, instance in self.get_all().items():
+            agent = cast(Extractor, instance)
             result[name] = agent.summary()
 
         return result

@@ -1,7 +1,7 @@
 """Base Load Style Class."""
 
 from abc import abstractmethod
-from typing import Generic
+from typing import Any, Generic
 
 from fragua.core.style import FraguaStyle
 
@@ -11,7 +11,7 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class LoadStyle(FraguaStyle, Generic[LoadParamsT]):
+class LoadStyle(FraguaStyle[LoadParamsT], Generic[LoadParamsT]):
     """
     Abstract base class for all load styles in Fragua ETL.
 
@@ -21,7 +21,7 @@ class LoadStyle(FraguaStyle, Generic[LoadParamsT]):
     """
 
     @abstractmethod
-    def load(self, params: LoadParamsT):
+    def load(self, params: LoadParamsT) -> Any:
         """
         Execute the load operation using the provided parameters.
 
@@ -35,7 +35,7 @@ class LoadStyle(FraguaStyle, Generic[LoadParamsT]):
         """
         raise NotImplementedError("Subclasses must implement load()")
 
-    def _run(self, params: LoadParamsT):
+    def _run(self, params: LoadParamsT) -> Any:
         """
         Internal execution pipeline for load styles.
 

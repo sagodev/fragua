@@ -6,7 +6,7 @@ within the Fragua ETL framework.
 """
 
 from abc import abstractmethod
-from typing import Generic
+from typing import Any, Generic
 from fragua.core.style import FraguaStyle
 from fragua.transform.params.generic_types import TransformParamsT
 from fragua.utils.logger import get_logger
@@ -14,7 +14,7 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-class TransformStyle(FraguaStyle, Generic[TransformParamsT]):
+class TransformStyle(FraguaStyle[TransformParamsT], Generic[TransformParamsT]):
     """
     Base class for all transformation styles in Fragua ETL.
 
@@ -26,7 +26,7 @@ class TransformStyle(FraguaStyle, Generic[TransformParamsT]):
     """
 
     @abstractmethod
-    def transform(self, params: TransformParamsT):
+    def transform(self, params: TransformParamsT) -> Any:
         """
         Apply the transformation logic to the given parameters.
 
@@ -46,7 +46,7 @@ class TransformStyle(FraguaStyle, Generic[TransformParamsT]):
         """
         raise NotImplementedError("Subclasses must implement transform()")
 
-    def _run(self, params: TransformParamsT):
+    def _run(self, params: TransformParamsT) -> Any:
         """
         Execute the transformation workflow with logging and lifecycle handling.
 

@@ -16,6 +16,11 @@ from fragua.transform.functions.transform_functions import (
 )
 
 from fragua.transform.params.base import TransformParams
+from fragua.transform.params.generic_types import (
+    AnalysisTransformParamsT,
+    MLTransformParamsT,
+    ReportTransformParamsT,
+)
 from fragua.transform.params.transform_params import (
     AnalysisTransformParams,
     MLTransformParams,
@@ -25,7 +30,7 @@ from fragua.transform.params.transform_params import (
 from fragua.transform.styles.base import TransformStyle
 
 
-class MLTransformStyle(TransformStyle):
+class MLTransformStyle(TransformStyle[MLTransformParamsT]):
     """
     Transform style dedicated to machine learning preprocessing workflows.
 
@@ -68,7 +73,7 @@ class MLTransformStyle(TransformStyle):
         }
 
 
-class ReportTransformStyle(TransformStyle):
+class ReportTransformStyle(TransformStyle[ReportTransformParamsT]):
     """
     Transform style focused on preparing data for reporting outputs.
 
@@ -110,7 +115,7 @@ class ReportTransformStyle(TransformStyle):
         }
 
 
-class AnalysisTransformStyle(TransformStyle):
+class AnalysisTransformStyle(TransformStyle[AnalysisTransformParamsT]):
     """
     Transform style for analytical data transformations.
 

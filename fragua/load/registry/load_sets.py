@@ -1,6 +1,6 @@
 """Load Sets Module."""
 
-from typing import Any, Dict, Type, cast
+from typing import Any, Dict, cast
 from fragua.core.set import FraguaSet
 from fragua.load import (
     LOAD_FUNCTION_CLASSES,
@@ -45,8 +45,8 @@ class LoadParamsSet(FraguaSet):
         """
         if self.fg_config:
             for name, cls in LOAD_PARAMS_CLASSES.items():
-                cls = cast(LoadParams, cls)
-                self.add(name, cls)
+                instance = cls(name)  # instanciar antes de agregar
+                self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -59,11 +59,9 @@ class LoadParamsSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        if self.fg_config:
-            for name, cls in self.get_all().items():
-                cls = cast(Type[LoadParams], cls)
-                obj = cls(name)
-                result[name] = obj.summary()
+        for name, instance in self.get_all().items():
+            obj = cast(LoadParams, instance)
+            result[name] = obj.summary()
 
         return result
 
@@ -100,8 +98,8 @@ class LoadFunctionSet(FraguaSet):
         """
         if self.fg_config:
             for name, cls in LOAD_FUNCTION_CLASSES.items():
-                cls = cast(LoadFunction, cls)
-                self.add(name, cls)
+                instance = cls()
+                self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -114,11 +112,9 @@ class LoadFunctionSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        if self.fg_config:
-            for name, cls in self.get_all().items():
-                cls = cast(Type[LoadFunction], cls)
-                obj = cls()
-                result[name] = obj.summary()
+        for name, instance in self.get_all().items():
+            obj = cast(LoadFunction, instance)
+            result[name] = obj.summary()
 
         return result
 
@@ -156,8 +152,8 @@ class LoadStyleSet(FraguaSet):
         """
         if self.fg_config:
             for name, cls in LOAD_STYLE_CLASSES.items():
-                cls = cast(LoadStyle, cls)
-                self.add(name, cls)
+                instance = cls()
+                self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -170,11 +166,9 @@ class LoadStyleSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
 
-        if self.fg_config:
-            for name, cls in self.get_all().items():
-                cls = cast(Type[LoadStyle], cls)
-                obj = cls()
-                result[name] = obj.summary()
+        for name, instance in self.get_all().items():
+            obj = cast(LoadStyle[Any], instance)
+            result[name] = obj.summary()
 
         return result
 
@@ -187,7 +181,7 @@ class LoadAgentSet(FraguaSet):
     of load workflows and interacting with the warehouse layer.
     """
 
-    def __init__(self, set_name="agents"):
+    def __init__(self, set_name: str = "agents") -> None:
         """
         Initialize the LoadAgentSet.
 

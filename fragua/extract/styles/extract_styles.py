@@ -23,10 +23,16 @@ from fragua.extract.params.extract_params import (
     ExcelExtractParams,
     SQLExtractParams,
 )
+from fragua.extract.params.generic_types import (
+    APIExtractParamsT,
+    CSVExtractParamsT,
+    ExcelExtractParamsT,
+    SQLExtractParamsT,
+)
 from fragua.extract.styles.base import ExtractStyle
 
 
-class CSVExtractStyle(ExtractStyle):
+class CSVExtractStyle(ExtractStyle[CSVExtractParamsT]):
     """
     Extraction style for CSV-based data sources.
 
@@ -62,7 +68,7 @@ class CSVExtractStyle(ExtractStyle):
         }
 
 
-class ExcelExtractStyle(ExtractStyle):
+class ExcelExtractStyle(ExtractStyle[ExcelExtractParamsT]):
     """
     Extraction style for Excel-based data sources.
 
@@ -99,7 +105,7 @@ class ExcelExtractStyle(ExtractStyle):
         }
 
 
-class SQLExtractStyle(ExtractStyle):
+class SQLExtractStyle(ExtractStyle[SQLExtractParamsT]):
     """
     Extraction style for SQL database sources.
 
@@ -136,7 +142,7 @@ class SQLExtractStyle(ExtractStyle):
         }
 
 
-class APIExtractStyle(ExtractStyle):
+class APIExtractStyle(ExtractStyle[APIExtractParamsT]):
     """
     Extraction style for REST API data sources.
 

@@ -4,6 +4,7 @@ Base class for all styles used by ETL agents in Fragua.
 
 from abc import abstractmethod
 from typing import Generic, Dict, Any
+
 from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
 from fragua.core.params import FraguaParamsT
@@ -21,7 +22,7 @@ class FraguaStyle(FraguaComponent, Generic[FraguaParamsT]):
     and returning the resulting data to be persisted or further processed.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize the style component.
 
@@ -30,7 +31,7 @@ class FraguaStyle(FraguaComponent, Generic[FraguaParamsT]):
         super().__init__(component_name=self.__class__.__name__)
 
     @abstractmethod
-    def _run(self, params: FraguaParamsT):
+    def _run(self, params: FraguaParamsT) -> Any:
         """
         Execute the core logic of the style.
 
@@ -49,7 +50,7 @@ class FraguaStyle(FraguaComponent, Generic[FraguaParamsT]):
         """
         raise NotImplementedError
 
-    def use(self, params: FraguaParamsT):
+    def use(self, params: FraguaParamsT) -> Any:
         """
         Execute the style using the standard execution pipeline.
 

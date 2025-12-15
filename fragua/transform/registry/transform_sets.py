@@ -6,7 +6,7 @@ related components in the Fragua ETL framework, including parameters,
 functions, styles, and agents.
 """
 
-from typing import Any, Dict, Type, cast
+from typing import Any, Dict, cast
 from fragua.core.set import FraguaSet
 from fragua.transform import (
     TRANSFORM_FUNCTION_CLASSES,
@@ -52,8 +52,8 @@ class TransformParamsSet(FraguaSet):
         """
         if self.fg_config:
             for name, cls in TRANSFORM_PARAMS_CLASSES.items():
-                cls = cast(TransformParams, cls)
-                self.add(name, cls)
+                instance = cls(name)
+                self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -67,12 +67,9 @@ class TransformParamsSet(FraguaSet):
                 A mapping of parameter names to their summary metadata.
         """
         result: Dict[str, Dict[str, Any]] = {}
-
-        if self.fg_config:
-            for name, cls in self.get_all().items():
-                cls = cast(Type[TransformParams], cls)
-                obj = cls(name)
-                result[name] = obj.summary()
+        for name, instance in self.get_all().items():
+            obj = cast(TransformParams, instance)
+            result[name] = obj.summary()
 
         return result
 
@@ -109,8 +106,8 @@ class TransformFunctionSet(FraguaSet):
         """
         if self.fg_config:
             for name, cls in TRANSFORM_FUNCTION_CLASSES.items():
-                cls = cast(TransformFunction, cls)
-                self.add(name, cls)
+                instance = cls()
+                self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -124,12 +121,9 @@ class TransformFunctionSet(FraguaSet):
                 A mapping of function names to their summary metadata.
         """
         result: Dict[str, Dict[str, Any]] = {}
-
-        if self.fg_config:
-            for name, cls in self.get_all().items():
-                cls = cast(Type[TransformFunction], cls)
-                obj = cls()
-                result[name] = obj.summary()
+        for name, instance in self.get_all().items():
+            obj = cast(TransformFunction, instance)
+            result[name] = obj.summary()
 
         return result
 
@@ -166,8 +160,8 @@ class TransformStyleSet(FraguaSet):
         """
         if self.fg_config:
             for name, cls in TRANSFORM_STYLE_CLASSES.items():
-                cls = cast(TransformStyle, cls)
-                self.add(name, cls)
+                instance = cls()
+                self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -178,12 +172,9 @@ class TransformStyleSet(FraguaSet):
                 A mapping of style names to their summary metadata.
         """
         result: Dict[str, Dict[str, Any]] = {}
-
-        if self.fg_config:
-            for name, cls in self.get_all().items():
-                cls = cast(Type[TransformStyle], cls)
-                obj = cls()
-                result[name] = obj.summary()
+        for name, instance in self.get_all().items():
+            obj = cast(TransformStyle[TransformParams], instance)
+            result[name] = obj.summary()
 
         return result
 

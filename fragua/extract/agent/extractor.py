@@ -8,13 +8,13 @@ from fragua.extract.params.generic_types import ExtractParamsT
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
-    from fragua.core.environment import Environment
+    from fragua.core.environment import FraguaEnvironment
 
 
 logger = get_logger(__name__)
 
 
-class Extractor(FraguaAgent):
+class Extractor(FraguaAgent[ExtractParamsT]):
     """
     Agent responsible for executing extraction workflows in Fragua.
 
@@ -26,7 +26,7 @@ class Extractor(FraguaAgent):
     its sole responsibility is data acquisition.
     """
 
-    def __init__(self, name: str, environment: Environment):
+    def __init__(self, name: str, environment: FraguaEnvironment):
         """
         Initialize the Extractor agent.
 

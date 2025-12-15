@@ -9,13 +9,13 @@ from fragua.transform.params.generic_types import TransformParamsT
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
-    from fragua.core.environment import Environment
+    from fragua.core.environment import FraguaEnvironment
 
 
 logger = get_logger(__name__)
 
 
-class Transformer(FraguaAgent):
+class Transformer(FraguaAgent[TransformParamsT]):
     """
     Agent responsible for applying transformation styles to stored data.
 
@@ -24,7 +24,7 @@ class Transformer(FraguaAgent):
     and optionally stores the transformed result back into the warehouse.
     """
 
-    def __init__(self, name: str, environment: Environment):
+    def __init__(self, name: str, environment: FraguaEnvironment):
         """
         Initialize a Transformer agent.
 

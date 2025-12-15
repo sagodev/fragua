@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional, Type, cast
 from fragua.core.agent import FraguaAgent
 from fragua.core.component import FraguaComponent
 from fragua.core.actions import FraguaActions
+from fragua.core.params import FraguaParams
 from fragua.core.set import FraguaSet
 from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.manager import FraguaManager
@@ -406,9 +407,9 @@ class FraguaEnvironment(FraguaComponent):
             ValueError: If the provided action type is invalid.
         """
 
-        def _build_agent() -> FraguaAgent:
+        def _build_agent() -> FraguaAgent[FraguaParams]:
             """Instantiate the correct agent class based on action."""
-            class_map: Dict[str, Type[FraguaAgent[Any]]] = {
+            class_map: Dict[str, Type[FraguaAgent[FraguaParams]]] = {
                 "extract": Extractor,
                 "transform": Transformer,
                 "load": Loader,
@@ -420,7 +421,7 @@ class FraguaEnvironment(FraguaComponent):
 
             return agent_class(agent_name, self)
 
-        def _register_agent(agent: FraguaAgent) -> bool:
+        def _register_agent(agent: FraguaAgent[FraguaParams]) -> bool:
             """Register the agent into the corresponding set."""
 
             type_set = self.agents.get(action)
@@ -443,7 +444,7 @@ class FraguaEnvironment(FraguaComponent):
 
     def get_agent(
         self, action: str, agent_name: Optional[str] = None
-    ) -> Optional[FraguaAgent]:
+    ) -> Optional[FraguaAgent[FraguaParams]]:
         """
         Retrieve an agent by action type and optional agent name.
 
@@ -472,11 +473,11 @@ class FraguaEnvironment(FraguaComponent):
 
             return agents_set.get_one(agent_name)
 
-        def _validate_agent(agent: Any) -> Optional[FraguaAgent]:
+        def _validate_agent(agent: Any) -> Optional[FraguaAgent[FraguaParams]]:
             """Validate and safely cast the agent to Agent type."""
             if agent is None:
                 return None
-            return cast(FraguaAgent, agent)
+            return cast(FraguaAgent[FraguaParams], agent)
 
         agent = _set_agent()
 

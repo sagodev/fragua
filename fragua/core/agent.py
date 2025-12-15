@@ -180,7 +180,7 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
 
         return params_cls(**kwargs)
 
-    def _instantiate_style(self, style: str) -> FraguaStyle:
+    def _instantiate_style(self, style: str) -> FraguaStyle[FraguaParams]:
         """
         Resolve and instantiate a style implementation for the agent action.
 
@@ -194,7 +194,8 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
             ValueError: If the style class cannot be resolved.
         """
         style_cls = cast(
-            Type[FraguaStyle], self.environment.get_style(self.action, style)
+            Type[FraguaStyle[FraguaParams]],
+            self.environment.get_style(self.action, style),
         )
         if style_cls is None:
             raise ValueError(f"Style not found: '{style}'.")
@@ -358,7 +359,7 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         self,
         style: str,
         save_as: Optional[str] = None,
-        params: Optional[FraguaParams] = None,
+        params: Optional[FraguaParamsT] = None,
         **kwargs: Any,
     ) -> None:
         """

@@ -6,11 +6,13 @@ from typing import Any, Dict, Type
 import pandas as pd
 
 from fragua.load.functions.load_functions import ExcelLoadFunction
+from fragua.load.params.base import LoadParams
+from fragua.load.params.generic_types import ExcelLoadParamsT
 from fragua.load.params.load_params import ExcelLoadParams
 from fragua.load.styles.base import LoadStyle
 
 
-class ExcelLoadStyle(LoadStyle):
+class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT]):
     """
     Load style for exporting tabular data to Excel files.
 
@@ -69,6 +71,6 @@ class ExcelLoadStyle(LoadStyle):
 # ---------------------------------------------------------------------- #
 # No implementations yet.
 
-LOAD_STYLE_CLASSES: Dict[str, Type[LoadStyle]] = {
+LOAD_STYLE_CLASSES: Dict[str, Type[LoadStyle[LoadParams]]] = {
     "excel": ExcelLoadStyle,
 }
