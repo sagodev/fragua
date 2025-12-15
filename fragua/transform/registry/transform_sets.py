@@ -1,4 +1,10 @@
-"""Transform Sets Module."""
+"""
+Transform Sets Module.
+
+Defines the collection sets used to register and organize all transformation-
+related components in the Fragua ETL framework, including parameters,
+functions, styles, and agents.
+"""
 
 from typing import Any, Dict, Type, cast
 from fragua.core.set import FraguaSet
@@ -14,22 +20,52 @@ from fragua.transform import (
 
 
 class TransformParamsSet(FraguaSet):
-    """Set containing transform parameters classes."""
+    """
+    Set that registers transformation parameter classes.
+
+    This set contains all parameter definitions required to configure
+    transformation pipelines. Each entry maps a transformation style
+    name to its corresponding parameter class.
+    """
 
     def __init__(self, fg_config: bool, set_name: str = "params") -> None:
+        """
+        Initialize the TransformParamsSet.
+
+        Args:
+            fg_config (bool):
+                Indicates whether built-in Fragua parameter classes
+                should be automatically registered.
+            set_name (str):
+                Logical name of the set within the registry.
+        """
         super().__init__(set_name)
         self.fg_config = fg_config
         self._initialize_params()
 
     def _initialize_params(self) -> None:
-        """Load all predefined transform parameter classes into the set."""
+        """
+        Register all predefined transformation parameter classes.
+
+        Parameter classes are loaded only when framework configuration
+        is enabled.
+        """
         if self.fg_config:
             for name, cls in TRANSFORM_PARAMS_CLASSES.items():
                 cls = cast(TransformParams, cls)
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """Return a structured summary of all Transform parameter classes."""
+        """
+        Generate a structured summary of all transform parameter classes.
+
+        Each parameter class is instantiated in order to extract its
+        metadata and declared field descriptions.
+
+        Returns:
+            Dict[str, Dict[str, Any]]:
+                A mapping of parameter names to their summary metadata.
+        """
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
@@ -42,22 +78,51 @@ class TransformParamsSet(FraguaSet):
 
 
 class TransformFunctionSet(FraguaSet):
-    """Transform functions set."""
+    """
+    Set that registers transformation function classes.
+
+    Transformation functions define the executable logic applied
+    during a transformation pipeline.
+    """
 
     def __init__(self, fg_config: bool, set_name: str = "functions") -> None:
+        """
+        Initialize the TransformFunctionSet.
+
+        Args:
+            fg_config (bool):
+                Indicates whether built-in Fragua transform functions
+                should be automatically registered.
+            set_name (str):
+                Logical name of the set within the registry.
+        """
         super().__init__(set_name)
         self.fg_config = fg_config
         self._initialize_functions()
 
     def _initialize_functions(self) -> None:
-        """Load all predefined Transform functions into the set."""
+        """
+        Register all predefined transformation function classes.
+
+        Functions are only registered when framework configuration
+        is enabled.
+        """
         if self.fg_config:
             for name, cls in TRANSFORM_FUNCTION_CLASSES.items():
                 cls = cast(TransformFunction, cls)
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """Return a structured summary of all Transform functions."""
+        """
+        Generate a structured summary of all transform functions.
+
+        Each function class is instantiated in order to expose
+        its declared purpose and execution steps.
+
+        Returns:
+            Dict[str, Dict[str, Any]]:
+                A mapping of function names to their summary metadata.
+        """
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
@@ -70,22 +135,48 @@ class TransformFunctionSet(FraguaSet):
 
 
 class TransformStyleSet(FraguaSet):
-    """Set that stores all Transform style classes."""
+    """
+    Set that registers transformation style classes.
+
+    Styles define how transformation functions are orchestrated
+    and applied within a pipeline.
+    """
 
     def __init__(self, fg_config: bool, set_name: str = "styles") -> None:
+        """
+        Initialize the TransformStyleSet.
+
+        Args:
+            fg_config (bool):
+                Indicates whether built-in Fragua styles
+                should be automatically registered.
+            set_name (str):
+                Logical name of the set within the registry.
+        """
         super().__init__(set_name)
         self.fg_config = fg_config
         self._initialize_styles()
 
     def _initialize_styles(self) -> None:
-        """Load predefined Transform style classes into the set."""
+        """
+        Register all predefined transformation style classes.
+
+        Styles are only registered when framework configuration
+        is enabled.
+        """
         if self.fg_config:
             for name, cls in TRANSFORM_STYLE_CLASSES.items():
                 cls = cast(TransformStyle, cls)
                 self.add(name, cls)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """Summary of all Transform style classes."""
+        """
+        Generate a structured summary of all transform styles.
+
+        Returns:
+            Dict[str, Dict[str, Any]]:
+                A mapping of style names to their summary metadata.
+        """
         result: Dict[str, Dict[str, Any]] = {}
 
         if self.fg_config:
@@ -98,18 +189,35 @@ class TransformStyleSet(FraguaSet):
 
 
 class TransformAgentSet(FraguaSet):
-    """Transform agents set."""
+    """
+    Set that stores transformation agent instances.
 
-    def __init__(self, set_name="agents"):
+    Agents are responsible for executing transformation workflows
+    using resolved styles, functions, and parameters.
+    """
+
+    def __init__(self, set_name: str = "agents"):
+        """
+        Initialize the TransformAgentSet.
+
+        Args:
+            set_name (str):
+                Logical name of the set within the registry.
+        """
         super().__init__(set_name)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """Transform agents set summary."""
+        """
+        Generate a structured summary of all registered transform agents.
+
+        Returns:
+            Dict[str, Dict[str, Any]]:
+                A mapping of agent names to their runtime summary metadata.
+        """
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
             obj = cast(Transformer, instance)
-            data = obj.summary()
-            result[name] = data
+            result[name] = obj.summary()
 
         return result

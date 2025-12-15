@@ -10,7 +10,7 @@ This module contains:
 
 from .base import TransformFunction
 
-from .function_registry import (
+from .internal_functions import (
     TRANSFORM_INTERNAL_FUNCTIONS,
 )
 
