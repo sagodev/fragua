@@ -1,131 +1,136 @@
 # Fragua
 
-Fragua is a lightweight and modular library designed to build ETL/ELT
-pipelines and data processing workflows in Python. It provides reusable
-components such as environments, agents, styles, parameters, and
-storages to orchestrate data extraction, transformation, and loading
-with traceability and best practices.
+**Fragua** is a lightweight, modular Python library designed to model, configure, and orchestrate **ETL / ELT workflows** through explicit environments and well-defined execution boundaries.
 
-------------------------------------------------------------------------
+Instead of centering the design around individual agents, Fragua treats the **Environment** as the primary abstraction: a self-contained execution context that owns configuration, state, components, and data artifacts.
+
+---
 
 ## What is Fragua?
 
-Fragua provides an abstraction layer for data integration tasks based on
-three main agents:
+Fragua provides an abstraction layer for data integration workflows where **everything happens inside an Environment**.
 
-- **Extractor**: retrieves data from different sources such as Excel,
-  CSV, or APIs.
-- **Transformer**: transforms or enriches data by applying rules or
-  models.
-- **Loader**: saves or delivers results to final destinations such as
-  files or databases.
+An `Environment` represents a fully isolated workspace that defines:
 
-In addition to the agents, Fragua introduces the concept of **Environments**, 
-which act as isolated workspaces that organize and group all components 
-involved in a pipeline. An `Environment` manages:
+- Which agents exist
+- Which components they can use
+- Where data is stored
+- How operations are logged and traced
 
-- Registered agents and their lifecycle.
-- Registries for `styles`, `functions`, and `params`.
-- A dedicated **Warehouse** for storing intermediate or final artifacts.
-- Execution settings, logging configuration, and context boundaries.
+Agents such as extractors, transformers, and loaders do not operate independently; they are **created, configured, and executed within an Environment**, which guarantees consistency, traceability, and predictable behavior.
 
-This design allows you to run multiple pipelines independently, each with 
-its own configuration, state, and stored data.
+---
 
-Fragua also includes a storage system with:
+## The Environment as the Core Concept
 
-- **Warehouse** and **WarehouseManager** to store intermediate artifacts 
-  with metadata and traceability.
-- A modular architecture where `styles`, `functions`, and `params` can 
-  be registered within an `Environment`.
+The **Environment** is the central coordinator of the system.
 
-------------------------------------------------------------------------
+It is responsible for:
+
+- Managing the lifecycle of agents.
+- Hosting registries for:
+  - `params`
+  - `functions`
+  - `styles`
+- Providing access to a shared **Warehouse**.
+- Enforcing execution context, configuration rules, and boundaries.
+- Exposing structured summaries of the entire runtime state.
+
+This approach allows multiple environments to coexist independently, each one representing a distinct pipeline, experiment, or execution context.
+
+---
+
+## Agents as Environment-Orchestrated Components
+
+Within an Environment, Fragua supports three agent roles:
+
+- **Extractor** — Retrieves data from external sources.
+- **Transformer** — Applies transformations or enrichment logic.
+- **Loader** — Persists or delivers processed data.
+
+Agents are **not global actors**. They:
+
+- Are instantiated by the Environment
+- Resolve styles, params, and functions exclusively via registries
+- Interact with data only through the Environment’s Warehouse
+- Follow a standardized execution workflow
+
+This ensures that agents remain stateless orchestrators rather than owners of configuration or data.
+
+---
+
+## Component Registries and Architecture
+
+Fragua uses a layered component model to ensure consistency and extensibility:
+
+- **FraguaComponent** — Base abstraction for all registrable elements.
+- **FraguaSet** — Generic container responsible for CRUD operations, validation, and summaries.
+- **FraguaRegistry** — Groups related `FraguaSet` instances by action and component type.
+
+All components (`styles`, `functions`, `params`, `agents`) are registered and resolved through these layers, eliminating implicit coupling and duplicated logic.
+
+---
+
+## Storage, Warehouse, and Traceability
+
+Each Environment owns a **Warehouse**, which acts as the single source of truth for pipeline artifacts.
+
+Storage management provides:
+
+- Controlled add, get, delete, rename, and copy operations
+- Full movement logging with timestamps
+- Undo support for destructive actions
+- Metadata-based search and snapshotting
+
+---
 
 ## Key Features
 
--   Environment modeling (`Environment`) to isolate and organize working
-    instances.
--   Agents (`Extractor`, `Transformer`, `Loader`) with a common
-    pipeline, `undo` capability, and operation logging.
--   Registries for `params`, `functions`, and `styles`.
--   Storage types (`Storage`, `Box`, `Container`) and a centralized
-    `Warehouse`.
--   Built-in utilities for logging, metrics, and execution state
-    summaries.
+- Environment-centric workflow orchestration.
+- Explicit isolation between pipelines.
+- Standardized agent execution model.
+- Component-based architecture.
+- Centralized storage and traceability.
+- Rich `summary()` methods with improved docstrings.
+- Built-in logging and operational metadata.
 
-------------------------------------------------------------------------
+---
 
 ## Project Structure
 
-    fragua/
-    ├── core/
-    ├── environments/
-    ├── extract/
-    ├── load/
-    ├── transform/
-    ├── utils/
-    └── __init__.py
+```
+fragua/
+├── core/
+├── environments/
+├── extract/
+├── transform/
+├── load/
+├── utils/
+└── __init__.py
+```
 
-------------------------------------------------------------------------
+---
 
 ## Installation
 
-Install Fragua in editable mode from the root of the repository:
-
-``` bash
+```bash
 python -m pip install -e .
 ```
 
-Check `requirements.txt` for additional dependencies.
+> ⚠️ Fragua is published on PyPI for learning purposes.  
+> It is **not recommended for production use yet**.
 
-------------------------------------------------------------------------
-
-## Usage Example
-
-``` python
-import fragua as fg
-from pathlib import Path
-
-BASE_DIR = Path(__file__).parent
-INPUT_XLSX = BASE_DIR / "test_files" / "input_files" / "test_data.xlsx"
-OUTPUT_XLSX = BASE_DIR / "test_files" / "output_files"
-
-env_1 = fg.create_fragua(env_name="fragua_1", env_type="minimal", fg_config=True)
-env_1.create_agent("extract", "extractor")
-env_1.create_agent("transform", "transformer")
-env_1.create_agent("load", "loader")
-
-extractor = env_1.get_extractor("extractor")
-transformer = env_1.get_transformer("transformer")
-loader = env_1.get_loader("loader")
-
-extractor.work(style="excel", save_as="extracted_data", path=INPUT_XLSX)
-
-transformer.work(
-    style="report", apply_to="extracted_data", save_as="transformed_data"
-)
-
-loader.work(
-    style="excel",
-    apply_to=["extracted_data", "transformed_data"],
-    destination=OUTPUT_XLSX,
-    file_name="output_file",
-)
-```
-
-------------------------------------------------------------------------
+---
 
 ## Author
 
-**Santiago Lanz**\
-📍 Developer and creator of Fragua\
-🌐 Portfolio: https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/\
-💼 LinkedIn: https://www.linkedin.com/in/santiagolanz/\
-🐙 GitHub: https://github.com/SagoDev
+**Santiago Lanz**  
+🌐 https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/  
+💼 https://www.linkedin.com/in/santiagolanz/  
+🐙 https://github.com/SagoDev  
 
-------------------------------------------------------------------------
+---
 
-## ⚖️ License
+## License
 
-This project is distributed under the **MIT** license.\
-See the `LICENSE` file for more details.
+MIT License
