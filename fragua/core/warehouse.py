@@ -44,16 +44,22 @@ class FraguaWarehouse(FraguaComponent):
 
     def summary(self) -> Dict[str, object]:
         """
-        Generate a structured summary of the warehouse contents.
+        Return a structured summary of the warehouse.
 
-        The summary is JSON-serializable and intended for diagnostics,
-        observability, and debugging.
+        This summary exposes high-level information about the warehouse
+        and its current contents, and is primarily intended for:
+
+        - System diagnostics
+        - Runtime observability
+        - Debugging and introspection
+        - Environment and registry summaries
 
         Returns:
-            A dictionary containing:
-                - warehouse_name: Name of the warehouse
-                - storage_count: Number of stored items
-                - storages: Mapping of storage names to storage class names
+            Dict([str, object]):
+                A dictionary containing:
+                - warehouse_name (str): Identifier of the warehouse
+                - storage_count (int): Total number of stored objects
+                - storages (Dict[str, str]): Mapping of storage keys to class names
         """
         storages_info: Dict[str, str] = {
             name: obj.__class__.__name__ for name, obj in self._warehouse.items()

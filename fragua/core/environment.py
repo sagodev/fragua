@@ -42,22 +42,38 @@ from fragua.utils.logger import get_logger
 logger = get_logger(__name__)
 
 
-    """Environment class for Fragua.
 class FraguaEnvironment(FraguaComponent):
+    """
+    Core environment abstraction for Fragua.
 
-    Encapsulates all logic for warehouse, warehouse manager, agents, and registries.
-    Provides methods for creation, retrieval, updating, and deletion of all components.
+    This class represents the top-level orchestration layer of the framework.
+    It encapsulates and coordinates all fundamental components, including
+    the warehouse, warehouse manager, action registries, and agents.
+
+    The Environment is responsible for initializing, exposing, and managing
+    the lifecycle of all ETL-related components within a given execution context.
     """
 
     def __init__(self, env_name: str, env_type: str = "base", fg_config: bool = False):
         """
-        Initialize the environment.
+        Initialize a Fragua execution environment.
+
+        This constructor bootstraps all core components required for
+        ETL operations, including the warehouse, its manager, and
+        the action registries (extract, transform, load).
 
         Args:
-            env_name: Name of the environment.
-            env_type: Type of the environment.
-            fg_config: If True, active default Fragua config for components(parms, functions, etc).
+            env_name (str):
+                Logical name of the environment instance.
+            env_type (str):
+                Environment classification or variant.
+                Defaults to "base".
+            fg_config (bool):
+                Enables the default Fragua configuration.
+                When True, built-in components such as parameters,
+                functions, styles, and agents are automatically registered.
         """
+
         super().__init__(component_name=env_name)
         self.env_type = env_type
         self.fg_config = fg_config
@@ -71,12 +87,31 @@ class FraguaEnvironment(FraguaComponent):
 
     # ---------------------- Error Handle ---------------------- #
     def agent_not_found(self) -> ValueError:
-        """Retrive a value error if agent is not found."""
+        """
+        Generate a standardized error for missing agents.
+
+        Returns:
+            ValueError:
+                Exception indicating that the requested agent
+                does not exist within the current environment.
+        """
+
         return ValueError("Agent not found.")
 
     # ---------------------- Initializers ---------------------- #
     def _initialize_manager(self) -> FraguaManager:
-        """Initialize warehouse manager for environment."""
+        """
+        Initialize the warehouse manager for the environment.
+
+        The warehouse manager acts as the coordination layer between
+        agents and the underlying warehouse, controlling access,
+        execution flow, and resource usage.
+
+        Returns:
+            FraguaManager:
+                Fully initialized warehouse manager instance.
+        """
+
         manager = FraguaManager(f"{self.name}_manager", self.warehouse)
 
         logger.info(
@@ -85,14 +120,36 @@ class FraguaEnvironment(FraguaComponent):
         return manager
 
     def _initialize_warehouse(self) -> FraguaWarehouse:
-        """Initialize warehouse for environment."""
+        """
+        Initialize the warehouse for the environment.
+
+        The warehouse serves as the central data container where
+        intermediate and final datasets are stored during
+        extract, transform, and load operations.
+
+        Returns:
+            FraguaWarehouse:
+                Initialized warehouse instance bound to this environment.
+        """
+
         warehouse = FraguaWarehouse(f"{self.name}_warehouse")
 
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
     def _initialize_actions(self) -> FraguaActions:
-        """Intialize actions."""
+        """
+        Initialize action registries for the environment.
+
+        This method sets up all action-specific registries
+        (extract, transform, load), optionally preloading
+        default Fragua components when fg_config is enabled.
+
+        Returns:
+            FraguaActions:
+                Container holding all action registries.
+        """
+
         actions = FraguaActions(self.fg_config)
         logger.info("Default actions initialized for environment '%s'.", self.name)
         return actions
@@ -100,82 +157,181 @@ class FraguaEnvironment(FraguaComponent):
     # ---------------------- Helper Properties ---------------------- #
     @property
     def extract(self) -> ExtractRegistry:
-        """Retrive extract action registry."""
+        """
+        Access the Extract action registry.
+
+        Returns:
+            ExtractRegistry:
+                Registry containing all extract-related components
+                (agents, params, functions, and styles).
+        """
         return self.actions.extract
 
     @property
+    def transform(self) -> TransformRegistry:
+        """
+        Access the Transform action registry.
+
+        Returns:
+            TransformRegistry:
+                Registry containing all transform-related components
+                (agents, params, functions, and styles).
+        """
+        return self.actions.transform
+
+    @property
+    def load(self) -> LoadRegistry:
+        """
+        Access the Load action registry.
+
+        Returns:
+            LoadRegistry:
+                Registry containing all load-related components
+                (agents, params, functions, and styles).
+        """
+        return self.actions.load
+
+    @property
     def extract_agents(self) -> ExtractAgentSet:
-        """Retrive extract agents set."""
+        """
+        Retrieve the set of extract agents.
+
+        Returns:
+            ExtractAgentSet:
+                Registered agents responsible for extract operations.
+        """
         return self.extract.agents
 
     @property
     def extract_params(self) -> ExtractParamsSet:
-        """Retrive extract params set."""
+        """
+        Retrieve the set of extract parameter classes.
+
+        Returns:
+            ExtractParamsSet:
+                Parameter definitions used by extract styles and functions.
+        """
         return self.extract.params
 
     @property
     def extract_functions(self) -> ExtractFunctionSet:
-        """Retrive extract functions set."""
+        """
+        Retrieve the set of extract functions.
+
+        Returns:
+            ExtractFunctionSet:
+                Callable units implementing extract logic.
+        """
         return self.extract.functions
 
     @property
     def extract_styles(self) -> ExtractStyleSet:
-        """Retrive extract styles set."""
+        """
+        Retrieve the set of extract styles.
+
+        Returns:
+            ExtractStyleSet:
+                Styles that orchestrate extract functions and parameters.
+        """
         return self.extract.styles
 
     @property
-    def transform(self) -> TransformRegistry:
-        """Retrive transform action registry."""
-        return self.actions.transform
-
-    @property
     def transform_agents(self) -> TransformAgentSet:
-        """Retrive transform agents set."""
+        """
+        Retrieve the set of transform agents.
+
+        Returns:
+            TransformAgentSet:
+                Agents responsible for transform operations.
+        """
         return self.transform.agents
 
     @property
     def transform_params(self) -> TransformParamsSet:
-        """Retrive transform params set."""
+        """
+        Retrieve the set of transform parameter classes.
+
+        Returns:
+            TransformParamsSet:
+                Parameter definitions used during transformations.
+        """
         return self.transform.params
 
     @property
     def transform_functions(self) -> TransformFunctionSet:
-        """Retrive transform functions set."""
+        """
+        Retrieve the set of transform functions.
+
+        Returns:
+            TransformFunctionSet:
+                Functions implementing transformation logic.
+        """
         return self.transform.functions
 
     @property
     def transform_styles(self) -> TransformStyleSet:
-        """Retrive transform styles set."""
+        """
+        Retrieve the set of transform styles.
+
+        Returns:
+            TransformStyleSet:
+                Styles coordinating transform functions and parameters.
+        """
         return self.transform.styles
 
     @property
-    def load(self) -> LoadRegistry:
-        """Retrive load action registry."""
-        return self.actions.load
-
-    @property
     def load_agents(self) -> LoadAgentSet:
-        """Retrive load agents set."""
+        """
+        Retrieve the set of load agents.
+
+        Returns:
+            LoadAgentSet:
+                Agents responsible for load operations.
+        """
         return self.load.agents
 
     @property
     def load_params(self) -> LoadParamsSet:
-        """Retrive load params set."""
+        """
+        Retrieve the set of load parameter classes.
+
+        Returns:
+            LoadParamsSet:
+                Parameter definitions used for load operations.
+        """
         return self.load.params
 
     @property
     def load_functions(self) -> LoadFunctionSet:
-        """Retrive load functions set."""
+        """
+        Retrieve the set of load functions.
+
+        Returns:
+            LoadFunctionSet:
+                Functions implementing load logic.
+        """
         return self.load.functions
 
     @property
     def load_styles(self) -> LoadStyleSet:
-        """Retrive load styles set."""
+        """
+        Retrieve the set of load styles.
+
+        Returns:
+            LoadStyleSet:
+                Styles coordinating load functions and parameters.
+        """
         return self.load.styles
 
     @property
     def params(self) -> Dict[str, FraguaSet]:
-        """Retrive all params separated by action."""
+        """
+        Retrieve all parameter sets grouped by action.
+
+        Returns:
+            Dict[str, FraguaSet]:
+                Mapping of action name to its corresponding params set.
+        """
         return {
             "extract": self.extract_params,
             "transform": self.transform_params,
@@ -184,7 +340,13 @@ class FraguaEnvironment(FraguaComponent):
 
     @property
     def functions(self) -> Dict[str, FraguaSet]:
-        """Retrive all functions separated by action."""
+        """
+        Retrieve all function sets grouped by action.
+
+        Returns:
+            Dict[str, FraguaSet]:
+                Mapping of action name to its corresponding functions set.
+        """
         return {
             "extract": self.extract_functions,
             "transform": self.transform_functions,
@@ -193,7 +355,13 @@ class FraguaEnvironment(FraguaComponent):
 
     @property
     def agents(self) -> Dict[str, FraguaSet]:
-        """Retrive all agents separated by action."""
+        """
+        Retrieve all agent sets grouped by action.
+
+        Returns:
+            Dict([str, FraguaSet]):
+                Mapping of action name to its corresponding agents set.
+        """
         return {
             "extract": self.extract_agents,
             "transform": self.transform_agents,
@@ -202,7 +370,13 @@ class FraguaEnvironment(FraguaComponent):
 
     @property
     def styles(self) -> Dict[str, FraguaSet]:
-        """Retrive all styles separated by action."""
+        """
+        Retrieve all style sets grouped by action.
+
+        Returns:
+            Dict([str, FraguaSet]):
+                Mapping of action name to its corresponding styles set.
+        """
         return {
             "extract": self.extract_styles,
             "transform": self.transform_styles,
@@ -788,57 +962,6 @@ class FraguaEnvironment(FraguaComponent):
         return deleted
 
     # ----------------------Shortcut functions ---------------------- #
-    def create_extractor(self, agent_name: str) -> bool:
-        """
-        Create and register a new Extractor agent.
-
-        This method creates an Extractor instance with the given name and
-        registers it in the extract agent registry.
-
-        Args:
-            agent_name: Name to assign to the Extractor agent.
-
-        Returns:
-            True if the Extractor was successfully created and registered,
-            False if an agent with the same name already exists.
-        """
-        created = self.create_agent("extract", agent_name)
-        return created
-
-    def create_transformer(self, agent_name: str) -> bool:
-        """
-        Create and register a new Transformer agent.
-
-        This method creates a Transformer instance with the given name and
-        registers it in the transform agent registry.
-
-        Args:
-            agent_name: Name to assign to the Transformer agent.
-
-        Returns:
-            True if the Transformer was successfully created and registered,
-            False if an agent with the same name already exists.
-        """
-        created = self.create_agent("transform", agent_name)
-        return created
-
-    def create_loader(self, agent_name: str) -> bool:
-        """
-        Create and register a new Loader agent.
-
-        This method creates a Loader instance with the given name and
-        registers it in the load agent registry.
-
-        Args:
-            agent_name: Name to assign to the Loader agent.
-
-        Returns:
-            True if the Loader was successfully created and registered,
-            False if an agent with the same name already exists.
-        """
-        created = self.create_agent("load", agent_name)
-        return created
-
     def get_extractor(self, agent_name: Optional[str] = None) -> Extractor:
         """
         Retrieve an Extractor agent by name.
@@ -916,8 +1039,21 @@ class FraguaEnvironment(FraguaComponent):
 
     def summary(self) -> Dict[str, Any]:
         """
-        Summary of the Environment instance,
-        including summaries from all entities(Manager, Agents, Params, Styles, Functions).
+        Return a structured summary of the Environment instance.
+
+        This summary aggregates high-level metadata and detailed
+        information from all core environment components, including:
+
+        - Environment identity (name and type)
+        - Warehouse state and configuration
+        - Warehouse manager summary
+        - Action registries (extract, transform, load), each including
+        their respective agents, parameters, functions, and styles
+
+        Returns:
+            Dict([str, Any]):
+                A hierarchical dictionary representing the complete
+                environment configuration and registered components.
         """
 
         return {

@@ -98,8 +98,17 @@ class ExtractRegistry(FraguaRegistry):
         """
         Return a structured summary of all extract components.
 
-        The summary aggregates the summaries of params, functions,
-        styles, and agents registered under the extract action.
+        This method aggregates the summaries of each extract set
+        (params, agents, functions, styles) into a single structured object.
+
+
+        Returns:
+            Dict([str, Any]):
+                A dictionary with the following structure:
+                - params (dict): Summary of the extract params set
+                - functions (dict): Summary of extract functions set
+                - styles (dict): Summary of the extract styles set
+                - agents (dict): Summary of the extract agents set
         """
         return {
             "params": self.params.summary(),

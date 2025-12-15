@@ -105,13 +105,19 @@ class LoadRegistry(FraguaRegistry):
 
     def summary(self) -> Dict[str, Any]:
         """
-        Generate a structured summary of the load registry.
+        Return a structured summary of all load components.
+
+        This method aggregates the summaries of each load set
+        (params, agents, functions, styles) into a single structured object.
+
 
         Returns:
-            Dict[str, Any]:
-                Dictionary containing summarized information for
-                parameters, functions, styles and agents registered
-                under the load action.
+            Dict([str, Any]):
+                A dictionary with the following structure:
+                - params (dict): Summary of the load params set
+                - functions (dict): Summary of load functions set
+                - styles (dict): Summary of the load styles set
+                - agents (dict): Summary of the load agents set
         """
         return {
             "params": self.params.summary(),

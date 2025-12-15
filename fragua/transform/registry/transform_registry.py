@@ -110,12 +110,20 @@ class TransformRegistry(FraguaRegistry):
 
     def summary(self) -> Dict[str, Any]:
         """
-        Generate a structured summary of the transform registry.
+        Return a structured summary of all transform components.
+
+        This method aggregates the summaries of each transform set
+        (params, agents, functions, styles) into a single structured object.
+
 
         Returns:
-            Dict[str, Any]:
-                A dictionary containing summarized information for
-                parameters, functions, styles, and agents.
+            Dict([str, Any]):
+                A dictionary with the following structure:
+                - params (dict): Summary of the transform params set
+                - functions (dict): Summary of transform functions set
+                - styles (dict): Summary of the transform styles set
+                - agents (dict): Summary of the transform agents set
+
         """
         return {
             "params": self.params.summary(),

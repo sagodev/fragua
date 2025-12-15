@@ -96,11 +96,18 @@ class FraguaActions(FraguaComponent):
 
     def summary(self) -> Dict[str, Any]:
         """
-        Generate a consolidated summary of all action registries.
+        Return a structured summary of all registered actions.
+
+        This method aggregates the summaries of each action registry
+        (extract, transform, and load) into a single structured object.
+
 
         Returns:
-            A dictionary containing the summary of extract, transform,
-            and load registries.
+            Dict([str, Any]):
+                A dictionary with the following structure:
+                - extract (dict): Summary of the Extract registry
+                - transform (dict): Summary of the Transform registry
+                - load (dict): Summary of the Load registry
         """
         return {
             "extract": self.extract.summary(),

@@ -57,15 +57,27 @@ class FraguaManager(FraguaComponent):
 
     def summary(self) -> Dict[str, Any]:
         """
-        Return a structured summary of the manager state.
+        Return a structured summary of the warehouse manager.
 
-        Includes:
-            - manager name
-            - associated warehouse name
-            - number of stored objects
-            - mapping of storage names to their types
-            - full movement log
-            - counters for log entries and undo stack size
+        This method provides a structured snapshot of the manager,
+        exposing both configuration and runtime information, including:
+
+        - Manager identity
+        - Associated warehouse metadata
+        - Current storage inventory and their concrete types
+        - Full movement history registered by the manager
+        - Operational counters for traceability and debugging
+
+        Returns:
+            Dict([str, Any]):
+                A hierarchical dictionary containing:
+                - manager_name (str): Manager identifier
+                - warehouse_name (str | None): Linked warehouse name
+                - storage_count (int): Total number of stored objects
+                - storages (Dict[str, str]): Mapping of storage names to class types
+                - movement_log (List[Any]): Complete movement history
+                - log_entries (int): Total number of logged movements
+                - undo_stack_size (int): Current undo stack depth
         """
         warehouse_name = getattr(self.warehouse, "warehouse_name", None)
 
