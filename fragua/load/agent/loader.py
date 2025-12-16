@@ -11,8 +11,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 from fragua.core.agent import FraguaAgent
 
-from fragua.load.params.generic_types import LoadParamsT
-from fragua.load.params.load_params import ExcelLoadParams
+
+from fragua.core.params import FraguaParamsT
 from fragua.core.storage import Box, Container
 from fragua.utils.logger import get_logger
 
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Loader(FraguaAgent[LoadParamsT]):
+class Loader(FraguaAgent[FraguaParamsT]):
     """
     Loader agent responsible for executing load workflows.
 
@@ -89,7 +89,7 @@ class Loader(FraguaAgent[LoadParamsT]):
         style: str,
         apply_to: Union[str | list[str], None] = None,
         save_as: Optional[str] = None,
-        params: Optional[LoadParamsT] = None,
+        params: Optional[FraguaParamsT] = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -136,9 +136,10 @@ class Loader(FraguaAgent[LoadParamsT]):
                 params_instance = params
 
             # -------- Excel-specific adjustment --------
-            if isinstance(params_instance, ExcelLoadParams):
-                if not getattr(params_instance, "sheet_name", None):
-                    params_instance.sheet_name = name
+            if hasattr(params_instance, "sheet_name") and not getattr(
+                params_instance, "sheet_name"
+            ):
+                setattr(params_instance, "sheet_name", name)
 
             # -------- Execute style --------
             style_instance.use(params_instance)

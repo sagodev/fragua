@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional, Union
 from fragua.core.agent import FraguaAgent
 
-from fragua.transform.params.generic_types import TransformParamsT
+from fragua.core.params import FraguaParamsT
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Transformer(FraguaAgent[TransformParamsT]):
+class Transformer(FraguaAgent[FraguaParamsT]):
     """
     Agent responsible for applying transformation styles to stored data.
 
@@ -43,7 +43,7 @@ class Transformer(FraguaAgent[TransformParamsT]):
         style: str,
         apply_to: Union[str | list[str], None] = None,
         save_as: Optional[str] = None,
-        params: Optional[TransformParamsT] = None,
+        params: Optional[FraguaParamsT] = None,
         **kwargs: Any,
     ) -> None:
         """
