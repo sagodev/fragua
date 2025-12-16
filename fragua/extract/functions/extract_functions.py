@@ -7,14 +7,14 @@ and REST APIs.
 """
 
 from pathlib import Path
-from typing import Dict, Any, Optional, Type
+from typing import Dict, Any, Type
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
 from requests.auth import HTTPBasicAuth
 
 
-from fragua.extract.functions import ExtractFunction
+from fragua.core.function import FraguaFunction
 from fragua.extract.params.extract_params import (
     APIExtractParams,
     CSVExtractParams,
@@ -23,147 +23,71 @@ from fragua.extract.params.extract_params import (
 )
 
 
-class CSVExtractFunction(ExtractFunction):
+class CSVExtractFunction(FraguaFunction[CSVExtractParams]):
     """
-    Extraction function for CSV files.
-
-    Reads a CSV file from disk and returns its contents as a pandas
-    DataFrame.
+    Extract data from a CSV file.
     """
 
-    def __init__(self, params: Optional[CSVExtractParams] = None) -> None:
-        """
-        Initialize the CSV extract function.
+    action = "extract"
+    params_type = CSVExtractParams
+    purpose = "Extract tabular data from a CSV file."
 
-        Args:
-            params: Optional CSVExtractParams instance. If not provided,
-                a default instance is created.
-        """
-        super().__init__()
-        self.params = CSVExtractParams() if params is None else params
-
-    def summary(self) -> Dict[str, Any]:
-        """
-        Return a structured summary of the CSV extract function.
-
-        Returns:
-            Dictionary describing the function purpose and parameter type.
-        """
-        return {
-            "function": self.name,
-            "params_type": "CSVExtractParams",
-            "purpose": "Extract tabular data from a CSV file",
-        }
-
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the CSV extraction.
-
-        Reads the CSV file defined in the params and loads it into
-        a pandas DataFrame.
-
-        Returns:
-            A pandas DataFrame containing the extracted data.
-
-        Raises:
-            ValueError: If the 'path' parameter is not provided.
-        """
-        path = self.params.path
+    def execute(
+        self,
+        input_data: None,
+        params: CSVExtractParams,
+        context: Any,
+    ) -> pd.DataFrame:
+        path = params.get("path")
         if not path:
             raise ValueError("'path' is required in params")
 
-        path_str = str(path) if isinstance(path, Path) else path
-        return pd.read_csv(path_str)
+        return pd.read_csv(str(Path(path)))
 
 
-class ExcelExtractFunction(ExtractFunction):
+class ExcelExtractFunction(FraguaFunction[ExcelExtractParams]):
     """
-    Extraction function for Excel files.
-
-    Loads data from an Excel spreadsheet into a pandas DataFrame.
+    Extract data from an Excel file.
     """
 
-    def __init__(self, params: Optional[ExcelExtractParams] = None) -> None:
-        """
-        Initialize the Excel extract function.
+    action = "extract"
+    params_type = ExcelExtractParams
+    purpose = "Extract data from an Excel spreadsheet."
 
-        Args:
-            params: Optional ExcelExtractParams instance. If not provided,
-                a default instance is created.
-        """
-        super().__init__()
-        self.params = ExcelExtractParams() if params is None else params
-
-    def summary(self) -> Dict[str, Any]:
-        """
-        Return a structured summary of the Excel extract function.
-        """
-        return {
-            "function": self.name,
-            "params_type": "ExcelExtractParams",
-            "purpose": "Extract data from an Excel spreadsheet",
-        }
-
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the Excel extraction.
-
-        Returns:
-            A pandas DataFrame containing the extracted spreadsheet data.
-
-        Raises:
-            ValueError: If the 'path' parameter is not provided.
-        """
-        path = self.params.path
+    def execute(
+        self,
+        input_data: None,
+        params: ExcelExtractParams,
+        context: Any,
+    ) -> pd.DataFrame:
+        path = params.get("path")
         if not path:
             raise ValueError("'path' is required in params")
 
-        path_str = str(path) if isinstance(path, Path) else path
-        return pd.read_excel(path_str, sheet_name=self.params.sheet_name)
+        return pd.read_excel(
+            str(Path(path)),
+            sheet_name=params.get("sheet_name"),
+        )
 
 
-class SQLExtractFunction(ExtractFunction):
+class SQLExtractFunction(FraguaFunction[SQLExtractParams]):
     """
-    Extraction function for SQL databases.
-
-    Executes a SQL query against a database and returns the result
-    as a pandas DataFrame.
+    Execute a SQL query and return the result as a DataFrame.
     """
 
-    def __init__(self, params: Optional[SQLExtractParams] = None) -> None:
-        """
-        Initialize the SQL extract function.
+    action = "extract"
+    params_type = SQLExtractParams
+    purpose = "Execute a SQL query and extract the result as a DataFrame."
 
-        Args:
-            params: Optional SQLExtractParams instance. If not provided,
-                a default instance is created.
-        """
-        super().__init__()
-        self.params = SQLExtractParams() if params is None else params
+    def execute(
+        self,
+        input_data: None,
+        params: SQLExtractParams,
+        context: Any,
+    ) -> pd.DataFrame:
+        connection_string = params.get("connection_string")
+        query = params.get("query")
 
-    def summary(self) -> Dict[str, Any]:
-        """
-        Return a structured summary of the SQL extract function.
-        """
-        return {
-            "function": self.name,
-            "params_type": "SQLExtractParams",
-            "purpose": "Run a SQL query and extract the result as a DataFrame",
-        }
-
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the SQL extraction.
-
-        Returns:
-            A pandas DataFrame containing the query results.
-
-        Raises:
-            ValueError: If 'connection_string' or 'query' parameters
-                are not provided.
-        """
-        connection_string = self.params.connection_string
-        query = self.params.query
         if not connection_string or not query:
             raise ValueError("'connection_string' and 'query' are required in params")
 
@@ -175,77 +99,49 @@ class SQLExtractFunction(ExtractFunction):
             engine.dispose()
 
 
-class APIExtractFunction(ExtractFunction):
+class APIExtractFunction(FraguaFunction[APIExtractParams]):
     """
-    Extraction function for REST APIs.
-
-    Performs an HTTP request and converts the JSON response into
-    a pandas DataFrame.
+    Fetch JSON data from a REST API.
     """
 
-    def __init__(self, params: Optional[APIExtractParams] = None) -> None:
-        """
-        Initialize the API extract function.
+    action = "extract"
+    params_type = APIExtractParams
+    purpose = "Fetch JSON data from a REST API endpoint."
 
-        Args:
-            params: Optional APIExtractParams instance. If not provided,
-                a default instance is created.
-        """
-        super().__init__()
-        self.params = APIExtractParams() if params is None else params
-
-    def summary(self) -> Dict[str, Any]:
-        """
-        Return a structured summary of the API extract function.
-        """
-        return {
-            "function": self.name,
-            "params_type": "APIExtractParams",
-            "purpose": "Fetch JSON data from a REST API",
-        }
-
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the API extraction.
-
-        Sends an HTTP request based on the configured parameters
-        and normalizes the JSON response into a DataFrame.
-
-        Returns:
-            A pandas DataFrame containing the API response data.
-
-        Raises:
-            ValueError: If the 'url' parameter is not provided.
-            ValueError: If the API response format is unsupported.
-            requests.HTTPError: If the HTTP request fails.
-        """
-        url = self.params.url
-        assert url is not None, "'url' is required in params"
+    def execute(
+        self,
+        input_data: None,
+        params: APIExtractParams,
+        context: Any,
+    ) -> pd.DataFrame:
+        url = params.get("url")
+        if not url:
+            raise ValueError("'url' is required in params")
 
         response = requests.request(
-            method=self.params.method.upper(),
+            method=params.get("method"),
             url=url,
-            headers=self.params.headers,
-            params=self.params.params,
-            data=self.params.data,
-            auth=HTTPBasicAuth(**self.params.auth) if self.params.auth else None,
-            proxies=self.params.proxy,
-            timeout=self.params.timeout,
+            headers=params.get("headers"),
+            params=params.get("params"),
+            data=params.get("data"),
+            auth=HTTPBasicAuth(**params.get("auth")) if params.get("auth") else None,
+            proxies=params.get("proxy"),
+            timeout=params.get("timeout"),
         )
         response.raise_for_status()
 
-        result_data = response.json()
+        payload = response.json()
 
-        if isinstance(result_data, list):
-            return pd.DataFrame(result_data)
+        if isinstance(payload, list):
+            return pd.DataFrame(payload)
 
-        if isinstance(result_data, dict):
-            return pd.json_normalize(result_data)
+        if isinstance(payload, dict):
+            return pd.json_normalize(payload)
 
-        raise ValueError(f"Unexpected API response type: {type(result_data)}")
+        raise ValueError(f"Unexpected API response type: {type(payload)}")
 
 
-EXTRACT_FUNCTION_CLASSES: Dict[str, Type[ExtractFunction]] = {
+EXTRACT_FUNCTION_CLASSES: Dict[str, Type[FraguaFunction]] = {
     "csv": CSVExtractFunction,
     "excel": ExcelExtractFunction,
     "sql": SQLExtractFunction,
