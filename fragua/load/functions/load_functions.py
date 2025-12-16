@@ -7,7 +7,7 @@ Each function encapsulates the low-level persistence logic
 for a specific target system or format.
 """
 
-from typing import Any, Dict, Literal, Optional, Type
+from typing import Any, Dict, Type
 import pandas as pd
 
 from fragua.core.function import FraguaFunction
@@ -126,16 +126,11 @@ class SQLLoadFunction(LoadPipeline[SQLLoadParams]):
     ]
 
 
-class APILoadParams(LoadPipeline[ExcelLoadParams]):
-    """Parameters required to load data into an external API."""
+class APILoadFunction(LoadPipeline[ExcelLoadParams]):
+    """Load pipeline for API database outputs."""
 
-    url: str
-    method: Literal["POST", "PUT", "PATCH"] = "POST"
-    headers: Optional[Dict[str, str]] = None
-    timeout: int = 30
-    batch_size: Optional[int] = None
-    raise_for_status: bool = True
-
+    action = "load"
+    params_type = ExcelLoadParams
     purpose = "Parameters required to send data to an external API."
     steps = [
         "validate_api_load",
@@ -147,4 +142,5 @@ LOAD_FUNCTION_CLASSES: Dict[str, Type[FraguaFunction]] = {
     "excel": ExcelLoadFunction,
     "csv": CSVLoadFunction,
     "sql": SQLLoadFunction,
+    "api": APILoadFunction,
 }
