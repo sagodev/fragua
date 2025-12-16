@@ -8,31 +8,17 @@ This module contains:
 - Dict registry with each Params class.('name': class)
 """
 
-from .base import TransformParams
-
 from .transform_params import (
     MLTransformParams,
     ReportTransformParams,
     AnalysisTransformParams,
-    TRANSFORM_PARAMS_CLASSES,
+    TRANSFORM_PARAMS_SCHEMAS,
 )
 
-
-from .generic_types import (
-    TransformParamsT,
-    MLTransformParamsT,
-    ReportTransformParamsT,
-    AnalysisTransformParamsT,
-)
 
 __all__ = [
-    "TransformParams",
     "MLTransformParams",
     "ReportTransformParams",
     "AnalysisTransformParams",
-    "TRANSFORM_PARAMS_CLASSES",
-    "TransformParamsT",
-    "MLTransformParamsT",
-    "ReportTransformParamsT",
-    "AnalysisTransformParamsT",
+    "TRANSFORM_PARAMS_SCHEMAS",
 ]

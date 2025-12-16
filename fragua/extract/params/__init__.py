@@ -8,36 +8,19 @@ This module contains:
 - Dict registry with each Params class.('name': class)
 """
 
-from .base import ExtractParams
-
-
 from .extract_params import (
     CSVExtractParams,
     ExcelExtractParams,
     APIExtractParams,
     SQLExtractParams,
-    EXTRACT_PARAMS_CLASSES,
-)
-
-from .generic_types import (
-    ExtractParamsT,
-    CSVExtractParamsT,
-    ExcelExtractParamsT,
-    SQLExtractParamsT,
-    APIExtractParamsT,
+    EXTRACT_PARAMS_SCHEMAS,
 )
 
 
 __all__ = [
-    "ExtractParams",
     "CSVExtractParams",
     "ExcelExtractParams",
     "SQLExtractParams",
     "APIExtractParams",
-    "ExtractParamsT",
-    "CSVExtractParamsT",
-    "ExcelExtractParamsT",
-    "SQLExtractParamsT",
-    "APIExtractParamsT",
-    "EXTRACT_PARAMS_CLASSES",
+    "EXTRACT_PARAMS_SCHEMAS",
 ]
