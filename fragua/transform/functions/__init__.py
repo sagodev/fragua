@@ -8,8 +8,6 @@ This module contains:
 - Dict registry with each internal function. ('name': function(Callable))
 """
 
-from .base import TransformFunction
-
 from .internal_functions import (
     TRANSFORM_INTERNAL_FUNCTIONS,
 )
@@ -24,7 +22,6 @@ from .transform_functions import (
 
 
 __all__ = [
-    "TransformFunction",
     "AnalysisTransformFunction",
     "ReportTransformFunction",
     "MLTransformFunction",

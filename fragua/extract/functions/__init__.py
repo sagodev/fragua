@@ -7,8 +7,6 @@ This module contains:
 - Dict registry with each Function class.('name': class)
 """
 
-from .base import ExtractFunction
-
 from .extract_functions import (
     CSVExtractFunction,
     ExcelExtractFunction,
@@ -19,7 +17,6 @@ from .extract_functions import (
 
 
 __all__ = [
-    "ExtractFunction",
     "ExcelExtractFunction",
     "APIExtractFunction",
     "CSVExtractFunction",
