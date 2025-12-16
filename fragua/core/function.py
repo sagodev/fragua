@@ -2,47 +2,64 @@
 Base abstract class for all function schemas used by styles in Fragua.
 """
 
-from abc import abstractmethod
-from typing import Any
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Generic, Iterable, Optional, Type
 
 from fragua.core.component import FraguaComponent
+from fragua.core.params import FraguaParamsT
 
 
-class FraguaFunction(FraguaComponent):
+class FraguaFunction(FraguaComponent, ABC, Generic[FraguaParamsT]):
     """
-    Abstract base class for all executable function schemas in Fragua.
+    Abstract base class for all executable functions in Fragua.
 
-    A FraguaFunction represents a reusable, action-scoped unit of logic
-    that can be invoked by styles during an ETL workflow. Functions are
-    registered per action (extract, transform, load) and encapsulate
-    executable behavior that may operate on data, parameters, or both.
+    A FraguaFunction represents a stateless, reusable unit of logic
+    executed as part of an ETL workflow.
     """
 
-    def __init__(self, function_name: str, action: str) -> None:
-        """
-        Initialize the function with a name and associated action.
+    action: str
+    params_type: Type[FraguaParamsT]
+    purpose: str | None = None
+    steps: Iterable[str] | None = None
 
-        Args:
-            function_name: Unique identifier of the function.
-            action: ETL action scope where the function is applicable
-                (e.g., extract, transform, load).
-        """
-        super().__init__(component_name=function_name)
-        self.action: str = action
+    def __init__(self, function_name: Optional[str] = None) -> None:
+        super().__init__(component_name=function_name or self.__class__.__name__)
 
     @abstractmethod
-    def execute(self) -> Any:
+    def execute(
+        self,
+        input_data: Any,
+        params: FraguaParamsT,
+        context: Any,
+    ) -> Any:
         """
         Execute the function logic.
 
-        Concrete implementations must define the execution behavior
-        and return the result produced by the function.
+        Args:
+            input_data:
+                Input payload. None for extract, DataFrame for transform/load.
+            params:
+                Parameters instance defining execution behavior.
+            context:
+                Runtime execution context.
 
         Returns:
-            The result of the function execution.
-
-        Raises:
-            NotImplementedError: If the method is not implemented
-                by a subclass.
+            Execution result.
         """
-        raise NotImplementedError("Subclasses must implement the execute method.")
+        raise NotImplementedError
+
+    def summary(self) -> Dict[str, Any]:
+        """
+        Return a structured summary of the function.
+        """
+        summary: Dict[str, Any] = {
+            "name": self.name,
+            "action": self.action,
+            "purpose": self.purpose,
+            "params": self.params_type().summary(),
+        }
+
+        if self.steps:
+            summary["steps"] = self.steps
+
+        return summary
