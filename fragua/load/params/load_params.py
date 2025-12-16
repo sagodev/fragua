@@ -47,6 +47,45 @@ class ExcelLoadParams(FraguaParams):
     }
 
 
+class CSVLoadParams(FraguaParams):
+    """Parameters for loading data into CSV files."""
+
+    purpose = "Parameters required to load data into a CSV file."
+
+    FIELDS = {
+        "destination": {
+            "type": str,
+            "required": True,
+            "description": "Directory or full path where the CSV file will be saved.",
+        },
+        "file_name": {
+            "type": str,
+            "required": True,
+            "description": "Name of the output CSV file.",
+        },
+        "index": {
+            "type": bool,
+            "default": False,
+            "description": "Whether to include the DataFrame index in the CSV.",
+        },
+        "sep": {
+            "type": str,
+            "default": ",",
+            "description": "Delimiter for the CSV file (e.g., comma, tab, etc.).",
+        },
+        "header": {
+            "type": bool,
+            "default": True,
+            "description": "Whether to write column names in the CSV file.",
+        },
+        "encoding": {
+            "type": str,
+            "default": "utf-8",
+            "description": "Character encoding for the CSV file.",
+        },
+    }
+
+
 class SQLLoadParams(FraguaParams):
     """Parameters for loading data into SQL database tables."""
 
@@ -122,6 +161,7 @@ class APILoadParams(FraguaParams):
 
 LOAD_PARAMS_SCHEMAS: Dict[str, Type[FraguaParams]] = {
     "excel": ExcelLoadParams,
+    "csv": CSVLoadParams,
     "sql": SQLLoadParams,
     "api": APILoadParams,
 }
