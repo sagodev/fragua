@@ -1,155 +1,117 @@
 """
-Extract parameter classes for supported data source types.
-
-Each class defines the configuration schema required to extract data
-from a specific source type and is consumed by extract styles during
-the extraction workflow.
+Extract parameter schemas for supported data source types.
 """
 
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Union
 from pathlib import Path
 
-from fragua.extract.params.base import ExtractParams
-
-# pylint: disable=too-many-arguments, too-many-positional-arguments
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-few-public-methods
+from fragua.core.params import FraguaParams
 
 
-class CSVExtractParams(ExtractParams):
-    """
-    Extraction parameters for CSV file sources.
-    """
+class CSVExtractParams(FraguaParams):
+    """Parameters for CSV data extraction."""
 
     purpose = "Parameters required to extract data from a CSV file."
 
-    FIELD_DESCRIPTIONS = {
-        "path": "Filesystem path to the CSV file.",
+    FIELDS = {
+        "path": {
+            "type": Union[str, Path],
+            "required": True,
+            "description": "Filesystem path to the CSV file.",
+            "normalize": Path,
+        }
     }
 
-    def __init__(self, path: Optional[Union[str, Path]] = None) -> None:
-        """
-        Initialize CSV extraction parameters.
 
-        Args:
-            path: Path to the CSV file.
-        """
-        super().__init__(style="csv")
-        self.path = None if not path else Path(path)
-
-
-class ExcelExtractParams(ExtractParams):
-    """
-    Extraction parameters for Excel file sources.
-    """
+class ExcelExtractParams(FraguaParams):
+    """Parameters for Excel data extraction."""
 
     purpose = "Parameters required to extract data from an Excel file."
 
-    FIELD_DESCRIPTIONS = {
-        "path": "Filesystem path to the Excel file.",
-        "sheet_name": "Name or index of the worksheet to load.",
+    FIELDS = {
+        "path": {
+            "type": Union[str, Path],
+            "required": True,
+            "description": "Filesystem path to the Excel file.",
+            "normalize": Path,
+        },
+        "sheet_name": {
+            "type": Union[str, int],
+            "default": 0,
+            "description": "Name or index of the worksheet to load.",
+        },
     }
 
-    def __init__(
-        self,
-        path: Optional[Union[str, Path]] = None,
-        sheet_name: Union[str, int] = 0,
-    ) -> None:
-        """
-        Initialize Excel extraction parameters.
 
-        Args:
-            path: Path to the Excel file.
-            sheet_name: Worksheet name or index.
-        """
-        super().__init__(style="excel")
-        self.path = None if not path else Path(path)
-        self.sheet_name = sheet_name
-
-
-class SQLExtractParams(ExtractParams):
-    """
-    Extraction parameters for SQL database sources.
-    """
+class SQLExtractParams(FraguaParams):
+    """Parameters for SQL database extraction."""
 
     purpose = "Parameters required to extract data from a SQL database."
 
-    FIELD_DESCRIPTIONS = {
-        "connection_string": "Database connection URL string.",
-        "query": "SQL query to be executed.",
+    FIELDS = {
+        "connection_string": {
+            "type": str,
+            "required": True,
+            "description": "Database connection URL string.",
+        },
+        "query": {
+            "type": str,
+            "required": True,
+            "description": "SQL query to be executed.",
+        },
     }
 
-    def __init__(
-        self,
-        connection_string: Optional[str] = None,
-        query: Optional[str] = None,
-    ) -> None:
-        """
-        Initialize SQL extraction parameters.
 
-        Args:
-            connection_string: Database connection URL.
-            query: SQL query to execute.
-        """
-        super().__init__(style="sql")
-        self.connection_string = connection_string
-        self.query = query
-
-
-class APIExtractParams(ExtractParams):
-    """
-    Extraction parameters for HTTP API sources.
-    """
+class APIExtractParams(FraguaParams):
+    """Parameters for HTTP API extraction."""
 
     purpose = "Parameters required to extract data from an API endpoint."
 
-    FIELD_DESCRIPTIONS = {
-        "url": "Full URL of the API endpoint.",
-        "method": "HTTP method to use (GET, POST, etc).",
-        "headers": "HTTP headers sent with the request.",
-        "params": "URL query parameters sent with the request.",
-        "data": "Body data sent for POST/PUT requests.",
-        "auth": "Authentication credentials (API dependent).",
-        "proxy": "Proxy configuration for routing the request.",
-        "timeout": "Maximum time in seconds to wait for a response.",
+    FIELDS = {
+        "url": {
+            "type": str,
+            "required": True,
+            "description": "Full URL of the API endpoint.",
+        },
+        "method": {
+            "type": str,
+            "default": "GET",
+            "description": "HTTP method to use (GET, POST, etc).",
+        },
+        "headers": {
+            "type": Dict[str, str],
+            "default": {},
+            "description": "HTTP headers sent with the request.",
+        },
+        "params": {
+            "type": Dict[str, Any],
+            "default": {},
+            "description": "URL query parameters sent with the request.",
+        },
+        "data": {
+            "type": Dict[str, Any],
+            "default": {},
+            "description": "Body data sent for POST/PUT requests.",
+        },
+        "auth": {
+            "type": Dict[str, str],
+            "default": {},
+            "description": "Authentication credentials (API dependent).",
+        },
+        "proxy": {
+            "type": Dict[str, str],
+            "default": {},
+            "description": "Proxy configuration for routing the request.",
+        },
+        "timeout": {
+            "type": float,
+            "default": 30.0,
+            "description": "Maximum time in seconds to wait for a response.",
+        },
     }
 
-    def __init__(
-        self,
-        url: Optional[str] = None,
-        method: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
-        auth: Optional[Dict[str, str]] = None,
-        proxy: Optional[Dict[str, str]] = None,
-        timeout: float = 30.0,
-    ) -> None:
-        """
-        Initialize API extraction parameters.
 
-        Args:
-            url: API endpoint URL.
-            method: HTTP method to use.
-            headers: HTTP headers.
-            params: URL query parameters.
-            data: Request body payload.
-            auth: Authentication configuration.
-            proxy: Proxy configuration.
-            timeout: Request timeout in seconds.
-        """
-        super().__init__(style="api")
-        self.url = "" if url else url
-        self.method = "GET" if not method else method
-        self.headers = {} if not headers else headers
-        self.params = {} if not params else params
-        self.data = {} if not data else data
-        self.auth = {} if not auth else auth
-        self.proxy = {} if not proxy else proxy
-        self.timeout = timeout
-
-
-EXTRACT_PARAMS_CLASSES: Dict[str, Type[ExtractParams]] = {
+EXTRACT_PARAMS_SCHEMAS: Dict[str, type[FraguaParams]] = {
     "csv": CSVExtractParams,
     "excel": ExcelExtractParams,
     "sql": SQLExtractParams,
