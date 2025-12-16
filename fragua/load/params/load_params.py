@@ -9,9 +9,6 @@ from typing import Dict, Optional, Type
 
 from fragua.core.params import FraguaParams
 
-# pylint: disable=too-many-arguments, too-many-positional-arguments
-# pylint: disable=too-few-public-methods
-
 
 class ExcelLoadParams(FraguaParams):
     """Parameters for loading data into Excel files."""
