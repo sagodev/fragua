@@ -13,7 +13,12 @@ import pandas as pd
 from fragua.core.function import FraguaFunction
 from fragua.core.params import FraguaParamsT
 from fragua.load.functions.internal_functions import LOAD_INTERNAL_FUNCTIONS
-from fragua.load.params.load_params import CSVLoadParams, ExcelLoadParams, SQLLoadParams
+from fragua.load.params.load_params import (
+    APILoadParams,
+    CSVLoadParams,
+    ExcelLoadParams,
+    SQLLoadParams,
+)
 
 
 class LoadPipeline(FraguaFunction[FraguaParamsT]):
@@ -126,11 +131,11 @@ class SQLLoadFunction(LoadPipeline[SQLLoadParams]):
     ]
 
 
-class APILoadFunction(LoadPipeline[ExcelLoadParams]):
+class APILoadFunction(LoadPipeline[APILoadParams]):
     """Load pipeline for API database outputs."""
 
     action = "load"
-    params_type = ExcelLoadParams
+    params_type = APILoadParams
     purpose = "Parameters required to send data to an external API."
     steps = [
         "validate_api_load",
