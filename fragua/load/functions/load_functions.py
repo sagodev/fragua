@@ -7,79 +7,144 @@ Each function encapsulates the low-level persistence logic
 for a specific target system or format.
 """
 
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Literal, Optional, Type
 import pandas as pd
 
-from fragua.load.functions.base import LoadFunction
-from fragua.load.functions.internal_functions import (
-    build_excel_path,
-    convert_datetime_columns,
-    validate_excel_params,
-    write_excel,
-)
-from fragua.load.params.load_params import ExcelLoadParams
+from fragua.core.function import FraguaFunction
+from fragua.core.params import FraguaParamsT
+from fragua.load.functions.internal_functions import LOAD_INTERNAL_FUNCTIONS
+from fragua.load.params.load_params import CSVLoadParams, ExcelLoadParams, SQLLoadParams
 
 
-class ExcelLoadFunction(LoadFunction):
+class LoadPipeline(FraguaFunction[FraguaParamsT]):
     """
-    LoadFunction implementation for Excel outputs.
+    Base class for load pipelines executed as ordered internal steps.
 
-    This function:
-    - validates Excel-specific parameters
-    - resolves the target file path
-    - normalizes datetime columns for compatibility
-    - writes the data into an Excel file
+    A load pipeline orchestrates persistence-related operations
+    such as validation, path resolution, normalization and output writing.
     """
 
-    PURPOSE: str = "Export a DataFrame to an Excel file."
+    action = "load"
 
-    def __init__(self, params: Optional[ExcelLoadParams] = None) -> None:
+    def execute(
+        self,
+        input_data: pd.DataFrame,
+        params: FraguaParamsT,
+        context: Any = None,
+    ) -> pd.DataFrame:
         """
-        Initialize the Excel load function.
+        Execute the load pipeline.
 
         Args:
-            params (Optional[ExcelLoadParams]):
-                Parameters controlling Excel output behavior.
-                If not provided, a default ExcelLoadParams instance is created.
-        """
-        super().__init__()
-        self.params = ExcelLoadParams() if params is None else params
-
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the Excel load operation.
-
-        Performs the full persistence workflow:
-        - parameter validation
-        - destination path construction
-        - datetime normalization
-        - Excel file writing
+            input_data:
+                DataFrame to be persisted.
+            params:
+                Configuration object containing load options.
+            context:
+                Optional execution context (reserved for future use).
 
         Returns:
-            pd.DataFrame: The DataFrame that was persisted.
+            pd.DataFrame:
+                The persisted DataFrame.
+
+        Raises:
+            KeyError:
+                If a load step is not registered.
         """
-        validate_excel_params(self.params)
-        path = build_excel_path(self.params)
-        df = convert_datetime_columns(self.params.data)
-        write_excel(df, path, self.params.sheet_name or "Sheet1", self.params.index)
-        return df
+        data = input_data
+        artifacts: dict[str, Any] = {}
 
-    def summary(self) -> dict[str, Any]:
-        """
-        Return a structured summary of the Excel load function.
+        for step in self.steps or ():
+            if step not in LOAD_INTERNAL_FUNCTIONS:
+                raise KeyError(f"Load function '{step}' not registered.")
 
-        Includes:
-            - function name
-            - associated parameter class
-            - functional purpose
-        """
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-        }
+            spec = LOAD_INTERNAL_FUNCTIONS[step]
+
+            kwargs = {
+                key: getattr(params, key)
+                for key in spec.config_keys
+                if hasattr(params, key)
+            }
+
+            result = spec.func(data=data, **kwargs)
+
+            if isinstance(result, pd.DataFrame):
+                data = result
+            elif isinstance(result, dict):
+                artifacts.update(result)
+
+        return data
 
 
-LOAD_FUNCTION_CLASSES: Dict[str, Type[LoadFunction]] = {
+class ExcelLoadFunction(LoadPipeline[ExcelLoadParams]):
+    """
+    Load pipeline for exporting DataFrames to Excel files.
+    """
+
+    action = "load"
+    params_type = ExcelLoadParams
+    purpose = "Export a DataFrame to an Excel file."
+
+    steps = [
+        "validate_load",
+        "build_path",
+        "convert_datetime_columns",
+        "write_excel",
+    ]
+
+
+class CSVLoadFunction(LoadPipeline[CSVLoadParams]):
+    """
+    Load pipeline for exporting DataFrames to CSV files.
+    """
+
+    action = "load"
+    params_type = CSVLoadParams
+    purpose = "Export a DataFrame to a CSV file."
+
+    steps = [
+        "validate_load",
+        "build_path",
+        "write_csv",
+    ]
+
+
+class SQLLoadFunction(LoadPipeline[SQLLoadParams]):
+    """
+    Load pipeline for SQL database outputs.
+    """
+
+    action = "load"
+    params_type = SQLLoadParams
+    purpose = "Persist a DataFrame into a SQL database table."
+
+    internal_functions = LOAD_INTERNAL_FUNCTIONS
+
+    steps = [
+        "validate_sql_load",
+        "write_sql",
+    ]
+
+
+class APILoadParams(LoadPipeline[ExcelLoadParams]):
+    """Parameters required to load data into an external API."""
+
+    url: str
+    method: Literal["POST", "PUT", "PATCH"] = "POST"
+    headers: Optional[Dict[str, str]] = None
+    timeout: int = 30
+    batch_size: Optional[int] = None
+    raise_for_status: bool = True
+
+    purpose = "Parameters required to send data to an external API."
+    steps = [
+        "validate_api_load",
+        "write_api",
+    ]
+
+
+LOAD_FUNCTION_CLASSES: Dict[str, Type[FraguaFunction]] = {
     "excel": ExcelLoadFunction,
+    "csv": CSVLoadFunction,
+    "sql": SQLLoadFunction,
 }
