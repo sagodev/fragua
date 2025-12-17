@@ -5,72 +5,162 @@ LoadStyle types for various data Load methods.
 from typing import Any, Dict, Type
 import pandas as pd
 
-from fragua.load.functions.load_functions import ExcelLoadFunction
-from fragua.load.params.base import LoadParams
-from fragua.load.params.generic_types import ExcelLoadParamsT
-from fragua.load.params.load_params import ExcelLoadParams
-from fragua.load.styles.base import LoadStyle
+from fragua.core.style import FraguaStyle
+from fragua.load.functions.load_functions import (
+    APILoadFunction,
+    CSVLoadFunction,
+    ExcelLoadFunction,
+    SQLLoadFunction,
+)
+from fragua.load.params.load_params import (
+    APILoadParams,
+    CSVLoadParams,
+    ExcelLoadParams,
+    SQLLoadParams,
+)
 
 
-class ExcelLoadStyle(LoadStyle[ExcelLoadParamsT]):
+class ExcelLoadStyle(FraguaStyle[ExcelLoadParams]):
     """
     Load style for exporting tabular data to Excel files.
 
-    This style coordinates the loading process by delegating execution
-    to the corresponding `ExcelLoadFunction`, using the parameters
-    provided through an `ExcelLoadParams` instance.
+    Delegates the loading logic to ExcelLoadFunction.
     """
 
-    def summary_fields(self) -> Dict[str, Any]:
-        """
-        Return a structured description of this load style.
+    action = "load"
+    function = ExcelLoadFunction.__name__
+    params_type = ExcelLoadParams.__name__
+    purpose = "Export tabular data to an Excel file."
 
-        The summary provides metadata used for introspection,
-        documentation, and configuration validation.
-
-        Returns:
-            Dict[str, Any]:
-                Dictionary describing the style purpose, target,
-                expected parameters, and underlying function.
-        """
-        return {
-            "style_name": self.__class__.__name__,
-            "purpose": "Export tabular data to an Excel file.",
-            "action": "load",
-            "target": "Excel file",
-            "parameters_type": "ExcelLoadParams",
-            "function": "ExcelLoadFunction",
-            "fields": {
-                "destination": "Directory where the Excel file will be written.",
-                "file_name": "Name of the Excel file to create or overwrite.",
-                "sheet_name": "Worksheet name where data will be written.",
-                "index": "Whether to include DataFrame index.",
-            },
-        }
-
-    def load(self, params: ExcelLoadParams) -> pd.DataFrame:
+    def execute(
+        self,
+        params: ExcelLoadParams,
+        input_data: pd.DataFrame | None = None,
+        context: Any = None,
+    ) -> pd.DataFrame:
         """
         Execute the Excel load operation.
 
-        This method delegates the actual writing logic to
-        `ExcelLoadFunction`, returning the DataFrame that was persisted.
-
         Args:
-            params (ExcelLoadParams):
-                Parameters defining the Excel output configuration.
+            params (ExcelLoadParams): Parameters defining the Excel output configuration.
+            input_data (pd.DataFrame | None): DataFrame to be written.
+            context (Any): Optional runtime context.
 
         Returns:
-            pd.DataFrame:
-                The DataFrame that was written to the Excel file.
+            pd.DataFrame: The DataFrame that was persisted.
         """
-        return ExcelLoadFunction(params).execute()
+        df = pd.DataFrame() if input_data is None else input_data
+
+        return ExcelLoadFunction().execute(
+            input_data=df, params=params, context=context
+        )
 
 
-# ---------------------------------------------------------------------- #
-# Future Styles (SQL, API, etc.)
-# ---------------------------------------------------------------------- #
-# No implementations yet.
+class CSVLoadStyle(FraguaStyle[CSVLoadParams]):
+    """
+    Load style for exporting tabular data to CSV files.
 
-LOAD_STYLE_CLASSES: Dict[str, Type[LoadStyle[LoadParams]]] = {
+    Delegates the loading logic to CSVLoadFunction.
+    """
+
+    action = "load"
+    function = SQLLoadFunction.__name__
+    params_type = CSVLoadParams.__name__
+    purpose = "Export tabular data to a CSV file."
+
+    def execute(
+        self,
+        params: CSVLoadParams,
+        input_data: pd.DataFrame | None = None,
+        context: Any = None,
+    ) -> pd.DataFrame:
+        """
+        Execute the CSV load operation.
+
+        Args:
+            params (CSVLoadParams): Parameters defining the CSV output configuration.
+            input_data (pd.DataFrame | None): DataFrame to be written.
+            context (Any): Optional runtime context.
+
+        Returns:
+            pd.DataFrame: The DataFrame that was persisted.
+        """
+        df = pd.DataFrame() if input_data is None else input_data
+
+        return CSVLoadFunction().execute(input_data=df, params=params, context=context)
+
+
+class SQLLoadStyle(FraguaStyle[SQLLoadParams]):
+    """
+    Load style for inserting or updating tabular data in a SQL database.
+
+    Delegates the loading logic to SQLLoadFunction.
+    """
+
+    action = "load"
+    function = SQLLoadFunction.__name__
+    params_type = SQLLoadParams.__name__
+    purpose = "Load tabular data into a SQL database."
+
+    def execute(
+        self,
+        params: SQLLoadParams,
+        input_data: pd.DataFrame | None = None,
+        context: Any = None,
+    ) -> pd.DataFrame:
+        """
+        Execute the SQL load operation.
+
+        Args:
+            params (SQLLoadParams): Parameters defining the SQL target configuration.
+            input_data (pd.DataFrame | None): DataFrame to be loaded.
+            context (Any): Optional runtime context.
+
+        Returns:
+            pd.DataFrame: The DataFrame that was persisted.
+        """
+        df = pd.DataFrame() if input_data is None else input_data
+
+        return SQLLoadFunction().execute(input_data=df, params=params, context=context)
+
+
+class APILoadStyle(FraguaStyle[APILoadParams]):
+    """
+    Load style for sending tabular data to a REST API endpoint.
+
+    Delegates the loading logic to APILoadFunction.
+    """
+
+    action = "load"
+    function = APILoadFunction.__name__
+    params_type = APILoadParams.__name__
+    purpose = "Send tabular data to a REST API over HTTP."
+
+    def execute(
+        self,
+        params: APILoadParams,
+        input_data: pd.DataFrame | None = None,
+        context: Any = None,
+    ) -> pd.DataFrame:
+        """
+        Execute the API load operation.
+
+        Args:
+            params (APILoadParams): Parameters defining the API target configuration.
+            input_data (pd.DataFrame | None): DataFrame to be sent.
+            context (Any): Optional runtime context.
+
+        Returns:
+            pd.DataFrame: The DataFrame that was sent (as a reference or confirmation).
+        """
+        df = pd.DataFrame() if input_data is None else input_data
+
+        return APILoadFunction().execute(input_data=df, params=params, context=context)
+
+
+LOAD_STYLE_CLASSES: Dict[str, Type[FraguaStyle]] = {
     "excel": ExcelLoadStyle,
+    "csv": CSVLoadStyle,
+    "sql": SQLLoadStyle,
+    "api": APILoadStyle,
 }
