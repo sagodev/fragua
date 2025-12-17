@@ -7,14 +7,14 @@ functions, styles, and agents.
 """
 
 from typing import Any, Dict, cast
+from fragua.core.function import FraguaFunction
+from fragua.core.params import FraguaParams
 from fragua.core.set import FraguaSet
+from fragua.core.style import FraguaStyle
 from fragua.transform import (
     TRANSFORM_FUNCTION_CLASSES,
-    TRANSFORM_PARAMS_CLASSES,
+    TRANSFORM_PARAMS_SCHEMAS,
     TRANSFORM_STYLE_CLASSES,
-    TransformStyle,
-    TransformFunction,
-    TransformParams,
     Transformer,
 )
 
@@ -51,8 +51,8 @@ class TransformParamsSet(FraguaSet):
         is enabled.
         """
         if self.fg_config:
-            for name, cls in TRANSFORM_PARAMS_CLASSES.items():
-                instance = cls(name)
+            for name, cls in TRANSFORM_PARAMS_SCHEMAS.items():
+                instance = cls()
                 self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
@@ -68,7 +68,7 @@ class TransformParamsSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
         for name, instance in self.get_all().items():
-            obj = cast(TransformParams, instance)
+            obj = cast(FraguaParams, instance)
             result[name] = obj.summary()
 
         return result
@@ -122,7 +122,7 @@ class TransformFunctionSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
         for name, instance in self.get_all().items():
-            obj = cast(TransformFunction, instance)
+            obj = cast(FraguaFunction, instance)
             result[name] = obj.summary()
 
         return result
@@ -173,7 +173,7 @@ class TransformStyleSet(FraguaSet):
         """
         result: Dict[str, Dict[str, Any]] = {}
         for name, instance in self.get_all().items():
-            obj = cast(TransformStyle[TransformParams], instance)
+            obj = cast(FraguaStyle[FraguaParams], instance)
             result[name] = obj.summary()
 
         return result
@@ -208,7 +208,7 @@ class TransformAgentSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(Transformer[TransformParams], instance)
+            obj = cast(Transformer[FraguaParams], instance)
             result[name] = obj.summary()
 
         return result
