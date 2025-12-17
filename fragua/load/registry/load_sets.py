@@ -1,10 +1,18 @@
-"""Load Sets Module."""
+"""
+Load Sets Module.
 
-from typing import Any, Dict, cast
+Defines the collection sets used to register and organize all loading-
+related components in the Fragua ETL framework, including parameters,
+functions, styles, and agents.
+"""
+
+from typing import Any, Dict
+
 from fragua.core.function import FraguaFunction
 from fragua.core.params import FraguaParams
 from fragua.core.set import FraguaSet
 from fragua.core.style import FraguaStyle
+
 from fragua.load import (
     LOAD_FUNCTION_CLASSES,
     LOAD_PARAMS_SCHEMAS,
@@ -13,197 +21,79 @@ from fragua.load import (
 )
 
 
-class LoadParamsSet(FraguaSet):
+class LoadParamsSet(FraguaSet[FraguaParams]):
     """
-    Set that registers and manages load parameter classes.
-
-    This set contains all parameter definitions required by load styles
-    to configure how data is written to external destinations.
+    Set containing load parameter schema classes.
     """
 
-    def __init__(self, fg_config: bool, set_name: str = "params") -> None:
-        """
-        Initialize the LoadParamsSet.
-
-        Args:
-            fg_config (bool):
-                Flag indicating whether parameter classes should be loaded
-                from the Fragua configuration.
-            set_name (str):
-                Logical name of the set within the registry.
-        """
-        super().__init__(set_name)
+    def __init__(self, fg_config: bool, section_name: str = "params") -> None:
+        super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_params()
 
     def _initialize_params(self) -> None:
-        """
-        Register all predefined load parameter classes.
+        if not self.fg_config:
+            return
 
-        Parameter classes are loaded only when Fragua configuration
-        is enabled.
-        """
-        if self.fg_config:
-            for name, cls in LOAD_PARAMS_SCHEMAS.items():
-                instance = cls()
-                self.add(name, instance)
+        for name, params_cls in LOAD_PARAMS_SCHEMAS.items():
+            instance = params_cls()
+            self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Generate a summary of all registered load parameter classes.
-
-        Returns:
-            Dict[str, Dict[str, Any]]:
-                A dictionary keyed by parameter name containing
-                metadata and field descriptions for each parameter class.
-        """
-        result: Dict[str, Dict[str, Any]] = {}
-
-        for name, instance in self.get_all().items():
-            obj = cast(FraguaParams, instance)
-            result[name] = obj.summary()
-
-        return result
+        return {name: params.summary() for name, params in self.get_all().items()}
 
 
-class LoadFunctionSet(FraguaSet):
+class LoadFunctionSet(FraguaSet[FraguaFunction[FraguaParams]]):
     """
-    Set that registers and manages load function classes.
-
-    Load functions implement the concrete logic responsible for
-    writing data to external systems or storage layers.
+    Set containing load function classes.
     """
 
-    def __init__(self, fg_config: bool, set_name: str = "functions") -> None:
-        """
-        Initialize the LoadFunctionSet.
-
-        Args:
-            fg_config (bool):
-                Flag indicating whether function classes should be loaded
-                from the Fragua configuration.
-            set_name (str):
-                Logical name of the set within the registry.
-        """
-        super().__init__(set_name)
+    def __init__(self, fg_config: bool, section_name: str = "functions") -> None:
+        super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_functions()
 
     def _initialize_functions(self) -> None:
-        """
-        Register all predefined load function classes.
+        if not self.fg_config:
+            return
 
-        Function classes are loaded only when Fragua configuration
-        is enabled.
-        """
-        if self.fg_config:
-            for name, cls in LOAD_FUNCTION_CLASSES.items():
-                instance = cls()
-                self.add(name, instance)
+        for name, func_cls in LOAD_FUNCTION_CLASSES.items():
+            instance = func_cls()
+            self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Generate a summary of all registered load functions.
-
-        Returns:
-            Dict[str, Dict[str, Any]]:
-                A dictionary keyed by function name containing
-                high-level metadata for each load function.
-        """
-        result: Dict[str, Dict[str, Any]] = {}
-
-        for name, instance in self.get_all().items():
-            obj = cast(FraguaFunction, instance)
-            result[name] = obj.summary()
-
-        return result
+        return {name: function.summary() for name, function in self.get_all().items()}
 
 
-class LoadStyleSet(FraguaSet):
+class LoadStyleSet(FraguaSet[FraguaStyle[FraguaParams]]):
     """
-    Set that registers and manages load style classes.
-
-    Load styles coordinate the execution of load functions by
-    resolving parameters, applying transformations, and invoking
-    the appropriate function logic.
+    Set containing load style classes.
     """
 
-    def __init__(self, fg_config: bool, set_name: str = "styles") -> None:
-        """
-        Initialize the LoadStyleSet.
-
-        Args:
-            fg_config (bool):
-                Flag indicating whether style classes should be loaded
-                from the Fragua configuration.
-            set_name (str):
-                Logical name of the set within the registry.
-        """
-        super().__init__(set_name)
+    def __init__(self, fg_config: bool, section_name: str = "styles") -> None:
+        super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_styles()
 
     def _initialize_styles(self) -> None:
-        """
-        Register all predefined load style classes.
+        if not self.fg_config:
+            return
 
-        Style classes are loaded only when Fragua configuration
-        is enabled.
-        """
-        if self.fg_config:
-            for name, cls in LOAD_STYLE_CLASSES.items():
-                instance = cls()
-                self.add(name, instance)
+        for name, style_cls in LOAD_STYLE_CLASSES.items():
+            instance = style_cls()
+            self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Generate a summary of all registered load styles.
-
-        Returns:
-            Dict[str, Dict[str, Any]]:
-                A dictionary keyed by style name containing
-                metadata describing how each load style operates.
-        """
-        result: Dict[str, Dict[str, Any]] = {}
-
-        for name, instance in self.get_all().items():
-            obj = cast(FraguaStyle[Any], instance)
-            result[name] = obj.summary()
-
-        return result
+        return {name: style.summary() for name, style in self.get_all().items()}
 
 
-class LoadAgentSet(FraguaSet):
+class LoadAgentSet(FraguaSet[Loader[FraguaParams]]):
     """
-    Set that registers and manages load agent instances.
-
-    Load agents are responsible for orchestrating the execution
-    of load workflows and interacting with the warehouse layer.
+    Set containing load agent instances.
     """
 
-    def __init__(self, set_name: str = "agents") -> None:
-        """
-        Initialize the LoadAgentSet.
-
-        Args:
-            set_name (str):
-                Logical name of the set within the registry.
-        """
-        super().__init__(set_name)
+    def __init__(self, section_name: str = "agents") -> None:
+        super().__init__(section_name)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Generate a summary of all registered load agents.
-
-        Returns:
-            Dict[str, Dict[str, Any]]:
-                A dictionary keyed by agent name containing
-                runtime and configuration metadata.
-        """
-        result: Dict[str, Dict[str, Any]] = {}
-
-        for name, instance in self.get_all().items():
-            obj = cast(Loader[FraguaParams], instance)
-            result[name] = obj.summary()
-
-        return result
+        return {name: agent.summary() for name, agent in self.get_all().items()}
