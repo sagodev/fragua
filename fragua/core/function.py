@@ -3,7 +3,7 @@ Base abstract class for all function schemas used by styles in Fragua.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Iterable, Optional, Type
+from typing import Any, Dict, Generic, Iterable, Optional, Type, TypeVar
 
 from fragua.core.component import FraguaComponent
 from fragua.core.params import FraguaParamsT
@@ -63,3 +63,6 @@ class FraguaFunction(FraguaComponent, ABC, Generic[FraguaParamsT]):
             summary["steps"] = self.steps
 
         return summary
+
+
+FraguaFunctionT = TypeVar("FraguaFunctionT", bound=FraguaFunction)
