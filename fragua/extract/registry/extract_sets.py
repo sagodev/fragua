@@ -1,15 +1,15 @@
 """Extract Sections Module."""
 
 from typing import Any, Dict, cast
+from fragua.core.function import FraguaFunction
+from fragua.core.params import FraguaParams
 from fragua.core.set import FraguaSet
 
+from fragua.core.style import FraguaStyle
 from fragua.extract import (
     EXTRACT_FUNCTION_CLASSES,
-    EXTRACT_PARAMS_CLASSES,
+    EXTRACT_PARAMS_SCHEMAS,
     EXTRACT_STYLE_CLASSES,
-    ExtractStyle,
-    ExtractFunction,
-    ExtractParams,
     Extractor,
 )
 
@@ -31,8 +31,8 @@ class ExtractParamsSet(FraguaSet):
         if not self.fg_config:
             return
 
-        for name, cls in EXTRACT_PARAMS_CLASSES.items():
-            instance = cls(name)
+        for name, cls in EXTRACT_PARAMS_SCHEMAS.items():
+            instance = cls()
             self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
@@ -42,7 +42,7 @@ class ExtractParamsSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(ExtractParams, instance)
+            obj = cast(FraguaFunction, instance)
             result[name] = obj.summary()
 
         return result
@@ -76,7 +76,7 @@ class ExtractFunctionSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(ExtractFunction, instance)
+            obj = cast(FraguaFunction, instance)
             result[name] = obj.summary()
 
         return result
@@ -110,7 +110,7 @@ class ExtractStyleSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(ExtractStyle[Any], instance)
+            obj = cast(FraguaStyle, instance)
             result[name] = obj.summary()
 
         return result
@@ -131,7 +131,7 @@ class ExtractAgentSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            agent = cast(Extractor[ExtractParams], instance)
+            agent = cast(Extractor[FraguaParams], instance)
             result[name] = agent.summary()
 
         return result
