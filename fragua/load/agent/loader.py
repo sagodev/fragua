@@ -142,7 +142,7 @@ class Loader(FraguaAgent[FraguaParamsT]):
                 setattr(params_instance, "sheet_name", name)
 
             # -------- Execute style --------
-            style_instance.use(params_instance)
+            style_instance.execute(params_instance)
 
             # -------- Log operation --------
             self._add_operation(style, params_instance)

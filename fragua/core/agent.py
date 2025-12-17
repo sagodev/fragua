@@ -384,7 +384,7 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         params_instance = self._instantiate_params(style, params, **kwargs)
         style_instance = self._instantiate_style(style)
 
-        stylized_data = style_instance.use(params_instance)
+        stylized_data = style_instance.execute(params_instance)
         storage = self.create_storage(stylized_data)
 
         self._generate_operation_metadata(style, storage, params_instance)
