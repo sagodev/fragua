@@ -52,5 +52,21 @@ class FraguaStyle(FraguaComponent, ABC, Generic[FraguaParamsT]):
             "parameters_type": self.params_type,
         }
 
+    def summary(self) -> Dict[str, Any]:
+        """
+        Generate a structured summary describing the style.
+
+        The summary includes the style type, name, and detailed
+        field-level information provided by the concrete implementation.
+
+        Returns:
+            A dictionary representing the style summary.
+        """
+        return {
+            "type": "style",
+            "name": self.__class__.__name__,
+            "fields": self.summary_fields(),
+        }
+
 
 FraguaStyleT = TypeVar("FraguaStyleT", bound=FraguaStyle)
