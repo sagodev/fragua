@@ -1,11 +1,18 @@
-"""Extract Sections Module."""
+"""
+Extract Sections Module.
 
-from typing import Any, Dict, cast
+Defines the collection sets used to register and organize all extraction-
+related components in the Fragua ETL framework, including parameters,
+functions, styles, and agents.
+"""
+
+from typing import Any, Dict
+
 from fragua.core.function import FraguaFunction
-from fragua.core.params import FraguaParams
 from fragua.core.set import FraguaSet
-
+from fragua.core.params import FraguaParams
 from fragua.core.style import FraguaStyle
+
 from fragua.extract import (
     EXTRACT_FUNCTION_CLASSES,
     EXTRACT_PARAMS_SCHEMAS,
@@ -14,7 +21,7 @@ from fragua.extract import (
 )
 
 
-class ExtractParamsSet(FraguaSet):
+class ExtractParamsSet(FraguaSet[FraguaParams]):
     """
     Set containing extract parameter schema classes.
     """
@@ -25,30 +32,18 @@ class ExtractParamsSet(FraguaSet):
         self._initialize_params()
 
     def _initialize_params(self) -> None:
-        """
-        Register built-in extract parameter classes.
-        """
         if not self.fg_config:
             return
 
-        for name, cls in EXTRACT_PARAMS_SCHEMAS.items():
-            instance = cls()
+        for name, params_cls in EXTRACT_PARAMS_SCHEMAS.items():
+            instance = params_cls()
             self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Return a structured summary of all extract parameter schemas.
-        """
-        result: Dict[str, Dict[str, Any]] = {}
-
-        for name, instance in self.get_all().items():
-            obj = cast(FraguaFunction, instance)
-            result[name] = obj.summary()
-
-        return result
+        return {name: params.summary() for name, params in self.get_all().items()}
 
 
-class ExtractFunctionSet(FraguaSet):
+class ExtractFunctionSet(FraguaSet[FraguaFunction[FraguaParams]]):
     """
     Set containing extract function classes.
     """
@@ -59,30 +54,18 @@ class ExtractFunctionSet(FraguaSet):
         self._initialize_functions()
 
     def _initialize_functions(self) -> None:
-        """
-        Register built-in extract functions.
-        """
         if not self.fg_config:
             return
 
-        for name, cls in EXTRACT_FUNCTION_CLASSES.items():
-            instance = cls()
+        for name, func_cls in EXTRACT_FUNCTION_CLASSES.items():
+            instance = func_cls()
             self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Return a structured summary of all extract functions.
-        """
-        result: Dict[str, Dict[str, Any]] = {}
-
-        for name, instance in self.get_all().items():
-            obj = cast(FraguaFunction, instance)
-            result[name] = obj.summary()
-
-        return result
+        return {name: function.summary() for name, function in self.get_all().items()}
 
 
-class ExtractStyleSet(FraguaSet):
+class ExtractStyleSet(FraguaSet[FraguaStyle[FraguaParams]]):
     """
     Set containing extract style classes.
     """
@@ -93,30 +76,18 @@ class ExtractStyleSet(FraguaSet):
         self._initialize_styles()
 
     def _initialize_styles(self) -> None:
-        """
-        Register built-in extract styles.
-        """
         if not self.fg_config:
             return
 
-        for name, cls in EXTRACT_STYLE_CLASSES.items():
-            instance = cls()
+        for name, style_cls in EXTRACT_STYLE_CLASSES.items():
+            instance = style_cls()
             self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Return a structured summary of all extract styles.
-        """
-        result: Dict[str, Dict[str, Any]] = {}
-
-        for name, instance in self.get_all().items():
-            obj = cast(FraguaStyle, instance)
-            result[name] = obj.summary()
-
-        return result
+        return {name: style.summary() for name, style in self.get_all().items()}
 
 
-class ExtractAgentSet(FraguaSet):
+class ExtractAgentSet(FraguaSet[Extractor[FraguaParams]]):
     """
     Set containing extract agent instances.
     """
@@ -125,13 +96,4 @@ class ExtractAgentSet(FraguaSet):
         super().__init__(section_name)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Return a structured summary of all registered extract agents.
-        """
-        result: Dict[str, Dict[str, Any]] = {}
-
-        for name, instance in self.get_all().items():
-            agent = cast(Extractor[FraguaParams], instance)
-            result[name] = agent.summary()
-
-        return result
+        return {name: agent.summary() for name, agent in self.get_all().items()}
