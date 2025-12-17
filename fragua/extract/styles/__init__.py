@@ -7,8 +7,6 @@ This module contains:
 - Dict registry with each Style class.('name': class)
 """
 
-from .base import ExtractStyle
-
 from .extract_styles import (
     CSVExtractStyle,
     ExcelExtractStyle,
@@ -19,7 +17,6 @@ from .extract_styles import (
 
 
 __all__ = [
-    "ExtractStyle",
     "CSVExtractStyle",
     "ExcelExtractStyle",
     "SQLExtractStyle",

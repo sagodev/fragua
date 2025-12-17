@@ -7,8 +7,6 @@ This module contains:
 - Dict registry with each Style class.('name': class)
 """
 
-from .base import TransformStyle
-
 from .transform_styles import (
     MLTransformStyle,
     ReportTransformStyle,
@@ -17,7 +15,6 @@ from .transform_styles import (
 )
 
 __all__ = [
-    "TransformStyle",
     "MLTransformStyle",
     "ReportTransformStyle",
     "AnalysisTransformStyle",

@@ -7,13 +7,19 @@ This module contains:
 - Dict registry with each Style class.('name': class)
 """
 
-from .base import LoadStyle
-
-from .load_styles import ExcelLoadStyle, LOAD_STYLE_CLASSES
+from .load_styles import (
+    ExcelLoadStyle,
+    SQLLoadStyle,
+    APILoadStyle,
+    CSVLoadStyle,
+    LOAD_STYLE_CLASSES,
+)
 
 
 __all__ = [
-    "LoadStyle",
     "ExcelLoadStyle",
+    "CSVLoadStyle",
+    "SQLLoadStyle",
+    "APILoadStyle",
     "LOAD_STYLE_CLASSES",
 ]

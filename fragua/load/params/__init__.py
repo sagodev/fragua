@@ -11,6 +11,7 @@ This module contains:
 from .load_params import (
     ExcelLoadParams,
     APILoadParams,
+    CSVLoadParams,
     SQLLoadParams,
     LOAD_PARAMS_SCHEMAS,
 )
@@ -18,6 +19,7 @@ from .load_params import (
 
 __all__ = [
     "ExcelLoadParams",
+    "CSVLoadParams",
     "SQLLoadParams",
     "APILoadParams",
     "LOAD_PARAMS_SCHEMAS",
