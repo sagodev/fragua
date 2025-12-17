@@ -1,14 +1,14 @@
 """Load Sets Module."""
 
 from typing import Any, Dict, cast
+from fragua.core.function import FraguaFunction
+from fragua.core.params import FraguaParams
 from fragua.core.set import FraguaSet
+from fragua.core.style import FraguaStyle
 from fragua.load import (
     LOAD_FUNCTION_CLASSES,
-    LOAD_PARAMS_CLASSES,
+    LOAD_PARAMS_SCHEMAS,
     LOAD_STYLE_CLASSES,
-    LoadStyle,
-    LoadFunction,
-    LoadParams,
     Loader,
 )
 
@@ -44,8 +44,8 @@ class LoadParamsSet(FraguaSet):
         is enabled.
         """
         if self.fg_config:
-            for name, cls in LOAD_PARAMS_CLASSES.items():
-                instance = cls(name)  # instanciar antes de agregar
+            for name, cls in LOAD_PARAMS_SCHEMAS.items():
+                instance = cls()
                 self.add(name, instance)
 
     def summary(self) -> Dict[str, Dict[str, Any]]:
@@ -60,7 +60,7 @@ class LoadParamsSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(LoadParams, instance)
+            obj = cast(FraguaParams, instance)
             result[name] = obj.summary()
 
         return result
@@ -113,7 +113,7 @@ class LoadFunctionSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(LoadFunction, instance)
+            obj = cast(FraguaFunction, instance)
             result[name] = obj.summary()
 
         return result
@@ -167,7 +167,7 @@ class LoadStyleSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(LoadStyle[Any], instance)
+            obj = cast(FraguaStyle[Any], instance)
             result[name] = obj.summary()
 
         return result
@@ -203,7 +203,7 @@ class LoadAgentSet(FraguaSet):
         result: Dict[str, Dict[str, Any]] = {}
 
         for name, instance in self.get_all().items():
-            obj = cast(Loader[LoadParams], instance)
+            obj = cast(Loader[FraguaParams], instance)
             result[name] = obj.summary()
 
         return result
