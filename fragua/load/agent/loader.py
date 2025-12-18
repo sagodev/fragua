@@ -9,9 +9,8 @@ stored Box objects and persisting their data into target destinations
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Optional, Union
+
 from fragua.core.agent import FraguaAgent
-
-
 from fragua.core.params import FraguaParamsT
 from fragua.core.storage import Box, Container
 from fragua.utils.logger import get_logger
@@ -27,122 +26,124 @@ class Loader(FraguaAgent[FraguaParamsT]):
     """
     Loader agent responsible for executing load workflows.
 
-    This agent:
+    The Loader:
     - retrieves Box objects from the Warehouse
     - groups them into a Container
-    - resolves load styles and parameters
-    - executes the load operation for each stored object
+    - executes load functions over each Box
+    - does not generate new data storages, but performs side effects
+      (files, databases, external systems)
     """
 
-    def __init__(self, name: str, environment: FraguaEnvironment):
+    def __init__(self, name: str, environment: FraguaEnvironment) -> None:
         """
-        _toggleLoader agent initialization.
+        Initialize the Loader agent.
 
-                Args:
-                    name (str): Agent identifier.
-                    environment (Environment): Active Fragua environment.
+        Args:
+            name: Agent identifier.
+            environment: Active Fragua environment.
         """
         super().__init__(agent_name=name, environment=environment)
-        self.role: str = "loader"
-        self.action: str = "load"
-        self.storage_type: str = "Container"
+        self.role = "loader"
+        self.action = "load"
+        self.storage_type = "Container"
 
-    def create_container(self, content: Union[str, List[str]]) -> Container:
+    # ----------------- Container helpers ----------------- #
+    def _create_container(self, sources: Union[str, List[str]]) -> Container:
         """
         Create a Container populated with Box objects from the warehouse.
 
         Args:
-            content (Union[str, List[str]]): One or more Box names
-                to retrieve from the warehouse.
+            sources: One or more storage names to retrieve.
 
         Returns:
-            Container: A container holding the resolved Box objects.
+            A Container holding the resolved Box objects.
 
         Raises:
-            TypeError: If the created storage is not a Container or
-                if any resolved object is not a Box.
+            TypeError: If resolved objects are not Box instances.
         """
-        container = self.create_storage(data=None)
+        container = self.create_storage(
+            style_name=self.action,
+            storage_name="load_container",
+            data=None,
+        )
 
         if not isinstance(container, Container):
-            raise TypeError(
-                f"Expected a Container, got {type(container).__name__} ({container})"
-            )
+            raise TypeError(f"Expected Container, got {type(container).__name__}.")
 
-        storage_names = [content] if isinstance(content, str) else content
+        names = [sources] if isinstance(sources, str) else sources
 
-        for name in storage_names:
-            storage = self.get_from_warehouse(name)
+        for name in names:
+            box = self.get_from_warehouse(name)
 
-            if not isinstance(storage, Box):
-                raise TypeError(
-                    f"Type {type(storage).__name__} can't be stored in a container."
-                )
+            if not isinstance(box, Box):
+                raise TypeError(f"Storage '{name}' is not a Box and cannot be loaded.")
 
-            container.add_storage(name, storage)
+            container.add_storage(name, box)
 
         return container
 
+    # ----------------- Work method ----------------- #
     def work(
         self,
-        /,
         style: str,
-        apply_to: Union[str | list[str], None] = None,
+        apply_to: Union[str, List[str], None] = None,
         save_as: Optional[str] = None,
         params: Optional[FraguaParamsT] = None,
+        input_data: Any = None,
         **kwargs: Any,
     ) -> None:
         """
-        Execute a load workflow for one or more stored Box objects.
+        Execute a load workflow.
 
-        Workflow steps:
-            1. Resolve the load style.
-            2. Collect Box objects into a Container.
-            3. Resolve or instantiate load parameters.
-            4. Apply the load style to each Box's data.
-            5. Register the operation in the agent log.
+        The Loader differs from Extract/Transform in that:
+        - it operates on existing Box objects
+        - it executes load functions for side effects
+        - it does not persist new storages automatically
 
         Args:
-            style (str): Load style identifier (e.g. "excel", "sql").
-            apply_to (Union[str, list[str]]): Name(s) of Box objects
-                to be loaded.
-            save_as (Optional[str]): Optional storage alias (reserved).
-            params (Optional[LoadParamsT]): Explicit load parameters.
-            **kwargs: Additional keyword arguments used to build params.
+            style: Load style identifier.
+            apply_to: One or more Box names to load.
+            save_as: Reserved (not used for load operations).
+            params: Optional pre-instantiated Params object.
+            **kwargs: Additional arguments for Params resolution.
 
         Raises:
-            TypeError: If required arguments are missing or invalid.
+            TypeError: If apply_to is missing.
         """
         if apply_to is None:
-            raise TypeError("Missing required attribute: 'apply_to'.")
+            raise TypeError("Missing required argument: 'apply_to'.")
 
         style = style.lower()
 
-        # -------- Resolve style --------
-        style_instance = self._instantiate_style(style)
+        # 1. Resolve style specification
+        style_spec = self._resolve_style(style)
 
-        # -------- Create container --------
-        container: Container = self.create_container(apply_to)
+        # 2. Resolve function
+        func = self._resolve_function(style_spec["function_key"])
 
-        # -------- Apply style to each storage --------
+        # 3. Create container
+        container = self._create_container(apply_to)
+
+        # 4. Execute load for each Box
         for name in container.list_storages():
             box = container.get_storage(name)
 
-            # -------- Resolve params --------
-            if params is None:
-                kwargs["data"] = box.data
-                params_instance = self._instantiate_params(style, None, **kwargs)
-            else:
-                params_instance = params
+            # Resolve params
+            params_instance = self._resolve_params(
+                style,
+                params,
+                data=box.data,
+                **kwargs,
+            )
 
-            # -------- Excel-specific adjustment --------
+            # Optional sheet_name alignment (Excel-like loaders)
             if hasattr(params_instance, "sheet_name") and not getattr(
                 params_instance, "sheet_name"
             ):
                 setattr(params_instance, "sheet_name", name)
 
-            # -------- Execute style --------
-            style_instance.execute(params_instance)
+            # Execute load function
+            func(input_data=box.data, params=params_instance, context=self)
 
-            # -------- Log operation --------
+            # Log operation (no storage created)
             self._add_operation(style, params_instance)
