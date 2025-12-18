@@ -3,11 +3,11 @@ Lightweight in-memory store structure.
 """
 
 from typing import Dict
-from fragua.core.component import FraguaComponent
+from fragua.core.fragua_instance import FraguaInstance
 from fragua.core.storage import Storage, Box
 
 
-class FraguaWarehouse(FraguaComponent):
+class FraguaWarehouse(FraguaInstance):
     """
     Lightweight in-memory container for persisted storage objects.
 
@@ -25,7 +25,7 @@ class FraguaWarehouse(FraguaComponent):
             warehouse_name: Identifier used to reference this warehouse
                 within the environment.
         """
-        super().__init__(component_name=warehouse_name)
+        super().__init__(instance_name=warehouse_name)
         self._warehouse: Dict[str, Storage[Box]] = {}
 
     @property

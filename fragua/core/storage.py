@@ -3,6 +3,7 @@ Base storage class for all storage objects in Fragua (Wagon, Box, Container).
 """
 
 from typing import Any, Dict, Generic, Optional, TypeVar
+from fragua.core.fragua_instance import FraguaInstance
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -11,27 +12,13 @@ T = TypeVar("T")
 logger = get_logger(__name__)
 
 
-class Storage(Generic[T]):
+class Storage(FraguaInstance, Generic[T]):
     """
-    Core storage abstraction for all persistable objects in Fragua.
-
-    A Storage instance encapsulates data along with a unified metadata
-    model. Metadata is automatically generated and attached whenever
-    data is assigned, enabling traceability, observability, and lineage
-    tracking across the ETL workflow.
-
-    Concrete storage types (e.g., Box, Container) specialize how data
-    is organized, but share the same metadata lifecycle.
+    Core runtime storage abstraction for all persistable objects in Fragua.
     """
 
-    def __init__(self, data: Optional[T] = None) -> None:
-        """
-        Initialize the storage with optional data.
-
-        Args:
-            data: Optional initial data to store. If provided, base
-                metadata is generated automatically.
-        """
+    def __init__(self, storage_name: str, data: Optional[T] = None) -> None:
+        super().__init__(instance_name=storage_name)
         self._data: Optional[T] = data
         self._metadata: dict[str, object] = {}
 
@@ -39,50 +26,9 @@ class Storage(Generic[T]):
             self._generate_base_metadata()
 
     @property
-    def data(self) -> T:
-        """
-        Return the stored data.
-
-        Raises:
-            ValueError: If the storage has not been initialized with data.
-        """
-        if self._data is None:
-            raise ValueError(f"{self.__class__.__name__} has no data assigned yet.")
+    def data(self) -> Optional[T]:
+        """Access the stored data."""
         return self._data
-
-    @data.setter
-    def data(self, value: T) -> None:
-        """
-        Set or replace the stored data.
-
-        Assigning data regenerates the base metadata to reflect the
-        updated state.
-
-        Args:
-            value: Data to store.
-        """
-        self._data = value
-        self._generate_base_metadata()
-
-    @property
-    def metadata(self) -> dict[str, object]:
-        """
-        Return the metadata associated with this storage.
-
-        Returns:
-            A dictionary containing metadata entries.
-        """
-        return self._metadata
-
-    @metadata.setter
-    def metadata(self, value: dict[str, object]) -> None:
-        """
-        Replace the entire metadata mapping.
-
-        Args:
-            value: New metadata dictionary.
-        """
-        self._metadata = value
 
     def _generate_base_metadata(self) -> None:
         """
@@ -94,14 +40,14 @@ class Storage(Generic[T]):
         metadata = generate_metadata(self, metadata_type="base")
         add_metadata_to_storage(self, metadata)
 
-    def __repr__(self) -> str:
-        """
-        Return a concise string representation of the storage.
-
-        Returns:
-            A string identifying the storage class.
-        """
-        return f"<{self.__class__.__name__}>"
+    def summary(self) -> Dict[str, Any]:
+        return {
+            "type": "storage",
+            "name": self.name,
+            "class": self.__class__.__name__,
+            "has_data": self._data is not None,
+            "metadata_keys": list(self._metadata.keys()),
+        }
 
 
 class Box(Storage[Any]):
@@ -121,14 +67,14 @@ class Container(Storage[Any]):
     multiple Boxes to be stored and managed under a single logical unit.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, container_name: str) -> None:
         """
         Initialize an empty Container.
 
         Containers do not hold direct data; instead, they manage a
         collection of named Box instances.
         """
-        super().__init__(data=None)
+        super().__init__(storage_name=container_name, data=None)
         self._content: Dict[str, Box] = {}
 
     def add_storage(self, storage_name: str, storage: Box) -> None:

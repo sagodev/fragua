@@ -3,78 +3,56 @@ Fragua Set class.
 """
 
 from abc import ABC
-from typing import Any, Dict, Generic, Optional, Type, TypeVar, cast
+from typing import Any, Dict, Generic, Optional, Type, TypeVar, cast, Literal
 
-from fragua.core.component import FraguaComponent
 from fragua.core.fragua_class import FraguaClass
 from fragua.core.fragua_instance import FraguaInstance
-
 
 T = TypeVar("T")
 
 
 class FraguaSet(ABC, Generic[T]):
     """
-    Abstract base class representing a logical set of Fragua elements.
+    Logical container for Fragua components.
 
-    A FraguaSet groups related items under a common scope (such as
-    params schemas, function factories, styles, or agent instances).
-    The stored elements may be either concrete instances or classes,
-    depending on the responsibility of the set.
+    A FraguaSet groups homogeneous elements under a common scope
+    (params schemas, functions, styles, agents, etc.).
+
+    The set is explicitly configured to store either declarative
+    classes or runtime instances.
     """
 
     def __init__(
         self,
         set_name: str,
-        component_type: Type[T] = FraguaComponent,
+        *,
+        content_kind: Literal["class", "instance"],
         components: Optional[Dict[str, T]] = None,
     ) -> None:
         """
-        Initialize the set with a name and optional preloaded elements.
+        Initialize the set.
 
         Args:
-            set_name: Identifier of the set within its parent registry.
-            components: Optional dictionary of pre-registered elements.
+            set_name:
+                Identifier of the set within its parent registry.
+            content_kind:
+                Declares whether the set stores classes or instances.
+            components:
+                Optional preloaded elements.
         """
         self.set_name = set_name
-        self.component_type = component_type
+        self.content_kind = content_kind
         self._components: Dict[str, T] = {} if components is None else components
 
     def _exists(self, key: str) -> bool:
-        """
-        Check whether an element exists in the set.
-
-        Args:
-            key: Element name.
-
-        Returns:
-            True if the element exists, False otherwise.
-        """
         return key in self._components
 
     def _not_exists(self, key: str) -> bool:
-        """
-        Check whether an element does not exist in the set.
-
-        Args:
-            key: Element name.
-
-        Returns:
-            True if the element does not exist, False otherwise.
-        """
         return key not in self._components
 
     def add(self, name: str, component: T) -> bool:
         """
         Add a new element to the set.
-
-        Args:
-            name: Name under which the element will be registered.
-            component: Element (instance or class) to add.
-
-        Returns:
-            True if the element was added successfully, False if a
-            component with the same name already exists.
         """
         if self._not_exists(name):
             self._components[name] = component
@@ -115,8 +93,7 @@ class FraguaSet(ABC, Generic[T]):
             old name does not exist or the new name is already in use.
         """
         if self._exists(old_name) and self._not_exists(new_name):
-            component = self._components.pop(old_name)
-            self._components[new_name] = component
+            self._components[new_name] = self._components.pop(old_name)
             return True
         return False
 
@@ -136,23 +113,25 @@ class FraguaSet(ABC, Generic[T]):
         """
         Return a structured summary of the set contents.
 
-        The summary adapts automatically depending on whether the stored
-        elements are declarative classes or runtime instances.
+        Delegates summary generation to the contained elements
+        according to the declared content kind.
         """
         result: Dict[str, Any] = {}
 
-        for name, component in self.get_all().items():
-            if isinstance(component, type) and issubclass(component, FraguaClass):
+        if self.content_kind == "class":
+            for name, component in self._components.items():
                 cls = cast(Type[FraguaClass], component)
                 result[name] = cls.summary()
 
-            elif isinstance(component, FraguaInstance):
-                result[name] = component.summary()
+        elif self.content_kind == "instance":
+            for name, component in self._components.items():
+                inst = cast(FraguaInstance, component)
+                result[name] = inst.summary()
 
-            else:
-                raise TypeError(
-                    f"Unsupported component type in FraguaSet '{self.set_name}': "
-                    f"{type(component).__name__}"
-                )
+        else:
+            raise RuntimeError(
+                f"Invalid content_kind for FraguaSet '{self.set_name}': "
+                f"{self.content_kind}"
+            )
 
         return result

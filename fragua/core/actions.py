@@ -1,71 +1,28 @@
 """Actions class."""
 
-from typing import Any, Dict
-from fragua.core.component import FraguaComponent
-from fragua.extract.registry.extract_registry import ExtractRegistry
-from fragua.load.registry.load_registry import LoadRegistry
-from fragua.transform.registry.transform_registry import TransformRegistry
+from typing import Any, Dict, Optional
+from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.registry import FraguaRegistry
 
 
-class FraguaActions(FraguaComponent):
-    """
-    Centralized container for ETL action registries.
+class FraguaActions(FraguaInstance):
+    """Container for all action registries (extract, transform, load)."""
 
-    This component groups and manages the registries associated with
-    each ETL action type (extract, transform, load). It acts as a
-    single access point for resolving action-specific components
-    within the Fragua Environment.
-    """
-
-    def __init__(self, fg_config: bool) -> None:
-        """
-        Initialize the FraguaActions component and its registries.
-
-        Args:
-            fg_config: Flag indicating whether the environment is
-                running in configuration mode.
-        """
-        super().__init__(component_name="fragua_actions")
-        self.fg_config = fg_config
-        self._extract = self._initialize_extract_registry()
-        self._transform = self._initialize_transform_registry()
-        self._load = self._initialize_load_registry()
-
-    def _initialize_extract_registry(self) -> ExtractRegistry:
-        """
-        Create and initialize the Extract registry.
-
-        Returns:
-            An initialized ExtractRegistry instance.
-        """
-        reg_name = "extract"
-        extract_registry = ExtractRegistry(reg_name, self.fg_config)
-        return extract_registry
-
-    def _initialize_transform_registry(self) -> TransformRegistry:
-        """
-        Create and initialize the Transform registry.
-
-        Returns:
-            An initialized TransformRegistry instance.
-        """
-        reg_name = "transform"
-        transform_registry = TransformRegistry(reg_name, self.fg_config)
-        return transform_registry
-
-    def _initialize_load_registry(self) -> LoadRegistry:
-        """
-        Create and initialize the Load registry.
-
-        Returns:
-            An initialized LoadRegistry instance.
-        """
-        reg_name = "load"
-        load_registry = LoadRegistry(reg_name, self.fg_config)
-        return load_registry
+    def __init__(
+        self,
+        extract: Optional[FraguaRegistry] = None,
+        transform: Optional[FraguaRegistry] = None,
+        load: Optional[FraguaRegistry] = None,
+    ) -> None:
+        super().__init__(instance_name="actions")
+        self._extract = FraguaRegistry("extract") if extract is None else extract
+        self._transform = (
+            FraguaRegistry("transform") if transform is None else transform
+        )
+        self._load = FraguaRegistry("load") if load is None else load
 
     @property
-    def extract(self) -> ExtractRegistry:
+    def extract(self) -> FraguaRegistry:
         """
         Access the Extract action registry.
 
@@ -75,7 +32,7 @@ class FraguaActions(FraguaComponent):
         return self._extract
 
     @property
-    def transform(self) -> TransformRegistry:
+    def transform(self) -> FraguaRegistry:
         """
         Access the Transform action registry.
 
@@ -85,7 +42,7 @@ class FraguaActions(FraguaComponent):
         return self._transform
 
     @property
-    def load(self) -> LoadRegistry:
+    def load(self) -> FraguaRegistry:
         """
         Access the Load action registry.
 

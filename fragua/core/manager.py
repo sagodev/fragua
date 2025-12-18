@@ -7,7 +7,7 @@ from typing import Any, TypeAlias, Union, Optional, Mapping, Dict, List, Literal
 from datetime import datetime
 import copy as py_copy
 
-from fragua.core.component import FraguaComponent
+from fragua.core.fragua_instance import FraguaInstance
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 from fragua.core.warehouse import FraguaWarehouse
 from fragua.utils.logger import get_logger
@@ -22,7 +22,7 @@ StorageResult: TypeAlias = Union[
 ]
 
 
-class FraguaManager(FraguaComponent):
+class FraguaManager(FraguaInstance):
     """
     Central coordinator for managing Storage objects within a FraguaWarehouse.
 
@@ -39,7 +39,7 @@ class FraguaManager(FraguaComponent):
             manager_name: Logical name of the manager instance.
             warehouse: Warehouse instance to operate on.
         """
-        super().__init__(component_name=manager_name)
+        super().__init__(instance_name=manager_name)
         self.warehouse = warehouse
         self._movement_log: List[dict[str, object]] = []
         self._undo_stack: List[dict[str, Any]] = []

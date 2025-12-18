@@ -8,16 +8,18 @@ from fragua.core.component import FraguaComponent
 
 class FraguaInstance(FraguaComponent, ABC):
     """
-    Base class for runtime Fragua components.
+    Base class for all runtime instances in Fragua.
 
-    These components represent live, stateful objects created
-    during pipeline execution.
+    FraguaInstance represents stateful objects created during
+    environment execution (agents, managers, warehouses, etc.).
     """
+
+    def __init__(self, instance_name: str) -> None:
+        self.name = instance_name
 
     @abstractmethod
     def summary(self) -> Dict[str, Any]:
         """
-        Return a structured summary of the instance state.
-
-        Must reflect runtime configuration and execution status.
+        Return a structured summary describing the runtime state
+        of the instance.
         """

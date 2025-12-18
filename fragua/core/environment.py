@@ -2,42 +2,29 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Type, cast
+from typing import Any, Dict, List, Optional, Type, cast
 
 from fragua.core.agent import FraguaAgent
-from fragua.core.component import FraguaComponent
 from fragua.core.actions import FraguaActions
+from fragua.core.fragua_class import FraguaClass
+from fragua.core.fragua_instance import FraguaInstance
 from fragua.core.params import FraguaParams
+from fragua.core.registry import FraguaRegistry
 from fragua.core.set import FraguaSet
 from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.manager import FraguaManager
 
-from fragua.extract import Extractor
-from fragua.extract.registry.extract_registry import ExtractRegistry
-from fragua.extract.registry.extract_sets import (
-    ExtractAgentSet,
-    ExtractFunctionSet,
-    ExtractParamsSet,
-    ExtractStyleSet,
-)
 
-from fragua.load import Loader
-from fragua.load.registry.load_registry import LoadRegistry
-from fragua.load.registry.load_sets import (
-    LoadAgentSet,
-    LoadFunctionSet,
-    LoadParamsSet,
-    LoadStyleSet,
+from fragua.extract import Extractor, EXTRACT_STYLES, EXTRACT_FUNCTIONS, EXTRACT_PARAMS
+from fragua.transform import (
+    Transformer,
+    TRANSFORM_STYLES,
+    TRANSFORM_FUNCTIONS,
+    TRANSFORM_PARAMS,
 )
+from fragua.load import Loader, LOAD_STYLES, LOAD_FUNCTIONS, LOAD_PARAMS
 
-from fragua.transform import Transformer
-from fragua.transform.registry.transform_registry import TransformRegistry
-from fragua.transform.registry.transform_sets import (
-    TransformAgentSet,
-    TransformFunctionSet,
-    TransformParamsSet,
-    TransformStyleSet,
-)
+
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -46,7 +33,7 @@ logger = get_logger(__name__)
 # pylint: disable=too-many-public-methods
 
 
-class FraguaEnvironment(FraguaComponent):
+class FraguaEnvironment(FraguaInstance):
     """
     Core environment abstraction for Fragua.
 
@@ -78,7 +65,7 @@ class FraguaEnvironment(FraguaComponent):
                 functions, styles, and agents are automatically registered.
         """
 
-        super().__init__(component_name=env_name)
+        super().__init__(instance_name=env_name)
         self.env_type = env_type
         self.fg_config = fg_config
         self.warehouse = self._initialize_warehouse()
@@ -154,13 +141,87 @@ class FraguaEnvironment(FraguaComponent):
                 Container holding all action registries.
         """
 
-        actions = FraguaActions(self.fg_config)
+        def fg_actions() -> FraguaActions:
+            """Helper to populate actions with default Fragua sets."""
+            extract_registry = FraguaRegistry("extract")
+            transform_registry = FraguaRegistry("transform")
+            load_registry = FraguaRegistry("load")
+
+            fg_dicts = {
+                "extract": [EXTRACT_FUNCTIONS, EXTRACT_PARAMS, EXTRACT_STYLES],
+                "transform": [TRANSFORM_FUNCTIONS, TRANSFORM_PARAMS, TRANSFORM_STYLES],
+                "load": [LOAD_FUNCTIONS, LOAD_PARAMS, LOAD_STYLES],
+            }
+
+            def fill_registry(
+                registry: FraguaRegistry, dict_data: List[Dict[str, Any]]
+            ) -> None:
+                """
+                Populate registries with default Fragua sets.
+                """
+                for data in dict_data:
+                    for set_name, components in data.items():
+                        fragua_set = FraguaEnvironment.to_fragua_set(
+                            set_name, components
+                        )
+                        registry.add_set(set_name, fragua_set)
+
+            for action_type, fg_dict in fg_dicts.items():
+                if action_type == "extract":
+                    fill_registry(extract_registry, fg_dict)
+                elif action_type == "transform":
+                    fill_registry(transform_registry, fg_dict)
+                elif action_type == "load":
+                    fill_registry(load_registry, fg_dict)
+
+            return FraguaActions(
+                extract=extract_registry,
+                transform=transform_registry,
+                load=load_registry,
+            )
+
+        actions = fg_actions() if self.fg_config else FraguaActions()
         logger.info("Default actions initialized for environment '%s'.", self.name)
         return actions
 
+    # ---------------------- Converters ---------------------- #
+    @staticmethod
+    def to_fragua_set(set_name: str, dict_data: Dict[str, Any]) -> FraguaSet:
+        """
+        Convert a dictionary of components into a FraguaSet.
+
+        The method automatically detects whether the components are
+        classes or instances based on the type of the first element.
+
+        Args:
+            set_name: Name of the FraguaSet to create.
+            dict_data: Dictionary mapping keys to components.
+
+        Returns:
+            FraguaSet containing the provided components.
+        """
+        # Infer content_kind
+        first_value = next(iter(dict_data.values()), None)
+        if first_value is None:
+            content_kind = "class"  # default for empty dict
+        elif isinstance(first_value, type) and issubclass(first_value, FraguaClass):
+            content_kind = "class"
+        elif isinstance(first_value, FraguaInstance):
+            content_kind = "instance"
+        else:
+            # fallback: treat as 'class' by default
+            content_kind = "class"
+
+        # Create set and add elements
+        set_instance = FraguaSet(set_name=set_name, content_kind=content_kind)
+        for key, value in dict_data.items():
+            set_instance.add(key, value)
+
+        return set_instance
+
     # ---------------------- Helper Properties ---------------------- #
     @property
-    def extract(self) -> ExtractRegistry:
+    def extract(self) -> FraguaRegistry:
         """
         Access the Extract action registry.
 
@@ -172,7 +233,7 @@ class FraguaEnvironment(FraguaComponent):
         return self.actions.extract
 
     @property
-    def transform(self) -> TransformRegistry:
+    def transform(self) -> FraguaRegistry:
         """
         Access the Transform action registry.
 
@@ -184,7 +245,7 @@ class FraguaEnvironment(FraguaComponent):
         return self.actions.transform
 
     @property
-    def load(self) -> LoadRegistry:
+    def load(self) -> FraguaRegistry:
         """
         Access the Load action registry.
 
@@ -196,133 +257,133 @@ class FraguaEnvironment(FraguaComponent):
         return self.actions.load
 
     @property
-    def extract_agents(self) -> ExtractAgentSet:
+    def extract_agents(self) -> FraguaSet:
         """
         Retrieve the set of extract agents.
 
         Returns:
-            ExtractAgentSet:
+            FraguaSet:
                 Registered agents responsible for extract operations.
         """
         return self.extract.agents
 
     @property
-    def extract_params(self) -> ExtractParamsSet:
+    def extract_params(self) -> FraguaSet:
         """
         Retrieve the set of extract parameter classes.
 
         Returns:
-            ExtractParamsSet:
+            FraguaSet:
                 Parameter definitions used by extract styles and functions.
         """
         return self.extract.params
 
     @property
-    def extract_functions(self) -> ExtractFunctionSet:
+    def extract_functions(self) -> FraguaSet:
         """
         Retrieve the set of extract functions.
 
         Returns:
-            ExtractFunctionSet:
+            FraguaSet:
                 Callable units implementing extract logic.
         """
         return self.extract.functions
 
     @property
-    def extract_styles(self) -> ExtractStyleSet:
+    def extract_styles(self) -> FraguaSet:
         """
         Retrieve the set of extract styles.
 
         Returns:
-            ExtractStyleSet:
+            FraguaSet:
                 Styles that orchestrate extract functions and parameters.
         """
         return self.extract.styles
 
     @property
-    def transform_agents(self) -> TransformAgentSet:
+    def transform_agents(self) -> FraguaSet:
         """
         Retrieve the set of transform agents.
 
         Returns:
-            TransformAgentSet:
+            FraguaSet:
                 Agents responsible for transform operations.
         """
         return self.transform.agents
 
     @property
-    def transform_params(self) -> TransformParamsSet:
+    def transform_params(self) -> FraguaSet:
         """
         Retrieve the set of transform parameter classes.
 
         Returns:
-            TransformParamsSet:
+            FraguaSet:
                 Parameter definitions used during transformations.
         """
         return self.transform.params
 
     @property
-    def transform_functions(self) -> TransformFunctionSet:
+    def transform_functions(self) -> FraguaSet:
         """
         Retrieve the set of transform functions.
 
         Returns:
-            TransformFunctionSet:
+            FraguaSet:
                 Functions implementing transformation logic.
         """
         return self.transform.functions
 
     @property
-    def transform_styles(self) -> TransformStyleSet:
+    def transform_styles(self) -> FraguaSet:
         """
         Retrieve the set of transform styles.
 
         Returns:
-            TransformStyleSet:
+            FraguaSet:
                 Styles coordinating transform functions and parameters.
         """
         return self.transform.styles
 
     @property
-    def load_agents(self) -> LoadAgentSet:
+    def load_agents(self) -> FraguaSet:
         """
         Retrieve the set of load agents.
 
         Returns:
-            LoadAgentSet:
+            FraguaSet:
                 Agents responsible for load operations.
         """
         return self.load.agents
 
     @property
-    def load_params(self) -> LoadParamsSet:
+    def load_params(self) -> FraguaSet:
         """
         Retrieve the set of load parameter classes.
 
         Returns:
-            LoadParamsSet:
+            FraguaSet:
                 Parameter definitions used for load operations.
         """
         return self.load.params
 
     @property
-    def load_functions(self) -> LoadFunctionSet:
+    def load_functions(self) -> FraguaSet:
         """
         Retrieve the set of load functions.
 
         Returns:
-            LoadFunctionSet:
+            FraguaSet:
                 Functions implementing load logic.
         """
         return self.load.functions
 
     @property
-    def load_styles(self) -> LoadStyleSet:
+    def load_styles(self) -> FraguaSet:
         """
         Retrieve the set of load styles.
 
         Returns:
-            LoadStyleSet:
+            FraguaSet:
                 Styles coordinating load functions and parameters.
         """
         return self.load.styles
@@ -553,7 +614,7 @@ class FraguaEnvironment(FraguaComponent):
         self,
         action: str,
         function_name: str,
-        function: FraguaComponent,
+        function: FraguaClass,
     ) -> bool:
         """
         Register a new function in the corresponding action registry.
@@ -590,7 +651,7 @@ class FraguaEnvironment(FraguaComponent):
         self,
         action: str,
         function_name: Optional[str] = None,
-    ) -> Optional[FraguaComponent]:
+    ) -> Optional[FraguaClass]:
         """
         Retrieve a function by action type and optional name.
 
@@ -692,7 +753,7 @@ class FraguaEnvironment(FraguaComponent):
         self,
         action: str,
         style_name: str,
-        style: FraguaComponent,
+        style: FraguaClass,
     ) -> bool:
         """
         Register a new style in the corresponding action registry.
@@ -729,7 +790,7 @@ class FraguaEnvironment(FraguaComponent):
         self,
         action: str,
         style_name: Optional[str] = None,
-    ) -> Optional[FraguaComponent]:
+    ) -> Optional[FraguaClass]:
         """
         Retrieve a style by action type and optional name.
 
@@ -827,11 +888,11 @@ class FraguaEnvironment(FraguaComponent):
         return deleted
 
     # ----------------------Params Management ---------------------- #
-    def create_param(
+    def create_params(
         self,
         action: str,
         param_name: str,
-        param: FraguaComponent,
+        param: FraguaClass,
     ) -> bool:
         """
         Register a new parameter in the corresponding action registry.
@@ -864,11 +925,11 @@ class FraguaEnvironment(FraguaComponent):
 
         return created
 
-    def get_param(
+    def get_params(
         self,
         action: str,
         param_name: Optional[str] = None,
-    ) -> Optional[FraguaComponent]:
+    ) -> Optional[FraguaClass]:
         """
         Retrieve a parameter by action type and optional name.
 
@@ -894,7 +955,7 @@ class FraguaEnvironment(FraguaComponent):
 
         return params_set.get_one(param_name)
 
-    def update_param(
+    def update_params(
         self,
         action: str,
         old_name: str,
@@ -933,7 +994,7 @@ class FraguaEnvironment(FraguaComponent):
 
         return updated
 
-    def delete_param(self, action: str, param_name: str) -> bool:
+    def delete_params(self, action: str, param_name: str) -> bool:
         """
         Delete a parameter from a specific action registry.
 

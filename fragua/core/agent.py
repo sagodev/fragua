@@ -11,11 +11,10 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from fragua.core.component import FraguaComponent
+from fragua.core.fragua_instance import FraguaInstance
 from fragua.core.params import FraguaParams, FraguaParamsT
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
-from fragua.core.style import FraguaStyle
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 
@@ -25,7 +24,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
+class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
     """
     Base class for ETL agents operating within a shared Fragua Environment.
 
@@ -48,7 +47,7 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
             environment: Shared Environment instance providing registries,
                 warehouse manager, and configuration.
         """
-        super().__init__(component_name=agent_name)
+        super().__init__(instance_name=agent_name)
         self.environment: FraguaEnvironment = environment
         self.role: str
         self.action: str
@@ -145,7 +144,7 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
         """
         return f"{style_name}_{self.action}_data"
 
-    def _instantiate_params(
+    def _resolve_params(
         self,
         style: str,
         params: Optional[FraguaParams],
@@ -173,34 +172,54 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
             return params
 
         params_cls = cast(
-            Type[FraguaParams], self.environment.get_param(self.action, style)
+            Type[FraguaParams], self.environment.get_params(self.action, style)
         )
         if params_cls is None:
             raise ValueError(f"Params not found for style '{style}'.")
 
         return params_cls(**kwargs)
 
-    def _instantiate_style(self, style: str) -> FraguaStyle[FraguaParams]:
+    def _resolve_style(self, style: str) -> Dict[str, Any]:
         """
-        Resolve and instantiate a style implementation for the agent action.
+        Resolve a style specification for the agent action.
 
         Args:
-            style: Style identifier to resolve.
+            style:
+                Style identifier to resolve.
 
         Returns:
-            An instantiated FraguaStyle object.
+            Style specification dictionary.
 
         Raises:
-            ValueError: If the style class cannot be resolved.
+            ValueError:
+                If the style is not registered for the agent action.
         """
-        style_cls = cast(
-            Type[FraguaStyle[FraguaParams]],
-            self.environment.get_style(self.action, style),
-        )
-        if style_cls is None:
+        style_spec = self.environment.get_style(self.action, style)
+
+        if style_spec is None:
             raise ValueError(f"Style not found: '{style}'.")
 
-        return style_cls()
+        return style_spec
+
+    def _resolve_function(self, function_key: str) -> Any:
+        """
+        Resolve a function implementation for the agent action.
+
+        Args:
+            function_key: The key or name of the function to resolve from the Environment.
+
+        Returns:
+            The callable function associated with the key.
+
+        Raises:
+            ValueError: If the function is not registered for the agent action.
+        """
+        func_spec = self.environment.get_function(self.action, function_key)
+        if func_spec is None:
+            raise ValueError(
+                f"Function '{function_key}' not registered for action '{self.action}'."
+            )
+        return func_spec["function"]
 
     # ----------------- Metadata ----------------- #
     def _generate_operation_metadata(
@@ -357,55 +376,87 @@ class FraguaAgent(FraguaComponent, Generic[FraguaParamsT]):
     # ----------------- Work Pipeline ----------------- #
     def _execute_workflow(
         self,
-        style: str,
-        save_as: Optional[str] = None,
-        params: Optional[FraguaParamsT] = None,
+        style_name: str,
+        *,
+        input_data: pd.DataFrame | None = None,
+        save_as: str | None = None,
+        params: FraguaParamsT | None = None,
         **kwargs: Any,
     ) -> None:
         """
         Execute the standardized agent workflow pipeline.
 
-        This pipeline performs:
-        - Parameter resolution
-        - Style instantiation and execution
-        - Storage creation
-        - Metadata generation
-        - Operation logging
-        - Warehouse persistence
-
-        Args:
-            style: Style identifier to execute.
-            save_as: Optional explicit name for persisted storage.
-            params: Optional pre-instantiated Params object.
-            **kwargs: Parameters forwarded to Params instantiation.
+        Steps:
+        1. Resolve style specification from Environment
+        2. Resolve or instantiate Params
+        3. Execute the function associated with the style
+        4. Wrap result in storage
+        5. Generate metadata and log the operation
+        6. Persist automatically in warehouse
         """
-        style = style.lower()
+        style_name = style_name.lower()
 
-        params_instance = self._instantiate_params(style, params, **kwargs)
-        style_instance = self._instantiate_style(style)
+        # 1. Resolve style specification
+        style_spec = self._resolve_style(style_name)
 
-        stylized_data = style_instance.execute(params_instance)
-        storage = self.create_storage(stylized_data)
+        # 2. Resolve Params instance
+        params_instance = self._resolve_params(style_name, params, **kwargs)
 
-        self._generate_operation_metadata(style, storage, params_instance)
-        self._add_operation(style, params_instance)
-        self.auto_store(style, storage, save_as)
+        # 3. Resolve function from environment registry
+        func = self._resolve_function(style_spec["function_key"])
 
-    # ----------------- Abstract ----------------- #
+        # 4. Normalize input_data
+        data = pd.DataFrame() if input_data is None else input_data
+
+        # 5. Execute function (Agent owns execution)
+        result = func(input_data=data, params=params_instance, context=self)
+
+        # 6. Wrap result in storage
+        storage = self.create_storage(result)
+
+        # 7. Metadata & logging
+        self._generate_operation_metadata(style_name, storage, params_instance)
+        self._add_operation(style_name, params_instance)
+
+        # 8. Persist automatically
+        self.auto_store(style_name, storage, save_as)
+
+    # ----------------- Work method ----------------- #
     @abstractmethod
     def work(
         self,
-        /,
         style: str,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
-        params: Optional[FraguaParamsT] = None,
+        params: FraguaParamsT | None = None,
+        input_data: pd.DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
         """
         Execute the agent-specific task.
 
-        Concrete agents must implement this method to define how styles
-        are applied and how the workflow is triggered.
+        Args:
+            style: Style identifier to execute.
+            apply_to: Optional storage name(s) or input reference.
+            save_as: Optional explicit name for persisted storage.
+            params: Optional pre-instantiated Params object.
+            input_data: Optional input DataFrame for transform/load.
+            **kwargs: Additional parameters forwarded to Params.
         """
-        self._execute_workflow(style, save_as, params, **kwargs)
+        # Resolve input_data from warehouse if apply_to is provided
+        if input_data is None and apply_to is not None:
+            if isinstance(apply_to, list):
+                # Merge multiple DataFrames if necessary
+                input_data = pd.concat(
+                    [self.get_from_warehouse(name).data for name in apply_to]
+                )
+            else:
+                input_data = self.get_from_warehouse(apply_to).data
+
+        self._execute_workflow(
+            style_name=style,
+            input_data=input_data,
+            save_as=save_as,
+            params=params,
+            **kwargs,
+        )

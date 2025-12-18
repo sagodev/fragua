@@ -1,72 +1,66 @@
 """
-Base class for all styles used by ETL agents in Fragua.
+Base abstract class for all styles in Fragua.
 """
 
 from abc import ABC, abstractmethod
-from typing import Generic, Dict, Any, Optional, TypeVar
+from typing import Any, Dict, Generic, TypeVar
 
-from fragua.core.component import FraguaComponent
-from fragua.utils.logger import get_logger
-from fragua.core.params import FraguaParamsT
-
-logger = get_logger(__name__)
+from fragua.core.fragua_class import FraguaClass
+from fragua.core.params import FraguaParams
 
 
-class FraguaStyle(FraguaComponent, ABC, Generic[FraguaParamsT]):
+FraguaParamsT = TypeVar("FraguaParamsT", bound=FraguaParams)
+
+
+class FraguaStyle(FraguaClass, ABC, Generic[FraguaParamsT]):
     """
-    Base abstract class for all styles in Fragua.
+    Declarative execution style for Fragua.
 
-    Subclasses must implement `execute` and can define `fields` as metadata.
+    A style defines *how* a function is executed but does not perform
+    execution itself. Styles are declarative components and are never
+    instantiated directly.
     """
 
+    # Declarative metadata
     action: str
     function: str
     params_type: str
     purpose: str | None = None
 
-    def __init__(self, style_name: Optional[str] = None):
-        super().__init__(component_name=style_name or self.__class__.__name__)
-
+    @classmethod
     @abstractmethod
-    def execute(self, params: FraguaParamsT) -> Any:
+    def execute(cls, params: FraguaParamsT) -> Any:
         """
         Execute the style logic.
 
-        Args:
-            params: Parameters required by the style.
-
-        Returns:
-            The processed data.
+        This method is invoked by an Agent at runtime.
+        Styles must remain stateless.
         """
         raise NotImplementedError
 
-    def summary_fields(self) -> Dict[str, Any]:
+    @classmethod
+    def summary_fields(cls) -> Dict[str, Any]:
         """
-        Return a structured summary of the style, including fields.
+        Return a structured summary of the style metadata.
         """
         return {
-            "style_name": self.__class__.__name__,
-            "purpose": self.purpose,
-            "action": self.action,
-            "function": self.function,
-            "parameters_type": self.params_type,
+            "style_name": cls.__name__,
+            "purpose": cls.purpose,
+            "action": cls.action,
+            "function": cls.function,
+            "parameters_type": cls.params_type,
         }
 
-    def summary(self) -> Dict[str, Any]:
+    @classmethod
+    def summary(cls) -> Dict[str, Any]:
         """
-        Generate a structured summary describing the style.
-
-        The summary includes the style type, name, and detailed
-        field-level information provided by the concrete implementation.
+        Generate a declarative summary describing the style.
 
         Returns:
             A dictionary representing the style summary.
         """
         return {
             "type": "style",
-            "name": self.__class__.__name__,
-            "fields": self.summary_fields(),
+            "name": cls.__name__,
+            "fields": cls.summary_fields(),
         }
-
-
-FraguaStyleT = TypeVar("FraguaStyleT", bound=FraguaStyle)

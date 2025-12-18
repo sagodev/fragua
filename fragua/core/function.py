@@ -1,20 +1,23 @@
 """
-Base abstract class for all function schemas used by styles in Fragua.
+Base abstract class for all executable functions in Fragua.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Iterable, Optional, Type, TypeVar
+from typing import Any, Dict, Generic, Iterable, Type, TypeVar
 
-from fragua.core.component import FraguaComponent
-from fragua.core.params import FraguaParamsT
+from fragua.core.fragua_class import FraguaClass
+from fragua.core.params import FraguaParams
 
 
-class FraguaFunction(FraguaComponent, ABC, Generic[FraguaParamsT]):
+FraguaParamsT = TypeVar("FraguaParamsT", bound=FraguaParams)
+
+
+class FraguaFunction(FraguaClass, ABC, Generic[FraguaParamsT]):
     """
-    Abstract base class for all executable functions in Fragua.
+    Declarative processing function for Fragua.
 
-    A FraguaFunction represents a stateless, reusable unit of logic
-    executed as part of an ETL workflow.
+    A FraguaFunction defines *what* operation is performed during an
+    ETL workflow. Functions are stateless and declarative.
     """
 
     action: str
@@ -22,12 +25,10 @@ class FraguaFunction(FraguaComponent, ABC, Generic[FraguaParamsT]):
     purpose: str | None = None
     steps: Iterable[str] | None = None
 
-    def __init__(self, function_name: Optional[str] = None) -> None:
-        super().__init__(component_name=function_name or self.__class__.__name__)
-
+    @classmethod
     @abstractmethod
     def execute(
-        self,
+        cls,
         input_data: Any,
         params: FraguaParamsT,
         context: Any,
@@ -35,32 +36,26 @@ class FraguaFunction(FraguaComponent, ABC, Generic[FraguaParamsT]):
         """
         Execute the function logic.
 
-        Args:
-            input_data:
-                Input payload. None for extract, DataFrame for transform/load.
-            params:
-                Parameters instance defining execution behavior.
-            context:
-                Runtime execution context.
-
-        Returns:
-            Execution result.
+        Execution is coordinated by an Agent.
+        Functions must remain stateless.
         """
         raise NotImplementedError
 
-    def summary(self) -> Dict[str, Any]:
+    @classmethod
+    def summary(cls) -> Dict[str, Any]:
         """
-        Return a structured summary of the function.
+        Return a declarative summary of the function.
         """
         summary: Dict[str, Any] = {
-            "name": self.name,
-            "action": self.action,
-            "purpose": self.purpose,
-            "params": self.params_type().summary(),
+            "type": "function",
+            "name": cls.__name__,
+            "action": cls.action,
+            "purpose": cls.purpose,
+            "params": cls.params_type.summary(),
         }
 
-        if self.steps:
-            summary["steps"] = self.steps
+        if cls.steps:
+            summary["steps"] = list(cls.steps)
 
         return summary
 
