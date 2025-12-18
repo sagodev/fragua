@@ -448,7 +448,117 @@ class FraguaEnvironment(FraguaInstance):
             "load": self.load_styles,
         }
 
-    # ----------------------Agents Management ---------------------- #
+    # ---------------------- Internal helpers ---------------------- #
+    def _get_set(self, action: str, kind: str) -> FraguaSet:
+        """
+        Resolve a FraguaSet by action and component kind.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            kind: Component kind ("agents", "params", "functions", "styles").
+
+        Returns:
+            The resolved FraguaSet.
+
+        Raises:
+            ValueError: If the action or component kind is invalid.
+        """
+        registries = {
+            "agents": self.agents,
+            "params": self.params,
+            "functions": self.functions,
+            "styles": self.styles,
+        }
+
+        if kind not in registries:
+            raise ValueError(f"Invalid component kind: {kind}")
+
+        action_sets = registries[kind]
+        fragua_set = action_sets.get(action)
+
+        if fragua_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        return fragua_set
+
+    def _create(
+        self,
+        *,
+        action: str,
+        kind: str,
+        name: str,
+        component: Any,
+    ) -> bool:
+        fragua_set = self._get_set(action, kind)
+        created = fragua_set.add(name, component)
+
+        if created:
+            logger.info("%s registered: %s (%s)", kind[:-1].capitalize(), name, action)
+
+        return created
+
+    def _get(
+        self,
+        *,
+        action: str,
+        kind: str,
+        name: str | None = None,
+    ) -> Any:
+        fragua_set = self._get_set(action, kind)
+
+        if name is None:
+            all_items = fragua_set.get_all()
+            return next(iter(all_items.values()), None)
+
+        return fragua_set.get_one(name)
+
+    def _update(
+        self,
+        *,
+        action: str,
+        kind: str,
+        old_name: str,
+        new_name: str,
+    ) -> bool:
+        fragua_set = self._get_set(action, kind)
+        updated = fragua_set.update(old_name, new_name)
+
+        if not updated:
+            raise ValueError(f"{kind[:-1].capitalize()} not found.")
+
+        logger.info(
+            "%s renamed: %s -> %s (%s)",
+            kind[:-1].capitalize(),
+            old_name,
+            new_name,
+            action,
+        )
+
+        return updated
+
+    def _delete(
+        self,
+        *,
+        action: str,
+        kind: str,
+        name: str,
+    ) -> bool:
+        fragua_set = self._get_set(action, kind)
+        deleted = fragua_set.delete_one(name)
+
+        if not deleted:
+            raise ValueError(f"{kind[:-1].capitalize()} not found.")
+
+        logger.info(
+            "%s deleted: %s (%s)",
+            kind[:-1].capitalize(),
+            name,
+            action,
+        )
+
+        return deleted
+
+    # ----------------------Agents API ---------------------- #
     def create_agent(self, action: str, agent_name: str) -> bool:
         """
         Create and register a new agent for a given action.
@@ -609,27 +719,36 @@ class FraguaEnvironment(FraguaInstance):
 
         return deleted
 
-    # ----------------------Functions Management ---------------------- #
+    # ----------------------Functions API ---------------------- #
     def create_function(
         self,
         action: str,
         function_name: str,
-        function: FraguaClass,
+        function: Any,
     ) -> bool:
         """
-        Register a new function in the corresponding action registry.
+        Create and register a new function for a given action.
+
+        Functions are stored as opaque objects inside the registry.
+        They may be callables, classes, or structured descriptors,
+        depending on the execution model.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            function_name: Name to assign to the function.
-            function: Function component to register.
+            action (str):
+                Action type ("extract", "transform", "load").
+            function_name (str):
+                Unique name for the function.
+            function (Any):
+                Function object to register.
 
         Returns:
-            True if the function was successfully registered,
-            False if a function with the same name already exists.
+            bool:
+                True if the function was successfully registered.
+                False if a function with the same name already exists.
 
         Raises:
-            ValueError: If the provided action type is invalid.
+            ValueError:
+                If the provided action type is invalid.
         """
 
         functions_set = self.functions.get(action)
@@ -640,7 +759,7 @@ class FraguaEnvironment(FraguaInstance):
 
         if created:
             logger.info(
-                "Function registered: %s (%s)",
+                "Function created: %s (%s)",
                 function_name,
                 action,
             )
@@ -651,20 +770,23 @@ class FraguaEnvironment(FraguaInstance):
         self,
         action: str,
         function_name: Optional[str] = None,
-    ) -> Optional[FraguaClass]:
+    ) -> Optional[Any]:
         """
-        Retrieve a function by action type and optional name.
+        Retrieve a function by action and optional name.
 
-        If a function name is provided, the method returns the matching
-        function from the specified action registry. If no name is provided,
-        the first registered function is returned.
+        If a function name is provided, the matching function is returned.
+        If no name is provided, the first registered function for the
+        given action is returned.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            function_name: Optional name of the function to retrieve.
+            action (str):
+                Action type ("extract", "transform", "load").
+            function_name (Optional[str]):
+                Name of the function to retrieve.
 
         Returns:
-            The requested function if found, otherwise None.
+            Optional[Any]:
+                The requested function if found, otherwise None.
         """
 
         functions_set = self.functions.get(action)
@@ -684,18 +806,26 @@ class FraguaEnvironment(FraguaInstance):
         new_name: str,
     ) -> bool:
         """
-        Rename an existing function within a specific action.
+        Rename an existing function within a specific action registry.
+
+        This operation only updates the registry key.
+        The underlying function object remains unchanged.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            old_name: Current function name.
-            new_name: New function name.
+            action (str):
+                Action type ("extract", "transform", "load").
+            old_name (str):
+                Current function name.
+            new_name (str):
+                New function name.
 
         Returns:
-            True if the function was successfully renamed.
+            bool:
+                True if the function was successfully renamed.
 
         Raises:
-            ValueError: If the action is invalid or the function is not found.
+            ValueError:
+                If the action is invalid or the function does not exist.
         """
 
         functions_set = self.functions.get(action)
@@ -718,17 +848,21 @@ class FraguaEnvironment(FraguaInstance):
 
     def delete_function(self, action: str, function_name: str) -> bool:
         """
-            Delete a function from a specific action registry.
+        Delete a function from a specific action registry.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            function_name: Name of the function to delete.
+            action (str):
+                Action type ("extract", "transform", "load").
+            function_name (str):
+                Name of the function to delete.
 
         Returns:
-            True if the function was successfully deleted.
+            bool:
+                True if the function was successfully deleted.
 
         Raises:
-            ValueError: If the action is invalid or the function is not found.
+            ValueError:
+                If the action is invalid or the function does not exist.
         """
 
         functions_set = self.functions.get(action)
@@ -748,27 +882,36 @@ class FraguaEnvironment(FraguaInstance):
 
         return deleted
 
-    # ----------------------Styles Management ---------------------- #
+    # ----------------------Styles API ---------------------- #
     def create_style(
         self,
         action: str,
         style_name: str,
-        style: FraguaClass,
+        style: Any,
     ) -> bool:
         """
-        Register a new style in the corresponding action registry.
+        Create and register a new style for a given action.
+
+        Styles are stored as opaque objects inside the registry.
+        The Environment does not enforce a concrete base class,
+        allowing flexible style implementations.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            style_name: Name to assign to the style.
-            style: Style component to register.
+            action (str):
+                Action type ("extract", "transform", "load").
+            style_name (str):
+                Unique name for the style.
+            style (Any):
+                Style object or class to register.
 
         Returns:
-            True if the style was successfully registered,
-            False if a style with the same name already exists.
+            bool:
+                True if the style was successfully registered.
+                False if a style with the same name already exists.
 
         Raises:
-            ValueError: If the provided action type is invalid.
+            ValueError:
+                If the provided action type is invalid.
         """
 
         styles_set = self.styles.get(action)
@@ -779,7 +922,7 @@ class FraguaEnvironment(FraguaInstance):
 
         if created:
             logger.info(
-                "Style registered: %s (%s)",
+                "Style created: %s (%s)",
                 style_name,
                 action,
             )
@@ -790,20 +933,23 @@ class FraguaEnvironment(FraguaInstance):
         self,
         action: str,
         style_name: Optional[str] = None,
-    ) -> Optional[FraguaClass]:
+    ) -> Optional[Any]:
         """
-        Retrieve a style by action type and optional name.
+        Retrieve a style by action and optional name.
 
-        If a style name is provided, the method returns the matching
-        style from the specified action registry. If no name is provided,
-        the first registered style is returned.
+        If a style name is provided, the matching style is returned.
+        If no name is provided, the first registered style for the
+        given action is returned.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            style_name: Optional name of the style to retrieve.
+            action (str):
+                Action type ("extract", "transform", "load").
+            style_name (Optional[str]):
+                Name of the style to retrieve.
 
         Returns:
-            The requested style if found, otherwise None.
+            Optional[Any]:
+                The requested style if found, otherwise None.
         """
 
         styles_set = self.styles.get(action)
@@ -823,18 +969,26 @@ class FraguaEnvironment(FraguaInstance):
         new_name: str,
     ) -> bool:
         """
-        Rename an existing style within a specific action.
+        Rename an existing style within a specific action registry.
+
+        This operation updates only the registry key.
+        The underlying style object remains unchanged.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            old_name: Current style name.
-            new_name: New style name.
+            action (str):
+                Action type ("extract", "transform", "load").
+            old_name (str):
+                Current style name.
+            new_name (str):
+                New style name.
 
         Returns:
-            True if the style was successfully renamed.
+            bool:
+                True if the style was successfully renamed.
 
         Raises:
-            ValueError: If the action is invalid or the style is not found.
+            ValueError:
+                If the action is invalid or the style does not exist.
         """
 
         styles_set = self.styles.get(action)
@@ -860,14 +1014,18 @@ class FraguaEnvironment(FraguaInstance):
         Delete a style from a specific action registry.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            style_name: Name of the style to delete.
+            action (str):
+                Action type ("extract", "transform", "load").
+            style_name (str):
+                Name of the style to delete.
 
         Returns:
-            True if the style was successfully deleted.
+            bool:
+                True if the style was successfully deleted.
 
         Raises:
-            ValueError: If the action is invalid or the style is not found.
+            ValueError:
+                If the action is invalid or the style does not exist.
         """
 
         styles_set = self.styles.get(action)
