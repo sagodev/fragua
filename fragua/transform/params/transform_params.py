@@ -121,7 +121,7 @@ class AnalysisTransformParams(FraguaParams):
         super().__init__(style="analysis", **kwargs)
 
 
-TRANSFORM_PARAMS_SCHEMAS: Dict[str, Type[FraguaParams]] = {
+TRANSFORM_PARAMS: Dict[str, Type[FraguaParams]] = {
     "ml": MLTransformParams,
     "report": ReportTransformParams,
     "analysis": AnalysisTransformParams,

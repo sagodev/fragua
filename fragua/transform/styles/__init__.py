@@ -8,15 +8,9 @@ This module contains:
 """
 
 from .transform_styles import (
-    MLTransformStyle,
-    ReportTransformStyle,
-    AnalysisTransformStyle,
-    TRANSFORM_STYLE_CLASSES,
+    TRANSFORM_STYLES,
 )
 
 __all__ = [
-    "MLTransformStyle",
-    "ReportTransformStyle",
-    "AnalysisTransformStyle",
-    "TRANSFORM_STYLE_CLASSES",
+    "TRANSFORM_STYLES",
 ]

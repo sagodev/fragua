@@ -12,7 +12,7 @@ from .transform_params import (
     MLTransformParams,
     ReportTransformParams,
     AnalysisTransformParams,
-    TRANSFORM_PARAMS_SCHEMAS,
+    TRANSFORM_PARAMS,
 )
 
 
@@ -20,5 +20,5 @@ __all__ = [
     "MLTransformParams",
     "ReportTransformParams",
     "AnalysisTransformParams",
-    "TRANSFORM_PARAMS_SCHEMAS",
+    "TRANSFORM_PARAMS",
 ]

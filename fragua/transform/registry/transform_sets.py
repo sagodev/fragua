@@ -21,7 +21,7 @@ class TransformParamsSet(FraguaSet):
     """
 
     def __init__(self, fg_config: bool, section_name: str = "transform_params") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_params()
 
@@ -41,7 +41,7 @@ class TransformFunctionSet(FraguaSet):
     def __init__(
         self, fg_config: bool, section_name: str = "transform_functions"
     ) -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_functions()
 
@@ -59,7 +59,7 @@ class TransformStyleSet(FraguaSet):
     """
 
     def __init__(self, fg_config: bool, section_name: str = "transform_styles") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_styles()
 
@@ -77,4 +77,4 @@ class TransformAgentSet(FraguaSet):
     """
 
     def __init__(self, section_name: str = "transform_agents") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="instance")
