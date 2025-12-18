@@ -6,27 +6,21 @@ related components in the Fragua ETL framework, including parameters,
 functions, styles, and agents.
 """
 
-from typing import Any, Dict
-
-from fragua.core.function import FraguaFunction
-from fragua.core.params import FraguaParams
 from fragua.core.set import FraguaSet
-from fragua.core.style import FraguaStyle
 
 from fragua.load import (
     LOAD_FUNCTION_CLASSES,
     LOAD_PARAMS_SCHEMAS,
     LOAD_STYLE_CLASSES,
-    Loader,
 )
 
 
-class LoadParamsSet(FraguaSet[FraguaParams]):
+class LoadParamsSet(FraguaSet):
     """
     Set containing load parameter schema classes.
     """
 
-    def __init__(self, fg_config: bool, section_name: str = "params") -> None:
+    def __init__(self, fg_config: bool, section_name: str = "load_params") -> None:
         super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_params()
@@ -36,19 +30,15 @@ class LoadParamsSet(FraguaSet[FraguaParams]):
             return
 
         for name, params_cls in LOAD_PARAMS_SCHEMAS.items():
-            instance = params_cls()
-            self.add(name, instance)
-
-    def summary(self) -> Dict[str, Dict[str, Any]]:
-        return {name: params.summary() for name, params in self.get_all().items()}
+            self.add(name, params_cls)
 
 
-class LoadFunctionSet(FraguaSet[FraguaFunction[FraguaParams]]):
+class LoadFunctionSet(FraguaSet):
     """
     Set containing load function classes.
     """
 
-    def __init__(self, fg_config: bool, section_name: str = "functions") -> None:
+    def __init__(self, fg_config: bool, section_name: str = "load_functions") -> None:
         super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_functions()
@@ -58,19 +48,15 @@ class LoadFunctionSet(FraguaSet[FraguaFunction[FraguaParams]]):
             return
 
         for name, func_cls in LOAD_FUNCTION_CLASSES.items():
-            instance = func_cls()
-            self.add(name, instance)
-
-    def summary(self) -> Dict[str, Dict[str, Any]]:
-        return {name: function.summary() for name, function in self.get_all().items()}
+            self.add(name, func_cls)
 
 
-class LoadStyleSet(FraguaSet[FraguaStyle[FraguaParams]]):
+class LoadStyleSet(FraguaSet):
     """
     Set containing load style classes.
     """
 
-    def __init__(self, fg_config: bool, section_name: str = "styles") -> None:
+    def __init__(self, fg_config: bool, section_name: str = "load_styles") -> None:
         super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_styles()
@@ -80,20 +66,13 @@ class LoadStyleSet(FraguaSet[FraguaStyle[FraguaParams]]):
             return
 
         for name, style_cls in LOAD_STYLE_CLASSES.items():
-            instance = style_cls()
-            self.add(name, instance)
-
-    def summary(self) -> Dict[str, Dict[str, Any]]:
-        return {name: style.summary() for name, style in self.get_all().items()}
+            self.add(name, style_cls)
 
 
-class LoadAgentSet(FraguaSet[Loader[FraguaParams]]):
+class LoadAgentSet(FraguaSet):
     """
     Set containing load agent instances.
     """
 
-    def __init__(self, section_name: str = "agents") -> None:
+    def __init__(self, section_name: str = "load_agents") -> None:
         super().__init__(section_name)
-
-    def summary(self) -> Dict[str, Dict[str, Any]]:
-        return {name: agent.summary() for name, agent in self.get_all().items()}
