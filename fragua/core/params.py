@@ -3,13 +3,14 @@ Base class for declarative parameter schemas in Fragua.
 """
 
 from typing import Any, Dict, Optional, TypeVar
-from fragua.core.component import FraguaComponent
+
+from fragua.core.fragua_class import FraguaClass
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class FraguaParams(FraguaComponent):
+class FraguaParams(FraguaClass):
     """
     Declarative parameter schema for Fragua components.
 
@@ -24,7 +25,12 @@ class FraguaParams(FraguaComponent):
     FIELDS: Dict[str, Dict[str, Any]] = {}
 
     def __init__(self, **values: Any) -> None:
-        super().__init__(component_name=self.__class__.__name__)
+        """
+        Instantiate parameter values according to the declared schema.
+
+        Instantiation is optional and only required when executing
+        a function or style that consumes concrete parameter values.
+        """
         self._values: Dict[str, Any] = {}
         self._load(values)
 
@@ -52,19 +58,20 @@ class FraguaParams(FraguaComponent):
             self._values[field_name] = value
 
     def get(self, name: str) -> Any:
-        """Return the value of a parameter."""
+        """Return the resolved value of a parameter."""
         return self._values.get(name)
 
-    def summary(self) -> Dict[str, Any]:
+    @classmethod
+    def summary(cls) -> Dict[str, Any]:
         """
-        Return a structured summary of the params schema.
+        Return a declarative summary of the parameter schema.
 
-        Returns:
-            Dict[str, Any]: Serializable summary representation.
+        This method does not require instantiation and reflects
+        the static contract of the parameter definition.
         """
         fields: Dict[str, Dict[str, Any]] = {}
 
-        for name, spec in self.FIELDS.items():
+        for name, spec in cls.FIELDS.items():
             field_type = spec.get("type")
 
             fields[name] = {
@@ -79,8 +86,8 @@ class FraguaParams(FraguaComponent):
             }
 
         return {
-            "name": self.name,
-            "purpose": self.purpose,
+            "name": cls.__name__,
+            "purpose": cls.purpose,
             "fields": fields,
         }
 
