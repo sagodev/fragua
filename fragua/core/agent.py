@@ -292,27 +292,42 @@ class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
         return True
 
     # ----------------- Storage Management ----------------- #
-    def create_storage(self, data: Any) -> Storage[Any]:
+    def create_storage(
+        self,
+        *,
+        data: Any,
+        style_name: str,
+        storage_name: str | None = None,
+    ) -> Storage[Any]:
         """
         Instantiate a storage object based on the agent storage type.
 
         Args:
-            data: Data to be wrapped by the storage.
+            data:
+                Data to be wrapped by the storage.
+            style_name:
+                Executed style identifier.
+            storage_name:
+                Optional explicit storage name. If not provided, a default
+                name is generated automatically.
 
         Returns:
             A Storage instance.
 
         Raises:
-            TypeError: If the storage type is invalid or not registered.
+            TypeError:
+                If the storage type is invalid.
         """
         storage_cls = STORAGE_CLASSES.get(self.storage_type)
         if not storage_cls:
             raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
-        return (
-            storage_cls(data=data)
-            if self.storage_type != "Container"
-            else storage_cls()
-        )
+
+        name = storage_name or self._generate_storage_name(style_name)
+
+        if self.storage_type != "Container":
+            return storage_cls(name, data)
+
+        return storage_cls(name)
 
     def add_to_warehouse(
         self, storage: Storage[Box], storage_name: str | None = None
@@ -359,19 +374,11 @@ class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
             raise TypeError("Storage is not a Box.")
         return storage
 
-    def auto_store(
-        self, style: str, storage: Storage[Box], save_as: str | None = None
-    ) -> None:
+    def auto_store(self, storage: Storage[Box]) -> None:
         """
-        Automatically persist storage using a generated or provided name.
-
-        Args:
-            style: Executed style identifier.
-            storage: Storage instance to persist.
-            save_as: Optional explicit storage name.
+        Persist a storage object using its own name.
         """
-        name = save_as or self._generate_storage_name(style)
-        self.add_to_warehouse(storage, name)
+        self.add_to_warehouse(storage)
 
     # ----------------- Work Pipeline ----------------- #
     def _execute_workflow(
@@ -412,14 +419,18 @@ class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
         result = func(input_data=data, params=params_instance, context=self)
 
         # 6. Wrap result in storage
-        storage = self.create_storage(result)
+        storage = self.create_storage(
+            data=result,
+            style_name=style_name,
+            storage_name=save_as,
+        )
 
         # 7. Metadata & logging
         self._generate_operation_metadata(style_name, storage, params_instance)
         self._add_operation(style_name, params_instance)
 
         # 8. Persist automatically
-        self.auto_store(style_name, storage, save_as)
+        self.auto_store(storage)
 
     # ----------------- Work method ----------------- #
     @abstractmethod
@@ -443,10 +454,8 @@ class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
             input_data: Optional input DataFrame for transform/load.
             **kwargs: Additional parameters forwarded to Params.
         """
-        # Resolve input_data from warehouse if apply_to is provided
         if input_data is None and apply_to is not None:
             if isinstance(apply_to, list):
-                # Merge multiple DataFrames if necessary
                 input_data = pd.concat(
                     [self.get_from_warehouse(name).data for name in apply_to]
                 )
