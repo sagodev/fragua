@@ -36,6 +36,9 @@ from .warehouse import FraguaWarehouse
 
 from .storage import Storage, Box, Container, STORAGE_CLASSES
 
+from .fragua_class import FraguaClass
+
+from .fragua_instance import FraguaInstance
 
 __all__ = [
     # Fragua Component Class
@@ -48,6 +51,10 @@ __all__ = [
     "FraguaRegistry",
     # Section Fragua Class
     "FraguaSet",
+    # Base Runtime Class
+    "FraguaInstance",
+    # Base Declarative Class
+    "FraguaClass",
     # Agent Class
     "FraguaAgent",
     # Params Class
