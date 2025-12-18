@@ -26,10 +26,6 @@ from .agent import FraguaAgent
 
 from .params import FraguaParams
 
-from .style import FraguaStyle
-
-from .function import FraguaFunction
-
 from .manager import FraguaManager
 
 from .warehouse import FraguaWarehouse
@@ -59,10 +55,6 @@ __all__ = [
     "FraguaAgent",
     # Params Class
     "FraguaParams",
-    # Style Class
-    "FraguaStyle",
-    # Function Class
-    "FraguaFunction",
     # Warehouse Manager
     "FraguaManager",
     # Warehouse
