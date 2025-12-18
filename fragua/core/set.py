@@ -2,8 +2,12 @@
 Fragua Set class.
 """
 
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Optional, TypeVar
+from abc import ABC
+from typing import Any, Dict, Generic, Optional, Type, TypeVar, cast
+
+from fragua.core.component import FraguaComponent
+from fragua.core.fragua_class import FraguaClass
+from fragua.core.fragua_instance import FraguaInstance
 
 
 T = TypeVar("T")
@@ -22,6 +26,7 @@ class FraguaSet(ABC, Generic[T]):
     def __init__(
         self,
         set_name: str,
+        component_type: Type[T] = FraguaComponent,
         components: Optional[Dict[str, T]] = None,
     ) -> None:
         """
@@ -32,6 +37,7 @@ class FraguaSet(ABC, Generic[T]):
             components: Optional dictionary of pre-registered elements.
         """
         self.set_name = set_name
+        self.component_type = component_type
         self._components: Dict[str, T] = {} if components is None else components
 
     def _exists(self, key: str) -> bool:
@@ -126,14 +132,27 @@ class FraguaSet(ABC, Generic[T]):
         """
         return self._components.pop(name, None) is not None
 
-    @abstractmethod
     def summary(self) -> Dict[str, Any]:
         """
         Return a structured summary of the set contents.
 
-        Implementations should aggregate element-level metadata and
-        expose information relevant to the specific set type.
-
-        Returns:
-            A dictionary representing the set summary.
+        The summary adapts automatically depending on whether the stored
+        elements are declarative classes or runtime instances.
         """
+        result: Dict[str, Any] = {}
+
+        for name, component in self.get_all().items():
+            if isinstance(component, type) and issubclass(component, FraguaClass):
+                cls = cast(Type[FraguaClass], component)
+                result[name] = cls.summary()
+
+            elif isinstance(component, FraguaInstance):
+                result[name] = component.summary()
+
+            else:
+                raise TypeError(
+                    f"Unsupported component type in FraguaSet '{self.set_name}': "
+                    f"{type(component).__name__}"
+                )
+
+        return result
