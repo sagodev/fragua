@@ -6,27 +6,21 @@ related components in the Fragua ETL framework, including parameters,
 functions, styles, and agents.
 """
 
-from typing import Any, Dict
-
-from fragua.core.function import FraguaFunction
-from fragua.core.params import FraguaParams
 from fragua.core.set import FraguaSet
-from fragua.core.style import FraguaStyle
 
 from fragua.transform import (
     TRANSFORM_FUNCTION_CLASSES,
     TRANSFORM_PARAMS_SCHEMAS,
     TRANSFORM_STYLE_CLASSES,
-    Transformer,
 )
 
 
-class TransformParamsSet(FraguaSet[FraguaParams]):
+class TransformParamsSet(FraguaSet):
     """
     Set containing transform parameter schema classes.
     """
 
-    def __init__(self, fg_config: bool, section_name: str = "params") -> None:
+    def __init__(self, fg_config: bool, section_name: str = "transform_params") -> None:
         super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_params()
@@ -36,19 +30,17 @@ class TransformParamsSet(FraguaSet[FraguaParams]):
             return
 
         for name, params_cls in TRANSFORM_PARAMS_SCHEMAS.items():
-            instance = params_cls()
-            self.add(name, instance)
-
-    def summary(self) -> Dict[str, Dict[str, Any]]:
-        return {name: params.summary() for name, params in self.get_all().items()}
+            self.add(name, params_cls)
 
 
-class TransformFunctionSet(FraguaSet[FraguaFunction[FraguaParams]]):
+class TransformFunctionSet(FraguaSet):
     """
     Set containing transform function classes.
     """
 
-    def __init__(self, fg_config: bool, section_name: str = "functions") -> None:
+    def __init__(
+        self, fg_config: bool, section_name: str = "transform_functions"
+    ) -> None:
         super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_functions()
@@ -58,19 +50,15 @@ class TransformFunctionSet(FraguaSet[FraguaFunction[FraguaParams]]):
             return
 
         for name, func_cls in TRANSFORM_FUNCTION_CLASSES.items():
-            instance = func_cls()
-            self.add(name, instance)
-
-    def summary(self) -> Dict[str, Dict[str, Any]]:
-        return {name: function.summary() for name, function in self.get_all().items()}
+            self.add(name, func_cls)
 
 
-class TransformStyleSet(FraguaSet[FraguaStyle[FraguaParams]]):
+class TransformStyleSet(FraguaSet):
     """
     Set containing transform style classes.
     """
 
-    def __init__(self, fg_config: bool, section_name: str = "styles") -> None:
+    def __init__(self, fg_config: bool, section_name: str = "transform_styles") -> None:
         super().__init__(section_name)
         self.fg_config = fg_config
         self._initialize_styles()
@@ -80,20 +68,13 @@ class TransformStyleSet(FraguaSet[FraguaStyle[FraguaParams]]):
             return
 
         for name, style_cls in TRANSFORM_STYLE_CLASSES.items():
-            instance = style_cls()
-            self.add(name, instance)
-
-    def summary(self) -> Dict[str, Dict[str, Any]]:
-        return {name: style.summary() for name, style in self.get_all().items()}
+            self.add(name, style_cls)
 
 
-class TransformAgentSet(FraguaSet[Transformer[FraguaParams]]):
+class TransformAgentSet(FraguaSet):
     """
     Set containing transform agent instances.
     """
 
-    def __init__(self, section_name: str = "agents") -> None:
+    def __init__(self, section_name: str = "transform_agents") -> None:
         super().__init__(section_name)
-
-    def summary(self) -> Dict[str, Dict[str, Any]]:
-        return {name: agent.summary() for name, agent in self.get_all().items()}
