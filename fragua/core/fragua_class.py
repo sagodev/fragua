@@ -1,7 +1,7 @@
 """Declarative component base."""
 
 from abc import ABC
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from fragua.core.component import FraguaComponent
 
@@ -14,8 +14,6 @@ class FraguaClass(FraguaComponent, ABC):
     class level.
     """
 
-    purpose: Optional[str] = None
-
     @classmethod
     def summary(cls) -> Dict[str, Any]:
         """
@@ -23,6 +21,5 @@ class FraguaClass(FraguaComponent, ABC):
         """
         return {
             "name": cls.__name__,
-            "purpose": cls.purpose,
             "type": cls.__name__,
         }
