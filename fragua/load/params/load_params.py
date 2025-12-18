@@ -156,7 +156,7 @@ class APILoadParams(FraguaParams):
     }
 
 
-LOAD_PARAMS_SCHEMAS: Dict[str, Type[FraguaParams]] = {
+LOAD_PARAMS: Dict[str, Type[FraguaParams]] = {
     "excel": ExcelLoadParams,
     "csv": CSVLoadParams,
     "sql": SQLLoadParams,

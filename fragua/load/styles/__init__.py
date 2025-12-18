@@ -8,18 +8,10 @@ This module contains:
 """
 
 from .load_styles import (
-    ExcelLoadStyle,
-    SQLLoadStyle,
-    APILoadStyle,
-    CSVLoadStyle,
-    LOAD_STYLE_CLASSES,
+    LOAD_STYLES,
 )
 
 
 __all__ = [
-    "ExcelLoadStyle",
-    "CSVLoadStyle",
-    "SQLLoadStyle",
-    "APILoadStyle",
-    "LOAD_STYLE_CLASSES",
+    "LOAD_STYLES",
 ]

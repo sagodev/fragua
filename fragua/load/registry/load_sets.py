@@ -21,7 +21,7 @@ class LoadParamsSet(FraguaSet):
     """
 
     def __init__(self, fg_config: bool, section_name: str = "load_params") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_params()
 
@@ -39,7 +39,7 @@ class LoadFunctionSet(FraguaSet):
     """
 
     def __init__(self, fg_config: bool, section_name: str = "load_functions") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_functions()
 
@@ -57,7 +57,7 @@ class LoadStyleSet(FraguaSet):
     """
 
     def __init__(self, fg_config: bool, section_name: str = "load_styles") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_styles()
 
@@ -75,4 +75,4 @@ class LoadAgentSet(FraguaSet):
     """
 
     def __init__(self, section_name: str = "load_agents") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="instance")

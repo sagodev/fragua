@@ -13,7 +13,7 @@ from .load_params import (
     APILoadParams,
     CSVLoadParams,
     SQLLoadParams,
-    LOAD_PARAMS_SCHEMAS,
+    LOAD_PARAMS,
 )
 
 
@@ -22,5 +22,5 @@ __all__ = [
     "CSVLoadParams",
     "SQLLoadParams",
     "APILoadParams",
-    "LOAD_PARAMS_SCHEMAS",
+    "LOAD_PARAMS",
 ]
