@@ -8,18 +8,10 @@ This module contains:
 """
 
 from .extract_functions import (
-    CSVExtractFunction,
-    ExcelExtractFunction,
-    SQLExtractFunction,
-    APIExtractFunction,
-    EXTRACT_FUNCTION_CLASSES,
+    EXTRACT_FUNCTIONS,
 )
 
 
 __all__ = [
-    "ExcelExtractFunction",
-    "APIExtractFunction",
-    "CSVExtractFunction",
-    "SQLExtractFunction",
-    "EXTRACT_FUNCTION_CLASSES",
+    "EXTRACT_FUNCTIONS",
 ]

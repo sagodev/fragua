@@ -1,20 +1,18 @@
 """
-Concrete extraction function implementations.
+Concrete extraction functions.
 
-This module provides ExtractFunction implementations for common
+This module provides functional extract implementations for common
 data sources such as CSV files, Excel spreadsheets, SQL databases,
 and REST APIs.
 """
 
 from pathlib import Path
-from typing import Dict, Any, Type
+from typing import Any, Dict
 import pandas as pd
 from sqlalchemy import create_engine
 import requests
 from requests.auth import HTTPBasicAuth
 
-
-from fragua.core.function import FraguaFunction
 from fragua.extract.params.extract_params import (
     APIExtractParams,
     CSVExtractParams,
@@ -23,127 +21,103 @@ from fragua.extract.params.extract_params import (
 )
 
 
-class CSVExtractFunction(FraguaFunction[CSVExtractParams]):
-    """
-    Extract data from a CSV file.
-    """
+def extract_csv(
+    params: CSVExtractParams,
+) -> pd.DataFrame:
+    """Extract tabular data from a CSV file."""
+    path = params.get("path")
+    if not path:
+        raise ValueError("'path' is required in params")
 
-    action = "extract"
-    params_type = CSVExtractParams
-    purpose = "Extract tabular data from a CSV file."
-
-    def execute(
-        self,
-        input_data: None,
-        params: CSVExtractParams,
-        context: Any,
-    ) -> pd.DataFrame:
-        path = params.get("path")
-        if not path:
-            raise ValueError("'path' is required in params")
-
-        return pd.read_csv(str(Path(path)))
+    return pd.read_csv(str(Path(path)))
 
 
-class ExcelExtractFunction(FraguaFunction[ExcelExtractParams]):
-    """
-    Extract data from an Excel file.
-    """
+def extract_excel(
+    params: ExcelExtractParams,
+) -> pd.DataFrame:
+    """Extract data from an Excel spreadsheet."""
+    path = params.get("path")
+    if not path:
+        raise ValueError("'path' is required in params")
 
-    action = "extract"
-    params_type = ExcelExtractParams
-    purpose = "Extract data from an Excel spreadsheet."
-
-    def execute(
-        self,
-        input_data: None,
-        params: ExcelExtractParams,
-        context: Any,
-    ) -> pd.DataFrame:
-        path = params.get("path")
-        if not path:
-            raise ValueError("'path' is required in params")
-
-        return pd.read_excel(
-            str(Path(path)),
-            sheet_name=params.get("sheet_name"),
-        )
+    return pd.read_excel(
+        str(Path(path)),
+        sheet_name=params.get("sheet_name"),
+    )
 
 
-class SQLExtractFunction(FraguaFunction[SQLExtractParams]):
-    """
-    Execute a SQL query and return the result as a DataFrame.
-    """
+def extract_sql(
+    params: SQLExtractParams,
+) -> pd.DataFrame:
+    """Execute a SQL query and extract the result as a DataFrame."""
+    connection_string = params.get("connection_string")
+    query = params.get("query")
 
-    action = "extract"
-    params_type = SQLExtractParams
-    purpose = "Execute a SQL query and extract the result as a DataFrame."
+    if not connection_string or not query:
+        raise ValueError("'connection_string' and 'query' are required in params")
 
-    def execute(
-        self,
-        input_data: None,
-        params: SQLExtractParams,
-        context: Any,
-    ) -> pd.DataFrame:
-        connection_string = params.get("connection_string")
-        query = params.get("query")
-
-        if not connection_string or not query:
-            raise ValueError("'connection_string' and 'query' are required in params")
-
-        engine = create_engine(connection_string)
-        try:
-            with engine.connect() as conn:
-                return pd.read_sql_query(query, conn)
-        finally:
-            engine.dispose()
+    engine = create_engine(connection_string)
+    try:
+        with engine.connect() as conn:
+            return pd.read_sql_query(query, conn)
+    finally:
+        engine.dispose()
 
 
-class APIExtractFunction(FraguaFunction[APIExtractParams]):
-    """
-    Fetch JSON data from a REST API.
-    """
+def extract_api(
+    params: APIExtractParams,
+) -> pd.DataFrame:
+    """Fetch JSON data from a REST API endpoint."""
+    url = params.get("url")
+    if not url:
+        raise ValueError("'url' is required in params")
 
-    action = "extract"
-    params_type = APIExtractParams
-    purpose = "Fetch JSON data from a REST API endpoint."
+    response = requests.request(
+        method=params.get("method"),
+        url=url,
+        headers=params.get("headers"),
+        params=params.get("params"),
+        data=params.get("data"),
+        auth=HTTPBasicAuth(**params.get("auth")) if params.get("auth") else None,
+        proxies=params.get("proxy"),
+        timeout=params.get("timeout"),
+    )
+    response.raise_for_status()
 
-    def execute(
-        self,
-        input_data: None,
-        params: APIExtractParams,
-        context: Any,
-    ) -> pd.DataFrame:
-        url = params.get("url")
-        if not url:
-            raise ValueError("'url' is required in params")
+    payload = response.json()
 
-        response = requests.request(
-            method=params.get("method"),
-            url=url,
-            headers=params.get("headers"),
-            params=params.get("params"),
-            data=params.get("data"),
-            auth=HTTPBasicAuth(**params.get("auth")) if params.get("auth") else None,
-            proxies=params.get("proxy"),
-            timeout=params.get("timeout"),
-        )
-        response.raise_for_status()
+    if isinstance(payload, list):
+        return pd.DataFrame(payload)
 
-        payload = response.json()
+    if isinstance(payload, dict):
+        return pd.json_normalize(payload)
 
-        if isinstance(payload, list):
-            return pd.DataFrame(payload)
-
-        if isinstance(payload, dict):
-            return pd.json_normalize(payload)
-
-        raise ValueError(f"Unexpected API response type: {type(payload)}")
+    raise ValueError(f"Unexpected API response type: {type(payload)}")
 
 
-EXTRACT_FUNCTION_CLASSES: Dict[str, Type[FraguaFunction]] = {
-    "csv": CSVExtractFunction,
-    "excel": ExcelExtractFunction,
-    "sql": SQLExtractFunction,
-    "api": APIExtractFunction,
+EXTRACT_FUNCTIONS: Dict[str, Dict[str, Any]] = {
+    "csv": {
+        "action": "extract",
+        "purpose": "Extract tabular data from a CSV file.",
+        "params_type": CSVExtractParams.__class__.__name__,
+        "function": extract_csv,
+    },
+    "excel": {
+        "action": "extract",
+        "purpose": "Extract data from an Excel spreadsheet.",
+        "params_type": ExcelExtractParams.__class__.__name__,
+        "function": extract_excel,
+    },
+    "sql": {
+        "action": "extract",
+        "purpose": "Execute a SQL query and extract the result as a DataFrame.",
+        "params_type": SQLExtractParams.__class__.__name__,
+        "function": extract_sql,
+    },
+    "api": {
+        "action": "extract",
+        "purpose": "Fetch JSON data from a REST API endpoint.",
+        "params_type": APIExtractParams.__class__.__name__,
+        "function": extract_api,
+    },
 }

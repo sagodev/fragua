@@ -22,7 +22,7 @@ class ExtractParamsSet(FraguaSet):
     """
 
     def __init__(self, fg_config: bool, section_name: str = "extract_params") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_params()
 
@@ -42,7 +42,7 @@ class ExtractFunctionSet(FraguaSet):
     def __init__(
         self, fg_config: bool, section_name: str = "extract_functions"
     ) -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_functions()
 
@@ -60,7 +60,7 @@ class ExtractStyleSet(FraguaSet):
     """
 
     def __init__(self, fg_config: bool, section_name: str = "extract_styles") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="class")
         self.fg_config = fg_config
         self._initialize_styles()
 
@@ -78,4 +78,4 @@ class ExtractAgentSet(FraguaSet):
     """
 
     def __init__(self, section_name: str = "extract_agents") -> None:
-        super().__init__(section_name)
+        super().__init__(section_name, content_kind="instance")

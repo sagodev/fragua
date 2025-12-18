@@ -8,18 +8,10 @@ This module contains:
 """
 
 from .extract_styles import (
-    CSVExtractStyle,
-    ExcelExtractStyle,
-    SQLExtractStyle,
-    APIExtractStyle,
-    EXTRACT_STYLE_CLASSES,
+    EXTRACT_STYLES,
 )
 
 
 __all__ = [
-    "CSVExtractStyle",
-    "ExcelExtractStyle",
-    "SQLExtractStyle",
-    "APIExtractStyle",
-    "EXTRACT_STYLE_CLASSES",
+    "EXTRACT_STYLES",
 ]

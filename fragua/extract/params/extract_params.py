@@ -2,7 +2,7 @@
 Extract parameter schemas for supported data source types.
 """
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, Type, Union
 from pathlib import Path
 
 from fragua.core.params import FraguaParams
@@ -111,7 +111,7 @@ class APIExtractParams(FraguaParams):
     }
 
 
-EXTRACT_PARAMS_SCHEMAS: Dict[str, type[FraguaParams]] = {
+EXTRACT_PARAMS: Dict[str, Type[FraguaParams]] = {
     "csv": CSVExtractParams,
     "excel": ExcelExtractParams,
     "sql": SQLExtractParams,

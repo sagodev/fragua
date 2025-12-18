@@ -13,7 +13,7 @@ from .extract_params import (
     ExcelExtractParams,
     APIExtractParams,
     SQLExtractParams,
-    EXTRACT_PARAMS_SCHEMAS,
+    EXTRACT_PARAMS,
 )
 
 
@@ -22,5 +22,5 @@ __all__ = [
     "ExcelExtractParams",
     "SQLExtractParams",
     "APIExtractParams",
-    "EXTRACT_PARAMS_SCHEMAS",
+    "EXTRACT_PARAMS",
 ]
