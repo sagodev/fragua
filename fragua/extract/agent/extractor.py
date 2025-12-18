@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 from fragua.core.agent import FraguaAgent
 from fragua.core.params import FraguaParamsT
 from fragua.utils.logger import get_logger
@@ -41,11 +41,11 @@ class Extractor(FraguaAgent[FraguaParamsT]):
 
     def work(
         self,
-        /,
         style: str,
-        apply_to: Union[str, list[str], None] = None,
+        apply_to: Union[str, List[str], None] = None,
         save_as: Optional[str] = None,
         params: Optional[FraguaParamsT] = None,
+        input_data: Any = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -67,4 +67,10 @@ class Extractor(FraguaAgent[FraguaParamsT]):
         Returns:
             None
         """
-        self._execute_workflow(style, save_as, params, **kwargs)
+        self._execute_workflow(
+            style_name=style,
+            input_data=input_data,
+            save_as=save_as,
+            params=params,
+            **kwargs,
+        )
