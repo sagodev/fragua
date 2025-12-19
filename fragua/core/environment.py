@@ -84,25 +84,6 @@ class FraguaEnvironment(FraguaInstance):
         return ValueError("Agent not found.")
 
     # ---------------------- Initializers ---------------------- #
-    def _initialize_manager(self) -> FraguaManager:
-        """
-        Initialize the warehouse manager for the environment.
-
-        The warehouse manager acts as the coordination layer between
-        agents and the underlying warehouse, controlling access,
-        execution flow, and resource usage.
-
-        Returns:
-            FraguaManager:
-                Fully initialized warehouse manager instance.
-        """
-
-        manager = FraguaManager(f"{self.name}_manager", self.warehouse)
-
-        logger.info(
-            "Default warehouse manager initialized for environment '%s'.", self.name
-        )
-        return manager
 
     def _initialize_warehouse(self) -> FraguaWarehouse:
         """
@@ -121,6 +102,26 @@ class FraguaEnvironment(FraguaInstance):
 
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
+
+    def _initialize_manager(self) -> FraguaManager:
+        """
+        Initialize the warehouse manager for the environment.
+
+        The warehouse manager acts as the coordination layer between
+        agents and the underlying warehouse, controlling access,
+        execution flow, and resource usage.
+
+        Returns:
+            FraguaManager:
+                Fully initialized warehouse manager instance.
+        """
+
+        manager = FraguaManager(f"{self.name}_manager", self)
+
+        logger.info(
+            "Default warehouse manager initialized for environment '%s'.", self.name
+        )
+        return manager
 
     def _initialize_actions(self) -> FraguaActions:
         """
