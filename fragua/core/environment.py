@@ -8,7 +8,6 @@ from fragua.core.agent import FraguaAgent
 from fragua.core.actions import FraguaActions
 from fragua.core.fragua_class import FraguaClass
 from fragua.core.fragua_instance import FraguaInstance
-from fragua.core.params import FraguaParams
 from fragua.core.registry import FraguaRegistry
 from fragua.core.set import FraguaSet
 from fragua.core.warehouse import FraguaWarehouse
@@ -351,9 +350,9 @@ class FraguaEnvironment(FraguaInstance):
             ValueError: If the provided action type is invalid.
         """
 
-        def _build_agent() -> FraguaAgent[FraguaParams]:
+        def _build_agent() -> FraguaAgent:
             """Instantiate the correct agent class based on action."""
-            class_map: Dict[str, Type[FraguaAgent[FraguaParams]]] = {
+            class_map: Dict[str, Type[FraguaAgent]] = {
                 "extract": Extractor,
                 "transform": Transformer,
                 "load": Loader,
@@ -365,7 +364,7 @@ class FraguaEnvironment(FraguaInstance):
 
             return agent_class(agent_name, self)
 
-        def _register_agent(agent: FraguaAgent[FraguaParams]) -> bool:
+        def _register_agent(agent: FraguaAgent) -> bool:
             """Register the agent into the corresponding set."""
 
             type_set = self.agents.get(action)
@@ -388,7 +387,7 @@ class FraguaEnvironment(FraguaInstance):
 
     def get_agent(
         self, action: str, agent_name: Optional[str] = None
-    ) -> Optional[FraguaAgent[FraguaParams]]:
+    ) -> Optional[FraguaAgent]:
         """
         Retrieve an agent by action type and optional agent name.
 
@@ -417,11 +416,11 @@ class FraguaEnvironment(FraguaInstance):
 
             return agents_set.get_one(agent_name)
 
-        def _validate_agent(agent: Any) -> Optional[FraguaAgent[FraguaParams]]:
+        def _validate_agent(agent: Any) -> Optional[FraguaAgent]:
             """Validate and safely cast the agent to Agent type."""
             if agent is None:
                 return None
-            return cast(FraguaAgent[FraguaParams], agent)
+            return cast(FraguaAgent, agent)
 
         agent = _set_agent()
 
@@ -958,9 +957,7 @@ class FraguaEnvironment(FraguaInstance):
         return deleted
 
     # ----------------------Shortcut functions ---------------------- #
-    def get_extractor(
-        self, agent_name: Optional[str] = None
-    ) -> Extractor[FraguaParams]:
+    def get_extractor(self, agent_name: Optional[str] = None) -> Extractor:
         """
         Retrieve an Extractor agent by name.
 
@@ -982,11 +979,9 @@ class FraguaEnvironment(FraguaInstance):
         if extractor is None:
             self.agent_not_found()
 
-        return cast(Extractor[FraguaParams], extractor)
+        return cast(Extractor, extractor)
 
-    def get_transformer(
-        self, agent_name: str | None = None
-    ) -> Transformer[FraguaParams]:
+    def get_transformer(self, agent_name: str | None = None) -> Transformer:
         """
         Retrieve a Transformer agent by name.
 
@@ -1008,9 +1003,9 @@ class FraguaEnvironment(FraguaInstance):
         if transformer is None:
             self.agent_not_found()
 
-        return cast(Transformer[FraguaParams], transformer)
+        return cast(Transformer, transformer)
 
-    def get_loader(self, agent_name: str | None = None) -> Loader[FraguaParams]:
+    def get_loader(self, agent_name: str | None = None) -> Loader:
         """
         Retrieve a Loader agent by name.
 
@@ -1033,7 +1028,7 @@ class FraguaEnvironment(FraguaInstance):
         if loader is None:
             self.agent_not_found()
 
-        return cast(Loader[FraguaParams], loader)
+        return cast(Loader, loader)
 
     # ---------------------- Summary ---------------------- #
 
