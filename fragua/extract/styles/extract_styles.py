@@ -15,25 +15,25 @@ from fragua.extract.params.extract_params import (
 EXTRACT_STYLES: Dict[str, Dict[str, Any]] = {
     "csv": {
         "action": "extract",
-        "function": "csv",
+        "function_key": "csv",
         "params_type": CSVExtractParams,
         "purpose": "Extract tabular data from CSV files.",
     },
     "excel": {
         "action": "extract",
-        "function": "excel",
+        "function_key": "excel",
         "params_type": ExcelExtractParams,
         "purpose": "Extract structured data from Excel spreadsheets.",
     },
     "sql": {
         "action": "extract",
-        "function": "sql",
+        "function_key": "sql",
         "params_type": SQLExtractParams,
         "purpose": "Extract records from SQL databases using queries.",
     },
     "api": {
         "action": "extract",
-        "function": "api",
+        "function_key": "api",
         "params_type": APIExtractParams,
         "purpose": "Extract data from REST APIs over HTTP.",
     },

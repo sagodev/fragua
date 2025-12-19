@@ -99,25 +99,25 @@ EXTRACT_FUNCTIONS: Dict[str, Dict[str, Any]] = {
     "csv": {
         "action": "extract",
         "purpose": "Extract tabular data from a CSV file.",
-        "params_type": CSVExtractParams.__class__.__name__,
+        "params_type": CSVExtractParams.__name__,
         "function": extract_csv,
     },
     "excel": {
         "action": "extract",
         "purpose": "Extract data from an Excel spreadsheet.",
-        "params_type": ExcelExtractParams.__class__.__name__,
+        "params_type": ExcelExtractParams.__name__,
         "function": extract_excel,
     },
     "sql": {
         "action": "extract",
         "purpose": "Execute a SQL query and extract the result as a DataFrame.",
-        "params_type": SQLExtractParams.__class__.__name__,
+        "params_type": SQLExtractParams.__name__,
         "function": extract_sql,
     },
     "api": {
         "action": "extract",
         "purpose": "Fetch JSON data from a REST API endpoint.",
-        "params_type": APIExtractParams.__class__.__name__,
+        "params_type": APIExtractParams.__name__,
         "function": extract_api,
     },
 }

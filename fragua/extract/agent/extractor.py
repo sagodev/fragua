@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 from fragua.core.agent import FraguaAgent
-from fragua.core.params import FraguaParamsT
+from fragua.core.params import FraguaParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Extractor(FraguaAgent[FraguaParamsT]):
+class Extractor(FraguaAgent):
     """
     Agent responsible for executing extraction workflows in Fragua.
 
@@ -44,7 +44,7 @@ class Extractor(FraguaAgent[FraguaParamsT]):
         style: str,
         apply_to: Union[str, List[str], None] = None,
         save_as: Optional[str] = None,
-        params: Optional[FraguaParamsT] = None,
+        params: Optional[FraguaParams] = None,
         input_data: Any = None,
         **kwargs: Any,
     ) -> None:
