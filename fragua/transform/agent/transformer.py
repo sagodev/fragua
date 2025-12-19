@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any
+
+from pandas import DataFrame
 from fragua.core.agent import FraguaAgent
 
 from fragua.core.params import FraguaParams
@@ -40,42 +42,17 @@ class Transformer(FraguaAgent):
     def work(
         self,
         style: str,
-        apply_to: Union[str, List[str], None] = None,
-        save_as: Optional[str] = None,
-        params: Optional[FraguaParams] = None,
-        input_data: Any = None,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        params: FraguaParams | None = None,
+        input_data: DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Execute a transformation workflow.
-
-        This method retrieves the target data from the warehouse,
-        resolves the transformation style and parameters, and
-        applies the transformation logic accordingly.
-
-        Args:
-            style (str):
-                Name of the transformation style to apply.
-            apply_to (str | list[str] | None):
-                Name of the storage object(s) in the warehouse to transform.
-            save_as (Optional[str]):
-                Optional name under which to store the transformed result.
-            params (Optional[TransformParamsT]):
-                Explicit transformation parameters instance.
-            **kwargs:
-                Additional keyword arguments used to build parameters
-                when `params` is not provided.
-        """
-
-        if isinstance(apply_to, str):
-            storage = self.get_from_warehouse(apply_to)
-            data = storage.data
-            kwargs["data"] = data
-
-            self._execute_workflow(
-                style_name=style,
-                input_data=input_data,
-                save_as=save_as,
-                params=params,
-                **kwargs,
-            )
+        super().work(
+            style=style,
+            apply_to=apply_to,
+            save_as=save_as,
+            params=params,
+            input_data=input_data,
+            **kwargs,
+        )
