@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Dict, Optional, Type, cast
 
 from fragua.core.agent import FraguaAgent
 from fragua.core.actions import FraguaActions
@@ -15,14 +15,9 @@ from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.manager import FraguaManager
 
 
-from fragua.extract import Extractor, EXTRACT_STYLES, EXTRACT_FUNCTIONS, EXTRACT_PARAMS
-from fragua.transform import (
-    Transformer,
-    TRANSFORM_STYLES,
-    TRANSFORM_FUNCTIONS,
-    TRANSFORM_PARAMS,
-)
-from fragua.load import Loader, LOAD_STYLES, LOAD_FUNCTIONS, LOAD_PARAMS
+from fragua.extract import Extractor
+from fragua.transform import Transformer
+from fragua.load import Loader
 
 
 from fragua.utils.logger import get_logger
@@ -141,83 +136,9 @@ class FraguaEnvironment(FraguaInstance):
                 Container holding all action registries.
         """
 
-        def fg_actions() -> FraguaActions:
-            """Helper to populate actions with default Fragua sets."""
-            extract_registry = FraguaRegistry("extract")
-            transform_registry = FraguaRegistry("transform")
-            load_registry = FraguaRegistry("load")
-
-            fg_dicts = {
-                "extract": [EXTRACT_FUNCTIONS, EXTRACT_PARAMS, EXTRACT_STYLES],
-                "transform": [TRANSFORM_FUNCTIONS, TRANSFORM_PARAMS, TRANSFORM_STYLES],
-                "load": [LOAD_FUNCTIONS, LOAD_PARAMS, LOAD_STYLES],
-            }
-
-            def fill_registry(
-                registry: FraguaRegistry, dict_data: List[Dict[str, Any]]
-            ) -> None:
-                """
-                Populate registries with default Fragua sets.
-                """
-                for data in dict_data:
-                    for set_name, components in data.items():
-                        fragua_set = FraguaEnvironment.to_fragua_set(
-                            set_name, components
-                        )
-                        registry.add_set(set_name, fragua_set)
-
-            for action_type, fg_dict in fg_dicts.items():
-                if action_type == "extract":
-                    fill_registry(extract_registry, fg_dict)
-                elif action_type == "transform":
-                    fill_registry(transform_registry, fg_dict)
-                elif action_type == "load":
-                    fill_registry(load_registry, fg_dict)
-
-            return FraguaActions(
-                extract=extract_registry,
-                transform=transform_registry,
-                load=load_registry,
-            )
-
-        actions = fg_actions() if self.fg_config else FraguaActions()
+        actions = FraguaActions(self)
         logger.info("Default actions initialized for environment '%s'.", self.name)
         return actions
-
-    # ---------------------- Converters ---------------------- #
-    @staticmethod
-    def to_fragua_set(set_name: str, dict_data: Dict[str, Any]) -> FraguaSet:
-        """
-        Convert a dictionary of components into a FraguaSet.
-
-        The method automatically detects whether the components are
-        classes or instances based on the type of the first element.
-
-        Args:
-            set_name: Name of the FraguaSet to create.
-            dict_data: Dictionary mapping keys to components.
-
-        Returns:
-            FraguaSet containing the provided components.
-        """
-        # Infer content_kind
-        first_value = next(iter(dict_data.values()), None)
-        if first_value is None:
-            content_kind = "class"  # default for empty dict
-        elif isinstance(first_value, type) and issubclass(first_value, FraguaClass):
-            content_kind = "class"
-        elif isinstance(first_value, FraguaInstance):
-            content_kind = "instance"
-        else:
-            # fallback: treat as 'class' by default
-            content_kind = "class"
-
-        # Create set and add elements
-        set_instance = FraguaSet(set_name=set_name, content_kind=content_kind)
-        for key, value in dict_data.items():
-            set_instance.add(key, value)
-
-        return set_instance
 
     # ---------------------- Helper Properties ---------------------- #
     @property
@@ -257,138 +178,6 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.load
 
     @property
-    def extract_agents(self) -> FraguaSet:
-        """
-        Retrieve the set of extract agents.
-
-        Returns:
-            FraguaSet:
-                Registered agents responsible for extract operations.
-        """
-        return self.extract.agents
-
-    @property
-    def extract_params(self) -> FraguaSet:
-        """
-        Retrieve the set of extract parameter classes.
-
-        Returns:
-            FraguaSet:
-                Parameter definitions used by extract styles and functions.
-        """
-        return self.extract.params
-
-    @property
-    def extract_functions(self) -> FraguaSet:
-        """
-        Retrieve the set of extract functions.
-
-        Returns:
-            FraguaSet:
-                Callable units implementing extract logic.
-        """
-        return self.extract.functions
-
-    @property
-    def extract_styles(self) -> FraguaSet:
-        """
-        Retrieve the set of extract styles.
-
-        Returns:
-            FraguaSet:
-                Styles that orchestrate extract functions and parameters.
-        """
-        return self.extract.styles
-
-    @property
-    def transform_agents(self) -> FraguaSet:
-        """
-        Retrieve the set of transform agents.
-
-        Returns:
-            FraguaSet:
-                Agents responsible for transform operations.
-        """
-        return self.transform.agents
-
-    @property
-    def transform_params(self) -> FraguaSet:
-        """
-        Retrieve the set of transform parameter classes.
-
-        Returns:
-            FraguaSet:
-                Parameter definitions used during transformations.
-        """
-        return self.transform.params
-
-    @property
-    def transform_functions(self) -> FraguaSet:
-        """
-        Retrieve the set of transform functions.
-
-        Returns:
-            FraguaSet:
-                Functions implementing transformation logic.
-        """
-        return self.transform.functions
-
-    @property
-    def transform_styles(self) -> FraguaSet:
-        """
-        Retrieve the set of transform styles.
-
-        Returns:
-            FraguaSet:
-                Styles coordinating transform functions and parameters.
-        """
-        return self.transform.styles
-
-    @property
-    def load_agents(self) -> FraguaSet:
-        """
-        Retrieve the set of load agents.
-
-        Returns:
-            FraguaSet:
-                Agents responsible for load operations.
-        """
-        return self.load.agents
-
-    @property
-    def load_params(self) -> FraguaSet:
-        """
-        Retrieve the set of load parameter classes.
-
-        Returns:
-            FraguaSet:
-                Parameter definitions used for load operations.
-        """
-        return self.load.params
-
-    @property
-    def load_functions(self) -> FraguaSet:
-        """
-        Retrieve the set of load functions.
-
-        Returns:
-            FraguaSet:
-                Functions implementing load logic.
-        """
-        return self.load.functions
-
-    @property
-    def load_styles(self) -> FraguaSet:
-        """
-        Retrieve the set of load styles.
-
-        Returns:
-            FraguaSet:
-                Styles coordinating load functions and parameters.
-        """
-        return self.load.styles
-
-    @property
     def params(self) -> Dict[str, FraguaSet]:
         """
         Retrieve all parameter sets grouped by action.
@@ -397,11 +186,7 @@ class FraguaEnvironment(FraguaInstance):
             Dict[str, FraguaSet]:
                 Mapping of action name to its corresponding params set.
         """
-        return {
-            "extract": self.extract_params,
-            "transform": self.transform_params,
-            "load": self.load_params,
-        }
+        return self.actions.params
 
     @property
     def functions(self) -> Dict[str, FraguaSet]:
@@ -412,11 +197,7 @@ class FraguaEnvironment(FraguaInstance):
             Dict[str, FraguaSet]:
                 Mapping of action name to its corresponding functions set.
         """
-        return {
-            "extract": self.extract_functions,
-            "transform": self.transform_functions,
-            "load": self.load_functions,
-        }
+        return self.actions.functions
 
     @property
     def agents(self) -> Dict[str, FraguaSet]:
@@ -427,11 +208,7 @@ class FraguaEnvironment(FraguaInstance):
             Dict([str, FraguaSet]):
                 Mapping of action name to its corresponding agents set.
         """
-        return {
-            "extract": self.extract_agents,
-            "transform": self.transform_agents,
-            "load": self.load_agents,
-        }
+        return self.actions.agents
 
     @property
     def styles(self) -> Dict[str, FraguaSet]:
@@ -442,11 +219,7 @@ class FraguaEnvironment(FraguaInstance):
             Dict([str, FraguaSet]):
                 Mapping of action name to its corresponding styles set.
         """
-        return {
-            "extract": self.extract_styles,
-            "transform": self.transform_styles,
-            "load": self.load_styles,
-        }
+        return self.actions.styles
 
     # ---------------------- Internal helpers ---------------------- #
     def _get_set(self, action: str, kind: str) -> FraguaSet:
