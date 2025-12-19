@@ -17,7 +17,7 @@ class FraguaWarehouse(FraguaInstance):
     representation and introspection.
     """
 
-    def __init__(self, warehouse_name: str = "warehouse") -> None:
+    def __init__(self, warehouse_name: str) -> None:
         """
         Initialize the warehouse container.
 
