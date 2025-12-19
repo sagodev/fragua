@@ -28,7 +28,7 @@ class ExcelLoadParams(FraguaParams):
         },
         "sheet_name": {
             "type": str,
-            "default": "",
+            "default": None,
             "description": "Worksheet name where the data will be written.",
         },
         "index": {
@@ -38,7 +38,7 @@ class ExcelLoadParams(FraguaParams):
         },
         "engine": {
             "type": Optional[str],
-            "default": "",
+            "default": None,
             "description": "Optional Excel writer engine (e.g., openpyxl, xlsxwriter).",
         },
     }

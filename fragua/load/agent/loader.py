@@ -8,10 +8,10 @@ stored Box objects and persisting their data into target destinations
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Type, Union, cast
 
 from fragua.core.agent import FraguaAgent
-from fragua.core.params import FraguaParamsT
+from fragua.core.params import FraguaParams
 from fragua.core.storage import Box, Container
 from fragua.utils.logger import get_logger
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Loader(FraguaAgent[FraguaParamsT]):
+class Loader(FraguaAgent):
     """
     Loader agent responsible for executing load workflows.
 
@@ -31,7 +31,7 @@ class Loader(FraguaAgent[FraguaParamsT]):
     - groups them into a Container
     - executes load functions over each Box
     - does not generate new data storages, but performs side effects
-      (files, databases, external systems)
+    (files, databases, external systems)
     """
 
     def __init__(self, name: str, environment: FraguaEnvironment) -> None:
@@ -82,68 +82,79 @@ class Loader(FraguaAgent[FraguaParamsT]):
 
         return container
 
+    def _resolve_params_for_box(
+        self,
+        style: str,
+        box_name: str,
+        params: Optional[FraguaParams],
+        **kwargs: Any,
+    ) -> FraguaParams:
+        """
+        Resolve Params for a specific Box.
+        """
+        if params is not None:
+            return params
+
+        params_cls = cast(
+            Type[FraguaParams], self.environment.get_params(self.action, style)
+        )
+
+        if params_cls is None:
+            raise ValueError(f"Params not found for style '{style}'.")
+
+        resolved_kwargs = dict(kwargs)
+
+        # Excel-style: auto sheet_name
+        if "sheet_name" in params_cls.FIELDS and not resolved_kwargs.get("sheet_name"):
+            resolved_kwargs["sheet_name"] = box_name
+
+        # SQL-style: auto table_name
+        if "table_name" in params_cls.FIELDS and not resolved_kwargs.get("table_name"):
+            resolved_kwargs["table_name"] = box_name
+
+        return params_cls(**resolved_kwargs)
+
     # ----------------- Work method ----------------- #
     def work(
         self,
         style: str,
         apply_to: Union[str, List[str], None] = None,
         save_as: Optional[str] = None,
-        params: Optional[FraguaParamsT] = None,
+        params: Optional[FraguaParams] = None,
         input_data: Any = None,
         **kwargs: Any,
     ) -> None:
         """
-        Execute a load workflow.
-
-        The Loader differs from Extract/Transform in that:
-        - it operates on existing Box objects
-        - it executes load functions for side effects
-        - it does not persist new storages automatically
-
+        Execute the load workflow.
         Args:
-            style: Load style identifier.
-            apply_to: One or more Box names to load.
-            save_as: Reserved (not used for load operations).
-            params: Optional pre-instantiated Params object.
-            **kwargs: Additional arguments for Params resolution.
-
+            style: Load style to apply.
+            apply_to: One or more Box names to load from the warehouse.
+            save_as: Not used in Loader; present for interface consistency.
+            params: Optional Params instance to use for loading.
+            input_data: Not used in Loader; present for interface consistency.
+            **kwargs: Additional parameters for the load function.
         Raises:
-            TypeError: If apply_to is missing.
+            TypeError: If 'apply_to' is not provided.
         """
         if apply_to is None:
             raise TypeError("Missing required argument: 'apply_to'.")
 
         style = style.lower()
 
-        # 1. Resolve style specification
         style_spec = self._resolve_style(style)
-
-        # 2. Resolve function
         func = self._resolve_function(style_spec["function_key"])
-
-        # 3. Create container
         container = self._create_container(apply_to)
 
-        # 4. Execute load for each Box
-        for name in container.list_storages():
-            box = container.get_storage(name)
+        for box_name in container.list_storages():
+            box = container.get_storage(box_name)
 
-            # Resolve params
-            params_instance = self._resolve_params(
-                style,
-                params,
-                data=box.data,
+            params_instance = self._resolve_params_for_box(
+                style=style,
+                box_name=box_name,
+                params=params,
                 **kwargs,
             )
 
-            # Optional sheet_name alignment (Excel-like loaders)
-            if hasattr(params_instance, "sheet_name") and not getattr(
-                params_instance, "sheet_name"
-            ):
-                setattr(params_instance, "sheet_name", name)
+            func(input_data=box.data, params=params_instance)
 
-            # Execute load function
-            func(input_data=box.data, params=params_instance, context=self)
-
-            # Log operation (no storage created)
             self._add_operation(style, params_instance)

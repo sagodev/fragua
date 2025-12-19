@@ -25,25 +25,7 @@ def execute_load_pipeline(
     params: FraguaParams,
     steps: Iterable[str],
 ) -> pd.DataFrame:
-    """
-    Execute a load pipeline composed of ordered internal steps.
-
-    Args:
-        input_data:
-            DataFrame to be persisted.
-        params:
-            Configuration object containing load options.
-        steps:
-            Ordered list of internal load step names.
-
-    Returns:
-        pd.DataFrame:
-            The persisted DataFrame.
-
-    Raises:
-        KeyError:
-            If a load step is not registered.
-    """
+    """Execute a sequence of load internal functions as a pipeline."""
     data = input_data
     artifacts: dict[str, Any] = {}
 
@@ -53,14 +35,26 @@ def execute_load_pipeline(
 
         spec = LOAD_INTERNAL_FUNCTIONS[step]
 
-        kwargs = {
-            key: getattr(params, key)
-            for key in spec.config_keys
-            if hasattr(params, key)
-        }
+        kwargs = {}
 
-        result = spec.func(data=data, **kwargs)
+        # 1. params → kwargs
+        for key in spec.config_keys:
+            value = params.get(key)
+            if value is not None:
+                kwargs[key] = value
 
+        # 2. artifacts → kwargs (override params)
+        for key in spec.config_keys:
+            if key in artifacts:
+                kwargs[key] = artifacts[key]
+
+        # 3. execute
+        if spec.data_arg:
+            result = spec.func(**{spec.data_arg: data}, **kwargs)
+        else:
+            result = spec.func(**kwargs)
+
+        # 4. collect outputs
         if isinstance(result, pd.DataFrame):
             data = result
         elif isinstance(result, dict):
@@ -136,25 +130,25 @@ LOAD_FUNCTIONS: Dict[str, Dict[str, Any]] = {
     "excel": {
         "action": "load",
         "purpose": "Export a DataFrame to an Excel file.",
-        "params_type": ExcelLoadParams.__class__.__name__,
+        "params_type": ExcelLoadParams.__name__,
         "function": load_excel,
     },
     "csv": {
         "action": "load",
         "purpose": "Export a DataFrame to a CSV file.",
-        "params_type": CSVLoadParams.__class__.__name__,
+        "params_type": CSVLoadParams.__name__,
         "function": load_csv,
     },
     "sql": {
         "action": "load",
         "purpose": "Persist a DataFrame into a SQL database table.",
-        "params_type": SQLLoadParams.__class__.__name__,
+        "params_type": SQLLoadParams.__name__,
         "function": load_sql,
     },
     "api": {
         "action": "load",
         "purpose": "Send data to an external API.",
-        "params_type": APILoadParams.__class__.__name__,
+        "params_type": APILoadParams.__name__,
         "function": load_api,
     },
 }
