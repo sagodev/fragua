@@ -6,13 +6,21 @@ Agents can take a role to work like a Miner, Blacksmith, or Transporter.
 from __future__ import annotations
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Type, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    cast,
+)
 from datetime import datetime, timezone
-
 import pandas as pd
 
 from fragua.core.fragua_instance import FraguaInstance
-from fragua.core.params import FraguaParams, FraguaParamsT
+from fragua.core.params import FraguaParams
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
 from fragua.utils.logger import get_logger
@@ -24,7 +32,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
+class FraguaAgent(FraguaInstance):
     """
     Base class for ETL agents operating within a shared Fragua Environment.
 
@@ -201,25 +209,54 @@ class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
 
         return style_spec
 
-    def _resolve_function(self, function_key: str) -> Any:
+    def _resolve_function(self, function_key: str) -> Callable[..., pd.DataFrame]:
         """
-        Resolve a function implementation for the agent action.
+        Resolve and adapt a function implementation for the agent action.
+
+        The returned callable is normalized according to the action type:
+        - extract   -> func(params)
+        - transform -> func(input_data, params)
+        - load      -> func(input_data, params)
 
         Args:
             function_key: The key or name of the function to resolve from the Environment.
 
         Returns:
-            The callable function associated with the key.
+            A callable adapted to the agent execution contract.
 
         Raises:
-            ValueError: If the function is not registered for the agent action.
+            ValueError:
+                If the function is not registered for the agent action.
         """
         func_spec = self.environment.get_function(self.action, function_key)
         if func_spec is None:
             raise ValueError(
                 f"Function '{function_key}' not registered for action '{self.action}'."
             )
-        return func_spec["function"]
+
+        func = func_spec["function"]
+
+        # ----------------- Function adapter ----------------- #
+        if self.action == "extract":
+
+            def _extract_executor(*, params: FraguaParams, **_: Any) -> Any:
+                return func(params=params)
+
+            return _extract_executor
+
+        if self.action in {"transform", "load"}:
+
+            def _pipeline_executor(
+                *,
+                input_data: pd.DataFrame,
+                params: FraguaParams,
+                **_: Any,
+            ) -> Any:
+                return func(input_data=input_data, params=params)
+
+            return _pipeline_executor
+
+        raise RuntimeError(f"Unsupported agent action: {self.action}")
 
     # ----------------- Metadata ----------------- #
     def _generate_operation_metadata(
@@ -387,7 +424,7 @@ class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
         *,
         input_data: pd.DataFrame | None = None,
         save_as: str | None = None,
-        params: FraguaParamsT | None = None,
+        params: FraguaParams | None = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -415,8 +452,8 @@ class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
         # 4. Normalize input_data
         data = pd.DataFrame() if input_data is None else input_data
 
-        # 5. Execute function (Agent owns execution)
-        result = func(input_data=data, params=params_instance, context=self)
+        # 5. Execute function
+        result = func(input_data=data, params=params_instance)
 
         # 6. Wrap result in storage
         storage = self.create_storage(
@@ -439,7 +476,7 @@ class FraguaAgent(FraguaInstance, Generic[FraguaParamsT]):
         style: str,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
-        params: FraguaParamsT | None = None,
+        params: FraguaParams | None = None,
         input_data: pd.DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
