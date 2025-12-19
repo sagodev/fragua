@@ -12,19 +12,19 @@ from fragua.transform.params.transform_params import (
 TRANSFORM_STYLES: Dict[str, Dict[str, Any]] = {
     "ml": {
         "action": "transform",
-        "function": "ml",
+        "function_key": "ml",
         "params_type": MLTransformParams,
         "purpose": "Apply machine learning preprocessing steps.",
     },
     "report": {
         "action": "transform",
-        "function": "report",
+        "function_key": "report",
         "params_type": ReportTransformParams,
         "purpose": "Prepare data for reporting.",
     },
     "analysis": {
         "action": "transform",
-        "function": "analysis",
+        "function_key": "analysis",
         "params_type": AnalysisTransformParams,
         "purpose": "Perform analytical transformations.",
     },

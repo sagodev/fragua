@@ -130,7 +130,7 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Any]] = {
             "Apply ML-ready transformations including cleanup, "
             "encoding, outlier treatment, and scaling."
         ),
-        "params_type": MLTransformParams.__class__.__name__,
+        "params_type": MLTransformParams.__name__,
         "function": transform_ml,
     },
     "report": {
@@ -140,7 +140,7 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Any]] = {
             "standardizing text, adding derived columns, "
             "and formatting numbers."
         ),
-        "params_type": ReportTransformParams.__class__.__name__,
+        "params_type": ReportTransformParams.__name__,
         "function": transform_report,
     },
     "analysis": {
@@ -149,7 +149,7 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Any]] = {
             "Prepare datasets for exploratory analysis using grouping, "
             "aggregation, sorting, and basic cleanup."
         ),
-        "params_type": AnalysisTransformParams.__class__.__name__,
+        "params_type": AnalysisTransformParams.__name__,
         "function": transform_analysis,
     },
 }
