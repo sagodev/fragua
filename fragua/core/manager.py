@@ -3,16 +3,32 @@ FraguaManager class in Fragua.
 Handles all logic for adding, getting, removing, and listing storages.
 """
 
-from typing import Any, TypeAlias, Union, Optional, Mapping, Dict, List, Literal
+from __future__ import annotations
+
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    TypeAlias,
+    Union,
+    Optional,
+    Mapping,
+    Dict,
+    List,
+    Literal,
+)
 from datetime import datetime
 import copy as py_copy
 
+
 from fragua.core.fragua_instance import FraguaInstance
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
-from fragua.core.warehouse import FraguaWarehouse
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+if TYPE_CHECKING:
+    from fragua.core.environment import FraguaEnvironment
+
 
 StorageType = Literal["box", "all"]
 
@@ -31,7 +47,11 @@ class FraguaManager(FraguaInstance):
     batch-process storage objects.
     """
 
-    def __init__(self, manager_name: str, warehouse: FraguaWarehouse) -> None:
+    def __init__(
+        self,
+        manager_name: str,
+        environment: FraguaEnvironment,
+    ) -> None:
         """
         Initialize the manager and bind it to a Warehouse.
 
@@ -40,7 +60,8 @@ class FraguaManager(FraguaInstance):
             warehouse: Warehouse instance to operate on.
         """
         super().__init__(instance_name=manager_name)
-        self.warehouse = warehouse
+        self.environment = environment
+        self.warehouse = self.environment.warehouse
         self._movement_log: List[dict[str, object]] = []
         self._undo_stack: List[dict[str, Any]] = []
 
@@ -67,7 +88,6 @@ class FraguaManager(FraguaInstance):
                 - log_entries (int): Total number of logged movements
                 - undo_stack_size (int): Current undo stack depth
         """
-        warehouse_name = getattr(self.warehouse, "warehouse_name", None)
 
         storages_info = {
             name: obj.__class__.__name__ for name, obj in self.warehouse.data.items()
@@ -75,7 +95,7 @@ class FraguaManager(FraguaInstance):
 
         return {
             "manager_name": self.name,
-            "warehouse_name": warehouse_name,
+            "warehouse_name": self.warehouse.name,
             "storage_count": len(self.warehouse.data),
             "storages": storages_info,
             "movement_log": self._movement_log.copy(),
