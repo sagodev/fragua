@@ -3,7 +3,7 @@ Fragua Set class.
 """
 
 from abc import ABC
-from typing import Any, Dict, Generic, Optional, Type, TypeVar, cast, Literal
+from typing import Any, Dict, Generic, Optional, TypeVar, Literal
 
 from fragua.core.fragua_class import FraguaClass
 from fragua.core.fragua_instance import FraguaInstance
@@ -118,20 +118,29 @@ class FraguaSet(ABC, Generic[T]):
         """
         result: Dict[str, Any] = {}
 
-        if self.content_kind == "class":
-            for name, component in self._components.items():
-                cls = cast(Type[FraguaClass], component)
-                result[name] = cls.summary()
+        for name, component in self._components.items():
+            # Case 1: Fragua class
+            if isinstance(component, type) and issubclass(component, FraguaClass):
+                result[name] = component.summary()
 
-        elif self.content_kind == "instance":
-            for name, component in self._components.items():
-                inst = cast(FraguaInstance, component)
-                result[name] = inst.summary()
+            # Case 2: Fragua instance
+            elif isinstance(component, FraguaInstance):
+                result[name] = component.summary()
 
-        else:
-            raise RuntimeError(
-                f"Invalid content_kind for FraguaSet '{self.set_name}': "
-                f"{self.content_kind}"
-            )
+            # Case 3: Dictionary of components (variants / profiles)
+            elif isinstance(component, dict):
+                nested: Dict[str, Any] = {}
+                for key, value in component.items():
+                    if isinstance(value, type) and issubclass(value, FraguaClass):
+                        nested[key] = value.summary()
+                    elif isinstance(value, FraguaInstance):
+                        nested[key] = value.summary()
+                    else:
+                        nested[key] = value.__class__.__name__
+                result[name] = nested
+
+            # Fallback (should not normally happen)
+            else:
+                result[name] = component.__class__.__name__
 
         return result
