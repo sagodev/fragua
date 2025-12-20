@@ -77,7 +77,7 @@ class FraguaActions(FraguaInstance):
         Populate registries with empty Fragua sets.
         """
         for set_type in self.SET_TYPES:
-            fragua_set = FraguaSet(set_name=set_type, components={})
+            fragua_set: FraguaSet[Any] = FraguaSet(set_name=set_type, components={})
             registry.add_set(set_type, fragua_set)
 
     def _initialize_registry(self, registry_name: str) -> FraguaRegistry:
