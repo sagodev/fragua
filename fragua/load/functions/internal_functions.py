@@ -14,6 +14,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 
 
 def validate_load(

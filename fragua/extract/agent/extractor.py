@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING
 from fragua.core.agent import FraguaAgent
-from fragua.core.params import FraguaParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -12,8 +11,6 @@ if TYPE_CHECKING:
 
 
 logger = get_logger(__name__)
-
-# pylint: disable=too-many-arguments
 
 
 class Extractor(FraguaAgent):
@@ -40,36 +37,3 @@ class Extractor(FraguaAgent):
         self.role = "extractor"
         self.action = "extract"
         self.storage_type = "Box"
-
-    def work(
-        self,
-        style: str,
-        apply_to: Union[str, List[str], None] = None,
-        save_as: Optional[str] = None,
-        params: Optional[FraguaParams] = None,
-        input_data: Any = None,
-        **kwargs: Any,
-    ) -> None:
-        """
-        Execute an extraction workflow.
-        This method orchestrates the execution of an extraction style.
-
-        Args:
-            style: Name of the extraction style to apply.
-            apply_to: Optional source identifier(s) to extract from.
-            save_as: Optional target name under which the extracted
-                Box will be stored in the Warehouse.
-            params: ExtractParams instance defining configuration
-                for the extraction process.
-            **kwargs: Additional style-specific parameters.
-        Returns:
-            None
-        """
-        super().work(
-            style=style,
-            apply_to=apply_to,
-            save_as=save_as,
-            params=params,
-            input_data=input_data,
-            **kwargs,
-        )

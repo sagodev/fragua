@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 
 
 class Loader(FraguaAgent):
