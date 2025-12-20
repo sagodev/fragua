@@ -19,6 +19,7 @@ logger = get_logger(__name__)
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-positional-arguments
 
+
 class Extractor(FraguaAgent):
     """
     Agent responsible for executing extraction workflows in Fragua.
