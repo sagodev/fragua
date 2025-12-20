@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from pandas import DataFrame
 from fragua.core.agent import FraguaAgent
+from fragua.core.params import FraguaParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -37,3 +40,14 @@ class Extractor(FraguaAgent):
         self.role = "extractor"
         self.action = "extract"
         self.storage_type = "Box"
+
+    def work(
+        self,
+        style: str,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        params: FraguaParams | None = None,
+        input_data: DataFrame | None = None,
+        **kwargs: Any,
+    ) -> None:
+        return super().work(style, apply_to, save_as, params, input_data, **kwargs)

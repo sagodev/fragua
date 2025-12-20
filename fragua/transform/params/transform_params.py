@@ -48,7 +48,7 @@ class MLTransformParams(FraguaParams):
         },
     }
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(style="ml", **kwargs)
 
 
@@ -82,7 +82,7 @@ class ReportTransformParams(FraguaParams):
         },
     }
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(style="report", **kwargs)
 
 
@@ -117,7 +117,7 @@ class AnalysisTransformParams(FraguaParams):
         },
     }
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(style="analysis", **kwargs)
 
 

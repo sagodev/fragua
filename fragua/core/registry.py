@@ -30,7 +30,7 @@ class FraguaRegistry(FraguaInstance):
         """
         super().__init__(instance_name=registry_name)
 
-        self._sets: Dict[str, FraguaSet] = {}
+        self._sets: Dict[str, FraguaSet[Any]] = {}
 
     def _exists(self, key: str) -> bool:
         """Return True if a set exists in the registry."""
@@ -40,7 +40,7 @@ class FraguaRegistry(FraguaInstance):
         """Return True if a set does not exist in the registry."""
         return key not in self._sets
 
-    def get_sets(self) -> Dict[str, FraguaSet]:
+    def get_sets(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all registered sets.
 
@@ -49,7 +49,7 @@ class FraguaRegistry(FraguaInstance):
         """
         return self._sets
 
-    def add_set(self, name: str, registry_set: FraguaSet) -> bool:
+    def add_set(self, name: str, registry_set: FraguaSet[Any]) -> bool:
         """
         Register a new FraguaSet.
 
@@ -61,7 +61,7 @@ class FraguaRegistry(FraguaInstance):
             return True
         return False
 
-    def get_set(self, name: str) -> Optional[FraguaSet]:
+    def get_set(self, name: str) -> Optional[FraguaSet[Any]]:
         """
         Retrieve a set by name.
         """
@@ -84,7 +84,7 @@ class FraguaRegistry(FraguaInstance):
 
     # ------------------------------------------------------------------
     @property
-    def params(self) -> FraguaSet:
+    def params(self) -> FraguaSet[Any]:
         """
         Access the set containing extract parameter schemas.
 
@@ -96,7 +96,7 @@ class FraguaRegistry(FraguaInstance):
         raise KeyError("Params set not found in registry.")
 
     @property
-    def functions(self) -> FraguaSet:
+    def functions(self) -> FraguaSet[Any]:
         """
         Access the set containing extract functions.
 
@@ -108,7 +108,7 @@ class FraguaRegistry(FraguaInstance):
         raise KeyError("Functions set not found in registry.")
 
     @property
-    def styles(self) -> FraguaSet:
+    def styles(self) -> FraguaSet[Any]:
         """
         Access the set containing extract styles.
 
@@ -120,7 +120,7 @@ class FraguaRegistry(FraguaInstance):
         raise KeyError("Styles set not found in registry.")
 
     @property
-    def agents(self) -> FraguaSet:
+    def agents(self) -> FraguaSet[Any]:
         """
         Access the set containing extract agents.
 

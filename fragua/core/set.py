@@ -3,7 +3,7 @@ Fragua Set class.
 """
 
 from abc import ABC
-from typing import Any, Dict, Generic, Optional, TypeVar, Literal
+from typing import Any, Dict, Generic, Optional, TypeVar
 
 from fragua.core.fragua_class import FraguaClass
 from fragua.core.fragua_instance import FraguaInstance
@@ -26,7 +26,6 @@ class FraguaSet(ABC, Generic[T]):
         self,
         set_name: str,
         *,
-        content_kind: Literal["class", "instance"],
         components: Optional[Dict[str, T]] = None,
     ) -> None:
         """
@@ -35,13 +34,10 @@ class FraguaSet(ABC, Generic[T]):
         Args:
             set_name:
                 Identifier of the set within its parent registry.
-            content_kind:
-                Declares whether the set stores classes or instances.
             components:
                 Optional preloaded elements.
         """
         self.set_name = set_name
-        self.content_kind = content_kind
         self._components: Dict[str, T] = {} if components is None else components
 
     def _exists(self, key: str) -> bool:

@@ -178,7 +178,7 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.load
 
     @property
-    def params(self) -> Dict[str, FraguaSet]:
+    def params(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all parameter sets grouped by action.
 
@@ -189,7 +189,7 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.params
 
     @property
-    def functions(self) -> Dict[str, FraguaSet]:
+    def functions(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all function sets grouped by action.
 
@@ -200,7 +200,7 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.functions
 
     @property
-    def agents(self) -> Dict[str, FraguaSet]:
+    def agents(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all agent sets grouped by action.
 
@@ -211,7 +211,7 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.agents
 
     @property
-    def styles(self) -> Dict[str, FraguaSet]:
+    def styles(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all style sets grouped by action.
 
@@ -222,7 +222,7 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.styles
 
     # ---------------------- Internal helpers ---------------------- #
-    def _get_set(self, action: str, kind: str) -> FraguaSet:
+    def _get_set(self, action: str, kind: str) -> FraguaSet[Any]:
         """
         Resolve a FraguaSet by action and component kind.
 
@@ -706,7 +706,7 @@ class FraguaEnvironment(FraguaInstance):
         self,
         action: str,
         style_name: Optional[str] = None,
-    ) -> Optional[Any]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Retrieve a style by action and optional name.
 

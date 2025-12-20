@@ -15,8 +15,6 @@ from fragua.transform import (
 )
 from fragua.load import LOAD_STYLES, LOAD_FUNCTIONS, LOAD_PARAMS
 
-from fragua.utils.config import to_fragua_set
-
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -71,7 +69,7 @@ class FraguaActions(FraguaInstance):
         Populate registries with default Fragua sets.
         """
         for set_type, components in dict_data.items():
-            fragua_set = to_fragua_set(set_type, components)
+            fragua_set = FraguaSet(set_name=set_type, components=components)
             registry.add_set(set_type, fragua_set)
 
     def _to_empty_registry(self, registry: FraguaRegistry) -> None:
@@ -79,7 +77,7 @@ class FraguaActions(FraguaInstance):
         Populate registries with empty Fragua sets.
         """
         for set_type in self.SET_TYPES:
-            fragua_set = to_fragua_set(set_type, {})
+            fragua_set = FraguaSet(set_name=set_type, components={})
             registry.add_set(set_type, fragua_set)
 
     def _initialize_registry(self, registry_name: str) -> FraguaRegistry:
@@ -124,7 +122,7 @@ class FraguaActions(FraguaInstance):
         return self._load
 
     @property
-    def params(self) -> Dict[str, FraguaSet]:
+    def params(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all parameter sets grouped by action.
 
@@ -139,7 +137,7 @@ class FraguaActions(FraguaInstance):
         }
 
     @property
-    def functions(self) -> Dict[str, FraguaSet]:
+    def functions(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all function sets grouped by action.
 
@@ -154,7 +152,7 @@ class FraguaActions(FraguaInstance):
         }
 
     @property
-    def agents(self) -> Dict[str, FraguaSet]:
+    def agents(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all agent sets grouped by action.
 
@@ -169,7 +167,7 @@ class FraguaActions(FraguaInstance):
         }
 
     @property
-    def styles(self) -> Dict[str, FraguaSet]:
+    def styles(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all style sets grouped by action.
 

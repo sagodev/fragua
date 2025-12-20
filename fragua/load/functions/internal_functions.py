@@ -164,7 +164,7 @@ def write_api(
     data: pd.DataFrame,
     url: str,
     method: str,
-    headers: dict | None = None,
+    headers: dict[str, Any] | None = None,
     timeout: int = 30,
     raise_for_status: bool = True,
 ) -> pd.DataFrame:
