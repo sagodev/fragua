@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# pylint: disable=too-many-arguments
+
 
 class Extractor(FraguaAgent):
     """
@@ -49,11 +51,8 @@ class Extractor(FraguaAgent):
         **kwargs: Any,
     ) -> None:
         """
-        Execute an extraction workflow using a registered extract style.
-
-        This method orchestrates the execution of an extraction style
-        through the underlying agent workflow, producing a Box that
-        can be stored in the Warehouse.
+        Execute an extraction workflow.
+        This method orchestrates the execution of an extraction style.
 
         Args:
             style: Name of the extraction style to apply.
@@ -63,14 +62,14 @@ class Extractor(FraguaAgent):
             params: ExtractParams instance defining configuration
                 for the extraction process.
             **kwargs: Additional style-specific parameters.
-
         Returns:
             None
         """
-        self._execute_workflow(
-            style_name=style,
-            input_data=input_data,
+        super().work(
+            style=style,
+            apply_to=apply_to,
             save_as=save_as,
             params=params,
+            input_data=input_data,
             **kwargs,
         )

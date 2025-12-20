@@ -14,7 +14,6 @@ This module contains:
 
 from .environment import FraguaEnvironment
 
-from .component import FraguaComponent
 
 from .registry import FraguaRegistry
 
@@ -37,8 +36,6 @@ from .fragua_class import FraguaClass
 from .fragua_instance import FraguaInstance
 
 __all__ = [
-    # Fragua Component Class
-    "FraguaComponent",
     # Actions Class
     "FraguaActions",
     # Environment Class

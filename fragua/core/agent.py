@@ -31,6 +31,8 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# pylint: disable=too-many-arguments
+
 
 class FraguaAgent(FraguaInstance):
     """
@@ -152,6 +154,15 @@ class FraguaAgent(FraguaInstance):
         """
         return f"{style_name}_{self.action}_data"
 
+    def _get_params(self, style: str) -> Type[FraguaParams]:
+        params_cls = cast(
+            Type[FraguaParams], self.environment.get_params(self.action, style)
+        )
+        if params_cls is None:
+            raise ValueError(f"Params not found for style '{style}'.")
+
+        return params_cls
+
     def _resolve_params(
         self,
         style: str,
@@ -179,11 +190,7 @@ class FraguaAgent(FraguaInstance):
         if params is not None:
             return params
 
-        params_cls = cast(
-            Type[FraguaParams], self.environment.get_params(self.action, style)
-        )
-        if params_cls is None:
-            raise ValueError(f"Params not found for style '{style}'.")
+        params_cls = self._get_params(style)
 
         return params_cls(**kwargs)
 

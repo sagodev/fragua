@@ -8,7 +8,7 @@ stored Box objects and persisting their data into target destinations
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from fragua.core.agent import FraguaAgent
 from fragua.core.params import FraguaParams
@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 
 
 logger = get_logger(__name__)
+
+# pylint: disable=too-many-arguments
 
 
 class Loader(FraguaAgent):
@@ -95,12 +97,7 @@ class Loader(FraguaAgent):
         if params is not None:
             return params
 
-        params_cls = cast(
-            Type[FraguaParams], self.environment.get_params(self.action, style)
-        )
-
-        if params_cls is None:
-            raise ValueError(f"Params not found for style '{style}'.")
+        params_cls = self._get_params(style)
 
         resolved_kwargs = dict(kwargs)
 

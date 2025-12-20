@@ -13,6 +13,8 @@ import requests
 import pandas as pd
 from sqlalchemy import create_engine
 
+# pylint: disable=too-many-arguments
+
 
 def validate_load(
     data: pd.DataFrame,

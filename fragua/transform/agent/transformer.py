@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# pylint: disable=too-many-arguments
+
 
 class Transformer(FraguaAgent):
     """
@@ -48,6 +50,19 @@ class Transformer(FraguaAgent):
         input_data: DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Execute a transformation workflow.
+        This method orchestrates the execution of a transformation style.
+        Args:
+            style (str): Name of the transformation style to apply.
+            apply_to (str | list[str] | None): Target data identifiers.
+            save_as (str | None): Optional name to save the transformed data.
+            params (FraguaParams | None): Optional parameters for the transformation.
+            input_data (DataFrame | None): Optional input data for transformation.
+            **kwargs: Additional keyword arguments.
+        Returns:
+            None
+        """
         super().work(
             style=style,
             apply_to=apply_to,

@@ -3,10 +3,10 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from fragua.core.component import FraguaComponent
+# pylint: disable=too-few-public-methods
 
 
-class FraguaInstance(FraguaComponent, ABC):
+class FraguaInstance(ABC):
     """
     Base class for all runtime instances in Fragua.
 

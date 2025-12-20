@@ -93,8 +93,7 @@ class FraguaRegistry(FraguaInstance):
         """
         if "params" in self._sets:
             return self._sets["params"]
-        else:
-            raise KeyError("Params set not found in registry.")
+        raise KeyError("Params set not found in registry.")
 
     @property
     def functions(self) -> FraguaSet:
@@ -106,8 +105,7 @@ class FraguaRegistry(FraguaInstance):
         """
         if "functions" in self._sets:
             return self._sets["functions"]
-        else:
-            raise KeyError("Functions set not found in registry.")
+        raise KeyError("Functions set not found in registry.")
 
     @property
     def styles(self) -> FraguaSet:
@@ -119,8 +117,7 @@ class FraguaRegistry(FraguaInstance):
         """
         if "styles" in self._sets:
             return self._sets["styles"]
-        else:
-            raise KeyError("Styles set not found in registry.")
+        raise KeyError("Styles set not found in registry.")
 
     @property
     def agents(self) -> FraguaSet:
@@ -132,8 +129,7 @@ class FraguaRegistry(FraguaInstance):
         """
         if "agents" in self._sets:
             return self._sets["agents"]
-        else:
-            raise KeyError("Agents set not found in registry.")
+        raise KeyError("Agents set not found in registry.")
 
     def summary(self) -> Dict[str, Any]:
         """
