@@ -1,71 +1,98 @@
 """Actions class."""
 
-from typing import Any, Dict
-from fragua.core.component import FraguaComponent
-from fragua.extract.registry.extract_registry import ExtractRegistry
-from fragua.load.registry.load_registry import LoadRegistry
-from fragua.transform.registry.transform_registry import TransformRegistry
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, Optional
+from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.registry import FraguaRegistry
+
+from fragua.core.set import FraguaSet
+from fragua.extract import EXTRACT_STYLES, EXTRACT_FUNCTIONS, EXTRACT_PARAMS
+from fragua.transform import (
+    TRANSFORM_STYLES,
+    TRANSFORM_FUNCTIONS,
+    TRANSFORM_PARAMS,
+)
+from fragua.load import LOAD_STYLES, LOAD_FUNCTIONS, LOAD_PARAMS
 
 
-class FraguaActions(FraguaComponent):
-    """
-    Centralized container for ETL action registries.
+if TYPE_CHECKING:
+    from fragua.core.environment import FraguaEnvironment
 
-    This component groups and manages the registries associated with
-    each ETL action type (extract, transform, load). It acts as a
-    single access point for resolving action-specific components
-    within the Fragua Environment.
-    """
 
-    def __init__(self, fg_config: bool) -> None:
+class FraguaActions(FraguaInstance):
+    """Container for all action registries (extract, transform, load)."""
+
+    SET_TYPES = ["functions", "params", "styles", "agents"]
+    FG_SETS: Dict[str, Dict[str, Any]] = {
+        "extract": {
+            "functions": EXTRACT_FUNCTIONS,
+            "params": EXTRACT_PARAMS,
+            "styles": EXTRACT_STYLES,
+            "agents": {},
+        },
+        "transform": {
+            "functions": TRANSFORM_FUNCTIONS,
+            "params": TRANSFORM_PARAMS,
+            "styles": TRANSFORM_STYLES,
+            "agents": {},
+        },
+        "load": {
+            "functions": LOAD_FUNCTIONS,
+            "params": LOAD_PARAMS,
+            "styles": LOAD_STYLES,
+            "agents": {},
+        },
+    }
+
+    def __init__(
+        self,
+        environment: FraguaEnvironment,
+        extract: Optional[FraguaRegistry] = None,
+        transform: Optional[FraguaRegistry] = None,
+        load: Optional[FraguaRegistry] = None,
+    ) -> None:
+        super().__init__(instance_name="actions")
+        self.environment: FraguaEnvironment = environment
+        self._extract = (
+            self._initialize_registry("extract") if extract is None else extract
+        )
+        self._transform = (
+            self._initialize_registry("transform") if transform is None else transform
+        )
+        self._load = self._initialize_registry("load") if load is None else load
+
+    def _to_fg_registry(
+        self, registry: FraguaRegistry, dict_data: Dict[str, Dict[str, Any]]
+    ) -> None:
         """
-        Initialize the FraguaActions component and its registries.
-
-        Args:
-            fg_config: Flag indicating whether the environment is
-                running in configuration mode.
+        Populate registries with default Fragua sets.
         """
-        super().__init__(component_name="fragua_actions")
-        self.fg_config = fg_config
-        self._extract = self._initialize_extract_registry()
-        self._transform = self._initialize_transform_registry()
-        self._load = self._initialize_load_registry()
+        for set_type, components in dict_data.items():
+            fragua_set = FraguaSet(set_name=set_type, components=components)
+            registry.add_set(set_type, fragua_set)
 
-    def _initialize_extract_registry(self) -> ExtractRegistry:
+    def _to_empty_registry(self, registry: FraguaRegistry) -> None:
         """
-        Create and initialize the Extract registry.
+        Populate registries with empty Fragua sets.
+        """
+        for set_type in self.SET_TYPES:
+            fragua_set: FraguaSet[Any] = FraguaSet(set_name=set_type, components={})
+            registry.add_set(set_type, fragua_set)
 
-        Returns:
-            An initialized ExtractRegistry instance.
-        """
-        reg_name = "extract"
-        extract_registry = ExtractRegistry(reg_name, self.fg_config)
-        return extract_registry
+    def _initialize_registry(self, registry_name: str) -> FraguaRegistry:
+        """Initialize a generic action registry."""
+        registry = FraguaRegistry(registry_name)
+        if self.environment.fg_config:
+            fg_data = self.FG_SETS[registry_name]
 
-    def _initialize_transform_registry(self) -> TransformRegistry:
-        """
-        Create and initialize the Transform registry.
-
-        Returns:
-            An initialized TransformRegistry instance.
-        """
-        reg_name = "transform"
-        transform_registry = TransformRegistry(reg_name, self.fg_config)
-        return transform_registry
-
-    def _initialize_load_registry(self) -> LoadRegistry:
-        """
-        Create and initialize the Load registry.
-
-        Returns:
-            An initialized LoadRegistry instance.
-        """
-        reg_name = "load"
-        load_registry = LoadRegistry(reg_name, self.fg_config)
-        return load_registry
+            self._to_fg_registry(registry, fg_data)
+        else:
+            self._to_empty_registry(registry)
+        return registry
 
     @property
-    def extract(self) -> ExtractRegistry:
+    def extract(self) -> FraguaRegistry:
         """
         Access the Extract action registry.
 
@@ -75,7 +102,7 @@ class FraguaActions(FraguaComponent):
         return self._extract
 
     @property
-    def transform(self) -> TransformRegistry:
+    def transform(self) -> FraguaRegistry:
         """
         Access the Transform action registry.
 
@@ -85,7 +112,7 @@ class FraguaActions(FraguaComponent):
         return self._transform
 
     @property
-    def load(self) -> LoadRegistry:
+    def load(self) -> FraguaRegistry:
         """
         Access the Load action registry.
 
@@ -93,6 +120,66 @@ class FraguaActions(FraguaComponent):
             The LoadRegistry instance.
         """
         return self._load
+
+    @property
+    def params(self) -> Dict[str, FraguaSet[Any]]:
+        """
+        Retrieve all parameter sets grouped by action.
+
+        Returns:
+            Dict[str, FraguaSet]:
+                Mapping of action name to its corresponding params set.
+        """
+        return {
+            "extract": self.extract.params,
+            "transform": self.transform.params,
+            "load": self.load.params,
+        }
+
+    @property
+    def functions(self) -> Dict[str, FraguaSet[Any]]:
+        """
+        Retrieve all function sets grouped by action.
+
+        Returns:
+            Dict[str, FraguaSet]:
+                Mapping of action name to its corresponding functions set.
+        """
+        return {
+            "extract": self.extract.functions,
+            "transform": self.transform.functions,
+            "load": self.load.functions,
+        }
+
+    @property
+    def agents(self) -> Dict[str, FraguaSet[Any]]:
+        """
+        Retrieve all agent sets grouped by action.
+
+        Returns:
+            Dict([str, FraguaSet]):
+                Mapping of action name to its corresponding agents set.
+        """
+        return {
+            "extract": self.extract.agents,
+            "transform": self.transform.agents,
+            "load": self.load.agents,
+        }
+
+    @property
+    def styles(self) -> Dict[str, FraguaSet[Any]]:
+        """
+        Retrieve all style sets grouped by action.
+
+        Returns:
+            Dict([str, FraguaSet]):
+                Mapping of action name to its corresponding styles set.
+        """
+        return {
+            "extract": self.extract.styles,
+            "transform": self.transform.styles,
+            "load": self.load.styles,
+        }
 
     def summary(self) -> Dict[str, Any]:
         """

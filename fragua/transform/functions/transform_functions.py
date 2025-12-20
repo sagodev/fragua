@@ -2,16 +2,12 @@
 Transform Functions.
 """
 
-from __future__ import annotations
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable
 
 import pandas as pd
-
-from fragua.transform.functions.base import TransformFunction
+from fragua.core.params import FraguaParams
 from fragua.transform.functions.internal_functions import (
     TRANSFORM_INTERNAL_FUNCTIONS,
-    get_function_description,
-    get_function_name,
 )
 
 from fragua.transform.params.transform_params import (
@@ -21,220 +17,139 @@ from fragua.transform.params.transform_params import (
 )
 
 
-class MLTransformFunction(TransformFunction):
+def execute_transform_pipeline(
+    input_data: pd.DataFrame,
+    params: FraguaParams,
+    steps: Iterable[str],
+) -> pd.DataFrame:
     """
-    Transformation pipeline designed for Machine Learning workflows.
+    Execute a transformation pipeline composed of ordered steps.
 
-    This function applies a predefined sequence of data preparation
-    steps to produce ML-ready datasets, including normalization,
-    encoding, and outlier handling.
+    Args:
+        input_data:
+            Input DataFrame to be transformed.
+        params:
+            Configuration object containing transformation options.
+        steps:
+            Ordered list of internal transform step names.
+        context:
+            Optional execution context (reserved for future use).
+
+    Returns:
+        pd.DataFrame:
+            Transformed DataFrame.
+
+    Raises:
+        KeyError:
+            If a transformation step is not registered.
     """
+    data = input_data
 
-    PURPOSE = (
-        "Apply ML-ready transformations including "
-        "cleanup, encoding, outlier treatment, and scaling."
-    )
+    for step in steps:
+        if step not in TRANSFORM_INTERNAL_FUNCTIONS:
+            raise KeyError(f"Transform function '{step}' not registered.")
 
-    STEPS = [
-        "fill_missing",
-        "standardize",
-        "encode_categoricals",
-        "treat_outliers",
-        "scale_numeric",
-    ]
+        spec = TRANSFORM_INTERNAL_FUNCTIONS[step]
 
-    def __init__(self, params: Optional[MLTransformParams] = None) -> None:
-        """
-        Initialize the ML transformation pipeline.
-
-        Args:
-            params (Optional[MLTransformParams]):
-                Parameters controlling the ML transformation process.
-                If not provided, default parameters are instantiated.
-        """
-        super().__init__()
-        self.params = MLTransformParams() if params is None else params
-
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the ML transformation pipeline.
-
-        Each step defined in `STEPS` is resolved from the internal
-        transformation registry and applied sequentially to the
-        parameters object.
-
-        Returns:
-            pd.DataFrame: Transformed dataset ready for ML consumption.
-
-        Raises:
-            KeyError: If a required internal transformation is not registered.
-        """
-        for step in self.STEPS:
-            if step not in TRANSFORM_INTERNAL_FUNCTIONS:
-                raise KeyError(f"Transform function '{step}' not registered.")
-
-            func = TRANSFORM_INTERNAL_FUNCTIONS[step]["func"]
-            self.params = func(self.params)
-
-        return self.params.data
-
-    def summary(self) -> dict[str, Any]:
-        """
-        Return a structured summary of the ML transformation pipeline.
-
-        Includes the transformation purpose, parameter type, and
-        an ordered list of transformation steps with descriptions.
-        """
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-            "steps": [
-                {
-                    "function": get_function_name(func),
-                    "description": get_function_description(func),
-                }
-                for func in self.STEPS
-            ],
+        kwargs = {
+            key: getattr(params, key)
+            for key in spec.config_keys
+            if hasattr(params, key)
         }
 
+        data = spec.func(data, **kwargs)
 
-class ReportTransformFunction(TransformFunction):
+    return data
+
+
+def transform_ml(
+    input_data: pd.DataFrame,
+    params: MLTransformParams,
+) -> pd.DataFrame:
     """
-    Transformation pipeline tailored for reporting and presentation.
-
-    This function prepares datasets for reporting use cases by
-    standardizing values, formatting outputs, and enriching data
-    with derived columns.
+    Apply ML-ready transformations including cleanup, encoding,
+    outlier treatment, and scaling.
     """
-
-    PURPOSE = (
-        "Prepare data for reporting by cleaning values,"
-        " standardizing text, adding derived columns, and formatting numbers."
+    return execute_transform_pipeline(
+        input_data=input_data,
+        params=params,
+        steps=[
+            "fill_missing",
+            "standardize",
+            "encode_categoricals",
+            "treat_outliers",
+            "scale_numeric",
+        ],
     )
 
-    STEPS = [
-        "fill_missing",
-        "standardize",
-        "add_derived_columns",
-        "format_numeric",
-    ]
 
-    def __init__(self, params: Optional[ReportTransformParams] = None) -> None:
-        """
-        Initialize the report transformation pipeline.
-
-        Args:
-            params (Optional[ReportTransformParams]):
-                Parameters controlling the report transformation logic.
-        """
-        super().__init__()
-        self.params = ReportTransformParams() if params is None else params
-
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the reporting transformation pipeline.
-
-        Applies each registered transformation step sequentially
-        to prepare the dataset for reporting or dashboarding.
-
-        Returns:
-            pd.DataFrame: Reporting-ready dataset.
-        """
-        for step in self.STEPS:
-            if step not in TRANSFORM_INTERNAL_FUNCTIONS:
-                raise KeyError(f"Transform function '{step}' not registered.")
-
-            func = TRANSFORM_INTERNAL_FUNCTIONS[step]["func"]
-            self.params = func(self.params)
-
-        return self.params.data
-
-    def summary(self) -> dict[str, Any]:
-        """
-        Return a structured summary of the report transformation pipeline.
-        """
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-            "steps": [
-                {
-                    "function": get_function_name(func),
-                    "description": get_function_description(func),
-                }
-                for func in self.STEPS
-            ],
-        }
-
-
-class AnalysisTransformFunction(TransformFunction):
+def transform_report(
+    input_data: pd.DataFrame,
+    params: ReportTransformParams,
+) -> pd.DataFrame:
     """
-    Transformation pipeline for exploratory and analytical workflows.
-
-    Focused on preparing datasets for analysis through aggregation,
-    grouping, sorting, and general cleanup operations.
+    Prepare data for reporting by cleaning values, standardizing text,
+    adding derived columns, and formatting numbers.
     """
-
-    PURPOSE = (
-        "Prepare datasets for exploratory analysis"
-        " using grouping, aggregation, sorting, and basic cleanup."
+    return execute_transform_pipeline(
+        input_data=input_data,
+        params=params,
+        steps=[
+            "fill_missing",
+            "standardize",
+            "add_derived_columns",
+            "format_numeric",
+        ],
     )
 
-    STEPS = [
-        "fill_missing",
-        "standardize",
-        "group_and_aggregate",
-        "sort_dataframe",
-    ]
 
-    def __init__(self, params: Optional[AnalysisTransformParams] = None) -> None:
-        """
-        Initialize the analysis transformation pipeline.
-
-        Args:
-            params (Optional[AnalysisTransformParams]):
-                Parameters controlling analytical transformations.
-        """
-        super().__init__()
-        self.params = AnalysisTransformParams() if params is None else params
-
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the analysis transformation pipeline.
-
-        Returns:
-            pd.DataFrame: Dataset prepared for exploratory analysis.
-        """
-        for step in self.STEPS:
-            if step not in TRANSFORM_INTERNAL_FUNCTIONS:
-                raise KeyError(f"Transform function '{step}' not registered.")
-
-            func = TRANSFORM_INTERNAL_FUNCTIONS[step]["func"]
-            self.params = func(self.params)
-
-        return self.params.data
-
-    def summary(self) -> dict[str, Any]:
-        """
-        Return a structured summary of the analysis transformation pipeline.
-        """
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-            "steps": [
-                {
-                    "function": get_function_name(func),
-                    "description": get_function_description(func),
-                }
-                for func in self.STEPS
-            ],
-        }
+def transform_analysis(
+    input_data: pd.DataFrame,
+    params: AnalysisTransformParams,
+) -> pd.DataFrame:
+    """
+    Prepare datasets for exploratory analysis using grouping,
+    aggregation, sorting, and basic cleanup.
+    """
+    return execute_transform_pipeline(
+        input_data=input_data,
+        params=params,
+        steps=[
+            "fill_missing",
+            "standardize",
+            "group_and_aggregate",
+            "sort_dataframe",
+        ],
+    )
 
 
-TRANSFORM_FUNCTION_CLASSES: Dict[str, type[TransformFunction]] = {
-    "ml": MLTransformFunction,
-    "report": ReportTransformFunction,
-    "analysis": AnalysisTransformFunction,
+TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Any]] = {
+    "ml": {
+        "action": "transform",
+        "purpose": (
+            "Apply ML-ready transformations including cleanup, "
+            "encoding, outlier treatment, and scaling."
+        ),
+        "params_type": MLTransformParams.__name__,
+        "function": transform_ml,
+    },
+    "report": {
+        "action": "transform",
+        "purpose": (
+            "Prepare data for reporting by cleaning values, "
+            "standardizing text, adding derived columns, "
+            "and formatting numbers."
+        ),
+        "params_type": ReportTransformParams.__name__,
+        "function": transform_report,
+    },
+    "analysis": {
+        "action": "transform",
+        "purpose": (
+            "Prepare datasets for exploratory analysis using grouping, "
+            "aggregation, sorting, and basic cleanup."
+        ),
+        "params_type": AnalysisTransformParams.__name__,
+        "function": transform_analysis,
+    },
 }

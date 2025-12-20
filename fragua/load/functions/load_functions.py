@@ -7,79 +7,148 @@ Each function encapsulates the low-level persistence logic
 for a specific target system or format.
 """
 
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Iterable
 import pandas as pd
 
-from fragua.load.functions.base import LoadFunction
-from fragua.load.functions.internal_functions import (
-    build_excel_path,
-    convert_datetime_columns,
-    validate_excel_params,
-    write_excel,
+from fragua.core.params import FraguaParams
+from fragua.load.functions.internal_functions import LOAD_INTERNAL_FUNCTIONS
+from fragua.load.params.load_params import (
+    APILoadParams,
+    CSVLoadParams,
+    ExcelLoadParams,
+    SQLLoadParams,
 )
-from fragua.load.params.load_params import ExcelLoadParams
 
 
-class ExcelLoadFunction(LoadFunction):
-    """
-    LoadFunction implementation for Excel outputs.
+def execute_load_pipeline(
+    input_data: pd.DataFrame,
+    params: FraguaParams,
+    steps: Iterable[str],
+) -> pd.DataFrame:
+    """Execute a sequence of load internal functions as a pipeline."""
+    data = input_data
+    artifacts: dict[str, Any] = {}
 
-    This function:
-    - validates Excel-specific parameters
-    - resolves the target file path
-    - normalizes datetime columns for compatibility
-    - writes the data into an Excel file
-    """
+    for step in steps:
+        if step not in LOAD_INTERNAL_FUNCTIONS:
+            raise KeyError(f"Load function '{step}' not registered.")
 
-    PURPOSE: str = "Export a DataFrame to an Excel file."
+        spec = LOAD_INTERNAL_FUNCTIONS[step]
 
-    def __init__(self, params: Optional[ExcelLoadParams] = None) -> None:
-        """
-        Initialize the Excel load function.
+        kwargs = {}
 
-        Args:
-            params (Optional[ExcelLoadParams]):
-                Parameters controlling Excel output behavior.
-                If not provided, a default ExcelLoadParams instance is created.
-        """
-        super().__init__()
-        self.params = ExcelLoadParams() if params is None else params
+        # 1. params → kwargs
+        for key in spec.config_keys:
+            value = params.get(key)
+            if value is not None:
+                kwargs[key] = value
 
-    def execute(self) -> pd.DataFrame:
-        """
-        Execute the Excel load operation.
+        # 2. artifacts → kwargs (override params)
+        for key in spec.config_keys:
+            if key in artifacts:
+                kwargs[key] = artifacts[key]
 
-        Performs the full persistence workflow:
-        - parameter validation
-        - destination path construction
-        - datetime normalization
-        - Excel file writing
+        # 3. execute
+        if spec.data_arg:
+            result = spec.func(**{spec.data_arg: data}, **kwargs)
+        else:
+            result = spec.func(**kwargs)
 
-        Returns:
-            pd.DataFrame: The DataFrame that was persisted.
-        """
-        validate_excel_params(self.params)
-        path = build_excel_path(self.params)
-        df = convert_datetime_columns(self.params.data)
-        write_excel(df, path, self.params.sheet_name or "Sheet1", self.params.index)
-        return df
+        # 4. collect outputs
+        if isinstance(result, pd.DataFrame):
+            data = result
+        elif isinstance(result, dict):
+            artifacts.update(result)
 
-    def summary(self) -> dict[str, Any]:
-        """
-        Return a structured summary of the Excel load function.
-
-        Includes:
-            - function name
-            - associated parameter class
-            - functional purpose
-        """
-        return {
-            "name": self.name,
-            "params_type": type(self.params).__name__,
-            "purpose": self.PURPOSE,
-        }
+    return data
 
 
-LOAD_FUNCTION_CLASSES: Dict[str, Type[LoadFunction]] = {
-    "excel": ExcelLoadFunction,
+def load_excel(
+    input_data: pd.DataFrame,
+    params: ExcelLoadParams,
+) -> pd.DataFrame:
+    """Export a DataFrame to an Excel file."""
+    return execute_load_pipeline(
+        input_data=input_data,
+        params=params,
+        steps=[
+            "validate_load",
+            "build_path",
+            "convert_datetime_columns",
+            "write_excel",
+        ],
+    )
+
+
+def load_csv(
+    input_data: pd.DataFrame,
+    params: CSVLoadParams,
+) -> pd.DataFrame:
+    """Export a DataFrame to a CSV file."""
+    return execute_load_pipeline(
+        input_data=input_data,
+        params=params,
+        steps=[
+            "validate_load",
+            "build_path",
+            "write_csv",
+        ],
+    )
+
+
+def load_sql(
+    input_data: pd.DataFrame,
+    params: SQLLoadParams,
+) -> pd.DataFrame:
+    """Persist a DataFrame into a SQL database table."""
+    return execute_load_pipeline(
+        input_data=input_data,
+        params=params,
+        steps=[
+            "validate_sql_load",
+            "write_sql",
+        ],
+    )
+
+
+def load_api(
+    input_data: pd.DataFrame,
+    params: APILoadParams,
+) -> pd.DataFrame:
+    """Send data to an external API."""
+    return execute_load_pipeline(
+        input_data=input_data,
+        params=params,
+        steps=[
+            "validate_api_load",
+            "write_api",
+        ],
+    )
+
+
+LOAD_FUNCTIONS: Dict[str, Dict[str, Any]] = {
+    "excel": {
+        "action": "load",
+        "purpose": "Export a DataFrame to an Excel file.",
+        "params_type": ExcelLoadParams.__name__,
+        "function": load_excel,
+    },
+    "csv": {
+        "action": "load",
+        "purpose": "Export a DataFrame to a CSV file.",
+        "params_type": CSVLoadParams.__name__,
+        "function": load_csv,
+    },
+    "sql": {
+        "action": "load",
+        "purpose": "Persist a DataFrame into a SQL database table.",
+        "params_type": SQLLoadParams.__name__,
+        "function": load_sql,
+    },
+    "api": {
+        "action": "load",
+        "purpose": "Send data to an external API.",
+        "params_type": APILoadParams.__name__,
+        "function": load_api,
+    },
 }

@@ -5,42 +5,20 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Type, cast
 
 from fragua.core.agent import FraguaAgent
-from fragua.core.component import FraguaComponent
 from fragua.core.actions import FraguaActions
-from fragua.core.params import FraguaParams
+from fragua.core.fragua_class import FraguaClass
+from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.registry import FraguaRegistry
 from fragua.core.set import FraguaSet
 from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.manager import FraguaManager
 
+
 from fragua.extract import Extractor
-from fragua.extract.params.base import ExtractParams
-from fragua.extract.registry.extract_registry import ExtractRegistry
-from fragua.extract.registry.extract_sets import (
-    ExtractAgentSet,
-    ExtractFunctionSet,
-    ExtractParamsSet,
-    ExtractStyleSet,
-)
-
-from fragua.load import Loader
-from fragua.load.params.base import LoadParams
-from fragua.load.registry.load_registry import LoadRegistry
-from fragua.load.registry.load_sets import (
-    LoadAgentSet,
-    LoadFunctionSet,
-    LoadParamsSet,
-    LoadStyleSet,
-)
-
 from fragua.transform import Transformer
-from fragua.transform.params.base import TransformParams
-from fragua.transform.registry.transform_registry import TransformRegistry
-from fragua.transform.registry.transform_sets import (
-    TransformAgentSet,
-    TransformFunctionSet,
-    TransformParamsSet,
-    TransformStyleSet,
-)
+from fragua.load import Loader
+
+
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -49,7 +27,7 @@ logger = get_logger(__name__)
 # pylint: disable=too-many-public-methods
 
 
-class FraguaEnvironment(FraguaComponent):
+class FraguaEnvironment(FraguaInstance):
     """
     Core environment abstraction for Fragua.
 
@@ -81,7 +59,7 @@ class FraguaEnvironment(FraguaComponent):
                 functions, styles, and agents are automatically registered.
         """
 
-        super().__init__(component_name=env_name)
+        super().__init__(instance_name=env_name)
         self.env_type = env_type
         self.fg_config = fg_config
         self.warehouse = self._initialize_warehouse()
@@ -106,25 +84,6 @@ class FraguaEnvironment(FraguaComponent):
         return ValueError("Agent not found.")
 
     # ---------------------- Initializers ---------------------- #
-    def _initialize_manager(self) -> FraguaManager:
-        """
-        Initialize the warehouse manager for the environment.
-
-        The warehouse manager acts as the coordination layer between
-        agents and the underlying warehouse, controlling access,
-        execution flow, and resource usage.
-
-        Returns:
-            FraguaManager:
-                Fully initialized warehouse manager instance.
-        """
-
-        manager = FraguaManager(f"{self.name}_manager", self.warehouse)
-
-        logger.info(
-            "Default warehouse manager initialized for environment '%s'.", self.name
-        )
-        return manager
 
     def _initialize_warehouse(self) -> FraguaWarehouse:
         """
@@ -144,6 +103,26 @@ class FraguaEnvironment(FraguaComponent):
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
+    def _initialize_manager(self) -> FraguaManager:
+        """
+        Initialize the warehouse manager for the environment.
+
+        The warehouse manager acts as the coordination layer between
+        agents and the underlying warehouse, controlling access,
+        execution flow, and resource usage.
+
+        Returns:
+            FraguaManager:
+                Fully initialized warehouse manager instance.
+        """
+
+        manager = FraguaManager(f"{self.name}_manager", self)
+
+        logger.info(
+            "Default warehouse manager initialized for environment '%s'.", self.name
+        )
+        return manager
+
     def _initialize_actions(self) -> FraguaActions:
         """
         Initialize action registries for the environment.
@@ -157,13 +136,13 @@ class FraguaEnvironment(FraguaComponent):
                 Container holding all action registries.
         """
 
-        actions = FraguaActions(self.fg_config)
+        actions = FraguaActions(self)
         logger.info("Default actions initialized for environment '%s'.", self.name)
         return actions
 
     # ---------------------- Helper Properties ---------------------- #
     @property
-    def extract(self) -> ExtractRegistry:
+    def extract(self) -> FraguaRegistry:
         """
         Access the Extract action registry.
 
@@ -175,7 +154,7 @@ class FraguaEnvironment(FraguaComponent):
         return self.actions.extract
 
     @property
-    def transform(self) -> TransformRegistry:
+    def transform(self) -> FraguaRegistry:
         """
         Access the Transform action registry.
 
@@ -187,7 +166,7 @@ class FraguaEnvironment(FraguaComponent):
         return self.actions.transform
 
     @property
-    def load(self) -> LoadRegistry:
+    def load(self) -> FraguaRegistry:
         """
         Access the Load action registry.
 
@@ -199,139 +178,7 @@ class FraguaEnvironment(FraguaComponent):
         return self.actions.load
 
     @property
-    def extract_agents(self) -> ExtractAgentSet:
-        """
-        Retrieve the set of extract agents.
-
-        Returns:
-            ExtractAgentSet:
-                Registered agents responsible for extract operations.
-        """
-        return self.extract.agents
-
-    @property
-    def extract_params(self) -> ExtractParamsSet:
-        """
-        Retrieve the set of extract parameter classes.
-
-        Returns:
-            ExtractParamsSet:
-                Parameter definitions used by extract styles and functions.
-        """
-        return self.extract.params
-
-    @property
-    def extract_functions(self) -> ExtractFunctionSet:
-        """
-        Retrieve the set of extract functions.
-
-        Returns:
-            ExtractFunctionSet:
-                Callable units implementing extract logic.
-        """
-        return self.extract.functions
-
-    @property
-    def extract_styles(self) -> ExtractStyleSet:
-        """
-        Retrieve the set of extract styles.
-
-        Returns:
-            ExtractStyleSet:
-                Styles that orchestrate extract functions and parameters.
-        """
-        return self.extract.styles
-
-    @property
-    def transform_agents(self) -> TransformAgentSet:
-        """
-        Retrieve the set of transform agents.
-
-        Returns:
-            TransformAgentSet:
-                Agents responsible for transform operations.
-        """
-        return self.transform.agents
-
-    @property
-    def transform_params(self) -> TransformParamsSet:
-        """
-        Retrieve the set of transform parameter classes.
-
-        Returns:
-            TransformParamsSet:
-                Parameter definitions used during transformations.
-        """
-        return self.transform.params
-
-    @property
-    def transform_functions(self) -> TransformFunctionSet:
-        """
-        Retrieve the set of transform functions.
-
-        Returns:
-            TransformFunctionSet:
-                Functions implementing transformation logic.
-        """
-        return self.transform.functions
-
-    @property
-    def transform_styles(self) -> TransformStyleSet:
-        """
-        Retrieve the set of transform styles.
-
-        Returns:
-            TransformStyleSet:
-                Styles coordinating transform functions and parameters.
-        """
-        return self.transform.styles
-
-    @property
-    def load_agents(self) -> LoadAgentSet:
-        """
-        Retrieve the set of load agents.
-
-        Returns:
-            LoadAgentSet:
-                Agents responsible for load operations.
-        """
-        return self.load.agents
-
-    @property
-    def load_params(self) -> LoadParamsSet:
-        """
-        Retrieve the set of load parameter classes.
-
-        Returns:
-            LoadParamsSet:
-                Parameter definitions used for load operations.
-        """
-        return self.load.params
-
-    @property
-    def load_functions(self) -> LoadFunctionSet:
-        """
-        Retrieve the set of load functions.
-
-        Returns:
-            LoadFunctionSet:
-                Functions implementing load logic.
-        """
-        return self.load.functions
-
-    @property
-    def load_styles(self) -> LoadStyleSet:
-        """
-        Retrieve the set of load styles.
-
-        Returns:
-            LoadStyleSet:
-                Styles coordinating load functions and parameters.
-        """
-        return self.load.styles
-
-    @property
-    def params(self) -> Dict[str, FraguaSet]:
+    def params(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all parameter sets grouped by action.
 
@@ -339,14 +186,10 @@ class FraguaEnvironment(FraguaComponent):
             Dict[str, FraguaSet]:
                 Mapping of action name to its corresponding params set.
         """
-        return {
-            "extract": self.extract_params,
-            "transform": self.transform_params,
-            "load": self.load_params,
-        }
+        return self.actions.params
 
     @property
-    def functions(self) -> Dict[str, FraguaSet]:
+    def functions(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all function sets grouped by action.
 
@@ -354,14 +197,10 @@ class FraguaEnvironment(FraguaComponent):
             Dict[str, FraguaSet]:
                 Mapping of action name to its corresponding functions set.
         """
-        return {
-            "extract": self.extract_functions,
-            "transform": self.transform_functions,
-            "load": self.load_functions,
-        }
+        return self.actions.functions
 
     @property
-    def agents(self) -> Dict[str, FraguaSet]:
+    def agents(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all agent sets grouped by action.
 
@@ -369,14 +208,10 @@ class FraguaEnvironment(FraguaComponent):
             Dict([str, FraguaSet]):
                 Mapping of action name to its corresponding agents set.
         """
-        return {
-            "extract": self.extract_agents,
-            "transform": self.transform_agents,
-            "load": self.load_agents,
-        }
+        return self.actions.agents
 
     @property
-    def styles(self) -> Dict[str, FraguaSet]:
+    def styles(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all style sets grouped by action.
 
@@ -384,13 +219,119 @@ class FraguaEnvironment(FraguaComponent):
             Dict([str, FraguaSet]):
                 Mapping of action name to its corresponding styles set.
         """
-        return {
-            "extract": self.extract_styles,
-            "transform": self.transform_styles,
-            "load": self.load_styles,
+        return self.actions.styles
+
+    # ---------------------- Internal helpers ---------------------- #
+    def _get_set(self, action: str, kind: str) -> FraguaSet[Any]:
+        """
+        Resolve a FraguaSet by action and component kind.
+
+        Args:
+            action: Action type ("extract", "transform", "load").
+            kind: Component kind ("agents", "params", "functions", "styles").
+
+        Returns:
+            The resolved FraguaSet.
+
+        Raises:
+            ValueError: If the action or component kind is invalid.
+        """
+        registries = {
+            "agents": self.agents,
+            "params": self.params,
+            "functions": self.functions,
+            "styles": self.styles,
         }
 
-    # ----------------------Agents Management ---------------------- #
+        if kind not in registries:
+            raise ValueError(f"Invalid component kind: {kind}")
+
+        action_sets = registries[kind]
+        fragua_set = action_sets.get(action)
+
+        if fragua_set is None:
+            raise ValueError(f"Invalid action type: {action}")
+
+        return fragua_set
+
+    def _create(
+        self,
+        *,
+        action: str,
+        kind: str,
+        name: str,
+        component: Any,
+    ) -> bool:
+        fragua_set = self._get_set(action, kind)
+        created = fragua_set.add(name, component)
+
+        if created:
+            logger.info("%s registered: %s (%s)", kind[:-1].capitalize(), name, action)
+
+        return created
+
+    def _get(
+        self,
+        *,
+        action: str,
+        kind: str,
+        name: str | None = None,
+    ) -> Any:
+        fragua_set = self._get_set(action, kind)
+
+        if name is None:
+            all_items = fragua_set.get_all()
+            return next(iter(all_items.values()), None)
+
+        return fragua_set.get_one(name)
+
+    def _update(
+        self,
+        *,
+        action: str,
+        kind: str,
+        old_name: str,
+        new_name: str,
+    ) -> bool:
+        fragua_set = self._get_set(action, kind)
+        updated = fragua_set.update(old_name, new_name)
+
+        if not updated:
+            raise ValueError(f"{kind[:-1].capitalize()} not found.")
+
+        logger.info(
+            "%s renamed: %s -> %s (%s)",
+            kind[:-1].capitalize(),
+            old_name,
+            new_name,
+            action,
+        )
+
+        return updated
+
+    def _delete(
+        self,
+        *,
+        action: str,
+        kind: str,
+        name: str,
+    ) -> bool:
+        fragua_set = self._get_set(action, kind)
+        deleted = fragua_set.delete_one(name)
+
+        if not deleted:
+            raise ValueError(f"{kind[:-1].capitalize()} not found.")
+
+        logger.info(
+            "%s deleted: %s (%s)",
+            kind[:-1].capitalize(),
+            name,
+            action,
+        )
+
+        return deleted
+
+    # ----------------------Agents API ---------------------- #
     def create_agent(self, action: str, agent_name: str) -> bool:
         """
         Create and register a new agent for a given action.
@@ -410,9 +351,9 @@ class FraguaEnvironment(FraguaComponent):
             ValueError: If the provided action type is invalid.
         """
 
-        def _build_agent() -> FraguaAgent[FraguaParams]:
+        def _build_agent() -> FraguaAgent:
             """Instantiate the correct agent class based on action."""
-            class_map: Dict[str, Type[FraguaAgent[FraguaParams]]] = {
+            class_map: Dict[str, Type[FraguaAgent]] = {
                 "extract": Extractor,
                 "transform": Transformer,
                 "load": Loader,
@@ -424,7 +365,7 @@ class FraguaEnvironment(FraguaComponent):
 
             return agent_class(agent_name, self)
 
-        def _register_agent(agent: FraguaAgent[FraguaParams]) -> bool:
+        def _register_agent(agent: FraguaAgent) -> bool:
             """Register the agent into the corresponding set."""
 
             type_set = self.agents.get(action)
@@ -447,7 +388,7 @@ class FraguaEnvironment(FraguaComponent):
 
     def get_agent(
         self, action: str, agent_name: Optional[str] = None
-    ) -> Optional[FraguaAgent[FraguaParams]]:
+    ) -> Optional[FraguaAgent]:
         """
         Retrieve an agent by action type and optional agent name.
 
@@ -476,11 +417,11 @@ class FraguaEnvironment(FraguaComponent):
 
             return agents_set.get_one(agent_name)
 
-        def _validate_agent(agent: Any) -> Optional[FraguaAgent[FraguaParams]]:
+        def _validate_agent(agent: Any) -> Optional[FraguaAgent]:
             """Validate and safely cast the agent to Agent type."""
             if agent is None:
                 return None
-            return cast(FraguaAgent[FraguaParams], agent)
+            return cast(FraguaAgent, agent)
 
         agent = _set_agent()
 
@@ -551,27 +492,36 @@ class FraguaEnvironment(FraguaComponent):
 
         return deleted
 
-    # ----------------------Functions Management ---------------------- #
+    # ----------------------Functions API ---------------------- #
     def create_function(
         self,
         action: str,
         function_name: str,
-        function: FraguaComponent,
+        function: Any,
     ) -> bool:
         """
-        Register a new function in the corresponding action registry.
+        Create and register a new function for a given action.
+
+        Functions are stored as opaque objects inside the registry.
+        They may be callables, classes, or structured descriptors,
+        depending on the execution model.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            function_name: Name to assign to the function.
-            function: Function component to register.
+            action (str):
+                Action type ("extract", "transform", "load").
+            function_name (str):
+                Unique name for the function.
+            function (Any):
+                Function object to register.
 
         Returns:
-            True if the function was successfully registered,
-            False if a function with the same name already exists.
+            bool:
+                True if the function was successfully registered.
+                False if a function with the same name already exists.
 
         Raises:
-            ValueError: If the provided action type is invalid.
+            ValueError:
+                If the provided action type is invalid.
         """
 
         functions_set = self.functions.get(action)
@@ -582,7 +532,7 @@ class FraguaEnvironment(FraguaComponent):
 
         if created:
             logger.info(
-                "Function registered: %s (%s)",
+                "Function created: %s (%s)",
                 function_name,
                 action,
             )
@@ -593,20 +543,23 @@ class FraguaEnvironment(FraguaComponent):
         self,
         action: str,
         function_name: Optional[str] = None,
-    ) -> Optional[FraguaComponent]:
+    ) -> Optional[Any]:
         """
-        Retrieve a function by action type and optional name.
+        Retrieve a function by action and optional name.
 
-        If a function name is provided, the method returns the matching
-        function from the specified action registry. If no name is provided,
-        the first registered function is returned.
+        If a function name is provided, the matching function is returned.
+        If no name is provided, the first registered function for the
+        given action is returned.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            function_name: Optional name of the function to retrieve.
+            action (str):
+                Action type ("extract", "transform", "load").
+            function_name (Optional[str]):
+                Name of the function to retrieve.
 
         Returns:
-            The requested function if found, otherwise None.
+            Optional[Any]:
+                The requested function if found, otherwise None.
         """
 
         functions_set = self.functions.get(action)
@@ -626,18 +579,26 @@ class FraguaEnvironment(FraguaComponent):
         new_name: str,
     ) -> bool:
         """
-        Rename an existing function within a specific action.
+        Rename an existing function within a specific action registry.
+
+        This operation only updates the registry key.
+        The underlying function object remains unchanged.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            old_name: Current function name.
-            new_name: New function name.
+            action (str):
+                Action type ("extract", "transform", "load").
+            old_name (str):
+                Current function name.
+            new_name (str):
+                New function name.
 
         Returns:
-            True if the function was successfully renamed.
+            bool:
+                True if the function was successfully renamed.
 
         Raises:
-            ValueError: If the action is invalid or the function is not found.
+            ValueError:
+                If the action is invalid or the function does not exist.
         """
 
         functions_set = self.functions.get(action)
@@ -660,17 +621,21 @@ class FraguaEnvironment(FraguaComponent):
 
     def delete_function(self, action: str, function_name: str) -> bool:
         """
-            Delete a function from a specific action registry.
+        Delete a function from a specific action registry.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            function_name: Name of the function to delete.
+            action (str):
+                Action type ("extract", "transform", "load").
+            function_name (str):
+                Name of the function to delete.
 
         Returns:
-            True if the function was successfully deleted.
+            bool:
+                True if the function was successfully deleted.
 
         Raises:
-            ValueError: If the action is invalid or the function is not found.
+            ValueError:
+                If the action is invalid or the function does not exist.
         """
 
         functions_set = self.functions.get(action)
@@ -690,27 +655,36 @@ class FraguaEnvironment(FraguaComponent):
 
         return deleted
 
-    # ----------------------Styles Management ---------------------- #
+    # ----------------------Styles API ---------------------- #
     def create_style(
         self,
         action: str,
         style_name: str,
-        style: FraguaComponent,
+        style: Any,
     ) -> bool:
         """
-        Register a new style in the corresponding action registry.
+        Create and register a new style for a given action.
+
+        Styles are stored as opaque objects inside the registry.
+        The Environment does not enforce a concrete base class,
+        allowing flexible style implementations.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            style_name: Name to assign to the style.
-            style: Style component to register.
+            action (str):
+                Action type ("extract", "transform", "load").
+            style_name (str):
+                Unique name for the style.
+            style (Any):
+                Style object or class to register.
 
         Returns:
-            True if the style was successfully registered,
-            False if a style with the same name already exists.
+            bool:
+                True if the style was successfully registered.
+                False if a style with the same name already exists.
 
         Raises:
-            ValueError: If the provided action type is invalid.
+            ValueError:
+                If the provided action type is invalid.
         """
 
         styles_set = self.styles.get(action)
@@ -721,7 +695,7 @@ class FraguaEnvironment(FraguaComponent):
 
         if created:
             logger.info(
-                "Style registered: %s (%s)",
+                "Style created: %s (%s)",
                 style_name,
                 action,
             )
@@ -732,20 +706,23 @@ class FraguaEnvironment(FraguaComponent):
         self,
         action: str,
         style_name: Optional[str] = None,
-    ) -> Optional[FraguaComponent]:
+    ) -> Optional[Dict[str, Any]]:
         """
-        Retrieve a style by action type and optional name.
+        Retrieve a style by action and optional name.
 
-        If a style name is provided, the method returns the matching
-        style from the specified action registry. If no name is provided,
-        the first registered style is returned.
+        If a style name is provided, the matching style is returned.
+        If no name is provided, the first registered style for the
+        given action is returned.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            style_name: Optional name of the style to retrieve.
+            action (str):
+                Action type ("extract", "transform", "load").
+            style_name (Optional[str]):
+                Name of the style to retrieve.
 
         Returns:
-            The requested style if found, otherwise None.
+            Optional[Any]:
+                The requested style if found, otherwise None.
         """
 
         styles_set = self.styles.get(action)
@@ -765,18 +742,26 @@ class FraguaEnvironment(FraguaComponent):
         new_name: str,
     ) -> bool:
         """
-        Rename an existing style within a specific action.
+        Rename an existing style within a specific action registry.
+
+        This operation updates only the registry key.
+        The underlying style object remains unchanged.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            old_name: Current style name.
-            new_name: New style name.
+            action (str):
+                Action type ("extract", "transform", "load").
+            old_name (str):
+                Current style name.
+            new_name (str):
+                New style name.
 
         Returns:
-            True if the style was successfully renamed.
+            bool:
+                True if the style was successfully renamed.
 
         Raises:
-            ValueError: If the action is invalid or the style is not found.
+            ValueError:
+                If the action is invalid or the style does not exist.
         """
 
         styles_set = self.styles.get(action)
@@ -802,14 +787,18 @@ class FraguaEnvironment(FraguaComponent):
         Delete a style from a specific action registry.
 
         Args:
-            action: Action type ("extract", "transform", "load").
-            style_name: Name of the style to delete.
+            action (str):
+                Action type ("extract", "transform", "load").
+            style_name (str):
+                Name of the style to delete.
 
         Returns:
-            True if the style was successfully deleted.
+            bool:
+                True if the style was successfully deleted.
 
         Raises:
-            ValueError: If the action is invalid or the style is not found.
+            ValueError:
+                If the action is invalid or the style does not exist.
         """
 
         styles_set = self.styles.get(action)
@@ -830,11 +819,11 @@ class FraguaEnvironment(FraguaComponent):
         return deleted
 
     # ----------------------Params Management ---------------------- #
-    def create_param(
+    def create_params(
         self,
         action: str,
         param_name: str,
-        param: FraguaComponent,
+        param: FraguaClass,
     ) -> bool:
         """
         Register a new parameter in the corresponding action registry.
@@ -867,11 +856,11 @@ class FraguaEnvironment(FraguaComponent):
 
         return created
 
-    def get_param(
+    def get_params(
         self,
         action: str,
         param_name: Optional[str] = None,
-    ) -> Optional[FraguaComponent]:
+    ) -> Optional[FraguaClass]:
         """
         Retrieve a parameter by action type and optional name.
 
@@ -897,7 +886,7 @@ class FraguaEnvironment(FraguaComponent):
 
         return params_set.get_one(param_name)
 
-    def update_param(
+    def update_params(
         self,
         action: str,
         old_name: str,
@@ -936,7 +925,7 @@ class FraguaEnvironment(FraguaComponent):
 
         return updated
 
-    def delete_param(self, action: str, param_name: str) -> bool:
+    def delete_params(self, action: str, param_name: str) -> bool:
         """
         Delete a parameter from a specific action registry.
 
@@ -969,9 +958,7 @@ class FraguaEnvironment(FraguaComponent):
         return deleted
 
     # ----------------------Shortcut functions ---------------------- #
-    def get_extractor(
-        self, agent_name: Optional[str] = None
-    ) -> Extractor[ExtractParams]:
+    def get_extractor(self, agent_name: Optional[str] = None) -> Extractor:
         """
         Retrieve an Extractor agent by name.
 
@@ -993,11 +980,9 @@ class FraguaEnvironment(FraguaComponent):
         if extractor is None:
             self.agent_not_found()
 
-        return cast(Extractor[ExtractParams], extractor)
+        return cast(Extractor, extractor)
 
-    def get_transformer(
-        self, agent_name: str | None = None
-    ) -> Transformer[TransformParams]:
+    def get_transformer(self, agent_name: str | None = None) -> Transformer:
         """
         Retrieve a Transformer agent by name.
 
@@ -1019,9 +1004,9 @@ class FraguaEnvironment(FraguaComponent):
         if transformer is None:
             self.agent_not_found()
 
-        return cast(Transformer[TransformParams], transformer)
+        return cast(Transformer, transformer)
 
-    def get_loader(self, agent_name: str | None = None) -> Loader[LoadParams]:
+    def get_loader(self, agent_name: str | None = None) -> Loader:
         """
         Retrieve a Loader agent by name.
 
@@ -1044,7 +1029,7 @@ class FraguaEnvironment(FraguaComponent):
         if loader is None:
             self.agent_not_found()
 
-        return cast(Loader[LoadParams], loader)
+        return cast(Loader, loader)
 
     # ---------------------- Summary ---------------------- #
 

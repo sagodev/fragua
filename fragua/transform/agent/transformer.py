@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
+
+from pandas import DataFrame
+
 from fragua.core.agent import FraguaAgent
 
-from fragua.transform.params.generic_types import TransformParamsT
+from fragua.core.params import FraguaParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -14,8 +17,11 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 
-class Transformer(FraguaAgent[TransformParamsT]):
+
+class Transformer(FraguaAgent):
     """
     Agent responsible for applying transformation styles to stored data.
 
@@ -39,37 +45,11 @@ class Transformer(FraguaAgent[TransformParamsT]):
 
     def work(
         self,
-        /,
         style: str,
-        apply_to: Union[str | list[str], None] = None,
-        save_as: Optional[str] = None,
-        params: Optional[TransformParamsT] = None,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        params: FraguaParams | None = None,
+        input_data: DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Execute a transformation workflow.
-
-        This method retrieves the target data from the warehouse,
-        resolves the transformation style and parameters, and
-        applies the transformation logic accordingly.
-
-        Args:
-            style (str):
-                Name of the transformation style to apply.
-            apply_to (str | list[str] | None):
-                Name of the storage object(s) in the warehouse to transform.
-            save_as (Optional[str]):
-                Optional name under which to store the transformed result.
-            params (Optional[TransformParamsT]):
-                Explicit transformation parameters instance.
-            **kwargs:
-                Additional keyword arguments used to build parameters
-                when `params` is not provided.
-        """
-
-        if isinstance(apply_to, str):
-            storage = self.get_from_warehouse(apply_to)
-            data = storage.data
-            kwargs["data"] = data
-
-            self._execute_workflow(style, save_as, params, **kwargs)
+        return super().work(style, apply_to, save_as, params, input_data, **kwargs)

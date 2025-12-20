@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
+
+from pandas import DataFrame
 from fragua.core.agent import FraguaAgent
-from fragua.extract.params.generic_types import ExtractParamsT
+from fragua.core.params import FraguaParams
 from fragua.utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -14,7 +16,11 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class Extractor(FraguaAgent[ExtractParamsT]):
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+
+
+class Extractor(FraguaAgent):
     """
     Agent responsible for executing extraction workflows in Fragua.
 
@@ -41,30 +47,11 @@ class Extractor(FraguaAgent[ExtractParamsT]):
 
     def work(
         self,
-        /,
         style: str,
-        apply_to: Union[str, list[str], None] = None,
-        save_as: Optional[str] = None,
-        params: Optional[ExtractParamsT] = None,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        params: FraguaParams | None = None,
+        input_data: DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Execute an extraction workflow using a registered extract style.
-
-        This method orchestrates the execution of an extraction style
-        through the underlying agent workflow, producing a Box that
-        can be stored in the Warehouse.
-
-        Args:
-            style: Name of the extraction style to apply.
-            apply_to: Optional source identifier(s) to extract from.
-            save_as: Optional target name under which the extracted
-                Box will be stored in the Warehouse.
-            params: ExtractParams instance defining configuration
-                for the extraction process.
-            **kwargs: Additional style-specific parameters.
-
-        Returns:
-            None
-        """
-        self._execute_workflow(style, save_as, params, **kwargs)
+        return super().work(style, apply_to, save_as, params, input_data, **kwargs)

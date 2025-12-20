@@ -4,7 +4,7 @@
 from .logger import get_logger
 
 # ------------------- Config ------------------- #
-from .config import Config
+from .config import to_fragua_set
 
 # ------------------- Metrics ------------------- #
 from .metrics import (
@@ -19,7 +19,7 @@ __all__ = [
     # Logger
     "get_logger",
     # Config
-    "Config",
+    "to_fragua_set",
     # Metrics
     "calculate_checksum",
     "generate_metadata",

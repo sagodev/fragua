@@ -1,22 +1,22 @@
-"""Base class for all registries of an environment in Fragua."""
+"""
+Base class for all registries of an environment in Fragua.
+"""
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
-from fragua.core.component import FraguaComponent
+from fragua.core.fragua_instance import FraguaInstance
 from fragua.core.set import FraguaSet
 
 
-class FraguaRegistry(FraguaComponent):
+class FraguaRegistry(FraguaInstance):
     """
-    Base class for all registries within a Fragua environment.
+    Runtime registry within a Fragua environment.
 
     A FraguaRegistry manages a collection of FraguaSet instances,
     each representing a logical grouping of related components
-    (such as styles, params, or functions) under a specific scope.
+    (such as styles, params, or functions).
 
-    Registries provide controlled creation, retrieval, update,
-    and deletion of sets, and act as the backbone for dynamic
-    component resolution within the environment.
+    Registries are stateful and exist only at runtime.
     """
 
     def __init__(self, registry_name: str) -> None:
@@ -24,110 +24,131 @@ class FraguaRegistry(FraguaComponent):
         Initialize the registry with a name.
 
         Args:
-            registry_name: Identifier used to reference this registry
+            registry_name:
+                Identifier used to reference this registry
                 within the environment.
         """
-        super().__init__(component_name=registry_name)
-        self._set: Dict[str, FraguaSet] = {}
+        super().__init__(instance_name=registry_name)
+
+        self._sets: Dict[str, FraguaSet[Any]] = {}
 
     def _exists(self, key: str) -> bool:
-        """
-        Check whether a registry set exists.
-
-        Args:
-            key: Name of the registry set.
-
-        Returns:
-            True if the set exists, False otherwise.
-        """
-        return key in self._set
+        """Return True if a set exists in the registry."""
+        return key in self._sets
 
     def _not_exists(self, key: str) -> bool:
-        """
-        Check whether a registry set does not exist.
+        """Return True if a set does not exist in the registry."""
+        return key not in self._sets
 
-        Args:
-            key: Name of the registry set.
-
-        Returns:
-            True if the set does not exist, False otherwise.
-        """
-        return key not in self._set
-
-    def get_sets(self) -> Dict[str, FraguaSet]:
+    def get_sets(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all registered sets.
 
         Returns:
-            A dictionary mapping set names to FraguaSet instances.
+            A mapping of set names to FraguaSet instances.
         """
-        return self._set
+        return self._sets
 
-    def create_set(self, name: str, registry_set: FraguaSet) -> bool:
+    def add_set(self, name: str, registry_set: FraguaSet[Any]) -> bool:
         """
-        Register a new FraguaSet in the registry.
-
-        Args:
-            name: Name under which the set will be registered.
-            registry_set: FraguaSet instance to register.
+        Register a new FraguaSet.
 
         Returns:
-            True if the set was created successfully, False if a
-            set with the same name already exists.
+            True if created successfully, False if already exists.
         """
         if self._not_exists(name):
-            self._set[name] = registry_set
+            self._sets[name] = registry_set
             return True
         return False
 
-    def get_set(self, name: str) -> Optional[FraguaSet]:
+    def get_set(self, name: str) -> Optional[FraguaSet[Any]]:
         """
-        Retrieve a registry set by name.
-
-        Args:
-            name: Name of the registry set.
-
-        Returns:
-            The FraguaSet instance if found, otherwise None.
+        Retrieve a set by name.
         """
-        return self._set.get(name)
+        return self._sets.get(name)
 
     def update_set(self, old_name: str, new_name: str) -> bool:
         """
-        Rename an existing registry set.
-
-        Args:
-            old_name: Current name of the registry set.
-            new_name: New name to assign to the registry set.
-
-        Returns:
-            True if the set was renamed successfully, False if the
-            old name does not exist or the new name is already taken.
+        Rename an existing set.
         """
         if self._exists(old_name) and self._not_exists(new_name):
-            self._set[new_name] = self._set.pop(old_name)
+            self._sets[new_name] = self._sets.pop(old_name)
             return True
         return False
 
     def delete_set(self, name: str) -> bool:
         """
-        Remove a registry set from the registry.
+        Remove a set from the registry.
+        """
+        return self._sets.pop(name, None) is not None
 
-        Args:
-            name: Name of the registry set to delete.
+    # ------------------------------------------------------------------
+    @property
+    def params(self) -> FraguaSet[Any]:
+        """
+        Access the set containing extract parameter schemas.
 
         Returns:
-            True if the set was deleted, False if it did not exist.
+            ExtractParamsSet instance.
         """
-        return self._set.pop(name, None) is not None
+        if "params" in self._sets:
+            return self._sets["params"]
+        raise KeyError("Params set not found in registry.")
 
-    # ---------------------------------------------------------
+    @property
+    def functions(self) -> FraguaSet[Any]:
+        """
+        Access the set containing extract functions.
+
+        Returns:
+            ExtractFunctionSet instance.
+        """
+        if "functions" in self._sets:
+            return self._sets["functions"]
+        raise KeyError("Functions set not found in registry.")
+
+    @property
+    def styles(self) -> FraguaSet[Any]:
+        """
+        Access the set containing extract styles.
+
+        Returns:
+            ExtractStyleSet instance.
+        """
+        if "styles" in self._sets:
+            return self._sets["styles"]
+        raise KeyError("Styles set not found in registry.")
+
+    @property
+    def agents(self) -> FraguaSet[Any]:
+        """
+        Access the set containing extract agents.
+
+        Returns:
+            ExtractAgentSet instance.
+        """
+        if "agents" in self._sets:
+            return self._sets["agents"]
+        raise KeyError("Agents set not found in registry.")
+
+    def summary(self) -> Dict[str, Any]:
+        """
+        Return a summary of the registry contents.
+        Returns:
+            A dictionary summarizing the contents of each set.
+
+        """
+        summary = {
+            "params": self.params.summary(),
+            "functions": self.functions.summary(),
+            "styles": self.styles.summary(),
+            "agents": self.agents.summary(),
+        }
+
+        return summary
 
     def __repr__(self) -> str:
         """
         Return a concise string representation of the registry.
-
-        Returns:
-            A string identifying the registry class and name.
         """
         return f"{self.__class__.__name__}('{self.name}')"

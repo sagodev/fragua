@@ -19,6 +19,3 @@ from .params import *
 
 # ------------------- Transformer Agent ------------------- #
 from .agent import *
-
-# ------------------- Transform Registry ------------------- #
-from .registry import *

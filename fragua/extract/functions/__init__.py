@@ -7,22 +7,11 @@ This module contains:
 - Dict registry with each Function class.('name': class)
 """
 
-from .base import ExtractFunction
-
 from .extract_functions import (
-    CSVExtractFunction,
-    ExcelExtractFunction,
-    SQLExtractFunction,
-    APIExtractFunction,
-    EXTRACT_FUNCTION_CLASSES,
+    EXTRACT_FUNCTIONS,
 )
 
 
 __all__ = [
-    "ExtractFunction",
-    "ExcelExtractFunction",
-    "APIExtractFunction",
-    "CSVExtractFunction",
-    "SQLExtractFunction",
-    "EXTRACT_FUNCTION_CLASSES",
+    "EXTRACT_FUNCTIONS",
 ]

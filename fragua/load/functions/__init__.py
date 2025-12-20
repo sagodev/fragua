@@ -8,15 +8,11 @@ This module contains:
 - Dict registry with each internal function. ('name': function(Callable))
 """
 
-from .base import LoadFunction
-
-from .load_functions import ExcelLoadFunction, LOAD_FUNCTION_CLASSES
+from .load_functions import LOAD_FUNCTIONS
 from .internal_functions import LOAD_INTERNAL_FUNCTIONS
 
 
 __all__ = [
-    "LoadFunction",
-    "ExcelLoadFunction",
-    "LOAD_FUNCTION_CLASSES",
+    "LOAD_FUNCTIONS",
     "LOAD_INTERNAL_FUNCTIONS",
 ]

@@ -14,7 +14,6 @@ This module contains:
 
 from .environment import FraguaEnvironment
 
-from .component import FraguaComponent
 
 from .registry import FraguaRegistry
 
@@ -26,20 +25,17 @@ from .agent import FraguaAgent
 
 from .params import FraguaParams
 
-from .style import FraguaStyle
-
-from .function import FraguaFunction
-
 from .manager import FraguaManager
 
 from .warehouse import FraguaWarehouse
 
 from .storage import Storage, Box, Container, STORAGE_CLASSES
 
+from .fragua_class import FraguaClass
+
+from .fragua_instance import FraguaInstance
 
 __all__ = [
-    # Fragua Component Class
-    "FraguaComponent",
     # Actions Class
     "FraguaActions",
     # Environment Class
@@ -48,14 +44,14 @@ __all__ = [
     "FraguaRegistry",
     # Section Fragua Class
     "FraguaSet",
+    # Base Runtime Class
+    "FraguaInstance",
+    # Base Declarative Class
+    "FraguaClass",
     # Agent Class
     "FraguaAgent",
     # Params Class
     "FraguaParams",
-    # Style Class
-    "FraguaStyle",
-    # Function Class
-    "FraguaFunction",
     # Warehouse Manager
     "FraguaManager",
     # Warehouse

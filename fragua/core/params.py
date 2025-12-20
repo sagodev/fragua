@@ -1,83 +1,98 @@
 """
-Base abstract class for all parameter schemas used by styles in Fragua.
+Base class for declarative parameter schemas in Fragua.
 """
 
-from typing import Any, Dict, TypeVar
-from fragua.core.component import FraguaComponent
+from typing import Any, Dict, Optional, TypeVar
+
+from fragua.core.fragua_class import FraguaClass
 from fragua.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-# pylint: disable=too-few-public-methods
-
-
-class FraguaParams(FraguaComponent):
+class FraguaParams(FraguaClass):
     """
-    Abstract base class for all parameter schemas used by Fragua styles.
+    Declarative parameter schema for Fragua components.
 
-    FraguaParams defines the configuration contract required by styles
-    during ETL execution. Each concrete Params implementation represents
-    a validated, self-describing configuration object associated with
-    a specific action and style.
-
-    Params objects are responsible for encapsulating configuration
-    values, providing structured summaries, and exposing field-level
-    descriptions for documentation and introspection.
+    A FraguaParams defines the configuration contract required by
+    functions or styles during ETL execution. It is action-agnostic
+    and style-agnostic, focusing exclusively on parameter structure,
+    validation, and introspection.
     """
 
-    FIELD_DESCRIPTIONS: dict[str, str] = {}
+    purpose: Optional[str] = None
 
-    def __init__(self, action: str, style: str) -> None:
+    FIELDS: Dict[str, Dict[str, Any]] = {}
+
+    def __init__(self, **values: Any) -> None:
         """
-        Initialize the Params schema with an action and style.
+        Instantiate parameter values according to the declared schema.
 
-        Args:
-            action: ETL action scope where the params are applicable
-                (e.g., "extract", "transform", "load").
-            style: Style identifier associated with these parameters
-                (e.g., "csv", "excel", "sql", "api").
+        Instantiation is optional and only required when executing
+        a function or style that consumes concrete parameter values.
         """
-        super().__init__(component_name=self.__class__.__name__)
-        self.action = action
-        self.style = style
+        self._values: Dict[str, Any] = {}
+        self._load(values)
 
-    def summary(self) -> Dict[str, Any]:
+    def _load(self, values: Dict[str, Any]) -> None:
+        for field_name, spec in self.FIELDS.items():
+            if field_name in values:
+                value = values[field_name]
+            elif spec.get("required", False):
+                raise ValueError(f"Missing required parameter: {field_name}")
+            else:
+                value = spec.get("default")
+
+            normalizer = spec.get("normalize")
+            if normalizer and value is not None:
+                try:
+                    value = normalizer(value)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.error(
+                        "Failed to normalize param '%s': %s",
+                        field_name,
+                        exc,
+                    )
+                    raise
+
+            self._values[field_name] = value
+
+    def get(self, name: str) -> Any:
+        """Return the resolved value of a parameter."""
+        return self._values.get(name)
+
+    @classmethod
+    def summary(cls) -> Dict[str, Any]:
         """
-        Return a structured summary of the parameters.
+        Return a declarative summary of the parameter schema.
 
-        The summary includes:
-        - parameter class name
-        - associated action and style
-        - declared fields and their descriptions
-        - optional functional purpose
-
-        Returns:
-            Dict[str, Any]: Serializable summary representation.
+        This method does not require instantiation and reflects
+        the static contract of the parameter definition.
         """
-        fields = {}
+        fields: Dict[str, Dict[str, Any]] = {}
 
-        for name in self.FIELD_DESCRIPTIONS:
-            fields[name] = self.FIELD_DESCRIPTIONS.get(
-                name, "No description available."
-            )
+        for name, spec in cls.FIELDS.items():
+            field_type = spec.get("type")
+
+            fields[name] = {
+                "description": spec.get("description", "No description available."),
+                "required": spec.get("required", False),
+                "default": spec.get("default"),
+                "type": (
+                    field_type.__name__
+                    if field_type and hasattr(field_type, "__name__")
+                    else None
+                ),
+            }
 
         return {
-            "name": self.name,
-            "action": self.action,
-            "style": self.style,
+            "name": cls.__name__,
+            "purpose": cls.purpose,
             "fields": fields,
-            "purpose": getattr(self, "purpose", None),
         }
 
     def __repr__(self) -> str:
-        """
-        Return a concise string representation of the Params instance.
-
-        Returns:
-            A string identifying the Params class, action, and style.
-        """
-        return f"{self.__class__.__name__}(role='{self.action}', style='{self.style}')"
+        return f"{self.__class__.__name__}({self._values})"
 
 
 FraguaParamsT = TypeVar("FraguaParamsT", bound=FraguaParams)

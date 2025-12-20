@@ -8,32 +8,19 @@ This module contains:
 - Dict registry with each Params class.('name': class)
 """
 
-from .base import LoadParams
-
-
 from .load_params import (
     ExcelLoadParams,
     APILoadParams,
+    CSVLoadParams,
     SQLLoadParams,
-    LOAD_PARAMS_CLASSES,
-)
-
-from .generic_types import (
-    LoadParamsT,
-    ExcelLoadParamsT,
-    SQLLoadParamsT,
-    APILoadParamsT,
+    LOAD_PARAMS,
 )
 
 
 __all__ = [
-    "LoadParams",
     "ExcelLoadParams",
+    "CSVLoadParams",
     "SQLLoadParams",
     "APILoadParams",
-    "LoadParamsT",
-    "ExcelLoadParamsT",
-    "SQLLoadParamsT",
-    "APILoadParamsT",
-    "LOAD_PARAMS_CLASSES",
+    "LOAD_PARAMS",
 ]
