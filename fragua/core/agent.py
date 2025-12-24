@@ -154,7 +154,7 @@ class FraguaAgent(FraguaInstance):
 
         return params_cls(**kwargs)
 
-    def _resolve_style(self, style: str) -> Dict[str, Any]:
+    def _resolve_style(self, style: str) -> Any:
         """
         Resolve a style specification for the agent action.
 

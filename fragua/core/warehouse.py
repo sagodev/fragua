@@ -42,7 +42,7 @@ class MovementLog:
     """
 
     def __init__(self) -> None:
-        self._entries: List[dict[str, object]] = []
+        self._entries: List[Mapping[str, object]] = []
 
     def record(
         self,
@@ -77,7 +77,7 @@ class MovementLog:
             success,
         )
 
-    def snapshot(self) -> List[dict[str, object]]:
+    def snapshot(self) -> List[Mapping[str, object]]:
         """Get a copy of all log entries."""
         return self._entries.copy()
 
