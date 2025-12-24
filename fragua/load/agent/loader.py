@@ -1,10 +1,4 @@
-"""
-Loader Agent Class.
-
-Defines the Loader agent responsible for applying load styles to
-stored Box objects and persisting their data into target destinations
-(e.g. files, databases, external systems).
-"""
+"""Loader Agent Class."""
 
 from __future__ import annotations
 
@@ -46,7 +40,6 @@ class Loader(FraguaAgent):
             environment: Active Fragua environment.
         """
         super().__init__(agent_name=name, environment=environment)
-        self.role = "loader"
         self.action = "load"
         self.storage_type = "Container"
 

@@ -1,5 +1,4 @@
-"""Miner Class."""
-
+"""Extractor Agent Class."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -41,7 +40,6 @@ class Extractor(FraguaAgent):
             environment: Active Fragua environment instance.
         """
         super().__init__(agent_name=name, environment=environment)
-        self.role = "extractor"
         self.action = "extract"
         self.storage_type = "Box"
 
