@@ -33,6 +33,8 @@ StorageResult: TypeAlias = Union[
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
 
+# pylint: disable=too-many-arguments
+
 
 class MovementLog:
     """
