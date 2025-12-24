@@ -22,8 +22,6 @@ from fragua.utils.security.security_context import FraguaSecurityContext, Fragua
 
 logger = get_logger(__name__)
 
-# pylint: disable=too-many-public-methods
-
 
 class FraguaEnvironment(FraguaInstance):
     """
