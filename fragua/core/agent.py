@@ -25,6 +25,7 @@ from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
+from fragua.utils.security.security_context import FraguaToken
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -60,62 +61,20 @@ class FraguaAgent(FraguaInstance):
         """
         super().__init__(instance_name=agent_name)
         self.environment: FraguaEnvironment = environment
-        self.role: str
+        self.token: FraguaToken
         self.action: str
         self.storage_type: str
         self._operations: List[Dict[str, Any]] = []
         self._undo_stack: List[Dict[str, Any]] = []
 
-    # ----------------- Agent Summary ----------------- #
-    def summary(self) -> Dict[str, object]:
-        """
-        Generate a structured summary of the agent state and execution history.
-
-        The summary includes agent metadata, environment context, a serialized
-        view of executed operations, and the current undo stack state.
-
-        Returns:
-            A dictionary containing agent identification, configuration,
-            execution metrics, operation history, and undo information.
-        """
-
-        env_name = getattr(self.environment, "name", None)
-        manager = getattr(self.environment, "manager", None)
-        manager = manager() if callable(manager) else None
-
-        ops_serialized: list[Dict[str, object]] = []
-        for op in self._operations:
-            ts = op.get("timestamp")
-            ops_serialized.append(
-                {
-                    "action": op.get("action"),
-                    "style": op.get("style_name") or op.get("style"),
-                    "timestamp": ts.isoformat() if ts is not None else None,
-                }
-            )
-
-        undo_serialized: list[Dict[str, object]] = []
-        for item in self._undo_stack:
-            undo_serialized.append(
-                {
-                    "operation": item.get("operation"),
-                    "style": item.get("style"),
-                }
-            )
-
-        return {
-            "agent_name": self.name,
-            "role": getattr(self, "role", None),
-            "action": getattr(self, "action", None),
-            "storage_type": getattr(self, "storage_type", None),
-            "environment_name": env_name,
-            "operation_count": len(self._operations),
-            "operations": ops_serialized,
-            "undo_stack_size": len(self._undo_stack),
-            "undo_stack": undo_serialized,
-        }
-
     # ----------------- Helpers ----------------- #
+    def _require_token(self) -> FraguaToken:
+        if self.token is None:
+            raise RuntimeError(
+                f"Security token not initialized for agent '{self.name}'."
+            )
+        return self.token
+
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
         """
         Infer a human-readable origin name for metadata generation.
@@ -157,7 +116,7 @@ class FraguaAgent(FraguaInstance):
 
     def _get_params(self, style: str) -> Type[FraguaParams]:
         params_cls = cast(
-            Type[FraguaParams], self.environment.get_params(self.action, style)
+            Type[FraguaParams], self.environment.get("params", style, self.action)
         )
         if params_cls is None:
             raise ValueError(f"Params not found for style '{style}'.")
@@ -195,7 +154,7 @@ class FraguaAgent(FraguaInstance):
 
         return params_cls(**kwargs)
 
-    def _resolve_style(self, style: str) -> Dict[str, Any]:
+    def _resolve_style(self, style: str) -> Any:
         """
         Resolve a style specification for the agent action.
 
@@ -210,7 +169,7 @@ class FraguaAgent(FraguaInstance):
             ValueError:
                 If the style is not registered for the agent action.
         """
-        style_spec = self.environment.get_style(self.action, style)
+        style_spec = self.environment.get("style", style, self.action)
 
         if style_spec is None:
             raise ValueError(f"Style not found: '{style}'.")
@@ -236,7 +195,7 @@ class FraguaAgent(FraguaInstance):
             ValueError:
                 If the function is not registered for the agent action.
         """
-        func_spec = self.environment.get_function(self.action, function_key)
+        func_spec = self.environment.get("function", function_key, self.action)
         if func_spec is None:
             raise ValueError(
                 f"Function '{function_key}' not registered for action '{self.action}'."
@@ -375,48 +334,46 @@ class FraguaAgent(FraguaInstance):
         return storage_cls(name)
 
     def add_to_warehouse(
-        self, storage: Storage[Box], storage_name: str | None = None
-    ) -> None:
+        self,
+        storage: Storage[Box],
+        storage_name: str | None = None,
+        *,
+        overwrite: bool = False,
+    ) -> bool:
         """
         Persist a storage object into the warehouse.
-
-        Args:
-            storage: Storage instance to persist.
-            storage_name: Optional explicit name for the storage.
-
-        Raises:
-            RuntimeError: If the WarehouseManager is not initialized.
         """
         name = storage_name or getattr(storage, "name", None)
-        manager = self.environment.manager
-        if not manager:
-            raise RuntimeError("WarehouseManager not initialized.")
-        return manager.add(storage=storage, storage_name=name, agent_name=self.name)
+        if not name:
+            raise ValueError("Storage name could not be resolved.")
+
+        warehouse = self.environment.warehouse
+
+        return warehouse.add_storage(
+            name=name,
+            storage=storage,
+            token=self._require_token(),
+            agent_name=self.name,
+            overwrite=overwrite,
+        )
 
     def get_from_warehouse(self, storage_name: str) -> Box:
         """
-        Retrieve a storage object from the warehouse with type validation.
-
-        Args:
-            storage_name: Name of the storage to retrieve.
-
-        Returns:
-            A Box instance.
-
-        Raises:
-            RuntimeError: If the WarehouseManager is not initialized.
-            TypeError: If the storage is missing or of an invalid type.
+        Retrieve a Box storage from the warehouse.
         """
-        manager = self.environment.manager
-        if not manager:
-            raise RuntimeError("WarehouseManager not initialized.")
+        warehouse = self.environment.warehouse
 
-        storage = manager.get(storage_name=storage_name, agent_name=self.name)
+        storage = warehouse.get_storages(
+            token=self.token,
+            storage_name=storage_name,
+            agent_name=self.name,
+        )
 
         if storage is None:
             raise TypeError("Storage not found in warehouse.")
         if not isinstance(storage, Box):
             raise TypeError("Storage is not a Box.")
+
         return storage
 
     def auto_store(self, storage: Storage[Box]) -> None:
@@ -424,6 +381,53 @@ class FraguaAgent(FraguaInstance):
         Persist a storage object using its own name.
         """
         self.add_to_warehouse(storage)
+
+    # ----------------- Agent Summary ----------------- #
+    def summary(self) -> Dict[str, object]:
+        """
+        Generate a structured summary of the agent state and execution history.
+
+        The summary includes agent metadata, environment context, a serialized
+        view of executed operations, and the current undo stack state.
+
+        Returns:
+            A dictionary containing agent identification, configuration,
+            execution metrics, operation history, and undo information.
+        """
+
+        env_name = getattr(self.environment, "name", None)
+
+        ops_serialized: list[Dict[str, object]] = []
+        for op in self._operations:
+            ts = op.get("timestamp")
+            ops_serialized.append(
+                {
+                    "action": op.get("action"),
+                    "style": op.get("style_name") or op.get("style"),
+                    "timestamp": ts.isoformat() if ts is not None else None,
+                }
+            )
+
+        undo_serialized: list[Dict[str, object]] = []
+        for item in self._undo_stack:
+            undo_serialized.append(
+                {
+                    "operation": item.get("operation"),
+                    "style": item.get("style"),
+                }
+            )
+
+        return {
+            "agent_name": self.name,
+            "token": self.token,
+            "action": getattr(self, "action", None),
+            "storage_type": getattr(self, "storage_type", None),
+            "environment_name": env_name,
+            "operation_count": len(self._operations),
+            "operations": ops_serialized,
+            "undo_stack_size": len(self._undo_stack),
+            "undo_stack": undo_serialized,
+        }
 
     # ----------------- Work Pipeline ----------------- #
     def _execute_workflow(

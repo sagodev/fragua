@@ -1,4 +1,4 @@
-"""Transformer Class."""
+"""Transformer Agent Class."""
 
 from __future__ import annotations
 
@@ -39,7 +39,6 @@ class Transformer(FraguaAgent):
             environment (Environment): Execution environment instance.
         """
         super().__init__(agent_name=name, environment=environment)
-        self.role = "transformer"
         self.action = "transform"
         self.storage_type = "Box"
 
