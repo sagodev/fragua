@@ -263,7 +263,6 @@ class FraguaEnvironment(FraguaInstance):
     def get(self, kind: str, name: str, action: str) -> Any:
         """Get component."""
         fragua_set = self._get_set(action, kind)
-
         return fragua_set.get_one(name)
 
     def update(self, kind: str, action: str, old_name: str, new_name: str) -> bool:
@@ -336,7 +335,6 @@ class FraguaEnvironment(FraguaInstance):
         return added
 
     # ---------------------- Summary ------------------------- #
-
     def summary(self) -> Dict[str, Any]:
         """
         Return a structured summary of the Environment instance.
