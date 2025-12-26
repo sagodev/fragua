@@ -19,6 +19,7 @@ from fragua.extract.params.extract_params import (
     ExcelExtractParams,
     SQLExtractParams,
 )
+from fragua.utils.types.enums import ActionType, FieldType, TargetType
 
 
 def extract_csv(
@@ -96,28 +97,28 @@ def extract_api(
 
 
 EXTRACT_FUNCTIONS: Dict[str, Dict[str, Any]] = {
-    "csv": {
-        "action": "extract",
-        "purpose": "Extract tabular data from a CSV file.",
-        "params_type": CSVExtractParams.__name__,
-        "function": extract_csv,
+    TargetType.CSV.value: {
+        FieldType.ACTION.value: ActionType.EXTRACT.value,
+        FieldType.PURPOSE.value: "Extract tabular data from a CSV file.",
+        FieldType.PARAMS_TYPE.value: CSVExtractParams.__name__,
+        FieldType.FUNCTION.value: extract_csv,
     },
-    "excel": {
-        "action": "extract",
-        "purpose": "Extract data from an Excel spreadsheet.",
-        "params_type": ExcelExtractParams.__name__,
-        "function": extract_excel,
+    TargetType.EXCEL.value: {
+        FieldType.ACTION.value: ActionType.EXTRACT.value,
+        FieldType.PURPOSE.value: "Extract data from an Excel spreadsheet.",
+        FieldType.PARAMS_TYPE.value: ExcelExtractParams.__name__,
+        FieldType.FUNCTION.value: extract_excel,
     },
-    "sql": {
-        "action": "extract",
-        "purpose": "Execute a SQL query and extract the result as a DataFrame.",
-        "params_type": SQLExtractParams.__name__,
-        "function": extract_sql,
+    TargetType.SQL.value: {
+        FieldType.ACTION.value: ActionType.EXTRACT.value,
+        FieldType.PURPOSE.value: "Execute a SQL query and extract the result as a DataFrame.",
+        FieldType.PARAMS_TYPE.value: SQLExtractParams.__name__,
+        FieldType.FUNCTION.value: extract_sql,
     },
-    "api": {
-        "action": "extract",
-        "purpose": "Fetch JSON data from a REST API endpoint.",
-        "params_type": APIExtractParams.__name__,
-        "function": extract_api,
+    TargetType.API.value: {
+        FieldType.ACTION.value: ActionType.EXTRACT.value,
+        FieldType.PURPOSE.value: "Fetch JSON data from a REST API endpoint.",
+        FieldType.PARAMS_TYPE.value: APIExtractParams.__name__,
+        FieldType.FUNCTION.value: extract_api,
     },
 }

@@ -6,6 +6,7 @@ from typing import Any, Dict, Type, Union
 from pathlib import Path
 
 from fragua.core.params import FraguaParams
+from fragua.utils.types.enums import AttrType, FieldType, OperationType, TargetType
 
 
 class CSVExtractParams(FraguaParams):
@@ -14,11 +15,11 @@ class CSVExtractParams(FraguaParams):
     purpose = "Parameters required to extract data from a CSV file."
 
     FIELDS = {
-        "path": {
-            "type": Union[str, Path],
-            "required": True,
-            "description": "Filesystem path to the CSV file.",
-            "normalize": Path,
+        FieldType.PATH.value: {
+            AttrType.TYPE.value: Union[str, Path],
+            AttrType.REQUIRED.value: True,
+            AttrType.DESCRIPTION.value: "Filesystem path to the CSV file.",
+            AttrType.NORMALIZE.value: Path,
         }
     }
 
@@ -29,16 +30,16 @@ class ExcelExtractParams(FraguaParams):
     purpose = "Parameters required to extract data from an Excel file."
 
     FIELDS = {
-        "path": {
-            "type": Union[str, Path],
-            "required": True,
-            "description": "Filesystem path to the Excel file.",
-            "normalize": Path,
+        FieldType.PATH.value: {
+            AttrType.TYPE.value: Union[str, Path],
+            AttrType.REQUIRED.value: True,
+            AttrType.DESCRIPTION.value: "Filesystem path to the Excel file.",
+            AttrType.NORMALIZE.value: Path,
         },
-        "sheet_name": {
-            "type": Union[str, int],
-            "default": 0,
-            "description": "Name or index of the worksheet to load.",
+        FieldType.SHEET_NAME.value: {
+            AttrType.TYPE.value: Union[str, int],
+            AttrType.DEFAULT.value: 0,
+            AttrType.DESCRIPTION.value: "Name or index of the worksheet to load.",
         },
     }
 
@@ -49,15 +50,15 @@ class SQLExtractParams(FraguaParams):
     purpose = "Parameters required to extract data from a SQL database."
 
     FIELDS = {
-        "connection_string": {
-            "type": str,
-            "required": True,
-            "description": "Database connection URL string.",
+        FieldType.CONNECTION_STRING.value: {
+            AttrType.TYPE.value: str,
+            AttrType.REQUIRED.value: True,
+            AttrType.DESCRIPTION.value: "Database connection URL string.",
         },
-        "query": {
-            "type": str,
-            "required": True,
-            "description": "SQL query to be executed.",
+        FieldType.QUERY.value: {
+            AttrType.TYPE.value: str,
+            AttrType.REQUIRED.value: True,
+            AttrType.DESCRIPTION.value: "SQL query to be executed.",
         },
     }
 
@@ -68,52 +69,52 @@ class APIExtractParams(FraguaParams):
     purpose = "Parameters required to extract data from an API endpoint."
 
     FIELDS = {
-        "url": {
-            "type": str,
-            "required": True,
-            "description": "Full URL of the API endpoint.",
+        FieldType.URL.value: {
+            AttrType.TYPE.value: str,
+            AttrType.REQUIRED.value: True,
+            AttrType.DESCRIPTION.value: "Full URL of the API endpoint.",
         },
-        "method": {
-            "type": str,
-            "default": "GET",
-            "description": "HTTP method to use (GET, POST, etc).",
+        FieldType.METHOD.value: {
+            AttrType.TYPE.value: str,
+            AttrType.DEFAULT.value: OperationType.GET.value,
+            AttrType.DESCRIPTION.value: "HTTP method to use (GET, POST, etc).",
         },
-        "headers": {
-            "type": Dict[str, str],
-            "default": {},
-            "description": "HTTP headers sent with the request.",
+        FieldType.HEADERS.value: {
+            AttrType.TYPE.value: Dict[str, str],
+            AttrType.DEFAULT.value: {},
+            AttrType.DESCRIPTION.value: "HTTP headers sent with the request.",
         },
-        "params": {
-            "type": Dict[str, Any],
-            "default": {},
-            "description": "URL query parameters sent with the request.",
+        FieldType.PARAMS.value: {
+            AttrType.TYPE.value: Dict[str, Any],
+            AttrType.DEFAULT.value: {},
+            AttrType.DESCRIPTION.value: "URL query parameters sent with the request.",
         },
-        "data": {
-            "type": Dict[str, Any],
-            "default": {},
-            "description": "Body data sent for POST/PUT requests.",
+        FieldType.DATA.value: {
+            AttrType.TYPE.value: Dict[str, Any],
+            AttrType.DEFAULT.value: {},
+            AttrType.DESCRIPTION.value: "Body data sent for POST/PUT requests.",
         },
-        "auth": {
-            "type": Dict[str, str],
-            "default": {},
-            "description": "Authentication credentials (API dependent).",
+        FieldType.AUTH.value: {
+            AttrType.TYPE.value: Dict[str, str],
+            AttrType.DEFAULT.value: {},
+            AttrType.DESCRIPTION.value: "Authentication credentials (API dependent).",
         },
-        "proxy": {
-            "type": Dict[str, str],
-            "default": {},
-            "description": "Proxy configuration for routing the request.",
+        FieldType.PROXY.value: {
+            AttrType.TYPE.value: Dict[str, str],
+            AttrType.DEFAULT.value: {},
+            AttrType.DESCRIPTION.value: "Proxy configuration for routing the request.",
         },
-        "timeout": {
-            "type": float,
-            "default": 30.0,
-            "description": "Maximum time in seconds to wait for a response.",
+        FieldType.TIMEOUT.value: {
+            AttrType.TYPE.value: float,
+            AttrType.DEFAULT.value: 30.0,
+            AttrType.DESCRIPTION.value: "Maximum time in seconds to wait for a response.",
         },
     }
 
 
 EXTRACT_PARAMS: Dict[str, Type[FraguaParams]] = {
-    "csv": CSVExtractParams,
-    "excel": ExcelExtractParams,
-    "sql": SQLExtractParams,
-    "api": APIExtractParams,
+    TargetType.CSV.value: CSVExtractParams,
+    TargetType.EXCEL.value: ExcelExtractParams,
+    TargetType.SQL.value: SQLExtractParams,
+    TargetType.API.value: APIExtractParams,
 }

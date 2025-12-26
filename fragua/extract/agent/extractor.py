@@ -8,6 +8,7 @@ from pandas import DataFrame
 from fragua.core.agent import FraguaAgent
 from fragua.core.params import FraguaParams
 from fragua.utils.logger import get_logger
+from fragua.utils.types.enums import ActionType, StorageType
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -41,8 +42,8 @@ class Extractor(FraguaAgent):
             environment: Active Fragua environment instance.
         """
         super().__init__(agent_name=name, environment=environment)
-        self.action = "extract"
-        self.storage_type = "Box"
+        self.action = ActionType.EXTRACT
+        self.storage_type = StorageType.BOX
 
     def work(
         self,
