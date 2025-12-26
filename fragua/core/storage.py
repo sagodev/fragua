@@ -6,6 +6,7 @@ from typing import Any, Dict, Generic, Optional, TypeVar
 from fragua.core.fragua_instance import FraguaInstance
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
+from fragua.utils.types.enums import AttrType, StorageType
 
 T = TypeVar("T")
 
@@ -42,9 +43,9 @@ class Storage(FraguaInstance, Generic[T]):
 
     def summary(self) -> Dict[str, Any]:
         return {
-            "type": "storage",
-            "name": self.name,
-            "class": self.__class__.__name__,
+            AttrType.TYPE.value: "storage",
+            AttrType.NAME.value: self.name,
+            AttrType.CLASS.value: self.__class__.__name__,
             "has_data": self._data is not None,
             "metadata_keys": list(self._metadata.keys()),
         }
@@ -67,14 +68,14 @@ class Container(Storage[Any]):
     multiple Boxes to be stored and managed under a single logical unit.
     """
 
-    def __init__(self, container_name: str) -> None:
+    def __init__(self, container_name: str, data: Any | None = None) -> None:
         """
         Initialize an empty Container.
 
         Containers do not hold direct data; instead, they manage a
         collection of named Box instances.
         """
-        super().__init__(storage_name=container_name, data=None)
+        super().__init__(storage_name=container_name, data=data)
         self._content: Dict[str, Box] = {}
 
     def add_storage(self, storage_name: str, storage: Box) -> None:
@@ -135,6 +136,6 @@ class Container(Storage[Any]):
 
 
 STORAGE_CLASSES: dict[str, type[Storage[Any]]] = {
-    "Box": Box,
-    "Container": Container,
+    StorageType.BOX.value: Box,
+    StorageType.CONTAINER.value: Container,
 }

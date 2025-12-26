@@ -20,10 +20,11 @@ from fragua.core.fragua_instance import FraguaInstance
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 from fragua.utils.security.security_context import FraguaToken
 from fragua.utils.logger import get_logger
+from fragua.utils.types.enums import AttrType, OperationType, StorageType
 
 logger = get_logger(__name__)
 
-StorageType = Literal["box", "all"]
+AllowedTypes = Literal[StorageType.BOX, StorageType.ALL]
 
 StorageResult: TypeAlias = Union[
     Optional[Storage[Box]],
@@ -115,26 +116,30 @@ class FraguaWarehouse(FraguaInstance):
     # ----------------------------- Internals --------------------------- #
     def _register_undo(
         self,
-        operation: Literal["add", "delete"],
+        operation: Literal[OperationType.ADD, OperationType.DELETE],
         name: str,
         backup: Storage[Box] | None,
     ) -> None:
         self._undo_stack.append(
             {
-                "operation": operation,
-                "name": name,
+                "operation": operation.value,
+                AttrType.NAME: name,
                 "backup": py_copy.deepcopy(backup) if backup else None,
             }
         )
 
     def _resolve_targets(
         self,
-        storage_type: StorageType,
+        storage_type: AllowedTypes,
         storage_name: str,
     ) -> Dict[str, Storage[Box]]:
-        classes = Box if storage_type == "all" else STORAGE_CLASSES[storage_type]
+        classes = (
+            Box
+            if storage_type == StorageType.ALL.value
+            else STORAGE_CLASSES[storage_type.value]
+        )
 
-        if storage_name != "all":
+        if storage_name != StorageType.ALL.value:
             obj = self._storages.get(storage_name)
             if obj and isinstance(obj, classes):
                 return {storage_name: obj}
@@ -161,7 +166,7 @@ class FraguaWarehouse(FraguaInstance):
 
         if name in self._storages and not overwrite:
             self._movement_log.record(
-                operation="add",
+                operation=OperationType.ADD.value,
                 storage_name=name,
                 agent_name=agent_name,
                 warehouse_name=self.name,
@@ -171,12 +176,12 @@ class FraguaWarehouse(FraguaInstance):
             return False
 
         previous = self._storages.get(name)
-        self._register_undo("add", name, previous)
+        self._register_undo(OperationType.ADD, name, previous)
 
         self._storages[name] = storage
 
         self._movement_log.record(
-            operation="add",
+            operation=OperationType.ADD.value,
             storage_name=name,
             agent_name=agent_name,
             warehouse_name=self.name,
@@ -188,8 +193,8 @@ class FraguaWarehouse(FraguaInstance):
         self,
         *,
         token: FraguaToken,
-        storage_type: StorageType = "all",
-        storage_name: str = "all",
+        storage_type: AllowedTypes = StorageType.ALL,
+        storage_name: str = StorageType.ALL.value,
         agent_name: str | None = None,
     ) -> StorageResult:
         """Delete storage from warehouse."""
@@ -198,11 +203,11 @@ class FraguaWarehouse(FraguaInstance):
         targets = self._resolve_targets(storage_type, storage_name)
 
         for name, obj in targets.items():
-            self._register_undo("delete", name, obj)
+            self._register_undo(OperationType.DELETE, name, obj)
             self._storages.pop(name, None)
 
         self._movement_log.record(
-            operation="delete",
+            operation=OperationType.DELETE.value,
             storage_name=storage_name,
             agent_name=agent_name,
             warehouse_name=self.name,
@@ -210,15 +215,19 @@ class FraguaWarehouse(FraguaInstance):
             details={"removed_count": len(targets)},
         )
 
-        return next(iter(targets.values()), None) if storage_name != "all" else targets
+        return (
+            next(iter(targets.values()), None)
+            if storage_name != StorageType.ALL
+            else targets
+        )
 
     # ----------------------------- Queries ----------------------------- #
     def get_storages(
         self,
         *,
         token: FraguaToken,
-        storage_type: StorageType = "all",
-        storage_name: str = "all",
+        storage_type: AllowedTypes = StorageType.ALL,
+        storage_name: str = StorageType.ALL.value,
         agent_name: str | None = None,
     ) -> StorageResult:
         """Get storage from warehouse."""
@@ -227,7 +236,7 @@ class FraguaWarehouse(FraguaInstance):
         targets = self._resolve_targets(storage_type, storage_name)
 
         self._movement_log.record(
-            operation="get",
+            operation=OperationType.GET,
             storage_name=storage_name,
             agent_name=agent_name,
             warehouse_name=self.name,
@@ -235,7 +244,11 @@ class FraguaWarehouse(FraguaInstance):
             details={"count": len(targets)},
         )
 
-        return next(iter(targets.values()), None) if storage_name != "all" else targets
+        return (
+            next(iter(targets.values()), None)
+            if storage_name != StorageType.ALL.value
+            else targets
+        )
 
     def search_by_metadata(self, key: str, value: Any) -> Dict[str, Storage[Box]]:
         """Search storage by metadata."""
@@ -262,7 +275,7 @@ class FraguaWarehouse(FraguaInstance):
         self._storages[new_name] = self._storages.pop(old_name)
 
         self._movement_log.record(
-            operation="rename",
+            operation=OperationType.RENAME.value,
             storage_name=new_name,
             agent_name=None,
             warehouse_name=self.name,
@@ -282,7 +295,7 @@ class FraguaWarehouse(FraguaInstance):
         self._storages[new_name] = py_copy.deepcopy(obj)
 
         self._movement_log.record(
-            operation="copy",
+            operation=OperationType.COPY.value,
             storage_name=new_name,
             agent_name=None,
             warehouse_name=self.name,
@@ -301,20 +314,20 @@ class FraguaWarehouse(FraguaInstance):
 
         action = self._undo_stack.pop()
         op = action["operation"]
-        name = action["name"]
+        name = action[AttrType.NAME.value]
         backup = action["backup"]
 
-        if op == "add":
+        if op == OperationType.ADD.value:
             if backup:
                 self._storages[name] = backup
             else:
                 self._storages.pop(name, None)
 
-        elif op == "delete" and backup:
+        elif op == OperationType.DELETE.value and backup:
             self._storages[name] = backup
 
         self._movement_log.record(
-            operation="undo",
+            operation=OperationType.UNDO.value,
             storage_name=name,
             agent_name=None,
             warehouse_name=self.name,

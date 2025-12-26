@@ -11,7 +11,6 @@ from fragua.core.registry import FraguaRegistry
 from fragua.core.set import FraguaSet
 from fragua.core.warehouse import FraguaWarehouse
 
-
 from fragua.extract import Extractor
 from fragua.transform import Transformer
 from fragua.load import Loader
@@ -19,6 +18,7 @@ from fragua.load import Loader
 
 from fragua.utils.logger import get_logger
 from fragua.utils.security.security_context import FraguaSecurityContext, FraguaToken
+from fragua.utils.types.enums import ActionType, ComponentType
 
 logger = get_logger(__name__)
 
@@ -204,123 +204,121 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.styles
 
     # ---------------------- Global API ---------------------- #
-    def _get_set(self, action: str, kind: str) -> FraguaSet[Any]:
+    def _get_set(self, action: ActionType, kind: ComponentType) -> FraguaSet[Any]:
         """
         Resolve a FraguaSet by action and component kind.
-
-        Args:
-            action: Action type ("extract", "transform", "load").
-            kind: Component kind ("agents", "params", "functions", "styles").
-
-        Returns:
-            The resolved FraguaSet.
-
-        Raises:
-            ValueError: If the action or component kind is invalid.
         """
-        registries = {
-            "agent": self.agents,
-            "params": self.params,
-            "function": self.functions,
-            "style": self.styles,
+        registries: Dict[str, Dict[str, FraguaSet[Any]]] = {
+            ComponentType.AGENT.value: self.agents,
+            ComponentType.PARAMS.value: self.params,
+            ComponentType.FUNCTION.value: self.functions,
+            ComponentType.STYLE.value: self.styles,
         }
 
         if kind not in registries:
-            raise ValueError(f"Invalid component kind: {kind}")
+            raise ValueError(f"Invalid component kind: {kind.value}")
 
-        action_sets = registries[kind]
-        fragua_set = action_sets.get(action)
+        action_sets = registries[kind.value]
+        fragua_set = action_sets.get(action.value)
 
         if fragua_set is None:
-            raise ValueError(f"Invalid action type: {action}")
+            raise ValueError(f"Invalid action type: {action.value}")
 
         return fragua_set
 
-    def add(self, action: str, kind: str, name: str, component: Any) -> bool:
+    def add(
+        self,
+        action: ActionType,
+        kind: ComponentType,
+        name: str,
+        component: Any,
+    ) -> bool:
         """Add component."""
-
         fragua_set = self._get_set(action, kind)
         created = fragua_set.add(name, component)
 
         if not created:
             return False
 
-        token = self._token(kind=kind, name=name)
+        token = self._token(kind=kind.value, name=name)
 
-        # Token injection (mandatory for agents)
         if hasattr(component, "__dict__"):
             component.token = token
 
         logger.info(
             "%s registered: %s (%s)",
-            kind.capitalize(),
+            kind.value.capitalize(),
             name,
-            action,
+            action.value,
         )
 
         return True
 
-    def get(self, kind: str, name: str, action: str) -> Any:
+    def get(self, action: ActionType, kind: ComponentType, name: str) -> Any:
         """Get component."""
         fragua_set = self._get_set(action, kind)
         return fragua_set.get_one(name)
 
-    def update(self, kind: str, action: str, old_name: str, new_name: str) -> bool:
-        """Update an component."""
-
+    def update(
+        self,
+        kind: ComponentType,
+        action: ActionType,
+        old_name: str,
+        new_name: str,
+    ) -> bool:
+        """Update a component."""
         fragua_set = self._get_set(action, kind)
         updated = fragua_set.update(old_name, new_name)
 
         if not updated:
-            raise ValueError(f"{kind[:-1].capitalize()} not found.")
+            raise ValueError(f"{kind.value.capitalize()} not found.")
 
         logger.info(
             "%s renamed: %s -> %s (%s)",
-            kind[:-1].capitalize(),
+            kind.value.capitalize(),
             old_name,
             new_name,
-            action,
+            action.value,
         )
 
         return updated
 
-    def delete(self, kind: str, name: str, action: str) -> bool:
-        """Delete an component."""
-
+    def delete(self, kind: ComponentType, name: str, action: ActionType) -> bool:
+        """Delete a component."""
         fragua_set = self._get_set(action, kind)
         deleted = fragua_set.delete_one(name)
 
         if not deleted:
-            raise ValueError(f"{kind[:-1].capitalize()} not found.")
+            raise ValueError(f"{kind.value.capitalize()} not found.")
 
         logger.info(
             "%s deleted: %s (%s)",
-            kind[:-1].capitalize(),
+            kind.value.capitalize(),
             name,
-            action,
+            action.value,
         )
 
         return deleted
 
-    def create(self, kind: str, name: str, action: str) -> bool:
+    def create(self, action: ActionType, kind: ComponentType, name: str) -> bool:
         """Create and add new component."""
         new_component: Any = object()
 
         def _build_agent(agent_name: str) -> FraguaAgent:
             """Instantiate the correct agent class based on action."""
             class_map: Dict[str, Type[FraguaAgent]] = {
-                "extract": Extractor,
-                "transform": Transformer,
-                "load": Loader,
+                ActionType.EXTRACT.value: Extractor,
+                ActionType.TRANSFORM.value: Transformer,
+                ActionType.LOAD.value: Loader,
             }
 
             agent_class = class_map.get(action)
             if agent_class is None:
-                raise ValueError(f"Invalid action type: {action}")
+                raise ValueError(f"Invalid action type: {action.value}")
 
             return agent_class(agent_name, self)
 
-        if kind == "agent":
+        if kind is ComponentType.AGENT:
             new_component = _build_agent(name)
 
         added = self.add(action, kind, name, new_component)

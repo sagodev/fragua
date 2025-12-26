@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 from fragua.core.fragua_instance import FraguaInstance
 from fragua.core.set import FraguaSet
+from fragua.utils.types.enums import ComponentType
 
 
 class FraguaRegistry(FraguaInstance):
@@ -91,8 +92,8 @@ class FraguaRegistry(FraguaInstance):
         Returns:
             ExtractParamsSet instance.
         """
-        if "params" in self._sets:
-            return self._sets["params"]
+        if ComponentType.PARAMS in self._sets:
+            return self._sets[ComponentType.PARAMS.value]
         raise KeyError("Params set not found in registry.")
 
     @property
@@ -103,8 +104,8 @@ class FraguaRegistry(FraguaInstance):
         Returns:
             ExtractFunctionSet instance.
         """
-        if "functions" in self._sets:
-            return self._sets["functions"]
+        if ComponentType.FUNCTION in self._sets:
+            return self._sets[ComponentType.FUNCTION.value]
         raise KeyError("Functions set not found in registry.")
 
     @property
@@ -115,8 +116,8 @@ class FraguaRegistry(FraguaInstance):
         Returns:
             ExtractStyleSet instance.
         """
-        if "styles" in self._sets:
-            return self._sets["styles"]
+        if ComponentType.STYLE in self._sets:
+            return self._sets[ComponentType.STYLE.value]
         raise KeyError("Styles set not found in registry.")
 
     @property
@@ -127,8 +128,8 @@ class FraguaRegistry(FraguaInstance):
         Returns:
             ExtractAgentSet instance.
         """
-        if "agents" in self._sets:
-            return self._sets["agents"]
+        if ComponentType.AGENT in self._sets:
+            return self._sets[ComponentType.AGENT.value]
         raise KeyError("Agents set not found in registry.")
 
     def summary(self) -> Dict[str, Any]:
@@ -138,11 +139,11 @@ class FraguaRegistry(FraguaInstance):
             A dictionary summarizing the contents of each set.
 
         """
-        summary = {
-            "params": self.params.summary(),
-            "functions": self.functions.summary(),
-            "styles": self.styles.summary(),
-            "agents": self.agents.summary(),
+        summary: Dict[str, Any] = {
+            ComponentType.PARAMS.value: self.params.summary(),
+            ComponentType.FUNCTION.value: self.functions.summary(),
+            ComponentType.STYLE.value: self.styles.summary(),
+            ComponentType.AGENT.value: self.agents.summary(),
         }
 
         return summary

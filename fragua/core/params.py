@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional, TypeVar
 
 from fragua.core.fragua_class import FraguaClass
 from fragua.utils.logger import get_logger
+from fragua.utils.types.enums import AttrType, FieldType
 
 logger = get_logger(__name__)
 
@@ -38,12 +39,12 @@ class FraguaParams(FraguaClass):
         for field_name, spec in self.FIELDS.items():
             if field_name in values:
                 value = values[field_name]
-            elif spec.get("required", False):
+            elif spec.get(AttrType.REQUIRED.value, False):
                 raise ValueError(f"Missing required parameter: {field_name}")
             else:
-                value = spec.get("default")
+                value = spec.get(AttrType.DEFAULT.value)
 
-            normalizer = spec.get("normalize")
+            normalizer = spec.get(AttrType.NORMALIZE.value)
             if normalizer and value is not None:
                 try:
                     value = normalizer(value)
@@ -72,13 +73,15 @@ class FraguaParams(FraguaClass):
         fields: Dict[str, Dict[str, Any]] = {}
 
         for name, spec in cls.FIELDS.items():
-            field_type = spec.get("type")
+            field_type = spec.get(AttrType.TYPE.value)
 
             fields[name] = {
-                "description": spec.get("description", "No description available."),
-                "required": spec.get("required", False),
-                "default": spec.get("default"),
-                "type": (
+                AttrType.DESCRIPTION.value: spec.get(
+                    AttrType.DESCRIPTION.value, "No description available."
+                ),
+                AttrType.REQUIRED.value: spec.get(AttrType.REQUIRED.value, False),
+                AttrType.DEFAULT.value: spec.get(AttrType.DEFAULT.value),
+                AttrType.TYPE.value: (
                     field_type.__name__
                     if field_type and hasattr(field_type, "__name__")
                     else None
@@ -86,9 +89,9 @@ class FraguaParams(FraguaClass):
             }
 
         return {
-            "name": cls.__name__,
-            "purpose": cls.purpose,
-            "fields": fields,
+            AttrType.NAME.value: cls.__name__,
+            FieldType.PURPOSE.value: cls.purpose,
+            FieldType.FIELDS.value: fields,
         }
 
     def __repr__(self) -> str:
