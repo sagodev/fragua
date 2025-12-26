@@ -18,6 +18,7 @@ from fragua.load.params.load_params import (
     ExcelLoadParams,
     SQLLoadParams,
 )
+from fragua.utils.types.enums import ActionType, FieldType, TargetType
 
 
 def execute_load_pipeline(
@@ -127,28 +128,28 @@ def load_api(
 
 
 LOAD_FUNCTIONS: Dict[str, Dict[str, Any]] = {
-    "excel": {
-        "action": "load",
-        "purpose": "Export a DataFrame to an Excel file.",
-        "params_type": ExcelLoadParams.__name__,
-        "function": load_excel,
+    TargetType.EXCEL.value: {
+        FieldType.ACTION.value: ActionType.LOAD.value,
+        FieldType.PURPOSE.value: "Export a DataFrame to an Excel file.",
+        FieldType.PARAMS_TYPE.value: ExcelLoadParams.__name__,
+        FieldType.FUNCTION.value: load_excel,
     },
-    "csv": {
-        "action": "load",
-        "purpose": "Export a DataFrame to a CSV file.",
-        "params_type": CSVLoadParams.__name__,
-        "function": load_csv,
+    TargetType.CSV.value: {
+        FieldType.ACTION.value: ActionType.LOAD.value,
+        FieldType.PURPOSE.value: "Export a DataFrame to a CSV file.",
+        FieldType.PARAMS_TYPE.value: CSVLoadParams.__name__,
+        FieldType.FUNCTION.value: load_csv,
     },
-    "sql": {
-        "action": "load",
-        "purpose": "Persist a DataFrame into a SQL database table.",
-        "params_type": SQLLoadParams.__name__,
-        "function": load_sql,
+    TargetType.SQL.value: {
+        FieldType.ACTION.value: ActionType.LOAD.value,
+        FieldType.PURPOSE.value: "Persist a DataFrame into a SQL database table.",
+        FieldType.PARAMS_TYPE.value: SQLLoadParams.__name__,
+        FieldType.FUNCTION.value: load_sql,
     },
-    "api": {
-        "action": "load",
-        "purpose": "Send data to an external API.",
-        "params_type": APILoadParams.__name__,
-        "function": load_api,
+    TargetType.API.value: {
+        FieldType.ACTION.value: ActionType.LOAD.value,
+        FieldType.PURPOSE.value: "Send data to an external API.",
+        FieldType.PARAMS_TYPE.value: APILoadParams.__name__,
+        FieldType.FUNCTION.value: load_api,
     },
 }

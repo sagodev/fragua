@@ -8,6 +8,7 @@ from fragua.core.agent import FraguaAgent
 from fragua.core.params import FraguaParams
 from fragua.core.storage import Box, Container
 from fragua.utils.logger import get_logger
+from fragua.utils.types.enums import ActionType, StorageType
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -40,8 +41,8 @@ class Loader(FraguaAgent):
             environment: Active Fragua environment.
         """
         super().__init__(agent_name=name, environment=environment)
-        self.action = "load"
-        self.storage_type = "Container"
+        self.action = ActionType.LOAD
+        self.storage_type = StorageType.CONTAINER
 
     # ----------------- Container helpers ----------------- #
     def _create_container(self, sources: Union[str, List[str]]) -> Container:
