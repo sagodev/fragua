@@ -135,7 +135,7 @@ class FraguaWarehouse(FraguaInstance):
     ) -> Dict[str, Storage[Box]]:
         classes = (
             Box
-            if storage_type == StorageType.ALL.value
+            if storage_type.value == StorageType.ALL.value
             else STORAGE_CLASSES[storage_type.value]
         )
 
