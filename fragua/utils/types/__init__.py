@@ -1,6 +1,7 @@
 """Types Module."""
 
 from .enums import (
+    # ARCHITECTURE
     ActionType,
     EXTRACT,
     TRANSFORM,
@@ -34,9 +35,17 @@ from .enums import (
     ADD,
     FieldType,
     AttrType,
+    # INTERNAL FUNCTIONS
+    FillMissing,
+    SortBy,
+    AddDerivedColumns,
+    GroupAndAggregate,
+    FormatNumeric,
+    TreatOutliers,
 )
 
 __all__ = [
+    # ARCHITECTURE
     "ActionType",
     "EXTRACT",
     "TRANSFORM",
@@ -70,4 +79,11 @@ __all__ = [
     "CONTAINER",
     "FieldType",
     "AttrType",
+    # INTERNAL FUNCTIONS
+    "FillMissing",
+    "SortBy",
+    "AddDerivedColumns",
+    "GroupAndAggregate",
+    "FormatNumeric",
+    "TreatOutliers",
 ]

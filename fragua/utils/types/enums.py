@@ -3,6 +3,11 @@
 from enum import Enum
 
 
+# -------------------
+# ARCHITECTURE
+# -------------------
+
+
 class ActionType(str, Enum):
     """Fragua actions type class."""
 
@@ -126,16 +131,6 @@ class FieldType(str, Enum):
     FUNCTION = "function"
 
     FUNC_KEY = "function_key"
-    TARGET_COLUMN = "targer_column"
-    CATEGORICAL_COLS = "categorical_cols"
-    NUMERIC_COLS = "numeric_cols"
-    OUTLIER_THRESHOLD = "outlier_threshold"
-    FORMAT_CONFIG = "format_config"
-    DERIVED_COLUMNS = "derived_columns"
-    ROUND_PRECISION = "rounding_precision"
-    GROUP_BY_COLS = "group_by_cols"
-    AGG_FUNCTION = "agg_functions"
-    SORT_BY = "sort_by"
 
     DESTINATION = "destination"
     FILE_NAME = "file_name"
@@ -160,3 +155,76 @@ class AttrType(str, Enum):
     DESCRIPTION = "description"
     NORMALIZE = "normalize"
     DEFAULT = "default"
+
+
+# -------------------
+# INTERNAL FUNCTIONS
+# -------------------
+
+
+class FillMissing(str, Enum):
+    """
+    Fill missing function config keys.
+        - numeric_fill:
+        Strategy for numeric columns ("mean" | "zero"). Default: "mean".
+        - categorical_fill:
+        Fill value for categorical columns. Default: "unknown".
+    """
+
+    NUMERIC_FILL = "numeric_fill"
+    CATEGORICAL_FILL = "categorical_fill"
+
+
+class TreatOutliers(str, Enum):
+    """
+    Treat outliers function config keys.
+        - outlier_threshold:
+            IQR multiplier used for clipping. Default: 1.5."""
+
+    OUTLIERS_THRESHOLD = "outlier_threshold"
+
+
+class AddDerivedColumns(str, Enum):
+    """
+    Add derived columns function config keys.
+        - derived_columns:
+            Mapping of column names to pandas evaluation expressions.
+            If no derived columns are provided and both 'quantity' and 'price'
+            columns exist, a default 'total' column is computed.
+    """
+
+    DERIVED_COLUMNS = "derived_columns"
+
+
+class FormatNumeric(str, Enum):
+    """
+    Format numeric function config keys.
+        - rounding_precision:
+            Number of decimal places to apply. Default: 2.
+    """
+
+    ROUNDING_PRECISION = "rounding_precision"
+
+
+class GroupAndAggregate(str, Enum):
+    """
+    Group and aggregate function config keys.
+        - groupby_cols:
+            List of columns used for grouping.
+        - agg_functions:
+            Mapping of column names to aggregation functions.
+            If omitted, a default 'sum' aggregation is applied.
+    """
+
+    GROUP_BY = "group_by_cols"
+    AGG_FUNCTIONS = "agg_functions"
+
+
+class SortBy(str, Enum):
+    """
+    Sort function config keys.
+        - sort_by:
+            List of columns to sort by (ascending order).
+    """
+
+    SORT_BY = "sort_by"
