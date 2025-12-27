@@ -28,9 +28,9 @@ def fill_missing(
 
     Config keys:
         - numeric_fill: Strategy for numeric columns ("mean" | "zero").
-          Default: "mean".
+            Default: "mean".
         - categorical_fill: Fill value for categorical columns.
-          Default: "unknown".
+            Default: "unknown".
 
     Args:
         data (pd.DataFrame):
@@ -164,7 +164,7 @@ def treat_outliers(
 
     Config keys:
         - outlier_threshold: IQR multiplier used for clipping.
-          Default: 1.5.
+            Default: 1.5.
 
     Args:
         data (pd.DataFrame):
@@ -201,7 +201,7 @@ def add_derived_columns(
 
     Config keys:
         - derived_columns: Mapping of column names to pandas
-          evaluation expressions.
+            evaluation expressions.
 
     If no derived columns are provided and both 'quantity' and 'price'
     columns exist, a default 'total' column is computed.
@@ -254,7 +254,7 @@ def format_numeric(
 
     Config keys:
         - rounding_precision: Number of decimal places to apply.
-          Default: 2.
+            Default: 2.
 
     Args:
         data (pd.DataFrame):
@@ -288,7 +288,7 @@ def group_and_aggregate(
     Config keys:
         - groupby_cols: List of columns used for grouping.
         - agg_functions: Mapping of column names to aggregation functions.
-          If omitted, a default 'sum' aggregation is applied.
+            If omitted, a default 'sum' aggregation is applied.
 
     Args:
         data (pd.DataFrame):
@@ -301,7 +301,7 @@ def group_and_aggregate(
             Grouped and aggregated DataFrame.
     """
     cfg = config or {}
-    groupby_cols = cfg.get("groupby_cols", []) or []
+    groupby_cols = cfg.get("group_by_cols", []) or []
     agg_functions = cfg.get("agg_functions", {}) or {}
 
     df = data.copy()
@@ -367,54 +367,54 @@ class TransformInternalSpec:
     """
 
     func: Callable[..., pd.DataFrame]
-    description: str
+    purpose: str
     config_keys: List[str]
 
 
 TRANSFORM_INTERNAL_FUNCTIONS: Dict[str, TransformInternalSpec] = {
     "fill_missing": TransformInternalSpec(
         func=fill_missing,
-        description="Fill missing values in numeric and categorical columns.",
+        purpose="Fill missing values in numeric and categorical columns.",
         config_keys=["numeric_fill", "categorical_fill"],
     ),
     "standardize": TransformInternalSpec(
         func=standardize,
-        description="Trim and lowercase all string columns.",
+        purpose="Trim and lowercase all string columns.",
         config_keys=[],
     ),
     "encode_categoricals": TransformInternalSpec(
         func=encode_categoricals,
-        description="Convert categorical columns to dummy variables.",
+        purpose="Convert categorical columns to dummy variables.",
         config_keys=[],
     ),
     "scale_numeric": TransformInternalSpec(
         func=scale_numeric,
-        description="Scale numeric columns using MinMaxScaler.",
+        purpose="Scale numeric columns using MinMaxScaler.",
         config_keys=[],
     ),
     "treat_outliers": TransformInternalSpec(
         func=treat_outliers,
-        description="Cap outliers using the IQR method.",
+        purpose="Cap outliers using the IQR method.",
         config_keys=["outlier_threshold"],
     ),
     "add_derived_columns": TransformInternalSpec(
         func=add_derived_columns,
-        description="Create derived columns based on expressions.",
+        purpose="Create derived columns based on expressions.",
         config_keys=["derived_columns"],
     ),
     "format_numeric": TransformInternalSpec(
         func=format_numeric,
-        description="Round numeric columns to a given precision.",
+        purpose="Round numeric columns to a given precision.",
         config_keys=["rounding_precision"],
     ),
     "group_and_aggregate": TransformInternalSpec(
         func=group_and_aggregate,
-        description="Group and aggregate data using columns and aggregation functions.",
-        config_keys=["groupby_cols", "agg_functions"],
+        purpose="Group and aggregate data using columns and aggregation functions.",
+        config_keys=["group_by_cols", "agg_functions"],
     ),
     "sort_dataframe": TransformInternalSpec(
         func=sort_dataframe,
-        description="Sort the DataFrame by specified columns.",
+        purpose="Sort the DataFrame by specified columns.",
         config_keys=["sort_by"],
     ),
 }
