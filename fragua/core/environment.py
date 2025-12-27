@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Type
+from typing import Any, Dict, Literal, Type, overload
 
 from fragua.core.agent import FraguaAgent
 from fragua.core.actions import FraguaActions
@@ -226,6 +226,48 @@ class FraguaEnvironment(FraguaInstance):
 
         return fragua_set
 
+    @overload
+    def get(
+        self,
+        action: ActionType,
+        kind: Literal[ComponentType.AGENT],
+        name: str,
+    ) -> FraguaAgent: ...
+
+    @overload
+    def get(
+        self,
+        action: ActionType,
+        kind: Literal[ComponentType.PARAMS],
+        name: str,
+    ) -> FraguaAgent: ...
+
+    @overload
+    def get(
+        self,
+        action: ActionType,
+        kind: Literal[ComponentType.STYLE],
+        name: str,
+    ) -> Dict[str, Any]: ...
+
+    @overload
+    def get(
+        self,
+        action: ActionType,
+        kind: Literal[ComponentType.FUNCTION],
+        name: str,
+    ) -> Dict[str, Any]: ...
+
+    def get(
+        self,
+        action: ActionType,
+        kind: ComponentType,
+        name: str,
+    ) -> Any:
+        """Retrive a Component, by an given action type and component type."""
+        fragua_set = self._get_set(action, kind)
+        return fragua_set.get_one(name)
+
     def add(
         self,
         action: ActionType,
@@ -253,11 +295,6 @@ class FraguaEnvironment(FraguaInstance):
         )
 
         return True
-
-    def get(self, action: ActionType, kind: ComponentType, name: str) -> Any:
-        """Get component."""
-        fragua_set = self._get_set(action, kind)
-        return fragua_set.get_one(name)
 
     def update(
         self,
