@@ -15,6 +15,7 @@ from fragua.transform.params.transform_params import (
     MLTransformParams,
     ReportTransformParams,
 )
+from fragua.utils.types.enums import ActionType, FieldType, TargetType
 
 
 def execute_transform_pipeline(
@@ -124,32 +125,32 @@ def transform_analysis(
 
 
 TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Any]] = {
-    "ml": {
-        "action": "transform",
-        "purpose": (
+    TargetType.ML.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.PURPOSE.value: (
             "Apply ML-ready transformations including cleanup, "
             "encoding, outlier treatment, and scaling."
         ),
-        "params_type": MLTransformParams.__name__,
-        "function": transform_ml,
+        FieldType.PARAMS_TYPE.value: MLTransformParams.__name__,
+        FieldType.FUNCTION.value: transform_ml,
     },
-    "report": {
-        "action": "transform",
-        "purpose": (
+    TargetType.REPORT.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.PURPOSE.value: (
             "Prepare data for reporting by cleaning values, "
             "standardizing text, adding derived columns, "
             "and formatting numbers."
         ),
-        "params_type": ReportTransformParams.__name__,
-        "function": transform_report,
+        FieldType.PARAMS_TYPE.value: ReportTransformParams.__name__,
+        FieldType.FUNCTION.value: transform_report,
     },
-    "analysis": {
-        "action": "transform",
-        "purpose": (
+    TargetType.ANALYSIS.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.PURPOSE.value: (
             "Prepare datasets for exploratory analysis using grouping, "
             "aggregation, sorting, and basic cleanup."
         ),
-        "params_type": AnalysisTransformParams.__name__,
-        "function": transform_analysis,
+        FieldType.PARAMS_TYPE.value: AnalysisTransformParams.__name__,
+        FieldType.FUNCTION.value: transform_analysis,
     },
 }

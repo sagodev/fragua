@@ -10,6 +10,7 @@ from fragua.core.agent import FraguaAgent
 
 from fragua.core.params import FraguaParams
 from fragua.utils.logger import get_logger
+from fragua.utils.types.enums import ActionType, StorageType
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -39,8 +40,8 @@ class Transformer(FraguaAgent):
             environment (Environment): Execution environment instance.
         """
         super().__init__(agent_name=name, environment=environment)
-        self.action = "transform"
-        self.storage_type = "Box"
+        self.action = ActionType.TRANSFORM
+        self.storage_type = StorageType.BOX
 
     def work(
         self,

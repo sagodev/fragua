@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fragua.core.environment import FraguaEnvironment
 from fragua.utils.logger import get_logger
+from fragua.utils.types.enums import AGENT, EXTRACT, LOAD, TRANSFORM
 
 
 logger = get_logger(__name__)
@@ -24,9 +25,9 @@ class BasicEnvironment(FraguaEnvironment):
 
         logger.debug("Creating BasicEnvironment '%s'...", self.name)
 
-        self.create_agent("extract", f"{env_name}_etr")
-        self.create_agent("transform", f"{env_name}_tfr")
-        self.create_agent("load", f"{env_name}_ldr")
+        self.create(EXTRACT, AGENT, f"{env_name}_etr")
+        self.create(TRANSFORM, AGENT, f"{env_name}_tfr")
+        self.create(LOAD, AGENT, f"{env_name}_ldr")
 
         logger.info(
             "Basic environment '%s' created successfully with warehouse, manager, and 3 agents.",

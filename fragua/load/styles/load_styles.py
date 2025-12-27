@@ -9,30 +9,31 @@ from fragua.load.params.load_params import (
     ExcelLoadParams,
     SQLLoadParams,
 )
+from fragua.utils.types.enums import ActionType, FieldType, TargetType
 
 LOAD_STYLES: Dict[str, Dict[str, Any]] = {
-    "excel": {
-        "action": "load",
-        "function_key": "excel",
-        "params_type": ExcelLoadParams,
-        "purpose": "Export tabular data to an Excel file.",
+    TargetType.EXCEL.value: {
+        FieldType.ACTION.value: ActionType.LOAD.value,
+        FieldType.FUNC_KEY.value: TargetType.EXCEL.value,
+        FieldType.PARAMS_TYPE.value: ExcelLoadParams,
+        FieldType.PURPOSE.value: "Export tabular data to an Excel file.",
     },
-    "csv": {
-        "action": "load",
-        "function_key": "csv",
-        "params_type": CSVLoadParams,
-        "purpose": "Export tabular data to a CSV file.",
+    TargetType.CSV.value: {
+        FieldType.ACTION.value: ActionType.LOAD.value,
+        FieldType.FUNC_KEY.value: TargetType.CSV.value,
+        FieldType.PARAMS_TYPE.value: CSVLoadParams,
+        FieldType.PURPOSE.value: "Export tabular data to a CSV file.",
     },
-    "sql": {
-        "action": "load",
-        "function_key": "sql",
-        "params_type": SQLLoadParams,
-        "purpose": "Load tabular data into a SQL database.",
+    TargetType.SQL: {
+        FieldType.ACTION.value: ActionType.LOAD.value,
+        FieldType.FUNC_KEY.value: TargetType.SQL.value,
+        FieldType.PARAMS_TYPE.value: SQLLoadParams,
+        FieldType.PURPOSE.value: "Load tabular data into a SQL database.",
     },
-    "api": {
-        "action": "load",
-        "function_key": "api",
-        "params_type": APILoadParams,
-        "purpose": "Send tabular data to a REST API over HTTP.",
+    TargetType.API.value: {
+        FieldType.ACTION.value: ActionType.LOAD.value,
+        FieldType.FUNC_KEY.value: TargetType.API.value,
+        FieldType.PARAMS_TYPE.value: APILoadParams,
+        FieldType.PURPOSE.value: "Send tabular data to a REST API over HTTP.",
     },
 }

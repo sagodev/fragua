@@ -3,6 +3,8 @@
 from abc import ABC
 from typing import Any, Dict
 
+from fragua.utils.types.enums import AttrType
+
 # pylint: disable=too-few-public-methods
 
 
@@ -20,6 +22,5 @@ class FraguaClass(ABC):
         Default class summary.
         """
         return {
-            "name": cls.__name__,
-            "type": cls.__name__,
+            AttrType.NAME.value: cls.__name__,
         }

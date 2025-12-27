@@ -26,6 +26,7 @@ from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.utils.security.security_context import FraguaToken
+from fragua.utils.types.enums import ActionType, ComponentType, StorageType
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -62,8 +63,8 @@ class FraguaAgent(FraguaInstance):
         super().__init__(instance_name=agent_name)
         self.environment: FraguaEnvironment = environment
         self.token: FraguaToken
-        self.action: str
-        self.storage_type: str
+        self.action: ActionType
+        self.storage_type: StorageType
         self._operations: List[Dict[str, Any]] = []
         self._undo_stack: List[Dict[str, Any]] = []
 
@@ -116,7 +117,8 @@ class FraguaAgent(FraguaInstance):
 
     def _get_params(self, style: str) -> Type[FraguaParams]:
         params_cls = cast(
-            Type[FraguaParams], self.environment.get("params", style, self.action)
+            Type[FraguaParams],
+            self.environment.get(self.action, ComponentType.PARAMS, style),
         )
         if params_cls is None:
             raise ValueError(f"Params not found for style '{style}'.")
@@ -169,7 +171,7 @@ class FraguaAgent(FraguaInstance):
             ValueError:
                 If the style is not registered for the agent action.
         """
-        style_spec = self.environment.get("style", style, self.action)
+        style_spec = self.environment.get(self.action, ComponentType.STYLE, style)
 
         if style_spec is None:
             raise ValueError(f"Style not found: '{style}'.")
@@ -195,7 +197,9 @@ class FraguaAgent(FraguaInstance):
             ValueError:
                 If the function is not registered for the agent action.
         """
-        func_spec = self.environment.get("function", function_key, self.action)
+        func_spec = self.environment.get(
+            self.action, ComponentType.FUNCTION, function_key
+        )
         if func_spec is None:
             raise ValueError(
                 f"Function '{function_key}' not registered for action '{self.action}'."
@@ -260,7 +264,7 @@ class FraguaAgent(FraguaInstance):
         """
         self._operations.append(
             {
-                "action": self.action,
+                "action": self.action.value,
                 "style_name": style,
                 "timestamp": datetime.now(timezone.utc),
                 "params": params_instance,
@@ -326,7 +330,7 @@ class FraguaAgent(FraguaInstance):
         if not storage_cls:
             raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
 
-        name = storage_name or self._generate_storage_name(style_name)
+        name = storage_name if storage_name else self._generate_storage_name(style_name)
 
         if self.storage_type != "Container":
             return storage_cls(name, data)
@@ -419,9 +423,9 @@ class FraguaAgent(FraguaInstance):
 
         return {
             "agent_name": self.name,
-            "token": self.token,
-            "action": getattr(self, "action", None),
-            "storage_type": getattr(self, "storage_type", None),
+            "token_id": self.token.token_id,
+            "action": self.action.value,
+            "storage_type": self.storage_type.value,
             "environment_name": env_name,
             "operation_count": len(self._operations),
             "operations": ops_serialized,

@@ -9,13 +9,12 @@ by serializing the data in a consistent way.
 
 import hashlib
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Any
 import pandas as pd
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics.serializers import serialize_dataframe, serialize_other
 
 logger = get_logger(__name__)
-StorageType = Literal["", "box", "container"]
 
 
 def calculate_checksum(data: Any, algorithm: str = "sha256") -> str:

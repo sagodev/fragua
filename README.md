@@ -1,100 +1,165 @@
 # Fragua
 
-**Fragua** is a lightweight, modular Python library designed to model, configure, and orchestrate **ETL / ELT workflows** through explicit environments and well-defined execution boundaries.
+**Fragua** is a modular Python library for modeling and orchestrating **ETL / ELT workflows** through explicit execution environments, strong domain boundaries, and a centralized orchestration model.
 
-Instead of centering the design around individual agents, Fragua treats the **Environment** as the primary abstraction: a self-contained execution context that owns configuration, state, components, and data artifacts.
-
----
-
-## What is Fragua?
-
-Fragua provides an abstraction layer for data integration workflows where **everything happens inside an Environment**.
-
-An `Environment` represents a fully isolated workspace that defines:
-
-- Which agents exist
-- Which components they can use
-- Where data is stored
-- How operations are logged and traced
-
-Agents such as extractors, transformers, and loaders do not operate independently; they are **created, configured, and executed within an Environment**, which guarantees consistency, traceability, and predictable behavior.
+Fragua is designed as an educational and experimental framework focused on **clarity of architecture**, **predictable execution**, and **explicit responsibility separation**.
 
 ---
 
-## The Environment as the Core Concept
+## Core Concept
 
-The **Environment** is the central coordinator of the system.
+In Fragua, **everything happens inside an Environment**.
 
-It is responsible for:
+An `Environment` represents an isolated execution context that owns:
 
-- Managing the lifecycle of agents.
-- Hosting registries for:
-  - `params`
-  - `functions`
-  - `styles`
-- Providing access to a shared **Warehouse**.
-- Enforcing execution context, configuration rules, and boundaries.
-- Exposing structured summaries of the entire runtime state.
+- Component lifecycle and configuration
+- Security and execution boundaries
+- Runtime state and metadata
+- Data persistence and traceability
 
-This approach allows multiple environments to coexist independently, each one representing a distinct pipeline, experiment, or execution context.
+Agents do not exist or operate independently.  
+They are created, configured, and executed exclusively within an Environment.
 
 ---
 
-## Agents as Environment-Orchestrated Components
+## Environment Responsibilities
 
-Within an Environment, Fragua supports three agent roles:
+The `Environment` is the central orchestrator of the system. It is responsible for:
 
-- **Extractor** — Retrieves data from external sources.
-- **Transformer** — Applies transformations or enrichment logic.
-- **Loader** — Persists or delivers processed data.
+- Initializing the **Warehouse**
+- Managing action contexts: `extract`, `transform`, `load`
+- Registering and resolving all components
+- Enforcing security and execution boundaries
+- Providing a unified API for component lifecycle management
+- Exposing a structured summary of the runtime state
 
-Agents are **not global actors**. They:
+Multiple environments can coexist, each representing a separate pipeline, experiment, or workflow.
 
-- Are instantiated by the Environment
-- Resolve styles, params, and functions exclusively via registries
-- Interact with data only through the Environment’s Warehouse
+---
+
+## Unified Component Management
+
+All components in Fragua are managed through a **single, unified CRUD API** exposed by the Environment.
+
+Components are always resolved by:
+
+- **Action** (`extract`, `transform`, `load`)
+- **Component type** (`agent`, `params`, `function`, `style`)
+
+This applies consistently to all operations:
+
+- Create
+- Read
+- Update
+- Delete
+
+This design avoids duplicated logic, reduces coupling, and guarantees consistent behavior across the system.
+
+---
+
+## Agents and Execution Model
+
+Fragua defines three agent roles:
+
+- **Extractor** — Retrieves data from external sources
+- **Transformer** — Applies transformations or enrichment logic
+- **Loader** — Persists or delivers processed data
+
+Agents:
+
+- Are instantiated exclusively by the Environment
+- Receive mandatory execution credentials
+- Resolve configuration only through registered components
+- Interact with data exclusively via the Warehouse
 - Follow a standardized execution workflow
 
-This ensures that agents remain stateless orchestrators rather than owners of configuration or data.
+Agents act as controlled executors, not as owners of state or configuration.
 
 ---
 
-## Component Registries and Architecture
+## Security Model
 
-Fragua uses a layered component model to ensure consistency and extensibility:
+Fragua enforces an explicit internal security model:
 
-- **FraguaComponent** — Base abstraction for all registrable elements.
-- **FraguaSet** — Generic container responsible for CRUD operations, validation, and summaries.
-- **FraguaRegistry** — Groups related `FraguaSet` instances by action and component type.
+- The **Environment** issues execution credentials
+- **Agents** consume credentials to operate
+- The **Warehouse** validates credentials for protected operations
 
-All components (`styles`, `functions`, `params`, `agents`) are registered and resolved through these layers, eliminating implicit coupling and duplicated logic.
+This guarantees that no agent can execute or access data outside a valid environment context.
 
 ---
 
-## Storage, Warehouse, and Traceability
+## Domain-Driven Typing
 
-Each Environment owns a **Warehouse**, which acts as the single source of truth for pipeline artifacts.
+Fragua uses a strongly typed, enum-based domain vocabulary.
 
-Storage management provides:
+Enums define all core concepts, including:
 
-- Controlled add, get, delete, rename, and copy operations
+- Actions and component types
+- Agent roles
+- Storage and target types
+- Operations, fields, and attributes
+
+This approach:
+
+- Eliminates magic strings
+- Centralizes validation
+- Improves IDE support and static analysis
+- Provides a clear and extensible domain language
+
+Concise enum aliases are exported for ergonomic usage without sacrificing type safety.
+
+---
+
+## Component Architecture
+
+Fragua follows a layered component model:
+
+- **FraguaComponent**  
+  Base abstraction for all registrable elements.
+
+- **FraguaSet**  
+  Generic in-memory container responsible for:
+  - CRUD operations
+  - Validation
+  - Summaries
+
+- **FraguaRegistry**  
+  Runtime structure that groups multiple `FraguaSet` instances
+  by action and component type.
+
+This separation ensures clarity between existence, organization, and orchestration.
+
+---
+
+## Warehouse and Data Traceability
+
+Each Environment owns a **Warehouse**, which acts as the single source of truth for data artifacts.
+
+The Warehouse provides:
+
+- Controlled data operations
 - Full movement logging with timestamps
 - Undo support for destructive actions
-- Metadata-based search and snapshotting
+- Metadata-based summaries and inspection
 
 ---
 
-## Key Features
+## Key Characteristics
 
-- Environment-centric workflow orchestration.
-- Explicit isolation between pipelines.
-- Standardized agent execution model.
-- Component-based architecture.
-- Centralized storage and traceability.
-- Rich `summary()` methods with improved docstrings.
-- Built-in logging and operational metadata.
+- Environment-centric orchestration
+- Unified component lifecycle management
+- Explicit security boundaries
+- Strongly typed domain model
+- Isolated execution contexts
+- Centralized storage and traceability
+- Clear separation of responsibilities
 
 ---
+
+## Project Structure
+
+
 
 ## Project Structure
 

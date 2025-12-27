@@ -8,24 +8,25 @@ from fragua.transform.params.transform_params import (
     MLTransformParams,
     ReportTransformParams,
 )
+from fragua.utils.types.enums import ActionType, FieldType, TargetType
 
 TRANSFORM_STYLES: Dict[str, Dict[str, Any]] = {
-    "ml": {
-        "action": "transform",
-        "function_key": "ml",
-        "params_type": MLTransformParams,
-        "purpose": "Apply machine learning preprocessing steps.",
+    TargetType.ML.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.FUNC_KEY.value: TargetType.ML.value,
+        FieldType.PARAMS_TYPE.value: MLTransformParams,
+        FieldType.PURPOSE.value: "Apply machine learning preprocessing steps.",
     },
-    "report": {
-        "action": "transform",
-        "function_key": "report",
-        "params_type": ReportTransformParams,
-        "purpose": "Prepare data for reporting.",
+    TargetType.REPORT.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.FUNC_KEY.value: TargetType.REPORT.value,
+        FieldType.PARAMS_TYPE.value: ReportTransformParams,
+        FieldType.PURPOSE.value: "Prepare data for reporting.",
     },
-    "analysis": {
-        "action": "transform",
-        "function_key": "analysis",
-        "params_type": AnalysisTransformParams,
-        "purpose": "Perform analytical transformations.",
+    TargetType.ANALYSIS.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.FUNC_KEY.value: TargetType.ANALYSIS.value,
+        FieldType.PARAMS_TYPE.value: AnalysisTransformParams,
+        FieldType.PURPOSE.value: "Perform analytical transformations.",
     },
 }

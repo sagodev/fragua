@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
+
 # pylint: disable=too-few-public-methods
 
 

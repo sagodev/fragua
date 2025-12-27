@@ -14,6 +14,7 @@ from fragua.transform import (
     TRANSFORM_PARAMS,
 )
 from fragua.load import LOAD_STYLES, LOAD_FUNCTIONS, LOAD_PARAMS
+from fragua.utils.types.enums import ActionType, ComponentType
 
 
 if TYPE_CHECKING:
@@ -23,25 +24,30 @@ if TYPE_CHECKING:
 class FraguaActions(FraguaInstance):
     """Container for all action registries (extract, transform, load)."""
 
-    SET_TYPES = ["functions", "params", "styles", "agents"]
+    SET_TYPES = [
+        ComponentType.FUNCTION.value,
+        ComponentType.PARAMS.value,
+        ComponentType.STYLE.value,
+        ComponentType.AGENT.value,
+    ]
     FG_SETS: Dict[str, Dict[str, Any]] = {
-        "extract": {
-            "functions": EXTRACT_FUNCTIONS,
-            "params": EXTRACT_PARAMS,
-            "styles": EXTRACT_STYLES,
-            "agents": {},
+        ActionType.EXTRACT.value: {
+            ComponentType.FUNCTION.value: EXTRACT_FUNCTIONS,
+            ComponentType.PARAMS.value: EXTRACT_PARAMS,
+            ComponentType.STYLE.value: EXTRACT_STYLES,
+            ComponentType.AGENT.value: {},
         },
-        "transform": {
-            "functions": TRANSFORM_FUNCTIONS,
-            "params": TRANSFORM_PARAMS,
-            "styles": TRANSFORM_STYLES,
-            "agents": {},
+        ActionType.TRANSFORM.value: {
+            ComponentType.FUNCTION.value: TRANSFORM_FUNCTIONS,
+            ComponentType.PARAMS.value: TRANSFORM_PARAMS,
+            ComponentType.STYLE.value: TRANSFORM_STYLES,
+            ComponentType.AGENT.value: {},
         },
-        "load": {
-            "functions": LOAD_FUNCTIONS,
-            "params": LOAD_PARAMS,
-            "styles": LOAD_STYLES,
-            "agents": {},
+        ActionType.LOAD.value: {
+            ComponentType.FUNCTION.value: LOAD_FUNCTIONS,
+            ComponentType.PARAMS.value: LOAD_PARAMS,
+            ComponentType.STYLE.value: LOAD_STYLES,
+            ComponentType.AGENT.value: {},
         },
     }
 
@@ -55,12 +61,18 @@ class FraguaActions(FraguaInstance):
         super().__init__(instance_name="actions")
         self.environment: FraguaEnvironment = environment
         self._extract = (
-            self._initialize_registry("extract") if extract is None else extract
+            self._initialize_registry(ActionType.EXTRACT)
+            if extract is None
+            else extract
         )
         self._transform = (
-            self._initialize_registry("transform") if transform is None else transform
+            self._initialize_registry(ActionType.TRANSFORM)
+            if transform is None
+            else transform
         )
-        self._load = self._initialize_registry("load") if load is None else load
+        self._load = (
+            self._initialize_registry(ActionType.LOAD) if load is None else load
+        )
 
     def _to_fg_registry(
         self, registry: FraguaRegistry, dict_data: Dict[str, Dict[str, Any]]
@@ -131,9 +143,9 @@ class FraguaActions(FraguaInstance):
                 Mapping of action name to its corresponding params set.
         """
         return {
-            "extract": self.extract.params,
-            "transform": self.transform.params,
-            "load": self.load.params,
+            ActionType.EXTRACT.value: self.extract.params,
+            ActionType.TRANSFORM.value: self.transform.params,
+            ActionType.LOAD.value: self.load.params,
         }
 
     @property
@@ -146,9 +158,9 @@ class FraguaActions(FraguaInstance):
                 Mapping of action name to its corresponding functions set.
         """
         return {
-            "extract": self.extract.functions,
-            "transform": self.transform.functions,
-            "load": self.load.functions,
+            ActionType.EXTRACT.value: self.extract.functions,
+            ActionType.TRANSFORM.value: self.transform.functions,
+            ActionType.LOAD.value: self.load.functions,
         }
 
     @property
@@ -161,9 +173,9 @@ class FraguaActions(FraguaInstance):
                 Mapping of action name to its corresponding agents set.
         """
         return {
-            "extract": self.extract.agents,
-            "transform": self.transform.agents,
-            "load": self.load.agents,
+            ActionType.EXTRACT.value: self.extract.agents,
+            ActionType.TRANSFORM.value: self.transform.agents,
+            ActionType.LOAD.value: self.load.agents,
         }
 
     @property
@@ -176,9 +188,9 @@ class FraguaActions(FraguaInstance):
                 Mapping of action name to its corresponding styles set.
         """
         return {
-            "extract": self.extract.styles,
-            "transform": self.transform.styles,
-            "load": self.load.styles,
+            ActionType.EXTRACT.value: self.extract.styles,
+            ActionType.TRANSFORM.value: self.transform.styles,
+            ActionType.LOAD.value: self.load.styles,
         }
 
     def summary(self) -> Dict[str, Any]:
@@ -197,7 +209,7 @@ class FraguaActions(FraguaInstance):
                 - load (dict): Summary of the Load registry
         """
         return {
-            "extract": self.extract.summary(),
-            "transform": self.transform.summary(),
-            "load": self.load.summary(),
+            ActionType.EXTRACT.value: self.extract.summary(),
+            ActionType.TRANSFORM.value: self.transform.summary(),
+            ActionType.LOAD.value: self.load.summary(),
         }

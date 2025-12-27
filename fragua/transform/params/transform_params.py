@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Type
 
 
 from fragua.core.params import FraguaParams
+from fragua.utils.types.enums import AttrType, FieldType, TargetType
 
 
 class MLTransformParams(FraguaParams):
@@ -26,30 +27,30 @@ class MLTransformParams(FraguaParams):
     )
 
     FIELDS = {
-        "target_column": {
-            "type": str,
-            "required": True,
-            "description": "Name of the target variable to be predicted.",
+        FieldType.TARGET_COLUMN.value: {
+            AttrType.TYPE.value: str,
+            AttrType.REQUIRED.value: True,
+            AttrType.DESCRIPTION.value: "Name of the target variable to be predicted.",
         },
-        "categorical_cols": {
-            "type": List[str],
-            "default": [],
-            "description": "List of columns treated as categorical features.",
+        FieldType.CATEGORICAL_COLS.value: {
+            AttrType.TYPE.value: List[str],
+            AttrType.DEFAULT.value: [],
+            AttrType.DESCRIPTION.value: "List of columns treated as categorical features.",
         },
-        "numeric_cols": {
-            "type": List[str],
-            "default": [],
-            "description": "List of columns treated as numeric features.",
+        FieldType.NUMERIC_COLS.value: {
+            AttrType.TYPE.value: List[str],
+            AttrType.DEFAULT.value: [],
+            AttrType.DESCRIPTION.value: "List of columns treated as numeric features.",
         },
-        "outlier_threshold": {
-            "type": Optional[float],
-            "default": None,
-            "description": "Threshold factor used for outlier detection or capping.",
+        FieldType.OUTLIER_THRESHOLD.value: {
+            AttrType.TYPE.value: Optional[float],
+            AttrType.DEFAULT.value: None,
+            AttrType.DESCRIPTION.value: "Threshold factor used for outlier detection or capping.",
         },
     }
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(style="ml", **kwargs)
+        super().__init__(style=TargetType.ML.value, **kwargs)
 
 
 class ReportTransformParams(FraguaParams):
@@ -65,25 +66,25 @@ class ReportTransformParams(FraguaParams):
     )
 
     FIELDS = {
-        "format_config": {
-            "type": Dict[str, Any],
-            "default": {},
-            "description": "Formatting rules such as styles or alignment.",
+        FieldType.FORMAT_CONFIG.value: {
+            AttrType.TYPE.value: Dict[str, Any],
+            AttrType.DEFAULT.value: {},
+            AttrType.DESCRIPTION.value: "Formatting rules such as styles or alignment.",
         },
-        "derived_columns": {
-            "type": Dict[str, str],
-            "default": {},
-            "description": "Computed columns defined via expressions.",
+        FieldType.DERIVED_COLUMNS.value: {
+            AttrType.TYPE.value: Dict[str, str],
+            AttrType.DEFAULT.value: {},
+            AttrType.DESCRIPTION.value: "Computed columns defined via expressions.",
         },
-        "rounding_precision": {
-            "type": int,
-            "default": 2,
-            "description": "Decimal precision applied to numeric values.",
+        FieldType.ROUND_PRECISION.value: {
+            AttrType.TYPE.value: int,
+            AttrType.DEFAULT.value: 2,
+            AttrType.DESCRIPTION.value: "Decimal precision applied to numeric values.",
         },
     }
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(style="report", **kwargs)
+        super().__init__(style=TargetType.REPORT.value, **kwargs)
 
 
 class AnalysisTransformParams(FraguaParams):
@@ -100,29 +101,29 @@ class AnalysisTransformParams(FraguaParams):
     )
 
     FIELDS = {
-        "groupby_cols": {
-            "type": List[str],
-            "default": [],
-            "description": "Columns used to group the data.",
+        FieldType.GROUP_BY_COLS.value: {
+            AttrType.TYPE.value: List[str],
+            AttrType.DEFAULT.value: [],
+            AttrType.DESCRIPTION.value: "Columns used to group the data.",
         },
-        "agg_functions": {
-            "type": Dict[str, str],
-            "default": {},
-            "description": "Aggregation functions applied per column.",
+        FieldType.AGG_FUNCTION.value: {
+            AttrType.TYPE.value: Dict[str, str],
+            AttrType.DEFAULT.value: {},
+            AttrType.DESCRIPTION.value: "Aggregation functions applied per column.",
         },
-        "sort_by": {
-            "type": List[str],
-            "default": [],
-            "description": "Columns used to sort the final result.",
+        FieldType.SORT_BY.value: {
+            AttrType.TYPE.value: List[str],
+            AttrType.DEFAULT.value: [],
+            AttrType.DESCRIPTION.value: "Columns used to sort the final result.",
         },
     }
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(style="analysis", **kwargs)
+        super().__init__(style=TargetType.ANALYSIS.value, **kwargs)
 
 
 TRANSFORM_PARAMS: Dict[str, Type[FraguaParams]] = {
-    "ml": MLTransformParams,
-    "report": ReportTransformParams,
-    "analysis": AnalysisTransformParams,
+    TargetType.ML.value: MLTransformParams,
+    TargetType.REPORT.value: ReportTransformParams,
+    TargetType.ANALYSIS.value: AnalysisTransformParams,
 }
