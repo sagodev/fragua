@@ -1,8 +1,11 @@
 # Fragua
 
-**Fragua** is a modular Python library for modeling and orchestrating **ETL / ELT workflows** through explicit execution environments, strong domain boundaries, and a centralized orchestration model.
+**Fragua** is a modular Python library for modeling and orchestrating **ETL / ELT workflows**
+through explicit execution environments, strong domain boundaries, and a centralized
+orchestration model.
 
-Fragua is designed as an educational and experimental framework focused on **clarity of architecture**, **predictable execution**, and **explicit responsibility separation**.
+Fragua is designed as an educational and experimental framework focused on
+**architectural clarity**, **predictable execution**, and **explicit responsibility separation**.
 
 ---
 
@@ -12,7 +15,7 @@ In Fragua, **everything happens inside an Environment**.
 
 An `Environment` represents an isolated execution context that owns:
 
-- Component lifecycle and configuration
+- Component lifecycle and resolution
 - Security and execution boundaries
 - Runtime state and metadata
 - Data persistence and traceability
@@ -26,34 +29,33 @@ They are created, configured, and executed exclusively within an Environment.
 
 The `Environment` is the central orchestrator of the system. It is responsible for:
 
-- Initializing the **Warehouse**
+- Initializing and managing the **Warehouse**
 - Managing action contexts: `extract`, `transform`, `load`
 - Registering and resolving all components
 - Enforcing security and execution boundaries
 - Providing a unified API for component lifecycle management
-- Exposing a structured summary of the runtime state
+- Exposing structured runtime summaries
 
-Multiple environments can coexist, each representing a separate pipeline, experiment, or workflow.
+Multiple environments can coexist, each representing a separate pipeline, experiment,
+or workflow.
 
 ---
 
 ## Unified Component Management
 
-All components in Fragua are managed through a **single, unified CRUD API** exposed by the Environment.
+All components in Fragua are managed through a **single, unified CRUD API**
+exposed by the Environment.
 
-Components are always resolved by:
+Components are resolved by:
 
 - **Action** (`extract`, `transform`, `load`)
-- **Component type** (`agent`, `params`, `function`, `style`)
+- **Component type** (`agent`, `function`, `style`)
 
-This applies consistently to all operations:
+This unified approach:
 
-- Create
-- Read
-- Update
-- Delete
-
-This design avoids duplicated logic, reduces coupling, and guarantees consistent behavior across the system.
+- Avoids duplicated logic
+- Reduces coupling between modules
+- Guarantees consistent runtime behavior
 
 ---
 
@@ -69,11 +71,29 @@ Agents:
 
 - Are instantiated exclusively by the Environment
 - Receive mandatory execution credentials
-- Resolve configuration only through registered components
+- Resolve configuration through registered components and execution context
 - Interact with data exclusively via the Warehouse
 - Follow a standardized execution workflow
 
 Agents act as controlled executors, not as owners of state or configuration.
+
+---
+
+## Execution and Parameter Flow
+
+Fragua uses an **explicit execution-context model** for parameter handling.
+
+- Parameters are passed directly through function calls
+- Internal pipelines propagate execution context between steps
+- Functions declare their required inputs explicitly
+- No implicit or global parameter containers are used
+
+This model improves:
+
+- Readability
+- Debuggability
+- Contract enforcement
+- Predictability of execution
 
 ---
 
@@ -85,7 +105,8 @@ Fragua enforces an explicit internal security model:
 - **Agents** consume credentials to operate
 - The **Warehouse** validates credentials for protected operations
 
-This guarantees that no agent can execute or access data outside a valid environment context.
+This ensures that no agent can execute or access data outside a valid
+environment context.
 
 ---
 
@@ -122,19 +143,21 @@ Fragua follows a layered component model:
   Generic in-memory container responsible for:
   - CRUD operations
   - Validation
-  - Summaries
+  - Runtime summaries
 
 - **FraguaRegistry**  
   Runtime structure that groups multiple `FraguaSet` instances
   by action and component type.
 
-This separation ensures clarity between existence, organization, and orchestration.
+This separation ensures clarity between component definition,
+organization, and orchestration.
 
 ---
 
 ## Warehouse and Data Traceability
 
-Each Environment owns a **Warehouse**, which acts as the single source of truth for data artifacts.
+Each Environment owns a **Warehouse**, which acts as the single source of truth
+for data artifacts.
 
 The Warehouse provides:
 
@@ -149,7 +172,7 @@ The Warehouse provides:
 
 - Environment-centric orchestration
 - Unified component lifecycle management
-- Explicit security boundaries
+- Explicit execution-context-based parameter handling
 - Strongly typed domain model
 - Isolated execution contexts
 - Centralized storage and traceability
@@ -162,7 +185,6 @@ The Warehouse provides:
 ```
 fragua/
 ├── core/
-├── environments/
 ├── extract/
 ├── transform/
 ├── load/
@@ -178,7 +200,7 @@ fragua/
 python -m pip install -e .
 ```
 
-> ⚠️ Fragua is published on PyPI for learning purposes.  
+> ⚠️ Fragua is published for educational and experimental purposes.  
 > It is **not recommended for production use yet**.
 
 ---
