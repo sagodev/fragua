@@ -3,7 +3,6 @@ Fragua Set class.
 """
 
 from abc import ABC
-from collections.abc import Callable
 from typing import Any, Dict, Generic, Optional, TypeVar
 
 from fragua.core.component import FraguaComponent
@@ -120,7 +119,7 @@ class FraguaSet(ABC, Generic[T]):
                 for key, value in component.items():
                     if isinstance(value, FraguaComponent):
                         nested[key] = value.summary()
-                    elif isinstance(value, Callable):
+                    elif callable(value):
                         nested[key] = value.__name__
                     else:
                         nested[key] = value
