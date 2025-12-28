@@ -2,26 +2,20 @@
 Transform Functions.
 """
 
-from typing import Any, Dict, Iterable
+from typing import Callable, Dict, Iterable, Optional, Union
 
 import pandas as pd
-from fragua.core.params import FraguaParams
 from fragua.transform.functions.internal_functions import (
     TRANSFORM_INTERNAL_FUNCTIONS,
 )
 
-from fragua.transform.params.transform_params import (
-    AnalysisTransformParams,
-    MLTransformParams,
-    ReportTransformParams,
-)
 from fragua.utils.types.enums import ActionType, FieldType, TargetType
 
 
 def execute_transform_pipeline(
     input_data: pd.DataFrame,
-    params: FraguaParams,
     steps: Iterable[str],
+    config_keys: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     """
     Execute a transformation pipeline composed of ordered steps.
@@ -53,27 +47,27 @@ def execute_transform_pipeline(
         spec = TRANSFORM_INTERNAL_FUNCTIONS[step]
 
         kwargs = {
-            key: getattr(params, key)
+            key: getattr(config_keys, key)
             for key in spec.config_keys
-            if hasattr(params, key)
+            if hasattr(config_keys, key)
         }
 
-        data = spec.func(data, **kwargs)
+        data = spec.func(data, config=kwargs or None)
 
     return data
 
 
 def transform_ml(
-    input_data: pd.DataFrame,
-    params: MLTransformParams,
+    data: pd.DataFrame,
+    config_keys: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     """
     Apply ML-ready transformations including cleanup, encoding,
     outlier treatment, and scaling.
     """
     return execute_transform_pipeline(
-        input_data=input_data,
-        params=params,
+        input_data=data,
+        config_keys=config_keys,
         steps=[
             "fill_missing",
             "standardize",
@@ -86,7 +80,7 @@ def transform_ml(
 
 def transform_report(
     input_data: pd.DataFrame,
-    params: ReportTransformParams,
+    config_keys: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     """
     Prepare data for reporting by cleaning values, standardizing text,
@@ -94,7 +88,7 @@ def transform_report(
     """
     return execute_transform_pipeline(
         input_data=input_data,
-        params=params,
+        config_keys=config_keys,
         steps=[
             "fill_missing",
             "standardize",
@@ -105,16 +99,16 @@ def transform_report(
 
 
 def transform_analysis(
-    input_data: pd.DataFrame,
-    params: AnalysisTransformParams,
+    data: pd.DataFrame,
+    config_keys: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     """
     Prepare datasets for exploratory analysis using grouping,
     aggregation, sorting, and basic cleanup.
     """
     return execute_transform_pipeline(
-        input_data=input_data,
-        params=params,
+        input_data=data,
+        config_keys=config_keys,
         steps=[
             "fill_missing",
             "standardize",
@@ -124,14 +118,13 @@ def transform_analysis(
     )
 
 
-TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Any]] = {
+TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable]]] = {
     TargetType.ML.value: {
         FieldType.ACTION.value: ActionType.TRANSFORM.value,
         FieldType.PURPOSE.value: (
             "Apply ML-ready transformations including cleanup, "
             "encoding, outlier treatment, and scaling."
         ),
-        FieldType.PARAMS_TYPE.value: MLTransformParams.__name__,
         FieldType.FUNCTION.value: transform_ml,
     },
     TargetType.REPORT.value: {
@@ -141,7 +134,6 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Any]] = {
             "standardizing text, adding derived columns, "
             "and formatting numbers."
         ),
-        FieldType.PARAMS_TYPE.value: ReportTransformParams.__name__,
         FieldType.FUNCTION.value: transform_report,
     },
     TargetType.ANALYSIS.value: {
@@ -150,7 +142,6 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Any]] = {
             "Prepare datasets for exploratory analysis using grouping, "
             "aggregation, sorting, and basic cleanup."
         ),
-        FieldType.PARAMS_TYPE.value: AnalysisTransformParams.__name__,
         FieldType.FUNCTION.value: transform_analysis,
     },
 }
