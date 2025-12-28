@@ -23,10 +23,10 @@ logger = get_logger(__name__)
 
 class Transformer(FraguaAgent):
     """
-    Agent responsible for applying transformation styles to stored data.
+    Agent responsible for applying transformation target_types to stored data.
 
     The Transformer retrieves data from the warehouse, applies the
-    selected transformation style using the resolved parameters,
+    selected transformation target_type using the resolved parameters,
     and optionally stores the transformed result back into the warehouse.
     """
 
@@ -44,10 +44,10 @@ class Transformer(FraguaAgent):
 
     def work(
         self,
-        style: str,
+        target_type: str,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
         input_data: DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
-        return super().work(style, apply_to, save_as, input_data, **kwargs)
+        return super().work(target_type, apply_to, save_as, input_data, **kwargs)
