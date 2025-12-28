@@ -14,8 +14,5 @@ from .functions import *
 # ------------------- Load Styles ------------------- #
 from .styles import *
 
-# ------------------- Load Params ------------------- #
-from .params import *
-
 # ------------------- Load Agent ------------------- #
 from .agent import *

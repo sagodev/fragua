@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from fragua.core.agent import FraguaAgent
-from fragua.core.params import FraguaParams
 from fragua.core.storage import Box, Container
 from fragua.utils.logger import get_logger
 from fragua.utils.types.enums import ActionType, StorageType
@@ -79,32 +78,23 @@ class Loader(FraguaAgent):
 
         return container
 
-    def _resolve_params_for_box(
+    def _resolve_kwargs(
         self,
-        style: str,
         box_name: str,
-        params: Optional[FraguaParams],
         **kwargs: Any,
-    ) -> FraguaParams:
+    ) -> dict[str, Any]:
         """
-        Resolve Params for a specific Box.
+        Resolve load-time keyword arguments for a specific Box.
         """
-        if params is not None:
-            return params
+        resolved_kwargs = dict(**kwargs)
 
-        params_cls = self._get_params(style)
+        # Excel-style: auto sheet_name if not provided
+        resolved_kwargs.setdefault("sheet_name", box_name)
 
-        resolved_kwargs = dict(kwargs)
+        # SQL-style: auto table_name if not provided
+        resolved_kwargs.setdefault("table_name", box_name)
 
-        # Excel-style: auto sheet_name
-        if "sheet_name" in params_cls.FIELDS and not resolved_kwargs.get("sheet_name"):
-            resolved_kwargs["sheet_name"] = box_name
-
-        # SQL-style: auto table_name
-        if "table_name" in params_cls.FIELDS and not resolved_kwargs.get("table_name"):
-            resolved_kwargs["table_name"] = box_name
-
-        return params_cls(**resolved_kwargs)
+        return resolved_kwargs
 
     # ----------------- Work method ----------------- #
     def work(
@@ -112,7 +102,6 @@ class Loader(FraguaAgent):
         style: str,
         apply_to: Union[str, List[str], None] = None,
         save_as: Optional[str] = None,
-        params: Optional[FraguaParams] = None,
         input_data: Any = None,
         **kwargs: Any,
     ) -> None:
@@ -140,13 +129,11 @@ class Loader(FraguaAgent):
         for box_name in container.list_storages():
             box = container.get_storage(box_name)
 
-            params_instance = self._resolve_params_for_box(
-                style=style,
+            params = self._resolve_kwargs(
                 box_name=box_name,
-                params=params,
                 **kwargs,
             )
 
-            func(input_data=box.data, params=params_instance)
+            func(input_data=box.data, **params)
 
-            self._add_operation(style, params_instance)
+            self._add_operation(style)

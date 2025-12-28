@@ -7,28 +7,23 @@ Each function encapsulates the low-level persistence logic
 for a specific target system or format.
 """
 
-from typing import Any, Dict, Iterable
+from typing import Any, Callable, Dict, Iterable, Union
+
 import pandas as pd
 
-from fragua.core.params import FraguaParams
 from fragua.load.functions.internal_functions import LOAD_INTERNAL_FUNCTIONS
-from fragua.load.params.load_params import (
-    APILoadParams,
-    CSVLoadParams,
-    ExcelLoadParams,
-    SQLLoadParams,
-)
+
 from fragua.utils.types.enums import ActionType, FieldType, TargetType
 
 
 def execute_load_pipeline(
     input_data: pd.DataFrame,
-    params: FraguaParams,
     steps: Iterable[str],
+    **kwargs: Any,
 ) -> pd.DataFrame:
     """Execute a sequence of load internal functions as a pipeline."""
     data = input_data
-    artifacts: dict[str, Any] = {}
+    context: dict[str, Any] = dict(kwargs)
 
     for step in steps:
         if step not in LOAD_INTERNAL_FUNCTIONS:
@@ -36,120 +31,103 @@ def execute_load_pipeline(
 
         spec = LOAD_INTERNAL_FUNCTIONS[step]
 
-        kwargs = {}
+        call_kwargs = {key: context[key] for key in spec.config_keys if key in context}
 
-        # 1. params → kwargs
-        for key in spec.config_keys:
-            value = params.get(key)
-            if value is not None:
-                kwargs[key] = value
-
-        # 2. artifacts → kwargs (override params)
-        for key in spec.config_keys:
-            if key in artifacts:
-                kwargs[key] = artifacts[key]
-
-        # 3. execute
         if spec.data_arg:
-            result = spec.func(**{spec.data_arg: data}, **kwargs)
+            result = spec.func(**{spec.data_arg: data}, **call_kwargs)
         else:
-            result = spec.func(**kwargs)
+            result = spec.func(**call_kwargs)
 
-        # 4. collect outputs
-        if isinstance(result, pd.DataFrame):
+        if isinstance(result, dict):
+            context.update(result)
+        elif isinstance(result, pd.DataFrame):
             data = result
-        elif isinstance(result, dict):
-            artifacts.update(result)
 
     return data
 
 
 def load_excel(
     input_data: pd.DataFrame,
-    params: ExcelLoadParams,
+    **kwargs: Any,
 ) -> pd.DataFrame:
     """Export a DataFrame to an Excel file."""
     return execute_load_pipeline(
         input_data=input_data,
-        params=params,
         steps=[
             "validate_load",
             "build_path",
             "convert_datetime_columns",
             "write_excel",
         ],
+        **kwargs,
     )
 
 
 def load_csv(
     input_data: pd.DataFrame,
-    params: CSVLoadParams,
+    **kwargs: Any,
 ) -> pd.DataFrame:
     """Export a DataFrame to a CSV file."""
     return execute_load_pipeline(
         input_data=input_data,
-        params=params,
         steps=[
             "validate_load",
             "build_path",
             "write_csv",
         ],
+        **kwargs,
     )
 
 
 def load_sql(
     input_data: pd.DataFrame,
-    params: SQLLoadParams,
+    **kwargs: Any,
 ) -> pd.DataFrame:
     """Persist a DataFrame into a SQL database table."""
     return execute_load_pipeline(
         input_data=input_data,
-        params=params,
         steps=[
             "validate_sql_load",
             "write_sql",
         ],
+        **kwargs,
     )
 
 
 def load_api(
     input_data: pd.DataFrame,
-    params: APILoadParams,
+    **kwargs: Any,
 ) -> pd.DataFrame:
     """Send data to an external API."""
     return execute_load_pipeline(
         input_data=input_data,
-        params=params,
         steps=[
             "validate_api_load",
             "write_api",
         ],
+        **kwargs,
     )
 
 
-LOAD_FUNCTIONS: Dict[str, Dict[str, Any]] = {
+LOAD_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable]]] = {
     TargetType.EXCEL.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Export a DataFrame to an Excel file.",
-        FieldType.PARAMS_TYPE.value: ExcelLoadParams.__name__,
         FieldType.FUNCTION.value: load_excel,
     },
     TargetType.CSV.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Export a DataFrame to a CSV file.",
-        FieldType.PARAMS_TYPE.value: CSVLoadParams.__name__,
         FieldType.FUNCTION.value: load_csv,
     },
     TargetType.SQL.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Persist a DataFrame into a SQL database table.",
-        FieldType.PARAMS_TYPE.value: SQLLoadParams.__name__,
         FieldType.FUNCTION.value: load_sql,
     },
     TargetType.API.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Send data to an external API.",
-        FieldType.PARAMS_TYPE.value: APILoadParams.__name__,
         FieldType.FUNCTION.value: load_api,
     },
 }
