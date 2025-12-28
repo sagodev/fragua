@@ -1,8 +1,5 @@
 """Fragua Module."""
 
-# ------------------- Environments Module ------------------- #
-from fragua.environments import *
-
 # ------------------- Utils Module ------------------- #
 from fragua.utils import *
 
