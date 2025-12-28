@@ -169,7 +169,7 @@ class FraguaAgent(FraguaComponent):
 
         raise RuntimeError(f"Unsupported agent action: {self.action}")
 
-    def _normalize_input_data(self, input_data: Any):
+    def _normalize_input_data(self, input_data: Any) -> pd.DataFrame:
         if input_data is None:
             return pd.DataFrame()
 
