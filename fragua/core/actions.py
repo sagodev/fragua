@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, Optional
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.core.registry import FraguaRegistry
 
 from fragua.core.set import FraguaSet
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
 
 
-class FraguaActions(FraguaInstance):
+class FraguaActions(FraguaComponent):
     """Container for all action registries (extract, transform, load)."""
 
     FG_SETS: Dict[str, Dict[str, Any]] = {

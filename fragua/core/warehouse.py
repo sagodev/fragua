@@ -16,7 +16,7 @@ from typing import (
 )
 from datetime import datetime
 import copy as py_copy
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 from fragua.utils.security.security_context import FraguaToken
 from fragua.utils.logger import get_logger
@@ -86,7 +86,7 @@ class MovementLog:
         return len(self._entries)
 
 
-class FraguaWarehouse(FraguaInstance):
+class FraguaWarehouse(FraguaComponent):
     """
     In-memory aggregate root for Storage objects.
 

@@ -4,12 +4,12 @@ Base class for all registries of an environment in Fragua.
 
 from typing import Any, Dict, Optional
 
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.core.set import FraguaSet
 from fragua.utils.types.enums import ComponentType
 
 
-class FraguaRegistry(FraguaInstance):
+class FraguaRegistry(FraguaComponent):
     """
     Runtime registry within a Fragua environment.
 

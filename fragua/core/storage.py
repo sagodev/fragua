@@ -4,7 +4,7 @@ Base storage class for all storage objects in Fragua (Wagon, Box, Container).
 
 from typing import Any, Dict, Generic, Optional, TypeVar
 import pandas as pd
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.utils.types.enums import AttrType, StorageType
@@ -14,7 +14,7 @@ T = TypeVar("T")
 logger = get_logger(__name__)
 
 
-class Storage(FraguaInstance, Generic[T]):
+class Storage(FraguaComponent, Generic[T]):
     """
     Core runtime storage abstraction for all persistable objects in Fragua.
     """

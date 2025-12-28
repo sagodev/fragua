@@ -17,7 +17,7 @@ from typing import (
 from datetime import datetime, timezone
 import pandas as pd
 
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
 from fragua.utils.logger import get_logger
@@ -34,7 +34,7 @@ logger = get_logger(__name__)
 # pylint: disable=too-many-positional-arguments
 
 
-class FraguaAgent(FraguaInstance):
+class FraguaAgent(FraguaComponent):
     """
     Base class for ETL agents operating within a shared Fragua Environment.
 

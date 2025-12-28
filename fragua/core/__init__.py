@@ -2,18 +2,16 @@
 Base classes module.
 
 This module contains:
-- Base Environment class.
-- Base Agent class.
-- Base Params class.
-- Base Style class.
-- Base FraguaFunction class.
-- Warehouse Manager class.
+- Component class.
+- Environment class.
 - Warehouse class.
 - Storage class.
+- Set class.
+- Registry class.
+- Actions class.
 """
 
 from .environment import FraguaEnvironment
-
 
 from .registry import FraguaRegistry
 
@@ -27,8 +25,7 @@ from .warehouse import FraguaWarehouse
 
 from .storage import Storage, Box, Container, STORAGE_CLASSES
 
-
-from .fragua_instance import FraguaInstance
+from .component import FraguaComponent
 
 __all__ = [
     # Actions Class
@@ -39,8 +36,8 @@ __all__ = [
     "FraguaRegistry",
     # Section Fragua Class
     "FraguaSet",
-    # Base Runtime Class
-    "FraguaInstance",
+    # Base Fragua Component
+    "FraguaComponent",
     # Agent Class
     "FraguaAgent",
     # Warehouse
