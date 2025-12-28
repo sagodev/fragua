@@ -2,7 +2,7 @@
 Transform Functions.
 """
 
-from typing import Callable, Dict, Iterable, Optional, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Union
 
 import pandas as pd
 from fragua.transform.functions.internal_functions import (
@@ -118,7 +118,7 @@ def transform_analysis(
     )
 
 
-TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable]]] = {
+TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
     TargetType.ML.value: {
         FieldType.ACTION.value: ActionType.TRANSFORM.value,
         FieldType.PURPOSE.value: (

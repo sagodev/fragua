@@ -7,7 +7,7 @@ SQL databases, and REST APIs.
 """
 
 from pathlib import Path
-from typing import Callable, Dict, Any, Union
+from typing import Callable, Dict, Any, Mapping, MutableMapping, Union
 
 import pandas as pd
 from sqlalchemy import create_engine
@@ -72,11 +72,11 @@ def extract_api(
     *,
     url: str,
     method: str = OperationType.GET.value,
-    headers: dict | None = None,
-    params: dict | None = None,
-    data: dict | None = None,
-    auth: dict | None = None,
-    proxy: dict | None = None,
+    headers: Mapping[str, Any] | None = None,
+    params: Mapping[str, Any] | None = None,
+    data: Mapping[str, Any] | None = None,
+    auth: Mapping[str, str] | None = None,
+    proxy: MutableMapping[str, str] | None = None,
     timeout: int | None = None,
     **_: Any,
 ) -> pd.DataFrame:
@@ -107,7 +107,7 @@ def extract_api(
     raise ValueError(f"Unexpected API response type: {type(payload)}")
 
 
-EXTRACT_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable]]] = {
+EXTRACT_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
     TargetType.CSV.value: {
         FieldType.ACTION.value: ActionType.EXTRACT.value,
         FieldType.PURPOSE.value: "Extract tabular data from a CSV file.",

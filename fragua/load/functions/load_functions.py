@@ -109,7 +109,7 @@ def load_api(
     )
 
 
-LOAD_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable]]] = {
+LOAD_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
     TargetType.EXCEL.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Export a DataFrame to an Excel file.",
