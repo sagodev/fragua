@@ -32,33 +32,14 @@ class Loader(FraguaAgent):
     """
 
     def __init__(self, name: str, environment: FraguaEnvironment) -> None:
-        """
-        Initialize the Loader agent.
-
-        Args:
-            name: Agent identifier.
-            environment: Active Fragua environment.
-        """
         super().__init__(agent_name=name, environment=environment)
         self.action = ActionType.LOAD
         self.storage_type = StorageType.CONTAINER
 
     # ----------------- Container helpers ----------------- #
     def _create_container(self, sources: Union[str, List[str]]) -> Container:
-        """
-        Create a Container populated with Box objects from the warehouse.
-
-        Args:
-            sources: One or more storage names to retrieve.
-
-        Returns:
-            A Container holding the resolved Box objects.
-
-        Raises:
-            TypeError: If resolved objects are not Box instances.
-        """
         container = self.create_storage(
-            style_name=self.action,
+            function_name=self.action,
             storage_name="load_container",
             data=None,
         )
@@ -70,70 +51,38 @@ class Loader(FraguaAgent):
 
         for name in names:
             box = self.get_from_warehouse(name)
-
             if not isinstance(box, Box):
                 raise TypeError(f"Storage '{name}' is not a Box and cannot be loaded.")
-
             container.add_storage(name, box)
 
         return container
 
-    def _resolve_kwargs(
-        self,
-        box_name: str,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """
-        Resolve load-time keyword arguments for a specific Box.
-        """
+    def _resolve_kwargs(self, box_name: str, **kwargs: Any) -> dict[str, Any]:
         resolved_kwargs = kwargs
-
-        # Excel-style: auto sheet_name if not provided
         resolved_kwargs.setdefault(FieldType.SHEET_NAME.value, box_name)
-
-        # SQL-style: auto table_name if not provided
         resolved_kwargs.setdefault(FieldType.TABLE_NAME.value, box_name)
-
         return resolved_kwargs
 
     # ----------------- Work method ----------------- #
     def work(
         self,
-        style: str,
+        target_type: str,
         apply_to: Union[str, List[str], None] = None,
         save_as: Optional[str] = None,
         input_data: Any = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Execute the load workflow.
-        Args:
-            style: Load style to apply.
-            apply_to: One or more Box names to load from the warehouse.
-            save_as: Not used in Loader; present for interface consistency.
-            params: Optional Params instance to use for loading.
-            input_data: Not used in Loader; present for interface consistency.
-            **kwargs: Additional parameters for the load function.
-        Raises:
-            TypeError: If 'apply_to' is not provided.
-        """
         if apply_to is None:
             raise TypeError("Missing required argument: 'apply_to'.")
 
-        style = style.lower()
+        func = self._resolve_function(target_type)
 
-        style_spec = self._resolve_style(style)
-        func = self._resolve_function(style_spec[FieldType.FUNC_KEY.value])
         container = self._create_container(apply_to)
 
         for box_name in container.list_storages():
             box = container.get_storage(box_name)
-
-            params = self._resolve_kwargs(
-                box_name=box_name,
-                **kwargs,
-            )
+            params = self._resolve_kwargs(box_name=box_name, **kwargs)
 
             func(input_data=box.data, **params)
 
-            self._add_operation(style)
+            self._add_operation(target_type)

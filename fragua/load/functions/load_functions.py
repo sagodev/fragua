@@ -7,7 +7,7 @@ Each function encapsulates the low-level persistence logic
 for a specific target system or format.
 """
 
-from typing import Any, Callable, Dict, Iterable, Union
+from typing import Any, Callable, Dict, Iterable, List, Union
 
 import pandas as pd
 
@@ -109,25 +109,44 @@ def load_api(
     )
 
 
-LOAD_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
+LOAD_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str]]]] = {
     TargetType.EXCEL.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Export a DataFrame to an Excel file.",
         FieldType.FUNCTION.value: load_excel,
+        FieldType.STEPS.value: [
+            ILF.VALIDATE_LOAD.value,
+            ILF.BUILD_PATH.value,
+            ILF.CONVERT_DATETIME_COLUMNS.value,
+            ILF.WRITE_EXCEL.value,
+        ],
     },
     TargetType.CSV.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Export a DataFrame to a CSV file.",
         FieldType.FUNCTION.value: load_csv,
+        FieldType.STEPS.value: [
+            ILF.VALIDATE_LOAD.value,
+            ILF.BUILD_PATH.value,
+            ILF.WRITE_CSV.value,
+        ],
     },
     TargetType.SQL.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Persist a DataFrame into a SQL database table.",
         FieldType.FUNCTION.value: load_sql,
+        FieldType.STEPS.value: [
+            ILF.VALIDATE_SQL_LOAD.value,
+            ILF.WRITE_SQL.value,
+        ],
     },
     TargetType.API.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Send data to an external API.",
         FieldType.FUNCTION.value: load_api,
+        FieldType.STEPS.value: [
+            ILF.VALIDATE_API_LOAD.value,
+            ILF.WRITE_API.value,
+        ],
     },
 }

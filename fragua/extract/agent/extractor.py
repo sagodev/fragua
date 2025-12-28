@@ -24,7 +24,7 @@ class Extractor(FraguaAgent):
     """
     Agent responsible for executing extraction workflows in Fragua.
 
-    The Extractor applies extraction styles to external data sources
+    The Extractor applies extraction functions to external data sources
     (files, databases, APIs, etc.) and produces Box storage objects
     containing raw extracted data.
 
@@ -46,10 +46,10 @@ class Extractor(FraguaAgent):
 
     def work(
         self,
-        style: str,
+        target_type: str,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
         input_data: DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
-        return super().work(style, apply_to, save_as, input_data, **kwargs)
+        return super().work(target_type, apply_to, save_as, input_data, **kwargs)

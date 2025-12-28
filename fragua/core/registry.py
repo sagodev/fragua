@@ -15,7 +15,7 @@ class FraguaRegistry(FraguaComponent):
 
     A FraguaRegistry manages a collection of FraguaSet instances,
     each representing a logical grouping of related components
-    (such as styles, params, or functions).
+    (such as agents, functions, etc).
 
     Registries are stateful and exist only at runtime.
     """
@@ -97,18 +97,6 @@ class FraguaRegistry(FraguaComponent):
         raise KeyError("Functions set not found in registry.")
 
     @property
-    def styles(self) -> FraguaSet[Any]:
-        """
-        Access the set containing extract styles.
-
-        Returns:
-            ExtractStyleSet instance.
-        """
-        if ComponentType.STYLE in self._sets:
-            return self._sets[ComponentType.STYLE.value]
-        raise KeyError("Styles set not found in registry.")
-
-    @property
     def agents(self) -> FraguaSet[Any]:
         """
         Access the set containing extract agents.
@@ -129,7 +117,6 @@ class FraguaRegistry(FraguaComponent):
         """
         summary: Dict[str, Any] = {
             ComponentType.FUNCTION.value: self.functions.summary(),
-            ComponentType.STYLE.value: self.styles.summary(),
             ComponentType.AGENT.value: self.agents.summary(),
         }
 

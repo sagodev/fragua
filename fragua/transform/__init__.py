@@ -11,8 +11,5 @@ This module contains:
 # ------------------- Transform Functions ------------------- #
 from .functions import *
 
-# ------------------- Transform Styles ------------------- #
-from .styles import *
-
 # ------------------- Transformer Agent ------------------- #
 from .agent import *

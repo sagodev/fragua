@@ -16,9 +16,9 @@ def generate_metadata(
     Generate metadata dictionary for objects with .data and .name.
 
     Args:
-        storage: Storage object that holds data (e.g.  Box, Container).
-        **kwargs: Additional metadata fields
-            (e.g.,metadata_type, storage_name, agent_name, style_name, etc.).
+        storage: Storage object that holds data (e.g., Box, Container).
+        **metadata_kwargs: Additional metadata fields
+            (e.g., metadata_type, storage_name, agent_name, function_name, etc.).
     """
     data_attr = getattr(storage, FieldType.DATA.value, storage)
     rows, columns = getattr(data_attr, "shape", (None, None))
@@ -35,23 +35,22 @@ def generate_metadata(
 
     class_type = storage.__class__.__name__.lower()
 
-    if metadata_kwargs.get(MetadataType.METADATA_TYPE.value) == MetadataType.BASE.value:
+    metadata_type = metadata_kwargs.get(MetadataType.METADATA_TYPE.value)
+
+    if metadata_type == MetadataType.BASE.value:
         base_metadata.update({AttrType.TYPE.value: class_type})
-    elif (
-        metadata_kwargs.get(MetadataType.METADATA_TYPE.value)
-        == MetadataType.OPERATION.value
-    ):
+
+    elif metadata_type == MetadataType.OPERATION.value:
         base_metadata.update(
             {
-                ComponentType.STYLE.value: metadata_kwargs.get(
-                    ComponentType.STYLE.value
+                ComponentType.FUNCTION.value: metadata_kwargs.get(
+                    ComponentType.FUNCTION.value
                 ),
                 "operation_checksum": checksum,
             }
         )
-    elif (
-        metadata_kwargs.get(MetadataType.METADATA_TYPE.value) == MetadataType.SAVE.value
-    ):
+
+    elif metadata_type == MetadataType.SAVE.value:
         base_metadata.update(
             {
                 ComponentType.STORAGE.value: metadata_kwargs.get(
@@ -63,10 +62,9 @@ def generate_metadata(
                 "save_checksum": checksum,
             }
         )
+
     else:
-        raise ValueError(
-            f"Unknown metadata_type '{metadata_kwargs.get(MetadataType.METADATA_TYPE.value)}'"
-        )
+        raise ValueError(f"Unknown metadata_type '{metadata_type}'")
 
     return base_metadata
 

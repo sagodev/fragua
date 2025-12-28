@@ -26,7 +26,6 @@ class ComponentType(str, Enum):
 
     AGENT = "agent"
     FUNCTION = "function"
-    STYLE = "style"
     ENVIRONMENT = "environment"
     REGISTRY = "registry"
     SET = "set"
@@ -37,7 +36,6 @@ class ComponentType(str, Enum):
 
 AGENT = ComponentType.AGENT
 FUNCTION = ComponentType.FUNCTION
-STYLE = ComponentType.STYLE
 
 
 class AgentType(str, Enum):
@@ -121,7 +119,7 @@ class FieldType(str, Enum):
 
     ACTION = "action"
     PURPOSE = "purpose"
-    FIELDS = "fields"
+    STEPS = "steps"
     STORAGE_TYPE = "storage_type"
     FUNCTION = "function"
     FUNC_KEY = "function_key"

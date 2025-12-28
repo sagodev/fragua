@@ -2,7 +2,7 @@
 Transform Functions.
 """
 
-from typing import Any, Callable, Dict, Iterable, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import pandas as pd
 from fragua.transform.functions.internal_functions import (
@@ -118,7 +118,7 @@ def transform_analysis(
     )
 
 
-TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
+TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str]]]] = {
     TargetType.ML.value: {
         FieldType.ACTION.value: ActionType.TRANSFORM.value,
         FieldType.PURPOSE.value: (
@@ -126,6 +126,13 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
             "encoding, outlier treatment, and scaling."
         ),
         FieldType.FUNCTION.value: transform_ml,
+        FieldType.STEPS.value: [
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.ENCODE_CATEGORICALS.value,
+            ITF.TREAT_OUTLIERS.value,
+            ITF.SCALE_NUMERIC.value,
+        ],
     },
     TargetType.REPORT.value: {
         FieldType.ACTION.value: ActionType.TRANSFORM.value,
@@ -135,6 +142,12 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
             "and formatting numbers."
         ),
         FieldType.FUNCTION.value: transform_report,
+        FieldType.STEPS.value: [
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.ADD_DERIVED_COLUMNS.value,
+            ITF.FORMAT_NUMERIC.value,
+        ],
     },
     TargetType.ANALYSIS.value: {
         FieldType.ACTION.value: ActionType.TRANSFORM.value,
@@ -143,5 +156,11 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
             "aggregation, sorting, and basic cleanup."
         ),
         FieldType.FUNCTION.value: transform_analysis,
+        FieldType.STEPS.value: [
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.GROUP_AND_AGGREGATE.value,
+            ITF.SORT_DATAFRAME.value,
+        ],
     },
 }

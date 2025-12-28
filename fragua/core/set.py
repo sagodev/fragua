@@ -15,10 +15,7 @@ class FraguaSet(ABC, Generic[T]):
     Logical container for Fragua components.
 
     A FraguaSet groups homogeneous elements under a common scope
-    (params schemas, functions, styles, agents, etc.).
-
-    The set is explicitly configured to store either declarative
-    classes or runtime instances.
+    (functions, agents, etc.).
     """
 
     def __init__(
@@ -122,6 +119,8 @@ class FraguaSet(ABC, Generic[T]):
                 for key, value in component.items():
                     if isinstance(value, FraguaComponent):
                         nested[key] = value.summary()
+                    elif callable(value):
+                        nested[key] = value.__name__
                     else:
                         nested[key] = value
                 result[name] = nested
