@@ -23,8 +23,6 @@ from .actions import FraguaActions
 
 from .agent import FraguaAgent
 
-from .params import FraguaParams
-
 from .warehouse import FraguaWarehouse
 
 from .storage import Storage, Box, Container, STORAGE_CLASSES
@@ -48,8 +46,6 @@ __all__ = [
     "FraguaClass",
     # Agent Class
     "FraguaAgent",
-    # Params Class
-    "FraguaParams",
     # Warehouse
     "FraguaWarehouse",
     # Storage
