@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 
 from pandas import DataFrame
 from fragua.core.agent import FraguaAgent
-from fragua.core.params import FraguaParams
 from fragua.utils.logger import get_logger
 from fragua.utils.types.enums import ActionType, StorageType
 
@@ -50,8 +49,7 @@ class Extractor(FraguaAgent):
         style: str,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
-        params: FraguaParams | None = None,
         input_data: DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
-        return super().work(style, apply_to, save_as, params, input_data, **kwargs)
+        return super().work(style, apply_to, save_as, input_data, **kwargs)
