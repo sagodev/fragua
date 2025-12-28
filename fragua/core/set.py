@@ -132,7 +132,7 @@ class FraguaSet(ABC, Generic[T]):
                     elif isinstance(value, FraguaInstance):
                         nested[key] = value.summary()
                     else:
-                        nested[key] = value.__class__.__name__
+                        nested[key] = value
                 result[name] = nested
 
             # Fallback (should not normally happen)

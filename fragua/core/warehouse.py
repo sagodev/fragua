@@ -236,7 +236,7 @@ class FraguaWarehouse(FraguaInstance):
         targets = self._resolve_targets(storage_type, storage_name)
 
         self._movement_log.record(
-            operation=OperationType.GET,
+            operation=OperationType.GET.value,
             storage_name=storage_name,
             agent_name=agent_name,
             warehouse_name=self.name,

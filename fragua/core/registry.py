@@ -85,18 +85,6 @@ class FraguaRegistry(FraguaInstance):
 
     # ------------------------------------------------------------------
     @property
-    def params(self) -> FraguaSet[Any]:
-        """
-        Access the set containing extract parameter schemas.
-
-        Returns:
-            ExtractParamsSet instance.
-        """
-        if ComponentType.PARAMS in self._sets:
-            return self._sets[ComponentType.PARAMS.value]
-        raise KeyError("Params set not found in registry.")
-
-    @property
     def functions(self) -> FraguaSet[Any]:
         """
         Access the set containing extract functions.
@@ -140,7 +128,6 @@ class FraguaRegistry(FraguaInstance):
 
         """
         summary: Dict[str, Any] = {
-            ComponentType.PARAMS.value: self.params.summary(),
             ComponentType.FUNCTION.value: self.functions.summary(),
             ComponentType.STYLE.value: self.styles.summary(),
             ComponentType.AGENT.value: self.agents.summary(),

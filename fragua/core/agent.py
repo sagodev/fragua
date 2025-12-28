@@ -13,20 +13,17 @@ from typing import (
     Dict,
     List,
     Optional,
-    Type,
-    cast,
 )
 from datetime import datetime, timezone
 import pandas as pd
 
 from fragua.core.fragua_instance import FraguaInstance
-from fragua.core.params import FraguaParams
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.utils.security.security_context import FraguaToken
-from fragua.utils.types.enums import ActionType, ComponentType, StorageType
+from fragua.utils.types.enums import ActionType, ComponentType, FieldType, StorageType
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -77,19 +74,6 @@ class FraguaAgent(FraguaInstance):
         return self.token
 
     def _determine_origin_name(self, origin: Any) -> Optional[str]:
-        """
-        Infer a human-readable origin name for metadata generation.
-
-        The origin may represent a storage object, file path, DataFrame,
-        or any object exposing a `path` or `data` attribute.
-
-        Args:
-            origin: Source object used to infer origin metadata.
-
-        Returns:
-            A string representing the origin name, or None if it cannot
-            be determined.
-        """
         origin_name = None
         match origin:
             case Storage():
@@ -97,80 +81,20 @@ class FraguaAgent(FraguaInstance):
             case str() | Path():
                 origin_name = Path(origin).name
             case _:
-                if hasattr(origin, "path") and isinstance(origin.path, (str, Path)):
+                if hasattr(origin, FieldType.PATH.value) and isinstance(
+                    origin.path, (str, Path)
+                ):
                     origin_name = Path(origin.path).name
-                elif hasattr(origin, "data") and isinstance(origin.data, pd.DataFrame):
+                elif hasattr(origin, FieldType.DATA.value) and isinstance(
+                    origin.data, pd.DataFrame
+                ):
                     origin_name = "DataFrame"
         return origin_name
 
     def _generate_storage_name(self, style_name: str) -> str:
-        """
-        Generate a default storage name based on style and agent action.
-
-        Args:
-            style_name: Executed style identifier.
-
-        Returns:
-            A standardized storage name string.
-        """
         return f"{style_name}_{self.action}_data"
 
-    def _get_params(self, style: str) -> Type[FraguaParams]:
-        params_cls = cast(
-            Type[FraguaParams],
-            self.environment.get(self.action, ComponentType.PARAMS, style),
-        )
-        if params_cls is None:
-            raise ValueError(f"Params not found for style '{style}'.")
-
-        return params_cls
-
-    def _resolve_params(
-        self,
-        style: str,
-        params: Optional[FraguaParams],
-        **kwargs: Any,
-    ) -> FraguaParams:
-        """
-        Resolve and instantiate parameter objects for a given style.
-
-        If an explicit Params instance is provided, it is returned unchanged.
-        Otherwise, the Params class is resolved from the Environment registry
-        and instantiated using the supplied keyword arguments.
-
-        Args:
-            style: Style identifier used to resolve the Params class.
-            params: Optional pre-instantiated Params object.
-            **kwargs: Keyword arguments for Params construction.
-
-        Returns:
-            An instantiated Params object.
-
-        Raises:
-            ValueError: If no Params class is registered for the given style.
-        """
-        if params is not None:
-            return params
-
-        params_cls = self._get_params(style)
-
-        return params_cls(**kwargs)
-
     def _resolve_style(self, style: str) -> Any:
-        """
-        Resolve a style specification for the agent action.
-
-        Args:
-            style:
-                Style identifier to resolve.
-
-        Returns:
-            Style specification dictionary.
-
-        Raises:
-            ValueError:
-                If the style is not registered for the agent action.
-        """
         style_spec = self.environment.get(self.action, ComponentType.STYLE, style)
 
         if style_spec is None:
@@ -178,101 +102,108 @@ class FraguaAgent(FraguaInstance):
 
         return style_spec
 
-    def _resolve_function(self, function_key: str) -> Callable[..., pd.DataFrame]:
-        """
-        Resolve and adapt a function implementation for the agent action.
-
-        The returned callable is normalized according to the action type:
-        - extract   -> func(params)
-        - transform -> func(input_data, params)
-        - load      -> func(input_data, params)
-
-        Args:
-            function_key: The key or name of the function to resolve from the Environment.
-
-        Returns:
-            A callable adapted to the agent execution contract.
-
-        Raises:
-            ValueError:
-                If the function is not registered for the agent action.
-        """
+    def _resolve_function(self, function_key: str) -> Callable[..., Any]:
         func_spec = self.environment.get(
-            self.action, ComponentType.FUNCTION, function_key
+            self.action,
+            ComponentType.FUNCTION,
+            function_key,
         )
+
         if func_spec is None:
             raise ValueError(
                 f"Function '{function_key}' not registered for action '{self.action}'."
             )
 
-        func = func_spec["function"]
+        func = func_spec[ComponentType.FUNCTION.value]
 
-        # ----------------- Function adapter ----------------- #
-        if self.action == "extract":
+        # ----------------- EXTRACT ----------------- #
+        if self.action == ActionType.EXTRACT.value:
 
-            def _extract_executor(*, params: FraguaParams, **_: Any) -> Any:
-                return func(params=params)
+            def _extract_executor(**kwargs: Any) -> pd.DataFrame:
+                result = func(**kwargs)
+
+                if not isinstance(result, pd.DataFrame):
+                    raise TypeError("EXTRACT functions must return a pandas DataFrame")
+
+                return result
 
             return _extract_executor
 
-        if self.action in {"transform", "load"}:
+        # ----------------- TRANSFORM ----------------- #
+        if self.action == ActionType.TRANSFORM.value:
 
-            def _pipeline_executor(
+            def _transform_executor(
                 *,
                 input_data: pd.DataFrame,
-                params: FraguaParams,
-                **_: Any,
-            ) -> Any:
-                return func(input_data=input_data, params=params)
+                **kwargs: Any,
+            ) -> pd.DataFrame:
+                result = func(input_data=input_data, **kwargs)
 
-            return _pipeline_executor
+                if not isinstance(result, pd.DataFrame):
+                    raise TypeError(
+                        "TRANSFORM functions must return a pandas DataFrame"
+                    )
+
+                return result
+
+            return _transform_executor
+
+        # ----------------- LOAD ----------------- #
+        if self.action == ActionType.LOAD.value:
+
+            def _load_executor(
+                *,
+                input_data: pd.DataFrame,
+                **kwargs: Any,
+            ) -> Any:
+                return func(input_data=input_data, **kwargs)
+
+            return _load_executor
 
         raise RuntimeError(f"Unsupported agent action: {self.action}")
 
+    def _normalize_input_data(self, input_data):
+        if input_data is None:
+            return pd.DataFrame()
+
+        if isinstance(input_data, pd.DataFrame):
+            return input_data
+
+        if isinstance(input_data, list):
+            # list[dict] o list[list]
+            return pd.DataFrame(input_data)
+
+        if isinstance(input_data, dict):
+            # dict de listas → DataFrame normal
+            if any(isinstance(v, (list, tuple)) for v in input_data.values()):
+                return pd.DataFrame(input_data)
+
+            # dict de escalares → 1 fila
+            return pd.DataFrame([input_data])
+
+        raise TypeError(f"Unsupported input_data type: {type(input_data).__name__}")
+
     # ----------------- Metadata ----------------- #
     def _generate_operation_metadata(
-        self, style_name: str, storage: Storage[Any], origin: Any
+        self, style_name: str, storage: Storage[Any]
     ) -> None:
-        """
-        Generate and attach operation metadata to a storage object.
-
-        Metadata captures contextual information such as origin, style,
-        and operation type to support traceability and auditing.
-
-        Args:
-            style_name: Executed style identifier.
-            storage: Storage instance receiving the metadata.
-            origin: Source object used to infer origin metadata.
-        """
-        origin_name = self._determine_origin_name(origin)
         metadata = generate_metadata(
             storage=storage,
             metadata_type="operation",
-            origin_name=origin_name,
             style_name=style_name,
         )
         add_metadata_to_storage(storage, metadata)
 
     # ----------------- Operations Logging ----------------- #
-    def _add_operation(self, style: str, params_instance: FraguaParams) -> None:
-        """
-        Record an executed operation and register it for undo support.
-
-        Args:
-            style: Executed style identifier.
-            params_instance: Parameters used during execution.
-        """
+    def _add_operation(self, style: str) -> None:
         self._operations.append(
             {
-                "action": self.action.value,
+                FieldType.ACTION.value: self.action.value,
                 "style_name": style,
                 "timestamp": datetime.now(timezone.utc),
-                "params": params_instance,
             }
         )
-        self._undo_stack.append(
-            {"operation": "workflow", "style": style, "params": params_instance}
-        )
+        self._undo_stack.append({"operation": "workflow", "style": style})
 
     def get_operations(self) -> pd.DataFrame:
         """
@@ -295,8 +226,10 @@ class FraguaAgent(FraguaInstance):
             return False
 
         last = self._undo_stack.pop()
-        self._operations = [op for op in self._operations if op != last.get("params")]
-        logger.info("Undid last operation: %s", last.get("style"))
+        self._operations = [
+            op for op in self._operations if op != last.get(ComponentType.PARAMS.value)
+        ]
+        logger.info("Undid last operation: %s", last.get(ComponentType.STYLE.value))
         return True
 
     # ----------------- Storage Management ----------------- #
@@ -332,7 +265,7 @@ class FraguaAgent(FraguaInstance):
 
         name = storage_name if storage_name else self._generate_storage_name(style_name)
 
-        if self.storage_type != "Container":
+        if self.storage_type != StorageType.CONTAINER.value:
             return storage_cls(name, data)
 
         return storage_cls(name)
@@ -406,8 +339,9 @@ class FraguaAgent(FraguaInstance):
             ts = op.get("timestamp")
             ops_serialized.append(
                 {
-                    "action": op.get("action"),
-                    "style": op.get("style_name") or op.get("style"),
+                    FieldType.ACTION.value: op.get(FieldType.ACTION.value),
+                    ComponentType.STYLE.value: op.get("style_name")
+                    or op.get(ComponentType.STYLE.value),
                     "timestamp": ts.isoformat() if ts is not None else None,
                 }
             )
@@ -417,7 +351,7 @@ class FraguaAgent(FraguaInstance):
             undo_serialized.append(
                 {
                     "operation": item.get("operation"),
-                    "style": item.get("style"),
+                    ComponentType.STYLE.value: item.get(ComponentType.STYLE.value),
                 }
             )
 
@@ -440,7 +374,6 @@ class FraguaAgent(FraguaInstance):
         *,
         input_data: pd.DataFrame | None = None,
         save_as: str | None = None,
-        params: FraguaParams | None = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -448,7 +381,6 @@ class FraguaAgent(FraguaInstance):
 
         Steps:
         1. Resolve style specification from Environment
-        2. Resolve or instantiate Params
         3. Execute the function associated with the style
         4. Wrap result in storage
         5. Generate metadata and log the operation
@@ -459,17 +391,14 @@ class FraguaAgent(FraguaInstance):
         # 1. Resolve style specification
         style_spec = self._resolve_style(style_name)
 
-        # 2. Resolve Params instance
-        params_instance = self._resolve_params(style_name, params, **kwargs)
-
         # 3. Resolve function from environment registry
-        func = self._resolve_function(style_spec["function_key"])
+        func = self._resolve_function(style_spec[FieldType.FUNC_KEY.value])
 
         # 4. Normalize input_data
-        data = pd.DataFrame() if input_data is None else input_data
+        data = self._normalize_input_data(input_data)
 
         # 5. Execute function
-        result = func(input_data=data, params=params_instance)
+        result = func(input_data=data, **kwargs)
 
         # 6. Wrap result in storage
         storage = self.create_storage(
@@ -479,8 +408,8 @@ class FraguaAgent(FraguaInstance):
         )
 
         # 7. Metadata & logging
-        self._generate_operation_metadata(style_name, storage, params_instance)
-        self._add_operation(style_name, params_instance)
+        self._generate_operation_metadata(style_name, storage)
+        self._add_operation(style_name)
 
         # 8. Persist automatically
         self.auto_store(storage)
@@ -492,7 +421,6 @@ class FraguaAgent(FraguaInstance):
         style: str,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
-        params: FraguaParams | None = None,
         input_data: pd.DataFrame | None = None,
         **kwargs: Any,
     ) -> None:
@@ -503,9 +431,8 @@ class FraguaAgent(FraguaInstance):
             style: Style identifier to execute.
             apply_to: Optional storage name(s) or input reference.
             save_as: Optional explicit name for persisted storage.
-            params: Optional pre-instantiated Params object.
             input_data: Optional input DataFrame for transform/load.
-            **kwargs: Additional parameters forwarded to Params.
+            **kwargs: Additional parameters.
         """
         if input_data is None and apply_to is not None:
             if isinstance(apply_to, list):
@@ -519,6 +446,5 @@ class FraguaAgent(FraguaInstance):
             style_name=style,
             input_data=input_data,
             save_as=save_as,
-            params=params,
             **kwargs,
         )

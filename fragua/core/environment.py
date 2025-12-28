@@ -160,17 +160,6 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.load
 
     @property
-    def params(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all parameter sets grouped by action.
-
-        Returns:
-            Dict[str, FraguaSet]:
-                Mapping of action name to its corresponding params set.
-        """
-        return self.actions.params
-
-    @property
     def functions(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all function sets grouped by action.
@@ -210,7 +199,6 @@ class FraguaEnvironment(FraguaInstance):
         """
         registries: Dict[str, Dict[str, FraguaSet[Any]]] = {
             ComponentType.AGENT.value: self.agents,
-            ComponentType.PARAMS.value: self.params,
             ComponentType.FUNCTION.value: self.functions,
             ComponentType.STYLE.value: self.styles,
         }
