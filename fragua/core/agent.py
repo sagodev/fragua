@@ -23,7 +23,14 @@ from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
 from fragua.utils.security.security_context import FraguaToken
-from fragua.utils.types.enums import ActionType, ComponentType, FieldType, StorageType
+from fragua.utils.types.enums import (
+    ActionType,
+    AttrType,
+    ComponentType,
+    FieldType,
+    MetadataType,
+    StorageType,
+)
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -170,15 +177,12 @@ class FraguaAgent(FraguaComponent):
             return input_data
 
         if isinstance(input_data, list):
-            # list[dict] o list[list]
             return pd.DataFrame(input_data)
 
         if isinstance(input_data, dict):
-            # dict de listas → DataFrame normal
             if any(isinstance(v, (list, tuple)) for v in input_data.values()):
                 return pd.DataFrame(input_data)
 
-            # dict de escalares → 1 fila
             return pd.DataFrame([input_data])
 
         raise TypeError(f"Unsupported input_data type: {type(input_data).__name__}")
@@ -189,7 +193,7 @@ class FraguaAgent(FraguaComponent):
     ) -> None:
         metadata = generate_metadata(
             storage=storage,
-            metadata_type="operation",
+            metadata_type=MetadataType.OPERATION.value,
             style_name=style_name,
         )
         add_metadata_to_storage(storage, metadata)
@@ -199,11 +203,13 @@ class FraguaAgent(FraguaComponent):
         self._operations.append(
             {
                 FieldType.ACTION.value: self.action.value,
-                "style_name": style,
-                "timestamp": datetime.now(timezone.utc),
+                ComponentType.STYLE.value: style,
+                MetadataType.TIMESTAMP.value: datetime.now(timezone.utc),
             }
         )
-        self._undo_stack.append({"operation": "workflow", "style": style})
+        self._undo_stack.append(
+            {MetadataType.OPERATION.value: "workflow", ComponentType.STYLE.value: style}
+        )
 
     def get_operations(self) -> pd.DataFrame:
         """
@@ -227,7 +233,7 @@ class FraguaAgent(FraguaComponent):
 
         last = self._undo_stack.pop()
         self._operations = [
-            op for op in self._operations if op != last.get(ComponentType.PARAMS.value)
+            op for op in self._operations if op != last.get(FieldType.PARAMS.value)
         ]
         logger.info("Undid last operation: %s", last.get(ComponentType.STYLE.value))
         return True
@@ -280,7 +286,7 @@ class FraguaAgent(FraguaComponent):
         """
         Persist a storage object into the warehouse.
         """
-        name = storage_name or getattr(storage, "name", None)
+        name = storage_name or getattr(storage, AttrType.NAME.value, None)
         if not name:
             raise ValueError("Storage name could not be resolved.")
 
@@ -332,17 +338,19 @@ class FraguaAgent(FraguaComponent):
             execution metrics, operation history, and undo information.
         """
 
-        env_name = getattr(self.environment, "name", None)
+        env_name = getattr(self.environment, AttrType.NAME.value, None)
 
         ops_serialized: list[Dict[str, object]] = []
         for op in self._operations:
-            ts = op.get("timestamp")
+            ts = op.get(MetadataType.TIMESTAMP.value)
             ops_serialized.append(
                 {
                     FieldType.ACTION.value: op.get(FieldType.ACTION.value),
-                    ComponentType.STYLE.value: op.get("style_name")
+                    ComponentType.STYLE.value: op.get(ComponentType.STYLE.value)
                     or op.get(ComponentType.STYLE.value),
-                    "timestamp": ts.isoformat() if ts is not None else None,
+                    MetadataType.TIMESTAMP.value: (
+                        ts.isoformat() if ts is not None else None
+                    ),
                 }
             )
 
@@ -350,19 +358,21 @@ class FraguaAgent(FraguaComponent):
         for item in self._undo_stack:
             undo_serialized.append(
                 {
-                    "operation": item.get("operation"),
+                    MetadataType.OPERATION.value: item.get(
+                        MetadataType.OPERATION.value
+                    ),
                     ComponentType.STYLE.value: item.get(ComponentType.STYLE.value),
                 }
             )
 
         return {
-            "agent_name": self.name,
-            "token_id": self.token.token_id,
-            "action": self.action.value,
-            "storage_type": self.storage_type.value,
-            "environment_name": env_name,
-            "operation_count": len(self._operations),
-            "operations": ops_serialized,
+            ComponentType.AGENT.value: self.name,
+            MetadataType.TOKEN_ID.value: self.token.token_id,
+            FieldType.ACTION.value: self.action.value,
+            FieldType.STORAGE_TYPE.value: self.storage_type.value,
+            ComponentType.ENVIRONMENT.value: env_name,
+            MetadataType.OPERATIONS_COUNT.value: len(self._operations),
+            MetadataType.OPERATIONS_DONE.value: ops_serialized,
             "undo_stack_size": len(self._undo_stack),
             "undo_stack": undo_serialized,
         }

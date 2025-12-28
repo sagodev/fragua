@@ -45,7 +45,7 @@ class FraguaActions(FraguaComponent):
         transform: Optional[FraguaRegistry] = None,
         load: Optional[FraguaRegistry] = None,
     ) -> None:
-        super().__init__(instance_name="actions")
+        super().__init__(instance_name=ComponentType.ACTIONS.value)
         self.environment: FraguaEnvironment = environment
         self._extract = (
             self._initialize_registry(ActionType.EXTRACT.value)

@@ -14,6 +14,8 @@ import requests
 import pandas as pd
 from sqlalchemy import create_engine
 
+from fragua.utils.types.enums import ILF, FieldType
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-positional-arguments
 
@@ -62,7 +64,7 @@ def build_path(
     directory: str = ".",
 ) -> dict[str, str]:
     """Build and validate the output file path."""
-    return {"path": str(Path(directory) / f"{file_name}.{extension}")}
+    return {FieldType.PATH.value: str(Path(directory) / f"{file_name}.{extension}")}
 
 
 def convert_datetime_columns(data: pd.DataFrame) -> pd.DataFrame:
@@ -187,58 +189,80 @@ class LoadInternalSpec:
 
 
 LOAD_INTERNAL_FUNCTIONS: Dict[str, LoadInternalSpec] = {
-    "validate_load": LoadInternalSpec(
+    ILF.VALIDATE_LOAD.value: LoadInternalSpec(
         func=validate_load,
         description="Validate load inputs.",
-        config_keys=["directory"],
-        data_arg="data",
+        config_keys=[FieldType.DIRECTORY.value],
+        data_arg=FieldType.DATA.value,
     ),
-    "build_path": LoadInternalSpec(
+    ILF.BUILD_PATH.value: LoadInternalSpec(
         func=build_path,
         description="Build and validate output path.",
-        config_keys=["directory", "file_name"],
+        config_keys=[FieldType.DIRECTORY.value, FieldType.FILE_NAME.value],
         data_arg=None,
     ),
-    "convert_datetime_columns": LoadInternalSpec(
+    ILF.CONVERT_DATETIME_COLUMNS.value: LoadInternalSpec(
         func=convert_datetime_columns,
         description="Convert timezone-aware datetime columns.",
         config_keys=[],
-        data_arg="data",
+        data_arg=FieldType.DATA.value,
     ),
-    "write_excel": LoadInternalSpec(
+    ILF.WRITE_EXCEL.value: LoadInternalSpec(
         func=write_excel,
         description="Write DataFrame to an Excel file.",
-        config_keys=["sheet_name", "index", "engine", "path"],
-        data_arg="data",
+        config_keys=[
+            FieldType.SHEET_NAME.value,
+            FieldType.INDEX.value,
+            FieldType.ENGINE.value,
+            FieldType.PATH.value,
+        ],
+        data_arg=FieldType.DATA.value,
     ),
-    "write_csv": LoadInternalSpec(
+    ILF.WRITE_CSV.value: LoadInternalSpec(
         func=write_csv,
         description="Persist DataFrame to CSV file.",
-        config_keys=["delimiter", "encoding", "index", "path"],
-        data_arg="data",
+        config_keys=[
+            FieldType.DELIMITER.value,
+            FieldType.ENCODING.value,
+            FieldType.INDEX.value,
+            FieldType.PATH.value,
+        ],
+        data_arg=FieldType.DATA.value,
     ),
-    "validate_sql_load": LoadInternalSpec(
+    ILF.VALIDATE_SQL_LOAD.value: LoadInternalSpec(
         func=validate_sql_load,
         description="Validate SQL load configuration.",
-        config_keys=["directory", "table_name"],
-        data_arg="data",
+        config_keys=[FieldType.DIRECTORY.value, FieldType.TABLE_NAME.value],
+        data_arg=FieldType.DATA.value,
     ),
-    "write_sql": LoadInternalSpec(
+    ILF.WRITE_SQL.value: LoadInternalSpec(
         func=write_sql,
         description="Persist DataFrame into a SQL table.",
-        config_keys=["directory", "table_name", "if_exists", "index", "chunksize"],
-        data_arg="data",
+        config_keys=[
+            FieldType.DIRECTORY.value,
+            FieldType.TABLE_NAME.value,
+            FieldType.IF_EXISTS.value,
+            FieldType.INDEX.value,
+            FieldType.CHUNKSIZE.value,
+        ],
+        data_arg=FieldType.DATA.value,
     ),
-    "validate_api_load": LoadInternalSpec(
+    ILF.VALIDATE_API_LOAD.value: LoadInternalSpec(
         func=validate_api_load,
         description="Validate API load configuration.",
-        config_keys=["url", "method"],
-        data_arg="data",
+        config_keys=[FieldType.URL.value, FieldType.METHOD.value],
+        data_arg=FieldType.DATA.value,
     ),
-    "write_api": LoadInternalSpec(
+    ILF.WRITE_API.value: LoadInternalSpec(
         func=write_api,
         description="Send DataFrame to an external API endpoint.",
-        config_keys=["url", "method", "headers", "timeout", "raise_for_status"],
-        data_arg="data",
+        config_keys=[
+            FieldType.URL.value,
+            FieldType.METHOD.value,
+            FieldType.HEADERS.value,
+            FieldType.TIMEOUT.value,
+            "raise_for_status",
+        ],
+        data_arg=FieldType.DATA.value,
     ),
 }

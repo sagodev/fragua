@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Union
 from fragua.core.agent import FraguaAgent
 from fragua.core.storage import Box, Container
 from fragua.utils.logger import get_logger
-from fragua.utils.types.enums import ActionType, StorageType
+from fragua.utils.types.enums import ActionType, FieldType, StorageType
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -89,10 +89,10 @@ class Loader(FraguaAgent):
         resolved_kwargs = dict(**kwargs)
 
         # Excel-style: auto sheet_name if not provided
-        resolved_kwargs.setdefault("sheet_name", box_name)
+        resolved_kwargs.setdefault(FieldType.SHEET_NAME.value, box_name)
 
         # SQL-style: auto table_name if not provided
-        resolved_kwargs.setdefault("table_name", box_name)
+        resolved_kwargs.setdefault(FieldType.TABLE_NAME.value, box_name)
 
         return resolved_kwargs
 
@@ -123,7 +123,7 @@ class Loader(FraguaAgent):
         style = style.lower()
 
         style_spec = self._resolve_style(style)
-        func = self._resolve_function(style_spec["function_key"])
+        func = self._resolve_function(style_spec[FieldType.FUNC_KEY.value])
         container = self._create_container(apply_to)
 
         for box_name in container.list_storages():

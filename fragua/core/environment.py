@@ -220,14 +220,6 @@ class FraguaEnvironment(FraguaComponent):
     def get(
         self,
         action: ActionType,
-        kind: Literal[ComponentType.PARAMS],
-        name: str,
-    ) -> FraguaAgent: ...
-
-    @overload
-    def get(
-        self,
-        action: ActionType,
         kind: Literal[ComponentType.STYLE],
         name: str,
     ) -> Dict[str, Any]: ...
@@ -371,9 +363,9 @@ class FraguaEnvironment(FraguaComponent):
         """
 
         return {
-            "env_name": self.name,
-            "warehouse": self.warehouse.summary(),
-            "actions": self.actions.summary(),
+            ComponentType.ENVIRONMENT.value: self.name,
+            ComponentType.WAREHOUSE.value: self.warehouse.summary(),
+            ComponentType.ACTIONS.value: self.actions.summary(),
         }
 
     def __repr__(self) -> str:

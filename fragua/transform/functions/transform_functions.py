@@ -9,7 +9,7 @@ from fragua.transform.functions.internal_functions import (
     TRANSFORM_INTERNAL_FUNCTIONS,
 )
 
-from fragua.utils.types.enums import ActionType, FieldType, TargetType
+from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
 
 
 def execute_transform_pipeline(
@@ -69,11 +69,11 @@ def transform_ml(
         input_data=data,
         config_keys=config_keys,
         steps=[
-            "fill_missing",
-            "standardize",
-            "encode_categoricals",
-            "treat_outliers",
-            "scale_numeric",
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.ENCODE_CATEGORICALS.value,
+            ITF.TREAT_OUTLIERS.value,
+            ITF.SCALE_NUMERIC.value,
         ],
     )
 
@@ -90,10 +90,10 @@ def transform_report(
         input_data=input_data,
         config_keys=config_keys,
         steps=[
-            "fill_missing",
-            "standardize",
-            "add_derived_columns",
-            "format_numeric",
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.ADD_DERIVED_COLUMNS.value,
+            ITF.FORMAT_NUMERIC.value,
         ],
     )
 
@@ -110,10 +110,10 @@ def transform_analysis(
         input_data=data,
         config_keys=config_keys,
         steps=[
-            "fill_missing",
-            "standardize",
-            "group_and_aggregate",
-            "sort_dataframe",
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.GROUP_AND_AGGREGATE.value,
+            ITF.SORT_DATAFRAME.value,
         ],
     )
 

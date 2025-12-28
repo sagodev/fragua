@@ -14,7 +14,7 @@ from sqlalchemy import create_engine
 import requests
 from requests.auth import HTTPBasicAuth
 
-from fragua.utils.types.enums import ActionType, FieldType, TargetType
+from fragua.utils.types.enums import ActionType, FieldType, OperationType, TargetType
 
 
 def extract_csv(*, path: str, **_: Any) -> pd.DataFrame:
@@ -69,7 +69,7 @@ def extract_sql(
 def extract_api(
     *,
     url: str,
-    method: str = "GET",
+    method: str = OperationType.GET.value,
     headers: dict | None = None,
     params: dict | None = None,
     data: dict | None = None,

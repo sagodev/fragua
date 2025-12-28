@@ -13,7 +13,7 @@ import pandas as pd
 
 from fragua.load.functions.internal_functions import LOAD_INTERNAL_FUNCTIONS
 
-from fragua.utils.types.enums import ActionType, FieldType, TargetType
+from fragua.utils.types.enums import ILF, ActionType, FieldType, TargetType
 
 
 def execute_load_pipeline(
@@ -54,10 +54,10 @@ def load_excel(
     return execute_load_pipeline(
         input_data=input_data,
         steps=[
-            "validate_load",
-            "build_path",
-            "convert_datetime_columns",
-            "write_excel",
+            ILF.VALIDATE_LOAD.value,
+            ILF.BUILD_PATH.value,
+            ILF.CONVERT_DATETIME_COLUMNS.value,
+            ILF.WRITE_EXCEL.value,
         ],
         **kwargs,
     )
@@ -71,9 +71,9 @@ def load_csv(
     return execute_load_pipeline(
         input_data=input_data,
         steps=[
-            "validate_load",
-            "build_path",
-            "write_csv",
+            ILF.VALIDATE_LOAD.value,
+            ILF.BUILD_PATH.value,
+            ILF.WRITE_CSV.value,
         ],
         **kwargs,
     )
@@ -87,8 +87,8 @@ def load_sql(
     return execute_load_pipeline(
         input_data=input_data,
         steps=[
-            "validate_sql_load",
-            "write_sql",
+            ILF.VALIDATE_SQL_LOAD.value,
+            ILF.WRITE_SQL.value,
         ],
         **kwargs,
     )
@@ -102,8 +102,8 @@ def load_api(
     return execute_load_pipeline(
         input_data=input_data,
         steps=[
-            "validate_api_load",
-            "write_api",
+            ILF.VALIDATE_API_LOAD.value,
+            ILF.WRITE_API.value,
         ],
         **kwargs,
     )

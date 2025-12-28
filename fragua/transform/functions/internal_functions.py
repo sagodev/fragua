@@ -14,6 +14,7 @@ from pandas.errors import UndefinedVariableError
 from sklearn.preprocessing import MinMaxScaler
 
 from fragua.utils.logger import get_logger
+from fragua.utils.types.enums import ITF, ITFConfigKeys
 
 logger = get_logger(__name__)
 
@@ -372,49 +373,55 @@ class TransformInternalSpec:
 
 
 TRANSFORM_INTERNAL_FUNCTIONS: Dict[str, TransformInternalSpec] = {
-    "fill_missing": TransformInternalSpec(
+    ITF.FILL_MISSING.value: TransformInternalSpec(
         func=fill_missing,
         purpose="Fill missing values in numeric and categorical columns.",
-        config_keys=["numeric_fill", "categorical_fill"],
+        config_keys=[
+            ITFConfigKeys.NUMERIC_FILL.value,
+            ITFConfigKeys.CATEGORICAL_FILL.value,
+        ],
     ),
-    "standardize": TransformInternalSpec(
+    ITF.STANDARDIZE.value: TransformInternalSpec(
         func=standardize,
         purpose="Trim and lowercase all string columns.",
         config_keys=[],
     ),
-    "encode_categoricals": TransformInternalSpec(
+    ITF.ENCODE_CATEGORICALS.value: TransformInternalSpec(
         func=encode_categoricals,
         purpose="Convert categorical columns to dummy variables.",
         config_keys=[],
     ),
-    "scale_numeric": TransformInternalSpec(
+    ITF.SCALE_NUMERIC.value: TransformInternalSpec(
         func=scale_numeric,
         purpose="Scale numeric columns using MinMaxScaler.",
         config_keys=[],
     ),
-    "treat_outliers": TransformInternalSpec(
+    ITF.TREAT_OUTLIERS.value: TransformInternalSpec(
         func=treat_outliers,
         purpose="Cap outliers using the IQR method.",
-        config_keys=["outlier_threshold"],
+        config_keys=[ITFConfigKeys.OUTLIER_THRESHOLD.value],
     ),
-    "add_derived_columns": TransformInternalSpec(
+    ITF.ADD_DERIVED_COLUMNS.value: TransformInternalSpec(
         func=add_derived_columns,
         purpose="Create derived columns based on expressions.",
-        config_keys=["derived_columns"],
+        config_keys=[ITFConfigKeys.DERIVED_COLUMNS.value],
     ),
-    "format_numeric": TransformInternalSpec(
+    ITF.FORMAT_NUMERIC.value: TransformInternalSpec(
         func=format_numeric,
         purpose="Round numeric columns to a given precision.",
-        config_keys=["rounding_precision"],
+        config_keys=[ITFConfigKeys.ROUNDING_PRECISION.value],
     ),
-    "group_and_aggregate": TransformInternalSpec(
+    ITF.GROUP_AND_AGGREGATE.value: TransformInternalSpec(
         func=group_and_aggregate,
         purpose="Group and aggregate data using columns and aggregation functions.",
-        config_keys=["group_by_cols", "agg_functions"],
+        config_keys=[
+            ITFConfigKeys.GROUP_BY_COLS.value,
+            ITFConfigKeys.AGG_FUNCTIONS.value,
+        ],
     ),
-    "sort_dataframe": TransformInternalSpec(
+    ITF.SORT_DATAFRAME.value: TransformInternalSpec(
         func=sort_dataframe,
         purpose="Sort the DataFrame by specified columns.",
-        config_keys=["sort_by"],
+        config_keys=[ITFConfigKeys.SORT_BY.value],
     ),
 }

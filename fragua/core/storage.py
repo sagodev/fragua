@@ -7,7 +7,7 @@ import pandas as pd
 from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
-from fragua.utils.types.enums import AttrType, StorageType
+from fragua.utils.types.enums import AttrType, ComponentType, MetadataType, StorageType
 
 T = TypeVar("T")
 
@@ -39,12 +39,12 @@ class Storage(FraguaComponent, Generic[T]):
         Base metadata typically includes information such as storage type,
         creation context, and timestamps.
         """
-        metadata = generate_metadata(self, metadata_type="base")
+        metadata = generate_metadata(self, metadata_type=MetadataType.BASE.value)
         add_metadata_to_storage(self, metadata)
 
     def summary(self) -> Dict[str, Any]:
         return {
-            AttrType.TYPE.value: "storage",
+            AttrType.TYPE.value: ComponentType.STORAGE.value,
             AttrType.NAME.value: self.name,
             AttrType.CLASS.value: self.__class__.__name__,
             "has_data": self._data is not None,

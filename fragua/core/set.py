@@ -114,7 +114,6 @@ class FraguaSet(ABC, Generic[T]):
         result: Dict[str, Any] = {}
 
         for name, component in self._components.items():
-            # Fragua instance
             if isinstance(component, FraguaComponent):
                 result[name] = component.summary()
 
