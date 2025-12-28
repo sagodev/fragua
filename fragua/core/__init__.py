@@ -27,7 +27,6 @@ from .warehouse import FraguaWarehouse
 
 from .storage import Storage, Box, Container, STORAGE_CLASSES
 
-from .fragua_class import FraguaClass
 
 from .fragua_instance import FraguaInstance
 
@@ -42,8 +41,6 @@ __all__ = [
     "FraguaSet",
     # Base Runtime Class
     "FraguaInstance",
-    # Base Declarative Class
-    "FraguaClass",
     # Agent Class
     "FraguaAgent",
     # Warehouse

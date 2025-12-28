@@ -5,7 +5,6 @@ Fragua Set class.
 from abc import ABC
 from typing import Any, Dict, Generic, Optional, TypeVar
 
-from fragua.core.fragua_class import FraguaClass
 from fragua.core.fragua_instance import FraguaInstance
 
 T = TypeVar("T")
@@ -115,21 +114,14 @@ class FraguaSet(ABC, Generic[T]):
         result: Dict[str, Any] = {}
 
         for name, component in self._components.items():
-            # Case 1: Fragua class
-            if isinstance(component, type) and issubclass(component, FraguaClass):
+            # Fragua instance
+            if isinstance(component, FraguaInstance):
                 result[name] = component.summary()
 
-            # Case 2: Fragua instance
-            elif isinstance(component, FraguaInstance):
-                result[name] = component.summary()
-
-            # Case 3: Dictionary of components (variants / profiles)
             elif isinstance(component, dict):
                 nested: Dict[str, Any] = {}
                 for key, value in component.items():
-                    if isinstance(value, type) and issubclass(value, FraguaClass):
-                        nested[key] = value.summary()
-                    elif isinstance(value, FraguaInstance):
+                    if isinstance(value, FraguaInstance):
                         nested[key] = value.summary()
                     else:
                         nested[key] = value
