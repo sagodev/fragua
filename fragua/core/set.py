@@ -3,7 +3,8 @@ Fragua Set class.
 """
 
 from abc import ABC
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar
+from collections.abc import Callable
+from typing import Any, Dict, Generic, Optional, TypeVar
 
 from fragua.core.component import FraguaComponent
 
