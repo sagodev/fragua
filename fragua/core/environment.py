@@ -48,8 +48,8 @@ class FraguaEnvironment(FraguaComponent):
                 Logical name of the environment instance.
             fg_config (bool):
                 Enables the default Fragua configuration.
-                When True, built-in components such as parameters,
-                functions, styles, and agents are automatically registered.
+                When True, built-in components such as
+                functions and agents are automatically registered.
         """
 
         super().__init__(instance_name=env_name)
@@ -125,7 +125,7 @@ class FraguaEnvironment(FraguaComponent):
         Returns:
             ExtractRegistry:
                 Registry containing all extract-related components
-                (agents, params, functions, and styles).
+                (agents, functions, etc).
         """
         return self.actions.extract
 
@@ -137,7 +137,7 @@ class FraguaEnvironment(FraguaComponent):
         Returns:
             TransformRegistry:
                 Registry containing all transform-related components
-                (agents, params, functions, and styles).
+                (agents, functions, etc).
         """
         return self.actions.transform
 
@@ -149,7 +149,7 @@ class FraguaEnvironment(FraguaComponent):
         Returns:
             LoadRegistry:
                 Registry containing all load-related components
-                (agents, params, functions, and styles).
+                (agents, functions, etc).
         """
         return self.actions.load
 
@@ -175,17 +175,6 @@ class FraguaEnvironment(FraguaComponent):
         """
         return self.actions.agents
 
-    @property
-    def styles(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all style sets grouped by action.
-
-        Returns:
-            Dict([str, FraguaSet]):
-                Mapping of action name to its corresponding styles set.
-        """
-        return self.actions.styles
-
     # ---------------------- Global API ---------------------- #
     def _get_set(self, action: ActionType, kind: ComponentType) -> FraguaSet[Any]:
         """
@@ -194,7 +183,6 @@ class FraguaEnvironment(FraguaComponent):
         registries: Dict[str, Dict[str, FraguaSet[Any]]] = {
             ComponentType.AGENT.value: self.agents,
             ComponentType.FUNCTION.value: self.functions,
-            ComponentType.STYLE.value: self.styles,
         }
 
         if kind not in registries:
@@ -215,14 +203,6 @@ class FraguaEnvironment(FraguaComponent):
         kind: Literal[ComponentType.AGENT],
         name: str,
     ) -> FraguaAgent: ...
-
-    @overload
-    def get(
-        self,
-        action: ActionType,
-        kind: Literal[ComponentType.STYLE],
-        name: str,
-    ) -> Dict[str, Any]: ...
 
     @overload
     def get(
@@ -354,7 +334,7 @@ class FraguaEnvironment(FraguaComponent):
         - Environment identity (name and type)
         - Warehouse state and configuration
         - Action registries (extract, transform, load), each including
-        their respective agents, parameters, functions, and styles
+        their respective agents, functions, etc.
 
         Returns:
             Dict([str, Any]):

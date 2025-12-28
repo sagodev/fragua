@@ -7,9 +7,9 @@ from fragua.core.component import FraguaComponent
 from fragua.core.registry import FraguaRegistry
 
 from fragua.core.set import FraguaSet
-from fragua.extract import EXTRACT_STYLES, EXTRACT_FUNCTIONS
-from fragua.transform import TRANSFORM_STYLES, TRANSFORM_FUNCTIONS
-from fragua.load import LOAD_STYLES, LOAD_FUNCTIONS
+from fragua.extract import EXTRACT_FUNCTIONS
+from fragua.transform import TRANSFORM_FUNCTIONS
+from fragua.load import LOAD_FUNCTIONS
 from fragua.utils.types.enums import ActionType, ComponentType
 
 
@@ -23,17 +23,14 @@ class FraguaActions(FraguaComponent):
     FG_SETS: Dict[str, Dict[str, Any]] = {
         ActionType.EXTRACT.value: {
             ComponentType.FUNCTION.value: EXTRACT_FUNCTIONS,
-            ComponentType.STYLE.value: EXTRACT_STYLES,
             ComponentType.AGENT.value: {},
         },
         ActionType.TRANSFORM.value: {
             ComponentType.FUNCTION.value: TRANSFORM_FUNCTIONS,
-            ComponentType.STYLE.value: TRANSFORM_STYLES,
             ComponentType.AGENT.value: {},
         },
         ActionType.LOAD.value: {
             ComponentType.FUNCTION.value: LOAD_FUNCTIONS,
-            ComponentType.STYLE.value: LOAD_STYLES,
             ComponentType.AGENT.value: {},
         },
     }
@@ -136,6 +133,15 @@ class FraguaActions(FraguaComponent):
         }
 
     @property
+    def function_summary(self) -> Dict[str, Dict[str, Any]]:
+        """Retrive all actions function summaries."""
+        return {
+            ActionType.EXTRACT.value: self.extract.functions.summary(),
+            ActionType.TRANSFORM.value: self.transform.functions.summary(),
+            ActionType.LOAD.value: self.load.functions.summary(),
+        }
+
+    @property
     def agents(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all agent sets grouped by action.
@@ -151,18 +157,12 @@ class FraguaActions(FraguaComponent):
         }
 
     @property
-    def styles(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all style sets grouped by action.
-
-        Returns:
-            Dict([str, FraguaSet]):
-                Mapping of action name to its corresponding styles set.
-        """
+    def agents_summary(self) -> Dict[str, Dict[str, Any]]:
+        """Retrive all actions agent summaries."""
         return {
-            ActionType.EXTRACT.value: self.extract.styles,
-            ActionType.TRANSFORM.value: self.transform.styles,
-            ActionType.LOAD.value: self.load.styles,
+            ActionType.EXTRACT.value: self.extract.agents.summary(),
+            ActionType.TRANSFORM.value: self.transform.agents.summary(),
+            ActionType.LOAD.value: self.load.agents.summary(),
         }
 
     def summary(self) -> Dict[str, Any]:

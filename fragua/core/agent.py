@@ -47,12 +47,8 @@ class FraguaAgent(FraguaComponent):
 
     A FraguaAgent encapsulates the execution logic of a single ETL role
     (extract, transform, or load) and provides a standardized workflow
-    including parameter resolution, style execution, storage handling,
-    metadata generation, operation logging, undo support, and warehouse
-    persistence.
-
-    The agent relies on Environment registries to dynamically resolve
-    styles, parameters, and storage implementations.
+    including function execution, storage handling, metadata generation,
+    operation logging, undo support, and warehouse persistence.
     """
 
     def __init__(self, agent_name: str, environment: FraguaEnvironment) -> None:
@@ -98,16 +94,8 @@ class FraguaAgent(FraguaComponent):
                     origin_name = "DataFrame"
         return origin_name
 
-    def _generate_storage_name(self, style_name: str) -> str:
-        return f"{style_name}_{self.action}_data"
-
-    def _resolve_style(self, style: str) -> Any:
-        style_spec = self.environment.get(self.action, ComponentType.STYLE, style)
-
-        if style_spec is None:
-            raise ValueError(f"Style not found: '{style}'.")
-
-        return style_spec
+    def _generate_storage_name(self, storage_name: str) -> str:
+        return f"{storage_name}_{self.action}_data"
 
     def _resolve_function(self, function_key: str) -> Callable[..., Any]:
         func_spec = self.environment.get(
@@ -189,26 +177,43 @@ class FraguaAgent(FraguaComponent):
 
     # ----------------- Metadata ----------------- #
     def _generate_operation_metadata(
-        self, style_name: str, storage: Storage[Any]
+        self, target_name: str, storage: Storage[Any]
     ) -> None:
         metadata = generate_metadata(
             storage=storage,
             metadata_type=MetadataType.OPERATION.value,
-            style_name=style_name,
+            target_name=target_name,
         )
         add_metadata_to_storage(storage, metadata)
 
     # ----------------- Operations Logging ----------------- #
-    def _add_operation(self, style: str) -> None:
+    def _add_operation(self, function_key: str) -> None:
+
+        func_spec = self.environment.get(
+            self.action, ComponentType.FUNCTION, function_key
+        )
+
+        if func_spec is None:
+            raise ValueError(
+                f"Function '{function_key}' not registered for action '{self.action}'."
+            )
+
+        func_name = getattr(
+            func_spec.get(ComponentType.FUNCTION.value), "__name__", str(func_spec)
+        )
+
         self._operations.append(
             {
                 FieldType.ACTION.value: self.action.value,
-                ComponentType.STYLE.value: style,
+                ComponentType.FUNCTION.value: func_name,
                 MetadataType.TIMESTAMP.value: datetime.now(timezone.utc),
             }
         )
         self._undo_stack.append(
-            {MetadataType.OPERATION.value: "workflow", ComponentType.STYLE.value: style}
+            {
+                MetadataType.OPERATION.value: "workflow",
+                ComponentType.FUNCTION.value: func_name,
+            }
         )
 
     def get_operations(self) -> pd.DataFrame:
@@ -232,10 +237,15 @@ class FraguaAgent(FraguaComponent):
             return False
 
         last = self._undo_stack.pop()
+        function_key = last.get(ComponentType.FUNCTION.value)
+
         self._operations = [
-            op for op in self._operations if op != last.get(FieldType.PARAMS.value)
+            op
+            for op in self._operations
+            if op.get(ComponentType.FUNCTION.value) != function_key
         ]
-        logger.info("Undid last operation: %s", last.get(ComponentType.STYLE.value))
+
+        logger.info("Undid last operation: %s", function_key)
         return True
 
     # ----------------- Storage Management ----------------- #
@@ -243,7 +253,7 @@ class FraguaAgent(FraguaComponent):
         self,
         *,
         data: Any,
-        style_name: str,
+        function_name: str,
         storage_name: str | None = None,
     ) -> Storage[Any]:
         """
@@ -252,8 +262,8 @@ class FraguaAgent(FraguaComponent):
         Args:
             data:
                 Data to be wrapped by the storage.
-            style_name:
-                Executed style identifier.
+            target_name:
+                Executed target identifier.
             storage_name:
                 Optional explicit storage name. If not provided, a default
                 name is generated automatically.
@@ -269,7 +279,9 @@ class FraguaAgent(FraguaComponent):
         if not storage_cls:
             raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
 
-        name = storage_name if storage_name else self._generate_storage_name(style_name)
+        name = (
+            storage_name if storage_name else self._generate_storage_name(function_name)
+        )
 
         if self.storage_type != StorageType.CONTAINER.value:
             return storage_cls(name, data)
@@ -337,7 +349,6 @@ class FraguaAgent(FraguaComponent):
             A dictionary containing agent identification, configuration,
             execution metrics, operation history, and undo information.
         """
-
         env_name = getattr(self.environment, AttrType.NAME.value, None)
 
         ops_serialized: list[Dict[str, object]] = []
@@ -346,11 +357,8 @@ class FraguaAgent(FraguaComponent):
             ops_serialized.append(
                 {
                     FieldType.ACTION.value: op.get(FieldType.ACTION.value),
-                    ComponentType.STYLE.value: op.get(ComponentType.STYLE.value)
-                    or op.get(ComponentType.STYLE.value),
-                    MetadataType.TIMESTAMP.value: (
-                        ts.isoformat() if ts is not None else None
-                    ),
+                    ComponentType.FUNCTION.value: op.get(ComponentType.FUNCTION.value),
+                    MetadataType.TIMESTAMP.value: ts.isoformat() if ts else None,
                 }
             )
 
@@ -361,7 +369,9 @@ class FraguaAgent(FraguaComponent):
                     MetadataType.OPERATION.value: item.get(
                         MetadataType.OPERATION.value
                     ),
-                    ComponentType.STYLE.value: item.get(ComponentType.STYLE.value),
+                    ComponentType.FUNCTION.value: item.get(
+                        ComponentType.FUNCTION.value
+                    ),
                 }
             )
 
@@ -380,55 +390,38 @@ class FraguaAgent(FraguaComponent):
     # ----------------- Work Pipeline ----------------- #
     def _execute_workflow(
         self,
-        style_name: str,
+        target_type: str,
         *,
         input_data: pd.DataFrame | None = None,
         save_as: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Execute the standardized agent workflow pipeline.
 
-        Steps:
-        1. Resolve style specification from Environment
-        3. Execute the function associated with the style
-        4. Wrap result in storage
-        5. Generate metadata and log the operation
-        6. Persist automatically in warehouse
-        """
-        style_name = style_name.lower()
+        func = self._resolve_function(target_type)
 
-        # 1. Resolve style specification
-        style_spec = self._resolve_style(style_name)
-
-        # 3. Resolve function from environment registry
-        func = self._resolve_function(style_spec[FieldType.FUNC_KEY.value])
-
-        # 4. Normalize input_data
         data = self._normalize_input_data(input_data)
 
-        # 5. Execute function
-        result = func(input_data=data, **kwargs)
+        if self.action == ActionType.EXTRACT:
+            result = func(**kwargs)
+        else:
+            result = func(input_data=data, **kwargs)
 
-        # 6. Wrap result in storage
         storage = self.create_storage(
             data=result,
-            style_name=style_name,
+            function_name=target_type,
             storage_name=save_as,
         )
 
-        # 7. Metadata & logging
-        self._generate_operation_metadata(style_name, storage)
-        self._add_operation(style_name)
+        self._generate_operation_metadata(target_type, storage)
+        self._add_operation(target_type)
 
-        # 8. Persist automatically
         self.auto_store(storage)
 
     # ----------------- Work method ----------------- #
     @abstractmethod
     def work(
         self,
-        style: str,
+        target_type: str,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
         input_data: pd.DataFrame | None = None,
@@ -436,9 +429,8 @@ class FraguaAgent(FraguaComponent):
     ) -> None:
         """
         Execute the agent-specific task.
-
         Args:
-            style: Style identifier to execute.
+            target_type: Function identifier to execute (e.g. "csv", "excel", etc).
             apply_to: Optional storage name(s) or input reference.
             save_as: Optional explicit name for persisted storage.
             input_data: Optional input DataFrame for transform/load.
@@ -453,7 +445,7 @@ class FraguaAgent(FraguaComponent):
                 input_data = self.get_from_warehouse(apply_to).data
 
         self._execute_workflow(
-            style_name=style,
+            target_type=target_type,
             input_data=input_data,
             save_as=save_as,
             **kwargs,
