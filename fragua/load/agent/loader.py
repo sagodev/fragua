@@ -86,7 +86,7 @@ class Loader(FraguaAgent):
         """
         Resolve load-time keyword arguments for a specific Box.
         """
-        resolved_kwargs = dict(**kwargs)
+        resolved_kwargs = kwargs
 
         # Excel-style: auto sheet_name if not provided
         resolved_kwargs.setdefault(FieldType.SHEET_NAME.value, box_name)

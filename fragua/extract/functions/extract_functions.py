@@ -16,6 +16,8 @@ from requests.auth import HTTPBasicAuth
 
 from fragua.utils.types.enums import ActionType, FieldType, OperationType, TargetType
 
+# pylint: disable=too-many-arguments
+
 
 def extract_csv(*, path: str, **_: Any) -> pd.DataFrame:
     """Extract tabular data from a CSV file."""
