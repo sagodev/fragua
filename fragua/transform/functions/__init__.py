@@ -15,10 +15,12 @@ from .internal_functions import (
 
 from .transform_functions import (
     TRANSFORM_FUNCTIONS,
+    execute_transform_pipeline,
 )
 
 
 __all__ = [
     "TRANSFORM_FUNCTIONS",
+    "execute_transform_pipeline",
     "TRANSFORM_INTERNAL_FUNCTIONS",
 ]

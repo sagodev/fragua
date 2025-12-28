@@ -16,11 +16,18 @@ from typing import (
 )
 from datetime import datetime
 import copy as py_copy
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.core.storage import Storage, Box, STORAGE_CLASSES
 from fragua.utils.security.security_context import FraguaToken
 from fragua.utils.logger import get_logger
-from fragua.utils.types.enums import AttrType, OperationType, StorageType
+from fragua.utils.types.enums import (
+    AttrType,
+    ComponentType,
+    FieldType,
+    MetadataType,
+    OperationType,
+    StorageType,
+)
 
 logger = get_logger(__name__)
 
@@ -86,7 +93,7 @@ class MovementLog:
         return len(self._entries)
 
 
-class FraguaWarehouse(FraguaInstance):
+class FraguaWarehouse(FraguaComponent):
     """
     In-memory aggregate root for Storage objects.
 
@@ -122,9 +129,9 @@ class FraguaWarehouse(FraguaInstance):
     ) -> None:
         self._undo_stack.append(
             {
-                "operation": operation.value,
+                MetadataType.OPERATION.value: operation.value,
                 AttrType.NAME: name,
-                "backup": py_copy.deepcopy(backup) if backup else None,
+                FieldType.BACKUP.value: py_copy.deepcopy(backup) if backup else None,
             }
         )
 
@@ -236,7 +243,7 @@ class FraguaWarehouse(FraguaInstance):
         targets = self._resolve_targets(storage_type, storage_name)
 
         self._movement_log.record(
-            operation=OperationType.GET,
+            operation=OperationType.GET.value,
             storage_name=storage_name,
             agent_name=agent_name,
             warehouse_name=self.name,
@@ -313,9 +320,9 @@ class FraguaWarehouse(FraguaInstance):
             return False
 
         action = self._undo_stack.pop()
-        op = action["operation"]
+        op = action[MetadataType.OPERATION.value]
         name = action[AttrType.NAME.value]
-        backup = action["backup"]
+        backup = action[FieldType.BACKUP.value]
 
         if op == OperationType.ADD.value:
             if backup:
@@ -339,13 +346,13 @@ class FraguaWarehouse(FraguaInstance):
     # ----------------------------- Introspection ----------------------- #
     def summary(self) -> Dict[str, Any]:
         return {
-            "warehouse_name": self.name,
-            "storage_count": len(self),
-            "storages": {
+            ComponentType.WAREHOUSE.value: self.name,
+            MetadataType.STORAGE_COUNT.value: len(self),
+            MetadataType.STORAGES.value: {
                 name: storage.__class__.__name__
                 for name, storage in self._storages.items()
             },
-            "log_entries": len(self._movement_log),
+            MetadataType.LOG_ENTRIES.value: len(self._movement_log),
             "undo_stack_size": len(self._undo_stack),
         }
 

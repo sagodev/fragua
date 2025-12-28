@@ -6,7 +6,7 @@ from typing import Any, Dict, Literal, Type, overload
 
 from fragua.core.agent import FraguaAgent
 from fragua.core.actions import FraguaActions
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.core.registry import FraguaRegistry
 from fragua.core.set import FraguaSet
 from fragua.core.warehouse import FraguaWarehouse
@@ -23,7 +23,7 @@ from fragua.utils.types.enums import ActionType, ComponentType
 logger = get_logger(__name__)
 
 
-class FraguaEnvironment(FraguaInstance):
+class FraguaEnvironment(FraguaComponent):
     """
     Core environment abstraction for Fragua.
 
@@ -35,7 +35,7 @@ class FraguaEnvironment(FraguaInstance):
     the lifecycle of all ETL-related components within a given execution context.
     """
 
-    def __init__(self, env_name: str, env_type: str = "base", fg_config: bool = False):
+    def __init__(self, env_name: str, fg_config: bool = False):
         """
         Initialize a Fragua execution environment.
 
@@ -46,9 +46,6 @@ class FraguaEnvironment(FraguaInstance):
         Args:
             env_name (str):
                 Logical name of the environment instance.
-            env_type (str):
-                Environment classification or variant.
-                Defaults to "base".
             fg_config (bool):
                 Enables the default Fragua configuration.
                 When True, built-in components such as parameters,
@@ -56,15 +53,12 @@ class FraguaEnvironment(FraguaInstance):
         """
 
         super().__init__(instance_name=env_name)
-        self.env_type = env_type
         self.fg_config = fg_config
         self.security = FraguaSecurityContext(env_name)
         self.warehouse = self._initialize_warehouse()
         self.actions = self._initialize_actions()
 
-        logger.debug(
-            "Environment '%s' initialized (type=%s).", self.name, self.env_type
-        )
+        logger.debug("Environment '%s' initialized.", self.name)
 
     # -------------------- Internal helpers -------------------- #
     def _token(self, *, kind: str, name: str) -> FraguaToken:
@@ -160,17 +154,6 @@ class FraguaEnvironment(FraguaInstance):
         return self.actions.load
 
     @property
-    def params(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all parameter sets grouped by action.
-
-        Returns:
-            Dict[str, FraguaSet]:
-                Mapping of action name to its corresponding params set.
-        """
-        return self.actions.params
-
-    @property
     def functions(self) -> Dict[str, FraguaSet[Any]]:
         """
         Retrieve all function sets grouped by action.
@@ -210,7 +193,6 @@ class FraguaEnvironment(FraguaInstance):
         """
         registries: Dict[str, Dict[str, FraguaSet[Any]]] = {
             ComponentType.AGENT.value: self.agents,
-            ComponentType.PARAMS.value: self.params,
             ComponentType.FUNCTION.value: self.functions,
             ComponentType.STYLE.value: self.styles,
         }
@@ -231,14 +213,6 @@ class FraguaEnvironment(FraguaInstance):
         self,
         action: ActionType,
         kind: Literal[ComponentType.AGENT],
-        name: str,
-    ) -> FraguaAgent: ...
-
-    @overload
-    def get(
-        self,
-        action: ActionType,
-        kind: Literal[ComponentType.PARAMS],
         name: str,
     ) -> FraguaAgent: ...
 
@@ -389,11 +363,10 @@ class FraguaEnvironment(FraguaInstance):
         """
 
         return {
-            "env_name": self.name,
-            "env_type": self.env_type,
-            "warehouse": self.warehouse.summary(),
-            "actions": self.actions.summary(),
+            ComponentType.ENVIRONMENT.value: self.name,
+            ComponentType.WAREHOUSE.value: self.warehouse.summary(),
+            ComponentType.ACTIONS.value: self.actions.summary(),
         }
 
     def __repr__(self) -> str:
-        return f"<Environment name={self.name!r} type={self.env_type!r}>"
+        return f"<Environment name={self.name!r}>"

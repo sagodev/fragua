@@ -3,17 +3,13 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, Optional
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.core.registry import FraguaRegistry
 
 from fragua.core.set import FraguaSet
-from fragua.extract import EXTRACT_STYLES, EXTRACT_FUNCTIONS, EXTRACT_PARAMS
-from fragua.transform import (
-    TRANSFORM_STYLES,
-    TRANSFORM_FUNCTIONS,
-    TRANSFORM_PARAMS,
-)
-from fragua.load import LOAD_STYLES, LOAD_FUNCTIONS, LOAD_PARAMS
+from fragua.extract import EXTRACT_STYLES, EXTRACT_FUNCTIONS
+from fragua.transform import TRANSFORM_STYLES, TRANSFORM_FUNCTIONS
+from fragua.load import LOAD_STYLES, LOAD_FUNCTIONS
 from fragua.utils.types.enums import ActionType, ComponentType
 
 
@@ -21,31 +17,22 @@ if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
 
 
-class FraguaActions(FraguaInstance):
+class FraguaActions(FraguaComponent):
     """Container for all action registries (extract, transform, load)."""
 
-    SET_TYPES = [
-        ComponentType.FUNCTION.value,
-        ComponentType.PARAMS.value,
-        ComponentType.STYLE.value,
-        ComponentType.AGENT.value,
-    ]
     FG_SETS: Dict[str, Dict[str, Any]] = {
         ActionType.EXTRACT.value: {
             ComponentType.FUNCTION.value: EXTRACT_FUNCTIONS,
-            ComponentType.PARAMS.value: EXTRACT_PARAMS,
             ComponentType.STYLE.value: EXTRACT_STYLES,
             ComponentType.AGENT.value: {},
         },
         ActionType.TRANSFORM.value: {
             ComponentType.FUNCTION.value: TRANSFORM_FUNCTIONS,
-            ComponentType.PARAMS.value: TRANSFORM_PARAMS,
             ComponentType.STYLE.value: TRANSFORM_STYLES,
             ComponentType.AGENT.value: {},
         },
         ActionType.LOAD.value: {
             ComponentType.FUNCTION.value: LOAD_FUNCTIONS,
-            ComponentType.PARAMS.value: LOAD_PARAMS,
             ComponentType.STYLE.value: LOAD_STYLES,
             ComponentType.AGENT.value: {},
         },
@@ -58,20 +45,20 @@ class FraguaActions(FraguaInstance):
         transform: Optional[FraguaRegistry] = None,
         load: Optional[FraguaRegistry] = None,
     ) -> None:
-        super().__init__(instance_name="actions")
+        super().__init__(instance_name=ComponentType.ACTIONS.value)
         self.environment: FraguaEnvironment = environment
         self._extract = (
-            self._initialize_registry(ActionType.EXTRACT)
+            self._initialize_registry(ActionType.EXTRACT.value)
             if extract is None
             else extract
         )
         self._transform = (
-            self._initialize_registry(ActionType.TRANSFORM)
+            self._initialize_registry(ActionType.TRANSFORM.value)
             if transform is None
             else transform
         )
         self._load = (
-            self._initialize_registry(ActionType.LOAD) if load is None else load
+            self._initialize_registry(ActionType.LOAD.value) if load is None else load
         )
 
     def _to_fg_registry(
@@ -88,7 +75,7 @@ class FraguaActions(FraguaInstance):
         """
         Populate registries with empty Fragua sets.
         """
-        for set_type in self.SET_TYPES:
+        for set_type in ComponentType:
             fragua_set: FraguaSet[Any] = FraguaSet(set_name=set_type, components={})
             registry.add_set(set_type, fragua_set)
 
@@ -132,21 +119,6 @@ class FraguaActions(FraguaInstance):
             The LoadRegistry instance.
         """
         return self._load
-
-    @property
-    def params(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all parameter sets grouped by action.
-
-        Returns:
-            Dict[str, FraguaSet]:
-                Mapping of action name to its corresponding params set.
-        """
-        return {
-            ActionType.EXTRACT.value: self.extract.params,
-            ActionType.TRANSFORM.value: self.transform.params,
-            ActionType.LOAD.value: self.load.params,
-        }
 
     @property
     def functions(self) -> Dict[str, FraguaSet[Any]]:

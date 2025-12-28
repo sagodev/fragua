@@ -4,12 +4,12 @@ Base class for all registries of an environment in Fragua.
 
 from typing import Any, Dict, Optional
 
-from fragua.core.fragua_instance import FraguaInstance
+from fragua.core.component import FraguaComponent
 from fragua.core.set import FraguaSet
 from fragua.utils.types.enums import ComponentType
 
 
-class FraguaRegistry(FraguaInstance):
+class FraguaRegistry(FraguaComponent):
     """
     Runtime registry within a Fragua environment.
 
@@ -85,18 +85,6 @@ class FraguaRegistry(FraguaInstance):
 
     # ------------------------------------------------------------------
     @property
-    def params(self) -> FraguaSet[Any]:
-        """
-        Access the set containing extract parameter schemas.
-
-        Returns:
-            ExtractParamsSet instance.
-        """
-        if ComponentType.PARAMS in self._sets:
-            return self._sets[ComponentType.PARAMS.value]
-        raise KeyError("Params set not found in registry.")
-
-    @property
     def functions(self) -> FraguaSet[Any]:
         """
         Access the set containing extract functions.
@@ -140,7 +128,6 @@ class FraguaRegistry(FraguaInstance):
 
         """
         summary: Dict[str, Any] = {
-            ComponentType.PARAMS.value: self.params.summary(),
             ComponentType.FUNCTION.value: self.functions.summary(),
             ComponentType.STYLE.value: self.styles.summary(),
             ComponentType.AGENT.value: self.agents.summary(),

@@ -1,6 +1,7 @@
 """Types Module."""
 
 from .enums import (
+    # ARCHITECTURE
     ActionType,
     EXTRACT,
     TRANSFORM,
@@ -9,14 +10,8 @@ from .enums import (
     AGENT,
     STYLE,
     FUNCTION,
-    PARAMS,
     AgentType,
-    EXTRACTOR,
-    TRANSFORMER,
-    LOADER,
     StorageType,
-    BOX,
-    CONTAINER,
     TargetType,
     EXCEL,
     CSV,
@@ -34,9 +29,14 @@ from .enums import (
     ADD,
     FieldType,
     AttrType,
+    MetadataType,
+    ILF,
+    ITF,
+    ITFConfigKeys,
 )
 
 __all__ = [
+    # ARCHITECTURE
     "ActionType",
     "EXTRACT",
     "TRANSFORM",
@@ -45,11 +45,7 @@ __all__ = [
     "AGENT",
     "STYLE",
     "FUNCTION",
-    "PARAMS",
     "AgentType",
-    "EXTRACTOR",
-    "TRANSFORMER",
-    "LOADER",
     "TargetType",
     "EXCEL",
     "CSV",
@@ -66,8 +62,10 @@ __all__ = [
     "CREATE",
     "ADD",
     "StorageType",
-    "BOX",
-    "CONTAINER",
     "FieldType",
     "AttrType",
+    "MetadataType",
+    "ILF",
+    "ITF",
+    "ITFConfigKeys",
 ]

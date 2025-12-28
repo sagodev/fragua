@@ -3,6 +3,11 @@
 from enum import Enum
 
 
+# -------------------
+# ARCHITECTURE
+# -------------------
+
+
 class ActionType(str, Enum):
     """Fragua actions type class."""
 
@@ -22,13 +27,17 @@ class ComponentType(str, Enum):
     AGENT = "agent"
     FUNCTION = "function"
     STYLE = "style"
-    PARAMS = "params"
+    ENVIRONMENT = "environment"
+    REGISTRY = "registry"
+    SET = "set"
+    WAREHOUSE = "warehouse"
+    ACTIONS = "actions"
+    STORAGE = "storage"
 
 
 AGENT = ComponentType.AGENT
 FUNCTION = ComponentType.FUNCTION
 STYLE = ComponentType.STYLE
-PARAMS = ComponentType.PARAMS
 
 
 class AgentType(str, Enum):
@@ -39,21 +48,12 @@ class AgentType(str, Enum):
     LOADER = "loader"
 
 
-EXTRACTOR = AgentType.EXTRACTOR
-TRANSFORMER = AgentType.TRANSFORMER
-LOADER = AgentType.LOADER
-
-
 class StorageType(str, Enum):
     """Storage types class."""
 
     BOX = "box"
     CONTAINER = "container"
     ALL = "all"
-
-
-BOX = StorageType.BOX
-CONTAINER = StorageType.CONTAINER
 
 
 class TargetType(str, Enum):
@@ -122,22 +122,11 @@ class FieldType(str, Enum):
     ACTION = "action"
     PURPOSE = "purpose"
     FIELDS = "fields"
-    PARAMS_TYPE = "params_type"
+    STORAGE_TYPE = "storage_type"
     FUNCTION = "function"
-
     FUNC_KEY = "function_key"
-    TARGET_COLUMN = "targer_column"
-    CATEGORICAL_COLS = "categorical_cols"
-    NUMERIC_COLS = "numeric_cols"
-    OUTLIER_THRESHOLD = "outlier_threshold"
-    FORMAT_CONFIG = "format_config"
-    DERIVED_COLUMNS = "derived_columns"
-    ROUND_PRECISION = "rounding_precision"
-    GROUP_BY_COLS = "group_by_cols"
-    AGG_FUNCTION = "agg_functions"
-    SORT_BY = "sort_by"
 
-    DESTINATION = "destination"
+    DIRECTORY = "directory"
     FILE_NAME = "file_name"
     INDEX = "index"
     ENGINE = "engine"
@@ -146,8 +135,11 @@ class FieldType(str, Enum):
     ENCODING = "encoding"
     TABLE_NAME = "table_name"
     IF_EXISTS = "if_exists"
+    DELIMITER = "delimiter"
     CHUNKSIZE = "chunksize"
     ENDPOINT = "endpoint"
+
+    BACKUP = "backup"
 
 
 class AttrType(str, Enum):
@@ -160,3 +152,75 @@ class AttrType(str, Enum):
     DESCRIPTION = "description"
     NORMALIZE = "normalize"
     DEFAULT = "default"
+
+
+class MetadataType(str, Enum):
+    """Metadata types class."""
+
+    BASE = "base"
+    SAVE = "save"
+
+    TIMESTAMP = "timestamp"
+    OPERATION = "operation"
+    TOKEN_ID = "token_id"
+    OPERATIONS_COUNT = "operations_count"
+    OPERATIONS_DONE = "operations_done"
+    STORAGE_COUNT = "storage_count"
+    STORAGES = "storages"
+    LOG_ENTRIES = "log_entries"
+    ROWS = "rows"
+    COLS = "cols"
+    METADATA_TYPE = "metadata_type"
+    LOCA_TIME = "local_time"
+    TIMEZONE_OFFSET = "timezone_offset"
+
+
+# ----------------------------
+# TRANSFORM INTERNAL FUNCTIONS
+# ----------------------------
+
+
+class ITF(str, Enum):
+    """Internal Transform Functions."""
+
+    FILL_MISSING = "fill_missing"
+    STANDARDIZE = "standardize"
+    ENCODE_CATEGORICALS = "encode_categoricals"
+    SCALE_NUMERIC = "scale_numeric"
+    TREAT_OUTLIERS = "treat_outliers"
+    ADD_DERIVED_COLUMNS = "add_derived_columns"
+    FORMAT_NUMERIC = "format_numeric"
+    GROUP_AND_AGGREGATE = "group_and_aggregate"
+    SORT_DATAFRAME = "sort_dataframe"
+
+
+class ITFConfigKeys(str, Enum):
+    """Internal transform function config keys."""
+
+    NUMERIC_FILL = "numeric_fill"
+    CATEGORICAL_FILL = "categorical_fill"
+    OUTLIER_THRESHOLD = "outlier_threshold"
+    DERIVED_COLUMNS = "derived_columns"
+    ROUNDING_PRECISION = "rounding_precision"
+    GROUP_BY_COLS = "group_by_cols"
+    AGG_FUNCTIONS = "agg_functions"
+    SORT_BY = "sort_by"
+
+
+# ----------------------------
+# LOAD INTERNAL FUNCTIONS
+# ----------------------------
+
+
+class ILF(str, Enum):
+    """Internal Load Functions."""
+
+    VALIDATE_LOAD = "validate_load"
+    VALIDATE_SQL_LOAD = "validate_sql_load"
+    VALIDATE_API_LOAD = "validate_api_load"
+    BUILD_PATH = "build_path"
+    CONVERT_DATETIME_COLUMNS = "convert_datetime_columns"
+    WRITE_EXCEL = "write_excel"
+    WRITE_CSV = "write_csv"
+    WRITE_SQL = "write_sql"
+    WRITE_API = "write_api"

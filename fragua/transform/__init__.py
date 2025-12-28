@@ -14,8 +14,5 @@ from .functions import *
 # ------------------- Transform Styles ------------------- #
 from .styles import *
 
-# ------------------- Transform Params ------------------- #
-from .params import *
-
 # ------------------- Transformer Agent ------------------- #
 from .agent import *

@@ -3,17 +3,18 @@ Base storage class for all storage objects in Fragua (Wagon, Box, Container).
 """
 
 from typing import Any, Dict, Generic, Optional, TypeVar
-from fragua.core.fragua_instance import FraguaInstance
+import pandas as pd
+from fragua.core.component import FraguaComponent
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
-from fragua.utils.types.enums import AttrType, StorageType
+from fragua.utils.types.enums import AttrType, ComponentType, MetadataType, StorageType
 
 T = TypeVar("T")
 
 logger = get_logger(__name__)
 
 
-class Storage(FraguaInstance, Generic[T]):
+class Storage(FraguaComponent, Generic[T]):
     """
     Core runtime storage abstraction for all persistable objects in Fragua.
     """
@@ -38,12 +39,12 @@ class Storage(FraguaInstance, Generic[T]):
         Base metadata typically includes information such as storage type,
         creation context, and timestamps.
         """
-        metadata = generate_metadata(self, metadata_type="base")
+        metadata = generate_metadata(self, metadata_type=MetadataType.BASE.value)
         add_metadata_to_storage(self, metadata)
 
     def summary(self) -> Dict[str, Any]:
         return {
-            AttrType.TYPE.value: "storage",
+            AttrType.TYPE.value: ComponentType.STORAGE.value,
             AttrType.NAME.value: self.name,
             AttrType.CLASS.value: self.__class__.__name__,
             "has_data": self._data is not None,
@@ -51,16 +52,20 @@ class Storage(FraguaInstance, Generic[T]):
         }
 
 
-class Box(Storage[Any]):
+class Box(Storage[pd.DataFrame]):
     """
-    Storage type representing a single unit of data.
-
-    A Box typically contains the output of a style execution and is the
-    most common persistable storage unit within the warehouse.
+    Storage type representing a single unit of tabular data.
     """
 
+    def __init__(self, storage_name: str, data: pd.DataFrame) -> None:
+        if not isinstance(data, pd.DataFrame):
+            raise TypeError(
+                f"Box requires a pandas DataFrame, got {type(data).__name__}"
+            )
+        super().__init__(storage_name=storage_name, data=data)
 
-class Container(Storage[Any]):
+
+class Container(Storage[None]):
     """
     Composite storage capable of grouping multiple Box instances.
 
@@ -68,14 +73,8 @@ class Container(Storage[Any]):
     multiple Boxes to be stored and managed under a single logical unit.
     """
 
-    def __init__(self, container_name: str, data: Any | None = None) -> None:
-        """
-        Initialize an empty Container.
-
-        Containers do not hold direct data; instead, they manage a
-        collection of named Box instances.
-        """
-        super().__init__(storage_name=container_name, data=data)
+    def __init__(self, container_name: str) -> None:
+        super().__init__(storage_name=container_name, data=None)
         self._content: Dict[str, Box] = {}
 
     def add_storage(self, storage_name: str, storage: Box) -> None:
