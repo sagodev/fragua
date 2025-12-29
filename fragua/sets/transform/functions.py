@@ -1,0 +1,174 @@
+"""Transform Set Module."""
+
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+
+import pandas as pd
+from fragua.core.set import FraguaSet
+from fragua.transform.functions.internal_functions import (
+    TRANSFORM_INTERNAL_FUNCTIONS,
+)
+
+from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
+
+
+# -----------------
+# Load Functions
+# -----------------
+
+
+def execute_transform_pipeline(
+    input_data: pd.DataFrame,
+    steps: Iterable[str],
+    config_keys: Optional[Dict[str, str]] = None,
+) -> pd.DataFrame:
+    """
+    Execute a transformation pipeline composed of ordered steps.
+
+    Args:
+        input_data:
+            Input DataFrame to be transformed.
+        steps:
+            Ordered list of internal transform step functions names.
+        config_keys:
+            Dict of configurations keys for steps function.
+
+    Returns:
+        pd.DataFrame:
+            Transformed DataFrame.
+
+    Raises:
+        KeyError:
+            If a transformation step is not registered.
+    """
+    data = input_data
+
+    for step in steps:
+        if step not in TRANSFORM_INTERNAL_FUNCTIONS:
+            raise KeyError(f"Transform function '{step}' not registered.")
+
+        spec = TRANSFORM_INTERNAL_FUNCTIONS[step]
+
+        kwargs = {
+            key: getattr(config_keys, key)
+            for key in spec.config_keys
+            if hasattr(config_keys, key)
+        }
+
+        data = spec.func(data, config=kwargs or None)
+
+    return data
+
+
+def transform_ml(
+    data: pd.DataFrame,
+    config_keys: Optional[Dict[str, str]] = None,
+) -> pd.DataFrame:
+    """
+    Apply ML-ready transformations including cleanup, encoding,
+    outlier treatment, and scaling.
+    """
+    return execute_transform_pipeline(
+        input_data=data,
+        config_keys=config_keys,
+        steps=[
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.ENCODE_CATEGORICALS.value,
+            ITF.TREAT_OUTLIERS.value,
+            ITF.SCALE_NUMERIC.value,
+        ],
+    )
+
+
+def transform_report(
+    input_data: pd.DataFrame,
+    config_keys: Optional[Dict[str, str]] = None,
+) -> pd.DataFrame:
+    """
+    Prepare data for reporting by cleaning values, standardizing text,
+    adding derived columns, and formatting numbers.
+    """
+    return execute_transform_pipeline(
+        input_data=input_data,
+        config_keys=config_keys,
+        steps=[
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.ADD_DERIVED_COLUMNS.value,
+            ITF.FORMAT_NUMERIC.value,
+        ],
+    )
+
+
+def transform_analysis(
+    data: pd.DataFrame,
+    config_keys: Optional[Dict[str, str]] = None,
+) -> pd.DataFrame:
+    """
+    Prepare datasets for exploratory analysis using grouping,
+    aggregation, sorting, and basic cleanup.
+    """
+    return execute_transform_pipeline(
+        input_data=data,
+        config_keys=config_keys,
+        steps=[
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.GROUP_AND_AGGREGATE.value,
+            ITF.SORT_DATAFRAME.value,
+        ],
+    )
+
+
+FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str]]]] = {
+    TargetType.ML.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.PURPOSE.value: (
+            "Apply ML-ready transformations including cleanup, "
+            "encoding, outlier treatment, and scaling."
+        ),
+        FieldType.FUNCTION.value: transform_ml,
+        FieldType.STEPS.value: [
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.ENCODE_CATEGORICALS.value,
+            ITF.TREAT_OUTLIERS.value,
+            ITF.SCALE_NUMERIC.value,
+        ],
+    },
+    TargetType.REPORT.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.PURPOSE.value: (
+            "Prepare data for reporting by cleaning values, "
+            "standardizing text, adding derived columns, "
+            "and formatting numbers."
+        ),
+        FieldType.FUNCTION.value: transform_report,
+        FieldType.STEPS.value: [
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.ADD_DERIVED_COLUMNS.value,
+            ITF.FORMAT_NUMERIC.value,
+        ],
+    },
+    TargetType.ANALYSIS.value: {
+        FieldType.ACTION.value: ActionType.TRANSFORM.value,
+        FieldType.PURPOSE.value: (
+            "Prepare datasets for exploratory analysis using grouping, "
+            "aggregation, sorting, and basic cleanup."
+        ),
+        FieldType.FUNCTION.value: transform_analysis,
+        FieldType.STEPS.value: [
+            ITF.FILL_MISSING.value,
+            ITF.STANDARDIZE.value,
+            ITF.GROUP_AND_AGGREGATE.value,
+            ITF.SORT_DATAFRAME.value,
+        ],
+    },
+}
+
+# ---------------------
+# Transform Functions Set
+# ---------------------
+
+TRANSFORM_FUNCTIONS = FraguaSet(set_name="transform_functions", components=FUNCTIONS)
