@@ -8,8 +8,5 @@ This module contains:
 - Transform FraguaFunctions subclasses.
 """
 
-# ------------------- Transform Functions ------------------- #
-from .functions import *
-
 # ------------------- Transformer Agent ------------------- #
 from .agent import *
