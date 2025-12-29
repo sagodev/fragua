@@ -44,8 +44,8 @@ class FraguaSections(FraguaComponent):
         """
         Populate registries with empty Fragua sets.
         """
-        agents_set = FraguaSet(ComponentType.AGENT, components={})
-        functions_set = FraguaSet(ComponentType.FUNCTION, components={})
+        agents_set: FraguaSet = FraguaSet(ComponentType.AGENT, components={})
+        functions_set: FraguaSet = FraguaSet(ComponentType.FUNCTION, components={})
 
         registry.add_set(agents_set)
         registry.add_set(functions_set)
