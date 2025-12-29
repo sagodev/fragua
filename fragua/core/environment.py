@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, Literal, Type, overload
 
 from fragua.core.agent import FraguaAgent
-from fragua.core.actions import FraguaActions
+from fragua.core.sections import FraguaSections
 from fragua.core.component import FraguaComponent
 from fragua.core.registry import FraguaRegistry
 from fragua.core.set import FraguaSet
@@ -56,7 +56,7 @@ class FraguaEnvironment(FraguaComponent):
         self.fg_config = fg_config
         self.security = FraguaSecurityContext(env_name)
         self.warehouse = self._initialize_warehouse()
-        self.actions = self._initialize_actions()
+        self.sections = self._initialize_actions()
 
         logger.debug("Environment '%s' initialized.", self.name)
 
@@ -99,7 +99,7 @@ class FraguaEnvironment(FraguaComponent):
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
-    def _initialize_actions(self) -> FraguaActions:
+    def _initialize_actions(self) -> FraguaSections:
         """
         Initialize action registries for the environment.
 
@@ -108,13 +108,13 @@ class FraguaEnvironment(FraguaComponent):
         default Fragua components when fg_config is enabled.
 
         Returns:
-            FraguaActions:
+            FraguaSections:
                 Container holding all action registries.
         """
 
-        actions = FraguaActions(self)
+        sections = FraguaSections(self)
         logger.info("Default actions initialized for environment '%s'.", self.name)
-        return actions
+        return sections
 
     # ------------------- Helper Properties -------------------- #
     @property
@@ -127,7 +127,7 @@ class FraguaEnvironment(FraguaComponent):
                 Registry containing all extract-related components
                 (agents, functions, etc).
         """
-        return self.actions.extract
+        return self.sections.extract
 
     @property
     def transform(self) -> FraguaRegistry:
@@ -139,7 +139,7 @@ class FraguaEnvironment(FraguaComponent):
                 Registry containing all transform-related components
                 (agents, functions, etc).
         """
-        return self.actions.transform
+        return self.sections.transform
 
     @property
     def load(self) -> FraguaRegistry:
@@ -151,7 +151,7 @@ class FraguaEnvironment(FraguaComponent):
                 Registry containing all load-related components
                 (agents, functions, etc).
         """
-        return self.actions.load
+        return self.sections.load
 
     @property
     def functions(self) -> Dict[str, FraguaSet[Any]]:
@@ -162,7 +162,18 @@ class FraguaEnvironment(FraguaComponent):
             Dict[str, FraguaSet]:
                 Mapping of action name to its corresponding functions set.
         """
-        return self.actions.functions
+        extract_functions = self.extract.get_set(ComponentType.FUNCTION.value)
+        transform_functions = self.transform.get_set(ComponentType.FUNCTION.value)
+        load_functions = self.load.get_set(ComponentType.FUNCTION.value)
+
+        if extract_functions and transform_functions and load_functions:
+
+            return {
+                ActionType.EXTRACT.value: extract_functions,
+                ActionType.TRANSFORM.value: transform_functions,
+                ActionType.LOAD.value: load_functions,
+            }
+        raise KeyError("Functions set not found in registry.")
 
     @property
     def agents(self) -> Dict[str, FraguaSet[Any]]:
@@ -173,23 +184,27 @@ class FraguaEnvironment(FraguaComponent):
             Dict([str, FraguaSet]):
                 Mapping of action name to its corresponding agents set.
         """
-        return self.actions.agents
+        extract_agents = self.extract.get_set(ComponentType.FUNCTION.value)
+        transform_agents = self.transform.get_set(ComponentType.FUNCTION.value)
+        load_agents = self.load.get_set(ComponentType.FUNCTION.value)
+
+        if extract_agents and transform_agents and load_agents:
+
+            return {
+                ActionType.EXTRACT.value: extract_agents,
+                ActionType.TRANSFORM.value: transform_agents,
+                ActionType.LOAD.value: load_agents,
+            }
+        raise KeyError("Agents set not found in registry.")
 
     # ---------------------- Global API ---------------------- #
     def _get_set(self, action: ActionType, kind: ComponentType) -> FraguaSet[Any]:
         """
         Resolve a FraguaSet by action and component kind.
         """
-        registries: Dict[str, Dict[str, FraguaSet[Any]]] = {
-            ComponentType.AGENT.value: self.agents,
-            ComponentType.FUNCTION.value: self.functions,
-        }
+        registry = self.sections.get_section(action.value)
 
-        if kind not in registries:
-            raise ValueError(f"Invalid component kind: {kind.value}")
-
-        action_sets = registries[kind.value]
-        fragua_set = action_sets.get(action.value)
+        fragua_set = registry.get_set(kind.value)
 
         if fragua_set is None:
             raise ValueError(f"Invalid action type: {action.value}")
@@ -345,7 +360,7 @@ class FraguaEnvironment(FraguaComponent):
         return {
             ComponentType.ENVIRONMENT.value: self.name,
             ComponentType.WAREHOUSE.value: self.warehouse.summary(),
-            ComponentType.ACTIONS.value: self.actions.summary(),
+            ComponentType.ACTIONS.value: self.sections.summary(),
         }
 
     def __repr__(self) -> str:

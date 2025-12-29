@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
 
 
-class FraguaActions(FraguaComponent):
-    """Container for all action registries (extract, transform, load)."""
+class FraguaSections(FraguaComponent):
+    """Container for all action sections (extract, transform, load)."""
 
     FG_SETS: Dict[str, Dict[str, Any]] = {
         ActionType.EXTRACT.value: {
@@ -66,7 +66,7 @@ class FraguaActions(FraguaComponent):
         """
         for set_type, components in dict_data.items():
             fragua_set = FraguaSet(set_name=set_type, components=components)
-            registry.add_set(set_type, fragua_set)
+            registry.add_set(fragua_set)
 
     def _to_empty_registry(self, registry: FraguaRegistry) -> None:
         """
@@ -74,7 +74,7 @@ class FraguaActions(FraguaComponent):
         """
         for set_type in ComponentType:
             fragua_set: FraguaSet[Any] = FraguaSet(set_name=set_type, components={})
-            registry.add_set(set_type, fragua_set)
+            registry.add_set(fragua_set)
 
     def _initialize_registry(self, registry_name: str) -> FraguaRegistry:
         """Initialize a generic action registry."""
@@ -86,6 +86,24 @@ class FraguaActions(FraguaComponent):
         else:
             self._to_empty_registry(registry)
         return registry
+
+    def get_section(self, section_name: str) -> FraguaRegistry:
+        """Retrive section"""
+        section: FraguaRegistry | None = None
+
+        if section_name == ActionType.EXTRACT.value:
+            section = self.extract
+
+        if section_name == ActionType.TRANSFORM.value:
+            section = self.transform
+
+        if section_name == ActionType.LOAD.value:
+            section = self.load
+
+        if section is None:
+            raise TypeError(f"{section_name.capitalize()} section not found.")
+
+        return section
 
     @property
     def extract(self) -> FraguaRegistry:
@@ -116,54 +134,6 @@ class FraguaActions(FraguaComponent):
             The LoadRegistry instance.
         """
         return self._load
-
-    @property
-    def functions(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all function sets grouped by action.
-
-        Returns:
-            Dict[str, FraguaSet]:
-                Mapping of action name to its corresponding functions set.
-        """
-        return {
-            ActionType.EXTRACT.value: self.extract.functions,
-            ActionType.TRANSFORM.value: self.transform.functions,
-            ActionType.LOAD.value: self.load.functions,
-        }
-
-    @property
-    def function_summary(self) -> Dict[str, Dict[str, Any]]:
-        """Retrive all actions function summaries."""
-        return {
-            ActionType.EXTRACT.value: self.extract.functions.summary(),
-            ActionType.TRANSFORM.value: self.transform.functions.summary(),
-            ActionType.LOAD.value: self.load.functions.summary(),
-        }
-
-    @property
-    def agents(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all agent sets grouped by action.
-
-        Returns:
-            Dict([str, FraguaSet]):
-                Mapping of action name to its corresponding agents set.
-        """
-        return {
-            ActionType.EXTRACT.value: self.extract.agents,
-            ActionType.TRANSFORM.value: self.transform.agents,
-            ActionType.LOAD.value: self.load.agents,
-        }
-
-    @property
-    def agents_summary(self) -> Dict[str, Dict[str, Any]]:
-        """Retrive all actions agent summaries."""
-        return {
-            ActionType.EXTRACT.value: self.extract.agents.summary(),
-            ActionType.TRANSFORM.value: self.transform.agents.summary(),
-            ActionType.LOAD.value: self.load.agents.summary(),
-        }
 
     def summary(self) -> Dict[str, Any]:
         """
