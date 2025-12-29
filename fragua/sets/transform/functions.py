@@ -1,15 +1,19 @@
-"""
-Transform Functions.
-"""
+"""Transform Set Module."""
 
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import pandas as pd
+from fragua.core.set import FraguaSet
 from fragua.transform.functions.internal_functions import (
     TRANSFORM_INTERNAL_FUNCTIONS,
 )
 
 from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
+
+
+# -----------------
+# Load Functions
+# -----------------
 
 
 def execute_transform_pipeline(
@@ -23,12 +27,10 @@ def execute_transform_pipeline(
     Args:
         input_data:
             Input DataFrame to be transformed.
-        params:
-            Configuration object containing transformation options.
         steps:
-            Ordered list of internal transform step names.
-        context:
-            Optional execution context (reserved for future use).
+            Ordered list of internal transform step functions names.
+        config_keys:
+            Dict of configurations keys for steps function.
 
     Returns:
         pd.DataFrame:
@@ -118,7 +120,7 @@ def transform_analysis(
     )
 
 
-TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str]]]] = {
+FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str]]]] = {
     TargetType.ML.value: {
         FieldType.ACTION.value: ActionType.TRANSFORM.value,
         FieldType.PURPOSE.value: (
@@ -164,3 +166,9 @@ TRANSFORM_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str
         ],
     },
 }
+
+# ---------------------
+# Transform Functions Set
+# ---------------------
+
+TRANSFORM_FUNCTIONS = FraguaSet(set_name="transform_functions", components=FUNCTIONS)

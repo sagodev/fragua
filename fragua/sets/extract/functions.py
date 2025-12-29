@@ -1,10 +1,4 @@
-"""
-Concrete extraction functions.
-
-Functional extract implementations for common
-data sources such as CSV files, Excel spreadsheets,
-SQL databases, and REST APIs.
-"""
+"""Fragua functions set."""
 
 from pathlib import Path
 from typing import Callable, Dict, Any, Mapping, MutableMapping, Union
@@ -14,9 +8,14 @@ from sqlalchemy import create_engine
 import requests
 from requests.auth import HTTPBasicAuth
 
+from fragua.core.set import FraguaSet
 from fragua.utils.types.enums import ActionType, FieldType, OperationType, TargetType
 
 # pylint: disable=too-many-arguments
+
+# -----------------
+# Extract Functions
+# -----------------
 
 
 def extract_csv(*, path: str, **_: Any) -> pd.DataFrame:
@@ -107,7 +106,7 @@ def extract_api(
     raise ValueError(f"Unexpected API response type: {type(payload)}")
 
 
-EXTRACT_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
+FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
     TargetType.CSV.value: {
         FieldType.ACTION.value: ActionType.EXTRACT.value,
         FieldType.PURPOSE.value: "Extract tabular data from a CSV file.",
@@ -129,3 +128,9 @@ EXTRACT_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any]]]] = {
         FieldType.FUNCTION.value: extract_api,
     },
 }
+
+# ---------------------
+# Extract Functions Set
+# ---------------------
+
+EXTRACT_FUNCTIONS = FraguaSet(set_name="extract_functions", components=FUNCTIONS)

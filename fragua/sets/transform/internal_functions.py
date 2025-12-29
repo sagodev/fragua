@@ -1,9 +1,5 @@
 """
-Internal transformation functions used by TransformFunction pipelines.
-
-Each function operates over a TransformParams instance, mutating
-its internal DataFrame and returning the same params object to
-allow sequential pipeline execution.
+Internal transformation functions used by transform pipelines function.
 """
 
 from typing import Any, Callable, Dict, List, Optional
@@ -13,10 +9,15 @@ import pandas as pd
 from pandas.errors import UndefinedVariableError
 from sklearn.preprocessing import MinMaxScaler
 
+from fragua.core.set import FraguaSet
 from fragua.utils.logger import get_logger
 from fragua.utils.types.enums import ITF, ITFConfigKeys
 
 logger = get_logger(__name__)
+
+# ----------------------------
+# Transform internal functions
+# ----------------------------
 
 
 def fill_missing(
@@ -372,7 +373,7 @@ class TransformInternalSpec:
     config_keys: List[str]
 
 
-TRANSFORM_INTERNAL_FUNCTIONS: Dict[str, TransformInternalSpec] = {
+INTERNAL_FUNCTIONS: Dict[str, TransformInternalSpec] = {
     ITF.FILL_MISSING.value: TransformInternalSpec(
         func=fill_missing,
         purpose="Fill missing values in numeric and categorical columns.",
@@ -425,3 +426,12 @@ TRANSFORM_INTERNAL_FUNCTIONS: Dict[str, TransformInternalSpec] = {
         config_keys=[ITFConfigKeys.SORT_BY.value],
     ),
 }
+
+
+# --------------------------------
+# Transform Internal Functions Set
+# --------------------------------
+
+TRANSFORM_INTERNAL_FUNCTIONS = FraguaSet(
+    set_name="transform_internal_functions", components=INTERNAL_FUNCTIONS
+)

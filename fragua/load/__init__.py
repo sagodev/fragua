@@ -8,8 +8,5 @@ This module contains:
 - Load Functions module.
 """
 
-# ------------------- Load Functions ------------------- #
-from .functions import *
-
 # ------------------- Load Agent ------------------- #
 from .agent import *

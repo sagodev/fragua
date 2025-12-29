@@ -1,19 +1,18 @@
-"""
-Load function implementations.
-
-This module defines concrete LoadFunction classes responsible
-for persisting processed data into external destinations.
-Each function encapsulates the low-level persistence logic
-for a specific target system or format.
-"""
+"""Load Functions Set."""
 
 from typing import Any, Callable, Dict, Iterable, List, Union
 
 import pandas as pd
 
+from fragua.core.set import FraguaSet
 from fragua.load.functions.internal_functions import LOAD_INTERNAL_FUNCTIONS
 
 from fragua.utils.types.enums import ILF, ActionType, FieldType, TargetType
+
+
+# -----------------
+# Load Functions
+# -----------------
 
 
 def execute_load_pipeline(
@@ -109,7 +108,7 @@ def load_api(
     )
 
 
-LOAD_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str]]]] = {
+FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str]]]] = {
     TargetType.EXCEL.value: {
         FieldType.ACTION.value: ActionType.LOAD.value,
         FieldType.PURPOSE.value: "Export a DataFrame to an Excel file.",
@@ -150,3 +149,9 @@ LOAD_FUNCTIONS: Dict[str, Dict[str, Union[str, Callable[..., Any], List[str]]]] 
         ],
     },
 }
+
+# ---------------------
+# Load Functions Set
+# ---------------------
+
+LOAD_FUNCTIONS = FraguaSet(set_name="load_functions", components=FUNCTIONS)

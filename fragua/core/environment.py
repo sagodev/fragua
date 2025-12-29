@@ -112,7 +112,7 @@ class FraguaEnvironment(FraguaComponent):
                 Container holding all action registries.
         """
 
-        sections = FraguaSections(self)
+        sections = FraguaSections(self.fg_config)
         logger.info("Default actions initialized for environment '%s'.", self.name)
         return sections
 
@@ -184,9 +184,9 @@ class FraguaEnvironment(FraguaComponent):
             Dict([str, FraguaSet]):
                 Mapping of action name to its corresponding agents set.
         """
-        extract_agents = self.extract.get_set(ComponentType.FUNCTION.value)
-        transform_agents = self.transform.get_set(ComponentType.FUNCTION.value)
-        load_agents = self.load.get_set(ComponentType.FUNCTION.value)
+        extract_agents = self.extract.get_set(ComponentType.AGENT.value)
+        transform_agents = self.transform.get_set(ComponentType.AGENT.value)
+        load_agents = self.load.get_set(ComponentType.AGENT.value)
 
         if extract_agents and transform_agents and load_agents:
 

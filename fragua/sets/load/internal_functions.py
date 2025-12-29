@@ -1,9 +1,5 @@
 """
-Internal helper functions for LoadFunction implementations.
-
-These utilities encapsulate reusable logic commonly required
-by load styles, such as validation, path resolution, data
-normalization, and persistence operations.
+Internal helper functions
 """
 
 import os
@@ -14,10 +10,15 @@ import requests
 import pandas as pd
 from sqlalchemy import create_engine
 
+from fragua.core.set import FraguaSet
 from fragua.utils.types.enums import ILF, FieldType
 
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-positional-arguments
+
+# -----------------------
+# Load Internal Functions
+# -----------------------
 
 
 def validate_load(
@@ -188,7 +189,7 @@ class LoadInternalSpec:
     data_arg: str | None = None
 
 
-LOAD_INTERNAL_FUNCTIONS: Dict[str, LoadInternalSpec] = {
+INTERNAL_FUNCTIONS: Dict[str, LoadInternalSpec] = {
     ILF.VALIDATE_LOAD.value: LoadInternalSpec(
         func=validate_load,
         description="Validate load inputs.",
@@ -266,3 +267,10 @@ LOAD_INTERNAL_FUNCTIONS: Dict[str, LoadInternalSpec] = {
         data_arg=FieldType.DATA.value,
     ),
 }
+
+# ---------------------------
+# Load Internal Functions Set
+# ---------------------------
+LOAD_INTERNAL_FUNCTIONS = FraguaSet(
+    set_name="load_internal_functions", components=INTERNAL_FUNCTIONS
+)
