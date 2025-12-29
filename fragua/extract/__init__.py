@@ -8,8 +8,5 @@ This module contains:
 - Extract Functions module.
 """
 
-# ------------------- Extract Functions ------------------- #
-from .functions import *
-
 # ------------------- Extractor Agent ------------------- #
 from .agent import *
