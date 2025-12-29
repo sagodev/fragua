@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict
+
 from fragua.core.component import FraguaComponent
 from fragua.core.registry import FraguaRegistry
-
 from fragua.core.set import FraguaSet
-from fragua.extract import EXTRACT_FUNCTIONS
-from fragua.transform import TRANSFORM_FUNCTIONS
-from fragua.load import LOAD_FUNCTIONS
+from fragua.registries.extract.registry import EXTRACT_REGISTRY
+from fragua.registries.load.registry import LOAD_REGISTRY
+from fragua.registries.transform.registry import TRANSFORM_REGISTRY
 from fragua.utils.types.enums import ActionType, ComponentType
-
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -20,71 +19,37 @@ if TYPE_CHECKING:
 class FraguaSections(FraguaComponent):
     """Container for all action sections (extract, transform, load)."""
 
-    FG_SETS: Dict[str, Dict[str, Any]] = {
-        ActionType.EXTRACT.value: {
-            ComponentType.FUNCTION.value: EXTRACT_FUNCTIONS,
-            ComponentType.AGENT.value: {},
-        },
-        ActionType.TRANSFORM.value: {
-            ComponentType.FUNCTION.value: TRANSFORM_FUNCTIONS,
-            ComponentType.AGENT.value: {},
-        },
-        ActionType.LOAD.value: {
-            ComponentType.FUNCTION.value: LOAD_FUNCTIONS,
-            ComponentType.AGENT.value: {},
-        },
-    }
-
     def __init__(
         self,
-        environment: FraguaEnvironment,
-        extract: Optional[FraguaRegistry] = None,
-        transform: Optional[FraguaRegistry] = None,
-        load: Optional[FraguaRegistry] = None,
+        fg_config: bool = False,
     ) -> None:
         super().__init__(instance_name=ComponentType.ACTIONS.value)
-        self.environment: FraguaEnvironment = environment
         self._extract = (
-            self._initialize_registry(ActionType.EXTRACT.value)
-            if extract is None
-            else extract
+            EXTRACT_REGISTRY
+            if fg_config
+            else self._to_empty_registry(FraguaRegistry(ActionType.EXTRACT.value))
         )
         self._transform = (
-            self._initialize_registry(ActionType.TRANSFORM.value)
-            if transform is None
-            else transform
+            TRANSFORM_REGISTRY
+            if fg_config
+            else self._to_empty_registry(FraguaRegistry(ActionType.TRANSFORM.value))
         )
         self._load = (
-            self._initialize_registry(ActionType.LOAD.value) if load is None else load
+            LOAD_REGISTRY
+            if fg_config
+            else self._to_empty_registry(FraguaRegistry(ActionType.LOAD.value))
         )
 
-    def _to_fg_registry(
-        self, registry: FraguaRegistry, dict_data: Dict[str, Dict[str, Any]]
-    ) -> None:
-        """
-        Populate registries with default Fragua sets.
-        """
-        for set_type, components in dict_data.items():
-            fragua_set = FraguaSet(set_name=set_type, components=components)
-            registry.add_set(fragua_set)
-
-    def _to_empty_registry(self, registry: FraguaRegistry) -> None:
+    def _to_empty_registry(self, registry: FraguaRegistry) -> FraguaRegistry:
         """
         Populate registries with empty Fragua sets.
         """
-        for set_type in ComponentType:
-            fragua_set: FraguaSet[Any] = FraguaSet(set_name=set_type, components={})
-            registry.add_set(fragua_set)
+        agents_set = FraguaSet(ComponentType.AGENT, components={})
+        functions_set = FraguaSet(ComponentType.FUNCTION, components={})
 
-    def _initialize_registry(self, registry_name: str) -> FraguaRegistry:
-        """Initialize a generic action registry."""
-        registry = FraguaRegistry(registry_name)
-        if self.environment.fg_config:
-            fg_data = self.FG_SETS[registry_name]
+        registry.add_set(agents_set)
+        registry.add_set(functions_set)
 
-            self._to_fg_registry(registry, fg_data)
-        else:
-            self._to_empty_registry(registry)
         return registry
 
     def get_section(self, section_name: str) -> FraguaRegistry:
