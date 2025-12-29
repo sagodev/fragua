@@ -1,12 +1,9 @@
-"""
-Base class for all registries of an environment in Fragua.
-"""
+"""Fragua Registry Class."""
 
 from typing import Any, Dict, Optional
 
 from fragua.core.component import FraguaComponent
 from fragua.core.set import FraguaSet
-from fragua.utils.types.enums import ComponentType
 
 
 class FraguaRegistry(FraguaComponent):
@@ -20,7 +17,11 @@ class FraguaRegistry(FraguaComponent):
     Registries are stateful and exist only at runtime.
     """
 
-    def __init__(self, registry_name: str) -> None:
+    def __init__(
+        self,
+        registry_name: str,
+        sets: Optional[Dict[str, FraguaSet[Any]]] = None,
+    ) -> None:
         """
         Initialize the registry with a name.
 
@@ -31,7 +32,7 @@ class FraguaRegistry(FraguaComponent):
         """
         super().__init__(instance_name=registry_name)
 
-        self._sets: Dict[str, FraguaSet[Any]] = {}
+        self._sets: Dict[str, FraguaSet[Any]] = sets if sets else {}
 
     def _exists(self, key: str) -> bool:
         """Return True if a set exists in the registry."""
@@ -50,63 +51,38 @@ class FraguaRegistry(FraguaComponent):
         """
         return self._sets
 
-    def add_set(self, name: str, registry_set: FraguaSet[Any]) -> bool:
+    def add_set(self, fragua_set: FraguaSet[Any]) -> bool:
         """
         Register a new FraguaSet.
 
         Returns:
             True if created successfully, False if already exists.
         """
-        if self._not_exists(name):
-            self._sets[name] = registry_set
+        if self._not_exists(fragua_set.set_name):
+            self._sets[fragua_set.set_name] = fragua_set
             return True
         return False
 
-    def get_set(self, name: str) -> Optional[FraguaSet[Any]]:
+    def get_set(self, set_name: str) -> Optional[FraguaSet[Any]]:
         """
         Retrieve a set by name.
         """
-        return self._sets.get(name)
+        return self._sets.get(set_name)
 
-    def update_set(self, old_name: str, new_name: str) -> bool:
+    def update_set(self, old_set_name: str, new_set_name: str) -> bool:
         """
         Rename an existing set.
         """
-        if self._exists(old_name) and self._not_exists(new_name):
-            self._sets[new_name] = self._sets.pop(old_name)
+        if self._exists(old_set_name) and self._not_exists(new_set_name):
+            self._sets[new_set_name] = self._sets.pop(old_set_name)
             return True
         return False
 
-    def delete_set(self, name: str) -> bool:
+    def delete_set(self, set_name: str) -> bool:
         """
         Remove a set from the registry.
         """
-        return self._sets.pop(name, None) is not None
-
-    # ------------------------------------------------------------------
-    @property
-    def functions(self) -> FraguaSet[Any]:
-        """
-        Access the set containing extract functions.
-
-        Returns:
-            ExtractFunctionSet instance.
-        """
-        if ComponentType.FUNCTION in self._sets:
-            return self._sets[ComponentType.FUNCTION.value]
-        raise KeyError("Functions set not found in registry.")
-
-    @property
-    def agents(self) -> FraguaSet[Any]:
-        """
-        Access the set containing extract agents.
-
-        Returns:
-            ExtractAgentSet instance.
-        """
-        if ComponentType.AGENT in self._sets:
-            return self._sets[ComponentType.AGENT.value]
-        raise KeyError("Agents set not found in registry.")
+        return self._sets.pop(set_name, None) is not None
 
     def summary(self) -> Dict[str, Any]:
         """
@@ -115,10 +91,10 @@ class FraguaRegistry(FraguaComponent):
             A dictionary summarizing the contents of each set.
 
         """
-        summary: Dict[str, Any] = {
-            ComponentType.FUNCTION.value: self.functions.summary(),
-            ComponentType.AGENT.value: self.agents.summary(),
-        }
+        summary: Dict[str, Dict[str, Any]] = {}
+
+        for set_name, fragua_set in self._sets.items():
+            summary[set_name] = fragua_set.summary()
 
         return summary
 
