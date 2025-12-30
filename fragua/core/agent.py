@@ -265,14 +265,34 @@ class FraguaAgent(FraguaComponent):
         self,
         *,
         action: ActionType,
-        target_type: str,
+        target_type: str | None,
+        function_callable: Any | None = None,
+        function_name: str | None = None,
         input_data: pd.DataFrame | None = None,
         save_as: str | None = None,
         **kwargs: Any,
     ) -> None:
+        """Execute a resolved function for the given action and target.
+
+        If ``function_callable`` is provided it will be used instead of resolving
+        the function via the environment registry. ``function_name`` may be used
+        to provide a human-readable name for metadata and storage naming.
+        """
         self.set_execution_context(action)
 
-        func, func_name = self._get_function(target_type)
+        # Resolve function and name
+        if function_callable is None:
+            if not target_type:
+                raise TypeError(
+                    "Missing 'target_type' when resolving function from registry"
+                )
+            func, func_name = self._get_function(target_type)
+        else:
+            func = function_callable
+            func_name = function_name or getattr(
+                function_callable, "__name__", target_type or "<unknown>"
+            )
+
         data = self._normalize_input_data(input_data)
 
         if action is ActionType.EXTRACT:
@@ -280,17 +300,29 @@ class FraguaAgent(FraguaComponent):
             if not isinstance(result, pd.DataFrame):
                 raise TypeError("EXTRACT functions must return a DataFrame")
         else:
-            result = func(input_data=data, **kwargs)
+            # Some user-provided transform functions expect a positional first
+            # argument (often named 'data') while others expect the keyword
+            # 'input_data'. Try keyword first and fall back to positional.
+            try:
+                result = func(input_data=data, **kwargs)
+            except TypeError as exc:  # try fallback to positional
+                msg = str(exc)
+                if "input_data" in msg or "unexpected keyword" in msg:
+                    result = func(data, **kwargs)
+                else:
+                    raise
+
             if action is ActionType.TRANSFORM and not isinstance(result, pd.DataFrame):
                 raise TypeError("TRANSFORM functions must return a DataFrame")
 
         storage = self.create_storage(
             data=result,
-            function_name=target_type,
+            function_name=func_name,
             storage_name=save_as,
         )
 
-        self._generate_operation_metadata(target_type, storage)
+        # Use the function name for operation metadata and registration
+        self._generate_operation_metadata(func_name, storage)
         self._register_operation(func_name)
         self.auto_store(storage)
 
@@ -300,21 +332,117 @@ class FraguaAgent(FraguaComponent):
     def work(
         self,
         *,
-        target_type: str,
+        target_type: str | None = None,
+        function: Any | None = None,
         apply_to: str | list[str] | None = None,
         save_as: str | None = None,
         input_data: pd.DataFrame | None = None,
         **kwargs: Any,
-    ) -> None:
-        """Execute a work unit for the given target type, storing results if requested."""
+    ) -> "FraguaAgent":
+        """Execute a work unit for the given target type and return the agent for chaining.
+
+        Parameters
+        - ``target_type``: key identifying the target/function to execute (e.g. 'csv', 'report').
+          If omitted, ``function`` must be provided.
+        - ``function``: optional callable or name (str) to override which function to run. If a
+          string is provided it will be looked up in the current action's function set.
+        """
         input_data = self._check_input_data(input_data, apply_to)
 
-        self._execute(
-            action=self.action,
-            target_type=target_type,
-            input_data=input_data,
-            save_as=save_as,
-            **kwargs,
+        logger.debug(
+            "work called: target_type=%r function=%r apply_to=%r save_as=%r",
+            target_type,
+            function,
+            apply_to,
+            save_as,
+        )
+
+        if target_type is None and function is None:
+            raise TypeError(
+                "Missing required keyword argument 'target_type'",
+                " (or provide 'function' as a callable or registered function name).",
+            )
+
+        # If no explicit function override, proceed normally
+        if function is None:
+            self._execute(
+                action=self.action,
+                target_type=target_type,
+                input_data=input_data,
+                save_as=save_as,
+                **kwargs,
+            )
+            return self
+
+        # If a string provided, look up the function spec in the environment
+        if isinstance(function, str):
+            # Try current action first, then fall back to other actions so callers
+            # needn't manually switch context when invoking a known function by name.
+            func_spec = self.environment.get(
+                self.action, ComponentType.FUNCTION, function
+            )
+            action_to_use = self.action
+
+            if func_spec is None:
+                for action_candidate in (
+                    ActionType.EXTRACT,
+                    ActionType.TRANSFORM,
+                    ActionType.LOAD,
+                ):
+                    if action_candidate == self.action:
+                        continue
+                    func_spec = self.environment.get(
+                        action_candidate, ComponentType.FUNCTION, function
+                    )
+                    if func_spec is not None:
+                        action_to_use = action_candidate
+                        break
+
+            if func_spec is None:
+                raise ValueError(
+                    f"Function '{function}' not registered for action '{self.action}'."
+                )
+
+            # func_spec can be either a dict record or a callable that was
+            # registered directly. Handle both shapes.
+            if isinstance(func_spec, dict):
+                func_callable = func_spec[ComponentType.FUNCTION.value]
+            elif callable(func_spec):
+                func_callable = func_spec
+            else:
+                raise TypeError("Registered function has unsupported format.")
+
+            func_name = getattr(func_callable, "__name__", function)
+
+            self._execute(
+                action=action_to_use,
+                target_type=target_type,
+                function_callable=func_callable,
+                function_name=func_name,
+                input_data=input_data,
+                save_as=save_as,
+                **kwargs,
+            )
+            return self
+
+        # If a callable provided, use it directly
+        if callable(function):
+            func_callable = function
+            func_name = getattr(function, "__name__", target_type)
+
+            self._execute(
+                action=self.action,
+                target_type=target_type,
+                function_callable=func_callable,
+                function_name=func_name,
+                input_data=input_data,
+                save_as=save_as,
+                **kwargs,
+            )
+            return self
+
+        raise TypeError(
+            "'function' must be either a callable or the name (str) of a registered function"
         )
 
     # ------------------------------------------------------------------
