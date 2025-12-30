@@ -16,6 +16,26 @@ from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
 # -----------------
 
 
+def _build_step_kwargs(spec, config_keys: Optional[Dict[str, Any]]):
+    """Extract the kwargs to pass to a step function based on its declared config_keys.
+
+    Returns a dict or None if no kwargs are relevant.
+    """
+    if not config_keys:
+        return None
+
+    kwargs: Dict[str, Any] = {}
+    for key in getattr(spec, "config_keys", []):
+        if isinstance(config_keys, dict):
+            if key in config_keys:
+                kwargs[key] = config_keys[key]
+        else:
+            if hasattr(config_keys, key):
+                kwargs[key] = getattr(config_keys, key)
+
+    return kwargs or None
+
+
 def execute_transform_pipeline(
     input_data: pd.DataFrame,
     steps: Iterable[Union[str, Callable[..., pd.DataFrame]]],
@@ -46,41 +66,24 @@ def execute_transform_pipeline(
     data = input_data
 
     for step in steps:
-        # Named step: resolve through the FraguaSet
         if isinstance(step, str):
             spec = TRANSFORM_INTERNAL_FUNCTIONS.get_one(step)
             if spec is None:
                 raise KeyError(f"Transform function '{step}' not registered.")
-
-            # Build kwargs only from declared config_keys in the spec
-            kwargs: Dict[str, Any] = {}
-            if config_keys:
-                if isinstance(config_keys, dict):
-                    for key in spec.config_keys:
-                        if key in config_keys:
-                            kwargs[key] = config_keys[key]
-                else:
-                    for key in spec.config_keys:
-                        if hasattr(config_keys, key):
-                            kwargs[key] = getattr(config_keys, key)
-
-            # invoke the function, try with config kwarg, fallback to plain call
             fn = spec.func
-            try:
-                data = fn(data, config=kwargs or None)
-            except TypeError:
-                data = fn(data)
+            kwargs = _build_step_kwargs(spec, config_keys)
 
-        # Callable step: invoke directly passing the full config mapping
         elif callable(step):
             fn = step
-            try:
-                data = fn(data, config=config_keys or None)
-            except TypeError:
-                data = fn(data)
+            kwargs = config_keys or None
 
         else:
             raise TypeError("Each step must be a registered name (str) or a callable")
+
+        try:
+            data = fn(data, config=kwargs)
+        except TypeError:
+            data = fn(data)
 
     return data
 

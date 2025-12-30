@@ -267,15 +267,14 @@ class FraguaEnvironment(FraguaComponent):
             if isinstance(name, str) and name:
                 return name
 
-        # Dict-based function records: try to extract the callable
+        # If it's a dict-based function record, prefer the callable's __name__ then a dict 'name'
         if isinstance(component, dict):
-            func = component.get(FieldType.FUNCTION.value)
+            func = component.get(FieldType.FUNCTION.value) or component.get("function")
             if callable(func):
                 inferred = getattr(func, "__name__", None)
                 if isinstance(inferred, str) and inferred:
                     return inferred
 
-            # As a fallback, allow a direct 'name' key in the dict
             dict_name = component.get("name") or component.get(FieldType.FUNC_KEY.value)
             if isinstance(dict_name, str) and dict_name:
                 return dict_name
@@ -285,14 +284,6 @@ class FraguaEnvironment(FraguaComponent):
             inferred = getattr(component.func, "__name__", None)
             if isinstance(inferred, str) and inferred:
                 return inferred
-
-        # Dict-based function records: allow dicts containing a 'function' callable
-        if isinstance(component, dict):
-            func = component.get(FieldType.FUNCTION.value) or component.get("function")
-            if callable(func):
-                inferred = getattr(func, "__name__", None)
-                if isinstance(inferred, str) and inferred:
-                    return inferred
 
         # Callables (functions) typically have __name__
         if callable(component):
@@ -341,7 +332,7 @@ class FraguaEnvironment(FraguaComponent):
                 "Unsupported type for internal transform function registration"
             )
 
-        elif action is ActionType.LOAD:
+        if action is ActionType.LOAD:
             # LoadInternalSpec imported at module level
 
             if callable(component):
@@ -383,9 +374,8 @@ class FraguaEnvironment(FraguaComponent):
         # TransformInternalSpec and LoadInternalSpec are imported at module level
 
         try:
-            if hasattr(component, "__dict__") and not (
-                isinstance(component, TransformInternalSpec)
-                or isinstance(component, LoadInternalSpec)
+            if hasattr(component, "__dict__") and not isinstance(
+                component, (TransformInternalSpec, LoadInternalSpec)
             ):
                 component.token = token
         except AttributeError:
