@@ -376,27 +376,32 @@ class FraguaAgent(FraguaComponent):
 
         # If a string provided, look up the function spec in the environment
         if isinstance(function, str):
-            # Try current action first, then fall back to other actions so callers
-            # needn't manually switch context when invoking a known function by name.
-            func_spec = self.environment.get(
-                self.action, ComponentType.FUNCTION, function
-            )
-            action_to_use = self.action
+            # Build ordered list: prefer current action, then try the others
+            actions_to_try = [
+                self.action,
+                ActionType.EXTRACT,
+                ActionType.TRANSFORM,
+                ActionType.LOAD,
+            ]
+            func_spec: Any | None = None
+            action_to_use: ActionType | None = None
 
-            if func_spec is None:
-                for action_candidate in (
+            for action_candidate in actions_to_try:
+                # avoid checking same action twice
+                if action_candidate == self.action and action_candidate in (
                     ActionType.EXTRACT,
                     ActionType.TRANSFORM,
                     ActionType.LOAD,
                 ):
-                    if action_candidate == self.action:
-                        continue
-                    func_spec = self.environment.get(
-                        action_candidate, ComponentType.FUNCTION, function
-                    )
-                    if func_spec is not None:
-                        action_to_use = action_candidate
-                        break
+                    pass
+
+                candidate = self.environment.get(
+                    action_candidate, ComponentType.FUNCTION, function
+                )
+                if candidate is not None:
+                    func_spec = candidate
+                    action_to_use = action_candidate
+                    break
 
             if func_spec is None:
                 raise ValueError(
@@ -404,7 +409,7 @@ class FraguaAgent(FraguaComponent):
                 )
 
             # func_spec can be either a dict record or a callable that was
-            # registered directly. Handle both shapes.
+            # registered directly. Handle both shapes explicitly.
             if isinstance(func_spec, dict):
                 func_callable = func_spec[ComponentType.FUNCTION.value]
             elif callable(func_spec):
@@ -415,7 +420,7 @@ class FraguaAgent(FraguaComponent):
             func_name = getattr(func_callable, "__name__", function)
 
             self._execute(
-                action=action_to_use,
+                action=action_to_use or self.action,
                 target_type=target_type,
                 function_callable=func_callable,
                 function_name=func_name,

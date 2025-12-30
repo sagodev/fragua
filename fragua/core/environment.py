@@ -203,14 +203,16 @@ class FraguaEnvironment(FraguaComponent):
         """
         # FraguaComponent instances expose a .name attribute
         if hasattr(component, "name"):
-            return getattr(component, "name")
+            name = getattr(component, "name")
+            if isinstance(name, str) and name:
+                return name
 
         # Dict-based function records: try to extract the callable
         if isinstance(component, dict):
             func = component.get(FieldType.FUNCTION.value)
             if callable(func):
                 inferred = getattr(func, "__name__", None)
-                if inferred:
+                if isinstance(inferred, str) and inferred:
                     return inferred
 
             # As a fallback, allow a direct 'name' key in the dict
@@ -221,7 +223,7 @@ class FraguaEnvironment(FraguaComponent):
         # Callables (functions) typically have __name__
         if callable(component):
             inferred = getattr(component, "__name__", None)
-            if inferred:
+            if isinstance(inferred, str) and inferred:
                 return inferred
 
         raise ValueError(
@@ -243,6 +245,14 @@ class FraguaEnvironment(FraguaComponent):
         kind: Literal[ComponentType.FUNCTION],
         name: str,
     ) -> Dict[str, Any]: ...
+
+    @overload
+    def get(
+        self,
+        action: ActionType,
+        kind: ComponentType,
+        name: str,
+    ) -> Any: ...
 
     def get(
         self,
