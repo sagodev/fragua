@@ -1,5 +1,7 @@
 """Example how to apply entire flow."""
 
+# pylint: disable=duplicate-code
+
 from pathlib import Path
 import fragua as fg
 

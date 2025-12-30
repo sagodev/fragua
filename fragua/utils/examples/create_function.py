@@ -1,5 +1,7 @@
 """Example of function creation, registration and use."""
 
+# pylint: disable=duplicate-code
+
 from pathlib import Path
 import pandas as pd
 import fragua as fg
