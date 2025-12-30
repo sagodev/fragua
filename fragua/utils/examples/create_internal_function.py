@@ -31,6 +31,7 @@ agent = env.get(fg.EXTRACT, fg.AGENT, "agent_1")
 # 1) TRANSFORM INTERNAL FUNCTION
 # -------------------------
 
+
 def remove_negative_numbers(
     data: pd.DataFrame,
     *,
@@ -53,8 +54,10 @@ def remove_negative_numbers(
     return df
 
 
-# Register the function directly (the name will be `remove_negative_numbers`) 
-env.add(action=fg.TRANSFORM, kind=fg.INTERNAL_FUNCTION, component=remove_negative_numbers)
+# Register the function directly (the name will be `remove_negative_numbers`)
+env.add(
+    action=fg.TRANSFORM, kind=fg.INTERNAL_FUNCTION, component=remove_negative_numbers
+)
 
 # It's also possible to register using a dict to add metadata and config_keys
 env.add(
@@ -101,6 +104,7 @@ print("Transformado (remove_neg_threshold, threshold=1):\n", transformed2)
 # 3) LOAD INTERNAL FUNCTION
 # -------------------------
 
+
 def ensure_id_column(data: pd.DataFrame, *, config: dict | None = None) -> pd.DataFrame:
     """Ensure that the 'id' column exists in the data and create it if missing."""
 
@@ -109,6 +113,7 @@ def ensure_id_column(data: pd.DataFrame, *, config: dict | None = None) -> pd.Da
         # for example, create a sequential id
         df.insert(0, "id", range(1, len(df) + 1))
     return df
+
 
 # Register as a load internal function; indicate that the function receives 'data' via data_arg
 env.add(
