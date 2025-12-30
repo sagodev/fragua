@@ -69,11 +69,15 @@ func_test = {
 env.add(action=fg.TRANSFORM, kind=fg.FUNCTION, component=func_test)
 
 
-agent.from_excel(save_as="extracted_data", path=str(INPUT_XLSX)).work(
+agent.from_excel(save_as="extracted_data", path=str(INPUT_XLSX))
+
+# to use custom function you have to use the 'work' agent function.
+agent.work(
     function="transform_pipeline_func",
     apply_to="extracted_data",
     save_as="transformed_data",
-).to_excel(
+)
+agent.to_excel(
     apply_to=["extracted_data", "transformed_data"],
     directory=str(OUTPUT_XLSX),
     file_name="output_file",
