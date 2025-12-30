@@ -149,7 +149,8 @@ class FraguaWarehouse(FraguaComponent):
         if storage_type is StorageType.ALL:
             classes = tuple(STORAGE_CLASSES.values())
         else:
-            classes = STORAGE_CLASSES[storage_type.value]
+            # Ensure a tuple of classes for consistent isinstance checks
+            classes = (STORAGE_CLASSES[storage_type.value],)
 
         # Specific storage requested
         if storage_name != StorageType.ALL.value:
