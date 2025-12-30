@@ -57,12 +57,24 @@ class Box(Storage[pd.DataFrame]):
     Storage type representing a single unit of tabular data.
     """
 
-    def __init__(self, storage_name: str, data: pd.DataFrame) -> None:
+    def __init__(
+        self,
+        storage_name: str,
+        data: pd.DataFrame | None = None,
+    ) -> None:
+        super().__init__(storage_name=storage_name, data=None)
+
+        if data is not None:
+            self.set(data)
+
+    def set(self, data: pd.DataFrame) -> None:
+        """Set box data."""
         if not isinstance(data, pd.DataFrame):
             raise TypeError(
                 f"Box requires a pandas DataFrame, got {type(data).__name__}"
             )
-        super().__init__(storage_name=storage_name, data=data)
+        self._data = data
+        self._generate_base_metadata()
 
 
 class Container(Storage[None]):
