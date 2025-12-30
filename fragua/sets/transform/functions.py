@@ -16,7 +16,7 @@ from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
 # -----------------
 
 
-def _build_step_kwargs(spec, config_keys: Optional[Dict[str, Any]]):
+def _build_step_kwargs(spec: Any, config_keys: Optional[Any]) -> Optional[Dict[str, Any]]:
     """Extract the kwargs to pass to a step function based on its declared config_keys.
 
     Returns a dict or None if no kwargs are relevant.
@@ -30,6 +30,7 @@ def _build_step_kwargs(spec, config_keys: Optional[Dict[str, Any]]):
             if key in config_keys:
                 kwargs[key] = config_keys[key]
         else:
+            # Support objects with attributes (e.g., simple Namespace/dataclass)
             if hasattr(config_keys, key):
                 kwargs[key] = getattr(config_keys, key)
 

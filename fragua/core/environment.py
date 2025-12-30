@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, overload, cast
+from typing import Any, Dict, Literal, overload, cast, Optional
 
 # Placeholder factories for internal functions (avoid name collisions)
 from typing import Callable as _Callable
@@ -24,9 +24,9 @@ from fragua.utils.security.security_context import FraguaSecurityContext, Fragua
 from fragua.utils.types.enums import ActionType, ComponentType, FieldType
 
 
-def _make_transform_placeholder(name: str) -> _Callable[[_pd.DataFrame], _pd.DataFrame]:
+def _make_transform_placeholder(name: str) -> _Callable[..., _pd.DataFrame]:
     def _placeholder(
-        df: _pd.DataFrame, *, config=None
+        df: _pd.DataFrame, *, config: Optional[Dict[str, Any]] = None
     ) -> _pd.DataFrame:  # pragma: no cover - trivial
         raise NotImplementedError(
             f"Internal transform function '{name}' not implemented"
@@ -37,7 +37,7 @@ def _make_transform_placeholder(name: str) -> _Callable[[_pd.DataFrame], _pd.Dat
 
 
 def _make_load_placeholder(name: str) -> _Callable[..., object]:
-    def _placeholder(*args, **kwargs):  # pragma: no cover - trivial
+    def _placeholder(*args: Any, **kwargs: Any) -> Any:  # pragma: no cover - trivial
         raise NotImplementedError(f"Internal load function '{name}' not implemented")
 
     _placeholder.__name__ = f"__load_placeholder_{name}"
@@ -319,8 +319,9 @@ class FraguaEnvironment(FraguaComponent):
                 fn = cast(_Callable[..., _pd.DataFrame], func)
                 return TransformInternalSpec(
                     func=fn,
-                    purpose=component.get(
-                        FieldType.PURPOSE.value, component.get("purpose", "")
+                    purpose=str(
+                        component.get(FieldType.PURPOSE.value, component.get("purpose", ""))
+                        or ""
                     ),
                     config_keys=component.get("config_keys", []),
                 )
@@ -352,13 +353,13 @@ class FraguaEnvironment(FraguaComponent):
                 fn = cast(_Callable[..., object], func)
                 return LoadInternalSpec(
                     func=fn,
-                    description=component.get(
-                        FieldType.PURPOSE.value, component.get("purpose", "")
+                    description=str(
+                        component.get(FieldType.PURPOSE.value, component.get("purpose", ""))
+                        or ""
                     ),
                     config_keys=component.get("config_keys", []),
                     data_arg=component.get("data_arg"),
                 )
-
             if isinstance(component, LoadInternalSpec):
                 return component
 
