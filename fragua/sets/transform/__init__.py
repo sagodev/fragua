@@ -5,7 +5,11 @@ This module contains:
     - FraguaSet for transform functions.
 """
 
-from .functions import TRANSFORM_FUNCTIONS
+from .functions import TRANSFORM_FUNCTIONS, execute_transform_pipeline
 from .internal_functions import TRANSFORM_INTERNAL_FUNCTIONS
 
-__all__ = ["TRANSFORM_FUNCTIONS", "TRANSFORM_INTERNAL_FUNCTIONS"]
+__all__ = [
+    "TRANSFORM_FUNCTIONS",
+    "execute_transform_pipeline",
+    "TRANSFORM_INTERNAL_FUNCTIONS",
+]

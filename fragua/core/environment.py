@@ -13,7 +13,7 @@ from fragua.core.warehouse import FraguaWarehouse
 
 from fragua.utils.logger import get_logger
 from fragua.utils.security.security_context import FraguaSecurityContext, FraguaToken
-from fragua.utils.types.enums import ActionType, ComponentType
+from fragua.utils.types.enums import ActionType, ComponentType, FieldType
 
 logger = get_logger(__name__)
 
@@ -150,47 +150,19 @@ class FraguaEnvironment(FraguaComponent):
 
     @property
     def functions(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all function sets grouped by action.
-
-        Returns:
-            Dict[str, FraguaSet]:
-                Mapping of action name to its corresponding functions set.
-        """
-        extract_functions = self.extract.get_set(ComponentType.FUNCTION.value)
-        transform_functions = self.transform.get_set(ComponentType.FUNCTION.value)
-        load_functions = self.load.get_set(ComponentType.FUNCTION.value)
-
-        if extract_functions and transform_functions and load_functions:
-
-            return {
-                ActionType.EXTRACT.value: extract_functions,
-                ActionType.TRANSFORM.value: transform_functions,
-                ActionType.LOAD.value: load_functions,
-            }
-        raise KeyError("Functions set not found in registry.")
+        """Retrieve all function sets grouped by action."""
+        try:
+            return self._group_components(ComponentType.FUNCTION)
+        except ValueError as exc:
+            raise KeyError("Functions set not found in registry.") from exc
 
     @property
     def agents(self) -> Dict[str, FraguaSet[Any]]:
-        """
-        Retrieve all agent sets grouped by action.
-
-        Returns:
-            Dict([str, FraguaSet]):
-                Mapping of action name to its corresponding agents set.
-        """
-        extract_agents = self.extract.get_set(ComponentType.AGENT.value)
-        transform_agents = self.transform.get_set(ComponentType.AGENT.value)
-        load_agents = self.load.get_set(ComponentType.AGENT.value)
-
-        if extract_agents and transform_agents and load_agents:
-
-            return {
-                ActionType.EXTRACT.value: extract_agents,
-                ActionType.TRANSFORM.value: transform_agents,
-                ActionType.LOAD.value: load_agents,
-            }
-        raise KeyError("Agents set not found in registry.")
+        """Retrieve all agent sets grouped by action."""
+        try:
+            return self._group_components(ComponentType.AGENT)
+        except ValueError as exc:
+            raise KeyError("Agents set not found in registry.") from exc
 
     # ---------------------- Global API ---------------------- #
     def _get_set(self, action: ActionType, kind: ComponentType) -> FraguaSet[Any]:
@@ -205,6 +177,58 @@ class FraguaEnvironment(FraguaComponent):
             raise ValueError(f"Invalid action type: {action.value}")
 
         return fragua_set
+
+    def _group_components(self, kind: ComponentType) -> Dict[str, FraguaSet[Any]]:
+        """Return a mapping of action name to the corresponding FraguaSet for a kind.
+
+        This consolidates the repeated logic used to build dictionaries of agents
+        or functions grouped by action and ensures a single failure mode if a
+        set is missing.
+        """
+        result: Dict[str, FraguaSet[Any]] = {}
+
+        for action in (ActionType.EXTRACT, ActionType.TRANSFORM, ActionType.LOAD):
+            result[action.value] = self._get_set(action, kind)
+
+        return result
+
+    def _infer_name_from_component(self, component: Any) -> str:
+        """Attempt to infer a registration name from a component.
+
+        - If the component exposes a ``name`` attribute (e.g. FraguaAgent), use it.
+        - If the component is a dictionary defining a function record (contains
+          the ``FieldType.FUNCTION`` key), use the underlying function's ``__name__``.
+        - If the component is callable, use ``component.__name__``.
+        - Otherwise raise ValueError requiring an explicit name.
+        """
+        # FraguaComponent instances expose a .name attribute
+        if hasattr(component, "name"):
+            name = getattr(component, "name")
+            if isinstance(name, str) and name:
+                return name
+
+        # Dict-based function records: try to extract the callable
+        if isinstance(component, dict):
+            func = component.get(FieldType.FUNCTION.value)
+            if callable(func):
+                inferred = getattr(func, "__name__", None)
+                if isinstance(inferred, str) and inferred:
+                    return inferred
+
+            # As a fallback, allow a direct 'name' key in the dict
+            dict_name = component.get("name") or component.get(FieldType.FUNC_KEY.value)
+            if isinstance(dict_name, str) and dict_name:
+                return dict_name
+
+        # Callables (functions) typically have __name__
+        if callable(component):
+            inferred = getattr(component, "__name__", None)
+            if isinstance(inferred, str) and inferred:
+                return inferred
+
+        raise ValueError(
+            "Could not infer a name from component; please provide an explicit 'name' argument."
+        )
 
     @overload
     def get(
@@ -222,6 +246,14 @@ class FraguaEnvironment(FraguaComponent):
         name: str,
     ) -> Dict[str, Any]: ...
 
+    @overload
+    def get(
+        self,
+        action: ActionType,
+        kind: ComponentType,
+        name: str,
+    ) -> Any: ...
+
     def get(
         self,
         action: ActionType,
@@ -236,25 +268,37 @@ class FraguaEnvironment(FraguaComponent):
         self,
         action: ActionType,
         kind: ComponentType,
-        name: str,
         component: Any,
+        name: str | None = None,
     ) -> bool:
-        """Add component."""
+        """Add component.
+
+        If ``name`` is omitted (None), attempt to infer it from the provided
+        component (e.g. agent's ``.name`` or function's ``__name__``).
+        """
         fragua_set = self._get_set(action, kind)
-        created = fragua_set.add(name, component)
+
+        # Infer name when not explicitly provided
+        resolved_name = (
+            name if name is not None else self._infer_name_from_component(component)
+        )
+
+        created = fragua_set.add(resolved_name, component)
 
         if not created:
             return False
 
-        token = self._token(kind=kind.value, name=name)
+        token = self._token(kind=kind.value, name=resolved_name)
 
+        # Attach token when possible (best-effort). Avoid broad exception catching
+        # by checking for a writable __dict__ first.
         if hasattr(component, "__dict__"):
             component.token = token
 
         logger.info(
             "%s registered: %s (%s)",
             kind.value.capitalize(),
-            name,
+            resolved_name,
             action.value,
         )
 
