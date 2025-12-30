@@ -38,19 +38,10 @@ AGENT = ComponentType.AGENT
 FUNCTION = ComponentType.FUNCTION
 
 
-class AgentType(str, Enum):
-    """Agent types class."""
-
-    EXTRACTOR = "extractor"
-    TRANSFORMER = "transformer"
-    LOADER = "loader"
-
-
 class StorageType(str, Enum):
     """Storage types class."""
 
     BOX = "box"
-    CONTAINER = "container"
     ALL = "all"
 
 
