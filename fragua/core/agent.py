@@ -82,7 +82,7 @@ class FraguaAgent(FraguaComponent):
     # ------------------------------------------------------------------
     # Function resolution
     # ------------------------------------------------------------------
-    def _get_function(self, function_key: str):
+    def _get_function(self, function_key: str) -> Any:
         func_spec = self.environment.get(
             self.action,
             ComponentType.FUNCTION,
@@ -337,7 +337,9 @@ class FraguaAgent(FraguaComponent):
         return self
 
     # ---------------- Extract ----------------
-    def from_csv(self, *, path: str, save_as: str | None = None, **kwargs: Any):
+    def from_csv(
+        self, *, path: str, save_as: str | None = None, **kwargs: Any
+    ) -> "FraguaAgent":
         """Extract data from a CSV file and optionally save it in the warehouse."""
         return self._pipeline(
             target_type=TargetType.CSV.value,
@@ -353,7 +355,7 @@ class FraguaAgent(FraguaComponent):
         sheet_name: str | int = 0,
         save_as: str | None = None,
         **kwargs: Any,
-    ):
+    ) -> "FraguaAgent":
         """Extract data from an Excel file and optionally save it in the warehouse."""
         return self._pipeline(
             target_type=TargetType.EXCEL.value,
@@ -370,7 +372,7 @@ class FraguaAgent(FraguaComponent):
         query: str,
         save_as: str | None = None,
         **kwargs: Any,
-    ):
+    ) -> "FraguaAgent":
         """Extract data with a SQL query and optionally save it in the warehouse."""
         return self._pipeline(
             target_type=TargetType.SQL.value,
@@ -393,7 +395,7 @@ class FraguaAgent(FraguaComponent):
         timeout: int | None = None,
         save_as: str | None = None,
         **kwargs: Any,
-    ):
+    ) -> "FraguaAgent":
         """Extract data from an API endpoint and optionally save it in the warehouse."""
         return self._pipeline(
             target_type=TargetType.API.value,
