@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 import pandas as pd
 from fragua.core.set import FraguaSet
 from fragua.sets.transform.internal_functions import (
-    INTERNAL_FUNCTIONS,
+    TRANSFORM_INTERNAL_FUNCTIONS,
 )
 
 from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
@@ -18,46 +18,71 @@ from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
 
 def execute_transform_pipeline(
     input_data: pd.DataFrame,
-    steps: Iterable[str],
-    config_keys: Optional[Dict[str, str]] = None,
+    steps: Iterable[Union[str, Callable[..., pd.DataFrame]]],
+    config_keys: Optional[Dict[str, Any]] = None,
 ) -> pd.DataFrame:
     """
     Execute a transformation pipeline composed of ordered steps.
 
+    Steps may be either the registered internal function name (str) or a
+    callable accepting (data, *, config=None).
+
+    The function resolves step names against the registered
+    `TRANSFORM_INTERNAL_FUNCTIONS` FraguaSet exposed in the transform
+    registry.
+
     Args:
-        input_data:
-            Input DataFrame to be transformed.
-        steps:
-            Ordered list of internal transform step functions names.
-        config_keys:
-            Dict of configurations keys for steps function.
+        input_data: Input DataFrame to be transformed.
+        steps: Ordered list of internal transform step names or callables.
+        config_keys: Mapping of configuration values to pass to steps.
 
     Returns:
-        pd.DataFrame:
-            Transformed DataFrame.
+        pd.DataFrame: Transformed DataFrame.
 
     Raises:
-        KeyError:
-            If a transformation step is not registered.
+        KeyError: If a named step is not registered.
+        TypeError: If a step is neither str nor callable.
     """
     data = input_data
 
     for step in steps:
-        if step not in INTERNAL_FUNCTIONS:
-            raise KeyError(f"Transform function '{step}' not registered.")
+        # Named step: resolve through the FraguaSet
+        if isinstance(step, str):
+            spec = TRANSFORM_INTERNAL_FUNCTIONS.get_one(step)
+            if spec is None:
+                raise KeyError(f"Transform function '{step}' not registered.")
 
-        spec = INTERNAL_FUNCTIONS[step]
+            # Build kwargs only from declared config_keys in the spec
+            kwargs: Dict[str, Any] = {}
+            if config_keys:
+                if isinstance(config_keys, dict):
+                    for key in spec.config_keys:
+                        if key in config_keys:
+                            kwargs[key] = config_keys[key]
+                else:
+                    for key in spec.config_keys:
+                        if hasattr(config_keys, key):
+                            kwargs[key] = getattr(config_keys, key)
 
-        kwargs = {
-            key: getattr(config_keys, key)
-            for key in spec.config_keys
-            if hasattr(config_keys, key)
-        }
+            # invoke the function, try with config kwarg, fallback to plain call
+            fn = spec.func
+            try:
+                data = fn(data, config=kwargs or None)
+            except TypeError:
+                data = fn(data)
 
-        data = spec.func(data, config=kwargs or None)
+        # Callable step: invoke directly passing the full config mapping
+        elif callable(step):
+            fn = step
+            try:
+                data = fn(data, config=config_keys or None)
+            except TypeError:
+                data = fn(data)
+
+        else:
+            raise TypeError("Each step must be a registered name (str) or a callable")
 
     return data
-
 
 def transform_ml(
     data: pd.DataFrame,
