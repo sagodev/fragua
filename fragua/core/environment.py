@@ -364,10 +364,9 @@ class FraguaEnvironment(FraguaComponent):
 
             raise ValueError("Unsupported type for internal load function registration")
 
-        else:
-            raise ValueError(
-                "Internal functions can only be created for transform or load actions"
-            )
+        raise ValueError(
+            "Internal functions can only be created for transform or load actions"
+        )
 
     def _attach_token_if_applicable(self, component: Any, token: FraguaToken) -> None:
         """Attempt to attach a token to component unless it is a frozen spec."""
