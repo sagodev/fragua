@@ -57,84 +57,26 @@ class Box(Storage[pd.DataFrame]):
     Storage type representing a single unit of tabular data.
     """
 
-    def __init__(self, storage_name: str, data: pd.DataFrame) -> None:
+    def __init__(
+        self,
+        storage_name: str,
+        data: pd.DataFrame | None = None,
+    ) -> None:
+        super().__init__(storage_name=storage_name, data=None)
+
+        if data is not None:
+            self.set(data)
+
+    def set(self, data: pd.DataFrame) -> None:
+        """Set box data."""
         if not isinstance(data, pd.DataFrame):
             raise TypeError(
                 f"Box requires a pandas DataFrame, got {type(data).__name__}"
             )
-        super().__init__(storage_name=storage_name, data=data)
-
-
-class Container(Storage[None]):
-    """
-    Composite storage capable of grouping multiple Box instances.
-
-    A Container acts as a hierarchical storage structure, allowing
-    multiple Boxes to be stored and managed under a single logical unit.
-    """
-
-    def __init__(self, container_name: str) -> None:
-        super().__init__(storage_name=container_name, data=None)
-        self._content: Dict[str, Box] = {}
-
-    def add_storage(self, storage_name: str, storage: Box) -> None:
-        """
-        Add a Box to the container.
-
-        Args:
-            storage_name: Name under which the Box will be stored.
-            storage: Box instance to add.
-        """
-        self._content[storage_name] = storage
-
-    def get_storage(self, name: str) -> Box:
-        """
-        Retrieve a Box from the container by name.
-
-        Args:
-            name: Name of the Box.
-
-        Returns:
-            The requested Box instance.
-        """
-        return self._content[name]
-
-    def list_storages(self) -> dict[str, str]:
-        """
-        List all contained storages.
-
-        Returns:
-            A mapping of storage names to their class names.
-        """
-        return {name: s.__class__.__name__ for name, s in self._content.items()}
-
-    def remove_storage(self, name: str) -> None:
-        """
-        Remove a Box from the container.
-
-        Args:
-            name: Name of the Box to remove.
-        """
-        self._content.pop(name, None)
-
-    def clear(self) -> None:
-        """
-        Remove all contained Boxes from the container.
-        """
-        self._content.clear()
-
-    def __repr__(self) -> str:
-        """
-        Return a string representation of the container and its contents.
-
-        Returns:
-            A string listing contained storage names or indicating emptiness.
-        """
-        items = ", ".join(self._content.keys()) or "empty"
-        return f"<Container: {items}>"
+        self._data = data
+        self._generate_base_metadata()
 
 
 STORAGE_CLASSES: dict[str, type[Storage[Any]]] = {
     StorageType.BOX.value: Box,
-    StorageType.CONTAINER.value: Container,
 }

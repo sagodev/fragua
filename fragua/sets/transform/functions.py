@@ -4,8 +4,8 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import pandas as pd
 from fragua.core.set import FraguaSet
-from fragua.transform.functions.internal_functions import (
-    TRANSFORM_INTERNAL_FUNCTIONS,
+from fragua.sets.transform.internal_functions import (
+    INTERNAL_FUNCTIONS,
 )
 
 from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
@@ -43,10 +43,10 @@ def execute_transform_pipeline(
     data = input_data
 
     for step in steps:
-        if step not in TRANSFORM_INTERNAL_FUNCTIONS:
+        if step not in INTERNAL_FUNCTIONS:
             raise KeyError(f"Transform function '{step}' not registered.")
 
-        spec = TRANSFORM_INTERNAL_FUNCTIONS[step]
+        spec = INTERNAL_FUNCTIONS[step]
 
         kwargs = {
             key: getattr(config_keys, key)

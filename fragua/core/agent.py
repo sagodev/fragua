@@ -1,24 +1,22 @@
-"""
-Agent class in Fragua.
-Agents can take a role to work like a Miner, Blacksmith, or Transporter.
+"""Fragua agent implementation.
+
+Provides the :class:`FraguaAgent` class which orchestrates extract-transform-load
+(ETL) operations inside a :class:`FraguaEnvironment`. Responsibilities include
+executing registered functions, creating and storing appropriate Storage
+objects (Box or Container), generating and attaching operation metadata,
+recording operations with undo support, and interacting with the environment
+warehouse.
 """
 
 from __future__ import annotations
-from abc import abstractmethod
-from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-)
+
+from typing import Any, Dict, List, TYPE_CHECKING
 from datetime import datetime, timezone
+
 import pandas as pd
 
 from fragua.core.component import FraguaComponent
-from fragua.core.storage import Storage, Box, STORAGE_CLASSES
+from fragua.core.storage import Box, Storage, STORAGE_CLASSES
 
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
@@ -29,8 +27,11 @@ from fragua.utils.types.enums import (
     ComponentType,
     FieldType,
     MetadataType,
+    OperationType,
     StorageType,
+    TargetType,
 )
+
 
 if TYPE_CHECKING:
     from fragua.core.environment import FraguaEnvironment
@@ -38,37 +39,39 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 # pylint: disable=too-many-arguments
-# pylint: disable=too-many-positional-arguments
 
 
 class FraguaAgent(FraguaComponent):
     """
-    Base class for ETL agents operating within a shared Fragua Environment.
-
-    A FraguaAgent encapsulates the execution logic of a single ETL role
-    (extract, transform, or load) and provides a standardized workflow
-    including function execution, storage handling, metadata generation,
-    operation logging, undo support, and warehouse persistence.
+    Base class for ETL agents operating within a Fragua Environment.
     """
 
-    def __init__(self, agent_name: str, environment: FraguaEnvironment) -> None:
-        """
-        Initialize the agent with a name and an execution environment.
+    _ACTION_STORAGE_MAP: dict[ActionType, StorageType] = {
+        ActionType.EXTRACT: StorageType.BOX,
+        ActionType.TRANSFORM: StorageType.BOX,
+        ActionType.LOAD: StorageType.BOX,
+    }
 
-        Args:
-            agent_name: Unique identifier for the agent.
-            environment: Shared Environment instance providing registries,
-                warehouse manager, and configuration.
-        """
+    def __init__(self, agent_name: str, environment: FraguaEnvironment) -> None:
+        """Initialize agent with a name and environment."""
         super().__init__(instance_name=agent_name)
+
         self.environment: FraguaEnvironment = environment
         self.token: FraguaToken
         self.action: ActionType
         self.storage_type: StorageType
+
         self._operations: List[Dict[str, Any]] = []
         self._undo_stack: List[Dict[str, Any]] = []
 
-    # ----------------- Helpers ----------------- #
+    # ------------------------------------------------------------------
+    # Execution context
+    # ------------------------------------------------------------------
+    def set_execution_context(self, action: ActionType) -> None:
+        """Set the current execution action and corresponding storage type."""
+        self.action = action
+        self.storage_type = self._ACTION_STORAGE_MAP[action]
+
     def _require_token(self) -> FraguaToken:
         if self.token is None:
             raise RuntimeError(
@@ -76,28 +79,10 @@ class FraguaAgent(FraguaComponent):
             )
         return self.token
 
-    def _determine_origin_name(self, origin: Any) -> Optional[str]:
-        origin_name = None
-        match origin:
-            case Storage():
-                origin_name = origin.__class__.__name__
-            case str() | Path():
-                origin_name = Path(origin).name
-            case _:
-                if hasattr(origin, FieldType.PATH.value) and isinstance(
-                    origin.path, (str, Path)
-                ):
-                    origin_name = Path(origin.path).name
-                elif hasattr(origin, FieldType.DATA.value) and isinstance(
-                    origin.data, pd.DataFrame
-                ):
-                    origin_name = "DataFrame"
-        return origin_name
-
-    def _generate_storage_name(self, storage_name: str) -> str:
-        return f"{storage_name}_{self.action}_data"
-
-    def _resolve_function(self, function_key: str) -> Callable[..., Any]:
+    # ------------------------------------------------------------------
+    # Function resolution
+    # ------------------------------------------------------------------
+    def _get_function(self, function_key: str) -> Any:
         func_spec = self.environment.get(
             self.action,
             ComponentType.FUNCTION,
@@ -110,53 +95,12 @@ class FraguaAgent(FraguaComponent):
             )
 
         func = func_spec[ComponentType.FUNCTION.value]
+        func_name = getattr(func, "__name__", function_key)
+        return func, func_name
 
-        # ----------------- EXTRACT ----------------- #
-        if self.action == ActionType.EXTRACT.value:
-
-            def _extract_executor(**kwargs: Any) -> pd.DataFrame:
-                result = func(**kwargs)
-
-                if not isinstance(result, pd.DataFrame):
-                    raise TypeError("EXTRACT functions must return a pandas DataFrame")
-
-                return result
-
-            return _extract_executor
-
-        # ----------------- TRANSFORM ----------------- #
-        if self.action == ActionType.TRANSFORM.value:
-
-            def _transform_executor(
-                *,
-                input_data: pd.DataFrame,
-                **kwargs: Any,
-            ) -> pd.DataFrame:
-                result = func(input_data=input_data, **kwargs)
-
-                if not isinstance(result, pd.DataFrame):
-                    raise TypeError(
-                        "TRANSFORM functions must return a pandas DataFrame"
-                    )
-
-                return result
-
-            return _transform_executor
-
-        # ----------------- LOAD ----------------- #
-        if self.action == ActionType.LOAD.value:
-
-            def _load_executor(
-                *,
-                input_data: pd.DataFrame,
-                **kwargs: Any,
-            ) -> Any:
-                return func(input_data=input_data, **kwargs)
-
-            return _load_executor
-
-        raise RuntimeError(f"Unsupported agent action: {self.action}")
-
+    # ------------------------------------------------------------------
+    # Input helpers
+    # ------------------------------------------------------------------
     def _normalize_input_data(self, input_data: Any) -> pd.DataFrame:
         if input_data is None:
             return pd.DataFrame()
@@ -170,12 +114,104 @@ class FraguaAgent(FraguaComponent):
         if isinstance(input_data, dict):
             if any(isinstance(v, (list, tuple)) for v in input_data.values()):
                 return pd.DataFrame(input_data)
-
             return pd.DataFrame([input_data])
 
         raise TypeError(f"Unsupported input_data type: {type(input_data).__name__}")
 
-    # ----------------- Metadata ----------------- #
+    def _check_input_data(
+        self,
+        input_data: pd.DataFrame | None,
+        apply_to: str | list[str] | None,
+    ) -> pd.DataFrame | None:
+        if input_data is None and apply_to is not None:
+            if isinstance(apply_to, list):
+                return pd.concat(
+                    [self.get_from_warehouse(name).data for name in apply_to]
+                )
+            return self.get_from_warehouse(apply_to).data
+
+        return input_data
+
+    # ------------------------------------------------------------------
+    # Storage creation
+    # ------------------------------------------------------------------
+    def _generate_storage_name(self, function_name: str) -> str:
+        return f"{function_name}_{self.action.value}_data"
+
+    def create_storage(
+        self,
+        *,
+        data: Any,
+        function_name: str,
+        storage_name: str | None = None,
+    ) -> Storage[Any]:
+        """Create the appropriate Storage (Box) for the given data and function name."""
+        storage_cls = STORAGE_CLASSES.get(self.storage_type)
+
+        if not storage_cls:
+            raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
+
+        name = storage_name or self._generate_storage_name(function_name)
+
+        return storage_cls(name, data)
+
+    # ------------------------------------------------------------------
+    # Warehouse access
+    # ------------------------------------------------------------------
+    def add_to_warehouse(
+        self,
+        storage: Storage[Box],
+        storage_name: str | None = None,
+        *,
+        overwrite: bool = False,
+    ) -> bool:
+        """Add a Storage to the environment warehouse; returns True if added."""
+        name = storage_name or getattr(storage, AttrType.NAME.value, None)
+        if not name:
+            raise ValueError("Storage name could not be resolved.")
+
+        return self.environment.warehouse.add_storage(
+            name=name,
+            storage=storage,
+            token=self._require_token(),
+            agent_name=self.name,
+            overwrite=overwrite,
+        )
+
+    def auto_store(self, storage: Storage[Box]) -> None:
+        """Convenience to add storage to the warehouse without explicit name."""
+        self.add_to_warehouse(storage)
+
+    def get_from_warehouse(self, storage_name: str) -> Box:
+        """Retrieve a Box storage by name from the environment warehouse."""
+        storage = self.environment.warehouse.get_storages(
+            token=self.token,
+            storage_name=storage_name,
+            agent_name=self.name,
+        )
+
+        if storage is None:
+            raise TypeError("Storage not found in warehouse.")
+        if not isinstance(storage, Box):
+            raise TypeError("Storage is not a Box.")
+
+        return storage
+
+    # ------------------------------------------------------------------
+    # Containers (removed)
+    # ------------------------------------------------------------------
+
+    def _resolve_load_kwargs(self, box_name: str, **kwargs: Any) -> dict[str, Any]:
+        resolved = dict(kwargs)
+        if resolved.get(FieldType.SHEET_NAME.value) is None:
+            resolved[FieldType.SHEET_NAME.value] = box_name
+        if resolved.get(FieldType.TABLE_NAME.value) is None:
+            resolved[FieldType.TABLE_NAME.value] = box_name
+        return resolved
+
+    # ------------------------------------------------------------------
+    # Metadata & operations
+    # ------------------------------------------------------------------
     def _generate_operation_metadata(
         self, target_name: str, storage: Storage[Any]
     ) -> None:
@@ -186,22 +222,7 @@ class FraguaAgent(FraguaComponent):
         )
         add_metadata_to_storage(storage, metadata)
 
-    # ----------------- Operations Logging ----------------- #
-    def _add_operation(self, function_key: str) -> None:
-
-        func_spec = self.environment.get(
-            self.action, ComponentType.FUNCTION, function_key
-        )
-
-        if func_spec is None:
-            raise ValueError(
-                f"Function '{function_key}' not registered for action '{self.action}'."
-            )
-
-        func_name = getattr(
-            func_spec.get(ComponentType.FUNCTION.value), "__name__", str(func_spec)
-        )
-
+    def _register_operation(self, func_name: str) -> None:
         self._operations.append(
             {
                 FieldType.ACTION.value: self.action.value,
@@ -217,163 +238,389 @@ class FraguaAgent(FraguaComponent):
         )
 
     def get_operations(self) -> pd.DataFrame:
-        """
-        Retrieve the execution history as a pandas DataFrame.
-
-        Returns:
-            A DataFrame containing all recorded operations.
-        """
+        """Return recorded operations as a pandas DataFrame."""
         return pd.DataFrame(self._operations)
 
     def undo_last_operation(self) -> bool:
-        """
-        Undo the most recent workflow operation.
-
-        Returns:
-            True if an operation was successfully undone, False if no
-            operations were available.
-        """
+        """Undo the last registered operation and return True if successful."""
         if not self._undo_stack:
             return False
 
         last = self._undo_stack.pop()
-        function_key = last.get(ComponentType.FUNCTION.value)
+        func_name = last.get(ComponentType.FUNCTION.value)
 
         self._operations = [
             op
             for op in self._operations
-            if op.get(ComponentType.FUNCTION.value) != function_key
+            if op.get(ComponentType.FUNCTION.value) != func_name
         ]
 
-        logger.info("Undid last operation: %s", function_key)
+        logger.info("Undid last operation: %s", func_name)
         return True
 
-    # ----------------- Storage Management ----------------- #
-    def create_storage(
+    # ------------------------------------------------------------------
+    # Core execution pipeline
+    # ------------------------------------------------------------------
+    def _execute(
         self,
         *,
-        data: Any,
-        function_name: str,
-        storage_name: str | None = None,
-    ) -> Storage[Any]:
-        """
-        Instantiate a storage object based on the agent storage type.
+        action: ActionType,
+        target_type: str,
+        input_data: pd.DataFrame | None = None,
+        save_as: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.set_execution_context(action)
 
-        Args:
-            data:
-                Data to be wrapped by the storage.
-            target_name:
-                Executed target identifier.
-            storage_name:
-                Optional explicit storage name. If not provided, a default
-                name is generated automatically.
+        func, func_name = self._get_function(target_type)
+        data = self._normalize_input_data(input_data)
 
-        Returns:
-            A Storage instance.
+        if action is ActionType.EXTRACT:
+            result = func(**kwargs)
+            if not isinstance(result, pd.DataFrame):
+                raise TypeError("EXTRACT functions must return a DataFrame")
+        else:
+            result = func(input_data=data, **kwargs)
+            if action is ActionType.TRANSFORM and not isinstance(result, pd.DataFrame):
+                raise TypeError("TRANSFORM functions must return a DataFrame")
 
-        Raises:
-            TypeError:
-                If the storage type is invalid.
-        """
-        storage_cls = STORAGE_CLASSES.get(self.storage_type)
-        if not storage_cls:
-            raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
-
-        name = (
-            storage_name if storage_name else self._generate_storage_name(function_name)
+        storage = self.create_storage(
+            data=result,
+            function_name=target_type,
+            storage_name=save_as,
         )
 
-        if self.storage_type != StorageType.CONTAINER.value:
-            return storage_cls(name, data)
+        self._generate_operation_metadata(target_type, storage)
+        self._register_operation(func_name)
+        self.auto_store(storage)
 
-        return storage_cls(name)
-
-    def add_to_warehouse(
+    # ------------------------------------------------------------------
+    # Public work API
+    # ------------------------------------------------------------------
+    def work(
         self,
-        storage: Storage[Box],
-        storage_name: str | None = None,
         *,
-        overwrite: bool = False,
-    ) -> bool:
-        """
-        Persist a storage object into the warehouse.
-        """
-        name = storage_name or getattr(storage, AttrType.NAME.value, None)
-        if not name:
-            raise ValueError("Storage name could not be resolved.")
+        target_type: str,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        input_data: pd.DataFrame | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Execute a work unit for the given target type, storing results if requested."""
+        input_data = self._check_input_data(input_data, apply_to)
 
-        warehouse = self.environment.warehouse
-
-        return warehouse.add_storage(
-            name=name,
-            storage=storage,
-            token=self._require_token(),
-            agent_name=self.name,
-            overwrite=overwrite,
+        self._execute(
+            action=self.action,
+            target_type=target_type,
+            input_data=input_data,
+            save_as=save_as,
+            **kwargs,
         )
 
-    def get_from_warehouse(self, storage_name: str) -> Box:
-        """
-        Retrieve a Box storage from the warehouse.
-        """
-        warehouse = self.environment.warehouse
+    # ------------------------------------------------------------------
+    # High-level fluent helpers
+    # ------------------------------------------------------------------
+    def _pipeline(
+        self,
+        *,
+        target_type: str,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        self.work(
+            target_type=target_type,
+            apply_to=apply_to,
+            save_as=save_as,
+            **kwargs,
+        )
+        return self
 
-        storage = warehouse.get_storages(
-            token=self.token,
-            storage_name=storage_name,
-            agent_name=self.name,
+    # ---------------- Extract ----------------
+    def from_csv(
+        self, *, path: str, save_as: str | None = None, **kwargs: Any
+    ) -> "FraguaAgent":
+        """Extract data from a CSV file and optionally save it in the warehouse."""
+        return self._pipeline(
+            target_type=TargetType.CSV.value,
+            path=path,
+            save_as=save_as,
+            **kwargs,
         )
 
-        if storage is None:
-            raise TypeError("Storage not found in warehouse.")
-        if not isinstance(storage, Box):
-            raise TypeError("Storage is not a Box.")
+    def from_excel(
+        self,
+        *,
+        path: str,
+        sheet_name: str | int = 0,
+        save_as: str | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Extract data from an Excel file and optionally save it in the warehouse."""
+        return self._pipeline(
+            target_type=TargetType.EXCEL.value,
+            path=path,
+            sheet_name=sheet_name,
+            save_as=save_as,
+            **kwargs,
+        )
 
-        return storage
+    def from_sql(
+        self,
+        *,
+        connection_string: str,
+        query: str,
+        save_as: str | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Extract data with a SQL query and optionally save it in the warehouse."""
+        return self._pipeline(
+            target_type=TargetType.SQL.value,
+            connection_string=connection_string,
+            query=query,
+            save_as=save_as,
+            **kwargs,
+        )
 
-    def auto_store(self, storage: Storage[Box]) -> None:
-        """
-        Persist a storage object using its own name.
-        """
-        self.add_to_warehouse(storage)
+    def from_api(
+        self,
+        *,
+        url: str,
+        method: str = OperationType.GET.value,
+        headers: Dict[str, Any] | None = None,
+        params: Dict[str, Any] | None = None,
+        data: Dict[str, Any] | None = None,
+        auth: Dict[str, str] | None = None,
+        proxy: Dict[str, str] | None = None,
+        timeout: int | None = None,
+        save_as: str | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Extract data from an API endpoint and optionally save it in the warehouse."""
+        return self._pipeline(
+            target_type=TargetType.API.value,
+            url=url,
+            method=method,
+            headers=headers,
+            params=params,
+            data=data,
+            auth=auth,
+            proxy=proxy,
+            timeout=timeout,
+            save_as=save_as,
+            **kwargs,
+        )
 
-    # ----------------- Agent Summary ----------------- #
-    def summary(self) -> Dict[str, object]:
-        """
-        Generate a structured summary of the agent state and execution history.
+    # ---------------- Transform ----------------
+    def to_ml(
+        self,
+        *,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        input_data: pd.DataFrame | None = None,
+        config_keys: Dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Apply ML transform and return agent for chaining."""
+        # Ensure execution context is set for transform actions
+        self.set_execution_context(ActionType.TRANSFORM)
 
-        The summary includes agent metadata, environment context, a serialized
-        view of executed operations, and the current undo stack state.
+        input_data = self._check_input_data(input_data, apply_to)
 
-        Returns:
-            A dictionary containing agent identification, configuration,
-            execution metrics, operation history, and undo information.
-        """
+        return self._pipeline(
+            target_type=TargetType.ML.value,
+            apply_to=apply_to,
+            save_as=save_as,
+            input_data=input_data,
+            config_keys=config_keys,
+            **kwargs,
+        )
+
+    def to_report(
+        self,
+        *,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        input_data: pd.DataFrame | None = None,
+        config_keys: Dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Apply report transform and return agent for chaining."""
+        self.set_execution_context(ActionType.TRANSFORM)
+
+        input_data = self._check_input_data(input_data, apply_to)
+
+        return self._pipeline(
+            target_type=TargetType.REPORT.value,
+            apply_to=apply_to,
+            save_as=save_as,
+            input_data=input_data,
+            config_keys=config_keys,
+            **kwargs,
+        )
+
+    def to_analysis(
+        self,
+        *,
+        apply_to: str | list[str] | None = None,
+        save_as: str | None = None,
+        input_data: pd.DataFrame | None = None,
+        config_keys: Dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Apply analysis transform and return agent for chaining."""
+        self.set_execution_context(ActionType.TRANSFORM)
+
+        input_data = self._check_input_data(input_data, apply_to)
+
+        return self._pipeline(
+            target_type=TargetType.ANALYSIS.value,
+            apply_to=apply_to,
+            save_as=save_as,
+            input_data=input_data,
+            config_keys=config_keys,
+            **kwargs,
+        )
+
+    # ---------------- Load ----------------
+    def _load(self, target_type: str, apply_to: str | list[str], **kwargs: Any) -> None:
+        if not apply_to:
+            raise TypeError("Missing required argument: 'apply_to'.")
+
+        names = [apply_to] if isinstance(apply_to, str) else apply_to
+
+        for box_name in names:
+            box = self.get_from_warehouse(box_name)
+            params = self._resolve_load_kwargs(box_name, **kwargs)
+
+            self._execute(
+                action=ActionType.LOAD,
+                target_type=target_type,
+                input_data=box.data,
+                **params,
+            )
+
+    def to_csv(
+        self,
+        *,
+        apply_to: str | list[str],
+        directory: str | None = None,
+        file_name: str | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Load specified warehouse storage(s) to CSV targets and return agent for chaining."""
+        self.set_execution_context(ActionType.LOAD)
+        self._load(
+            TargetType.CSV.value,
+            apply_to,
+            directory=directory,
+            file_name=file_name,
+            **kwargs,
+        )
+        return self
+
+    def to_excel(
+        self,
+        *,
+        apply_to: str | list[str],
+        directory: str | None = None,
+        file_name: str | None = None,
+        sheet_name: str | int | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Load specified warehouse storage(s) to Excel targets and return agent for chaining."""
+        self.set_execution_context(ActionType.LOAD)
+        self._load(
+            TargetType.EXCEL.value,
+            apply_to,
+            directory=directory,
+            file_name=file_name,
+            sheet_name=sheet_name,
+            **kwargs,
+        )
+        return self
+
+    def to_sql(
+        self,
+        *,
+        apply_to: str | list[str],
+        connection_string: str | None = None,
+        table_name: str | None = None,
+        if_exists: str | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Load specified warehouse storage(s) to SQL targets and return agent for chaining."""
+        self.set_execution_context(ActionType.LOAD)
+        self._load(
+            TargetType.SQL.value,
+            apply_to,
+            connection_string=connection_string,
+            table_name=table_name,
+            if_exists=if_exists,
+            **kwargs,
+        )
+        return self
+
+    def to_api(
+        self,
+        *,
+        apply_to: str | list[str],
+        url: str | None = None,
+        method: str = OperationType.POST.value,
+        headers: Dict[str, Any] | None = None,
+        params: Dict[str, Any] | None = None,
+        data: Dict[str, Any] | None = None,
+        auth: Dict[str, str] | None = None,
+        proxy: Dict[str, str] | None = None,
+        timeout: int | None = None,
+        **kwargs: Any,
+    ) -> "FraguaAgent":
+        """Load specified warehouse storage(s) to API endpoints and return agent for chaining."""
+        self.set_execution_context(ActionType.LOAD)
+        self._load(
+            TargetType.API.value,
+            apply_to,
+            url=url,
+            method=method,
+            headers=headers,
+            params=params,
+            data=data,
+            auth=auth,
+            proxy=proxy,
+            timeout=timeout,
+            **kwargs,
+        )
+        return self
+
+    # ------------------------------------------------------------------
+    # Summary
+    # ------------------------------------------------------------------
+    def summary(self) -> Dict[str, Any]:
+        """Return agent metadata and a serialized view of recent operations."""
         env_name = getattr(self.environment, AttrType.NAME.value, None)
 
-        ops_serialized: list[Dict[str, object]] = []
+        ops_serialized = []
+
         for op in self._operations:
             ts = op.get(MetadataType.TIMESTAMP.value)
+
             ops_serialized.append(
                 {
                     FieldType.ACTION.value: op.get(FieldType.ACTION.value),
                     ComponentType.FUNCTION.value: op.get(ComponentType.FUNCTION.value),
-                    MetadataType.TIMESTAMP.value: ts.isoformat() if ts else None,
+                    MetadataType.TIMESTAMP.value: (
+                        ts.isoformat() if ts is not None else None
+                    ),
                 }
             )
 
-        undo_serialized: list[Dict[str, object]] = []
-        for item in self._undo_stack:
-            undo_serialized.append(
-                {
-                    MetadataType.OPERATION.value: item.get(
-                        MetadataType.OPERATION.value
-                    ),
-                    ComponentType.FUNCTION.value: item.get(
-                        ComponentType.FUNCTION.value
-                    ),
-                }
-            )
+        undo_serialized = [
+            {
+                MetadataType.OPERATION.value: item.get(MetadataType.OPERATION.value),
+                ComponentType.FUNCTION.value: item.get(ComponentType.FUNCTION.value),
+            }
+            for item in self._undo_stack
+        ]
 
         return {
             ComponentType.AGENT.value: self.name,
@@ -386,67 +633,3 @@ class FraguaAgent(FraguaComponent):
             "undo_stack_size": len(self._undo_stack),
             "undo_stack": undo_serialized,
         }
-
-    # ----------------- Work Pipeline ----------------- #
-    def _execute_workflow(
-        self,
-        target_type: str,
-        *,
-        input_data: pd.DataFrame | None = None,
-        save_as: str | None = None,
-        **kwargs: Any,
-    ) -> None:
-
-        func = self._resolve_function(target_type)
-
-        data = self._normalize_input_data(input_data)
-
-        if self.action == ActionType.EXTRACT:
-            result = func(**kwargs)
-        else:
-            result = func(input_data=data, **kwargs)
-
-        storage = self.create_storage(
-            data=result,
-            function_name=target_type,
-            storage_name=save_as,
-        )
-
-        self._generate_operation_metadata(target_type, storage)
-        self._add_operation(target_type)
-
-        self.auto_store(storage)
-
-    # ----------------- Work method ----------------- #
-    @abstractmethod
-    def work(
-        self,
-        target_type: str,
-        apply_to: str | list[str] | None = None,
-        save_as: str | None = None,
-        input_data: pd.DataFrame | None = None,
-        **kwargs: Any,
-    ) -> None:
-        """
-        Execute the agent-specific task.
-        Args:
-            target_type: Function identifier to execute (e.g. "csv", "excel", etc).
-            apply_to: Optional storage name(s) or input reference.
-            save_as: Optional explicit name for persisted storage.
-            input_data: Optional input DataFrame for transform/load.
-            **kwargs: Additional parameters.
-        """
-        if input_data is None and apply_to is not None:
-            if isinstance(apply_to, list):
-                input_data = pd.concat(
-                    [self.get_from_warehouse(name).data for name in apply_to]
-                )
-            else:
-                input_data = self.get_from_warehouse(apply_to).data
-
-        self._execute_workflow(
-            target_type=target_type,
-            input_data=input_data,
-            save_as=save_as,
-            **kwargs,
-        )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, Type, overload
+from typing import Any, Dict, Literal, overload
 
 from fragua.core.agent import FraguaAgent
 from fragua.core.sections import FraguaSections
@@ -10,11 +10,6 @@ from fragua.core.component import FraguaComponent
 from fragua.core.registry import FraguaRegistry
 from fragua.core.set import FraguaSet
 from fragua.core.warehouse import FraguaWarehouse
-
-from fragua.extract import Extractor
-from fragua.transform import Transformer
-from fragua.load import Loader
-
 
 from fragua.utils.logger import get_logger
 from fragua.utils.security.security_context import FraguaSecurityContext, FraguaToken
@@ -307,36 +302,27 @@ class FraguaEnvironment(FraguaComponent):
         return deleted
 
     def create(self, action: ActionType, kind: ComponentType, name: str) -> bool:
-        """Create and add new component."""
-        new_component: Any = object()
+        """Create and register a new component in the environment."""
 
-        def _build_agent(agent_name: str) -> FraguaAgent:
-            """Instantiate the correct agent class based on action."""
-            class_map: Dict[str, Type[FraguaAgent]] = {
-                ActionType.EXTRACT.value: Extractor,
-                ActionType.TRANSFORM.value: Transformer,
-                ActionType.LOAD.value: Loader,
-            }
+        new_component: Any = None
 
-            agent_class = class_map.get(action)
-            if agent_class is None:
-                raise ValueError(f"Invalid action type: {action.value}")
-
-            return agent_class(agent_name, self)
-
+        # ---------- Component construction ----------
         if kind is ComponentType.AGENT:
-            new_component = _build_agent(name)
+            new_component = FraguaAgent(name, self)
+            new_component.set_execution_context(action)
 
-        added = self.add(action, kind, name, new_component)
+        elif kind is ComponentType.REGISTRY:
+            new_component = FraguaRegistry(name)
 
-        if added:
-            logger.info(
-                "component created: %s (%s)",
-                name,
-                new_component.__class__.__name__,
-            )
+        elif kind is ComponentType.SET:
+            new_component = FraguaSet(name)
 
-        return added
+        else:
+            raise ValueError(f"Unsupported component type: {kind}")
+
+        # ---------- Registration ----------
+        self.add(action=action, kind=kind, name=name, component=new_component)
+        return True
 
     # ---------------------- Summary ------------------------- #
     def summary(self) -> Dict[str, Any]:

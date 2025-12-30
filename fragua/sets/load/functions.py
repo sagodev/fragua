@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Iterable, List, Union
 import pandas as pd
 
 from fragua.core.set import FraguaSet
-from fragua.load.functions.internal_functions import LOAD_INTERNAL_FUNCTIONS
+from fragua.sets.load.internal_functions import INTERNAL_FUNCTIONS
 
 from fragua.utils.types.enums import ILF, ActionType, FieldType, TargetType
 
@@ -25,10 +25,10 @@ def execute_load_pipeline(
     context: dict[str, Any] = dict(kwargs)
 
     for step in steps:
-        if step not in LOAD_INTERNAL_FUNCTIONS:
+        if step not in INTERNAL_FUNCTIONS:
             raise KeyError(f"Load function '{step}' not registered.")
 
-        spec = LOAD_INTERNAL_FUNCTIONS[step]
+        spec = INTERNAL_FUNCTIONS[step]
 
         call_kwargs = {key: context[key] for key in spec.config_keys if key in context}
 

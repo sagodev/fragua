@@ -98,14 +98,14 @@ def write_excel(
             engine=engine,
             if_sheet_exists="new",
         ) as writer:
-            if sheet_name:
-                data.to_excel(writer, sheet_name=sheet_name, index=index)
+            if sheet_name is not None:
+                data.to_excel(writer, sheet_name=str(sheet_name), index=index)
             else:
                 data.to_excel(writer, index=index)
     else:
         with pd.ExcelWriter(path, engine=engine) as writer:
-            if sheet_name:
-                data.to_excel(writer, sheet_name=sheet_name, index=index)
+            if sheet_name is not None:
+                data.to_excel(writer, sheet_name=str(sheet_name), index=index)
             else:
                 data.to_excel(writer, index=index)
 

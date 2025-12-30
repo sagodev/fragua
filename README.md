@@ -183,13 +183,13 @@ The Warehouse provides:
 ## Project Structure
 
 ```
-fragua/
-├── core/
-├── extract/
-├── transform/
-├── load/
-├── utils/
-└── __init__.py
+
+├── fragua/
+│   ├── __init__.py
+│   ├── core/
+│   ├── registries/
+│   ├── sets/
+│   └── utils/
 ```
 
 ---

@@ -23,7 +23,7 @@ from .agent import FraguaAgent
 
 from .warehouse import FraguaWarehouse
 
-from .storage import Storage, Box, Container, STORAGE_CLASSES
+from .storage import Storage, Box, STORAGE_CLASSES
 
 from .component import FraguaComponent
 
@@ -47,5 +47,4 @@ __all__ = [
     # Storage Types
     "STORAGE_CLASSES",
     "Box",
-    "Container",
 ]
