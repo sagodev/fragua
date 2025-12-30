@@ -12,6 +12,7 @@ Takes `create_function.py` as a reference.
 # mypy: ignore-errors
 # pylint: disable=duplicate-code
 
+
 from pathlib import Path
 import pandas as pd
 import fragua as fg
@@ -105,7 +106,7 @@ print("Transformado (remove_neg_threshold, threshold=1):\n", transformed2)
 # -------------------------
 
 
-def ensure_id_column(data: pd.DataFrame, *, config: dict | None = None) -> pd.DataFrame:
+def ensure_id_column(data: pd.DataFrame) -> pd.DataFrame:
     """Ensure that the 'id' column exists in the data and create it if missing."""
 
     df = data.copy()
