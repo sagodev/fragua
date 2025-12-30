@@ -1,6 +1,7 @@
 """Example of function creation, registration and use."""
 
 # mypy: ignore-errors
+# pylint: disable=duplicate-code
 
 from pathlib import Path
 import pandas as pd

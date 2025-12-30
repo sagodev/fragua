@@ -1,5 +1,6 @@
 """Example how to apply entire flow."""
 
+# pylint: disable=duplicate-code
 # mypy: ignore-errors
 
 from pathlib import Path
