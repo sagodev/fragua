@@ -38,6 +38,8 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# pylint: disable=too-many-arguments
+
 
 class FraguaAgent(FraguaComponent):
     """
