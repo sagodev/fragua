@@ -26,6 +26,7 @@ class ComponentType(str, Enum):
 
     AGENT = "agent"
     FUNCTION = "function"
+    INTERNAL_FUNCTION = "internal_function"
     ENVIRONMENT = "environment"
     REGISTRY = "registry"
     SET = "set"
@@ -36,6 +37,7 @@ class ComponentType(str, Enum):
 
 AGENT = ComponentType.AGENT
 FUNCTION = ComponentType.FUNCTION
+INTERNAL_FUNCTION = ComponentType.INTERNAL_FUNCTION
 
 
 class StorageType(str, Enum):
