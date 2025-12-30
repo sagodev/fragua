@@ -106,27 +106,78 @@ class FraguaSet(ABC, Generic[T]):
         Return a structured summary of the set contents.
 
         Delegates summary generation to the contained elements
-        according to the declared content kind.
+        according to the declared content kind. Internal helper specs
+        (frozen dataclasses used for internal functions) are summarized
+        with their metadata (purpose/description, config_keys, etc.)
+        instead of their Python types.
         """
+        from dataclasses import is_dataclass
+
         result: Dict[str, Any] = {}
 
         for name, component in self._components.items():
+            # Fragua components delegate to their own summary
             if isinstance(component, FraguaComponent):
                 result[name] = component.summary()
 
+            # Standard mapping-like records (functions set entries)
             elif isinstance(component, dict):
                 nested: Dict[str, Any] = {}
                 for key, value in component.items():
+                    # nested components keep their own summaries
                     if isinstance(value, FraguaComponent):
                         nested[key] = value.summary()
+                    # dataclass specs inside dict (rare) are summarized
+                    elif is_dataclass(value):
+                        # pick well-known fields when present
+                        nested[key] = self._summarize_spec(value)
                     elif callable(value):
                         nested[key] = value.__name__
                     else:
                         nested[key] = value
                 result[name] = nested
 
-            # Fallback (should not normally happen)
+            # dataclass-based specs (TransformInternalSpec, LoadInternalSpec)
+            elif is_dataclass(component):
+                result[name] = self._summarize_spec(component)
+
+            # Callables are represented by name
+            elif callable(component):
+                # Use getattr to satisfy static type checkers: callables may not have __name__
+                result[name] = getattr(
+                    component, "__name__", component.__class__.__name__
+                )
+
+            # Fallback: show simple type name
             else:
                 result[name] = component.__class__.__name__
 
         return result
+
+    def _summarize_spec(self, spec: object) -> Dict[str, Any]:
+        """Extract friendly summary from an internal spec dataclass object.
+
+        We prefer to include human-readable fields (purpose/description)
+        and `config_keys`. For function members, we emit the function
+        name rather than the raw callable object.
+        """
+        summary: Dict[str, Any] = {}
+
+        # common fields
+        if hasattr(spec, "purpose"):
+            summary["purpose"] = getattr(spec, "purpose")
+        if hasattr(spec, "description"):
+            summary["description"] = getattr(spec, "description")
+        if hasattr(spec, "config_keys"):
+            summary["config_keys"] = list(getattr(spec, "config_keys") or [])
+
+        # optional fields
+        if hasattr(spec, "data_arg"):
+            summary["data_arg"] = getattr(spec, "data_arg")
+
+        # function name
+        func = getattr(spec, "func", None)
+        if callable(func):
+            summary["function"] = getattr(func, "__name__", repr(func))
+
+        return summary
