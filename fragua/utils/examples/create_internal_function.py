@@ -77,13 +77,13 @@ env.add(
 # -------------------------
 
 # Example data
-df = pd.DataFrame({"a": [1, -2, 3], "b": [-1, 5, -6], "c": ["X", "Y", "Z"]})
+test_df = pd.DataFrame({"a": [1, -2, 3], "b": [-1, 5, -6], "c": ["X", "Y", "Z"]})
 
-print("Original:\n", df)
+print("Original:\n", test_df)
 
 # Run pipeline using the registered name
 transformed = fg.execute_transform_pipeline(
-    input_data=df,
+    input_data=test_df,
     steps=["remove_negative_numbers"],
     config_keys={"threshold": 0},
 )
@@ -92,7 +92,7 @@ print("Transformado (remove_negative_numbers):\n", transformed)
 
 # Run the pipeline using the registered alias (remove_neg_threshold)
 transformed2 = fg.execute_transform_pipeline(
-    input_data=df,
+    input_data=test_df,
     steps=["remove_neg_threshold"],
     config_keys={"threshold": 1},
 )
@@ -131,7 +131,7 @@ env.add(
 spec = env.get(fg.LOAD, fg.INTERNAL_FUNCTION, "ensure_id_column")
 print("Load internal spec:", spec)
 
-df_with_id = spec.func(df)
+df_with_id = spec.func(test_df)
 print("Data after ensure_id_column:\n", df_with_id)
 
 # -------------------------
