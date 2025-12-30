@@ -144,7 +144,9 @@ class FraguaSet(ABC, Generic[T]):
             # Callables are represented by name
             elif callable(component):
                 # Use getattr to satisfy static type checkers: callables may not have __name__
-                result[name] = getattr(component, "__name__", component.__class__.__name__)
+                result[name] = getattr(
+                    component, "__name__", component.__class__.__name__
+                )
 
             # Fallback: show simple type name
             else:

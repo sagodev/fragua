@@ -320,7 +320,9 @@ class FraguaEnvironment(FraguaComponent):
                 return TransformInternalSpec(
                     func=fn,
                     purpose=str(
-                        component.get(FieldType.PURPOSE.value, component.get("purpose", ""))
+                        component.get(
+                            FieldType.PURPOSE.value, component.get("purpose", "")
+                        )
                         or ""
                     ),
                     config_keys=component.get("config_keys", []),
@@ -354,7 +356,9 @@ class FraguaEnvironment(FraguaComponent):
                 return LoadInternalSpec(
                     func=fn,
                     description=str(
-                        component.get(FieldType.PURPOSE.value, component.get("purpose", ""))
+                        component.get(
+                            FieldType.PURPOSE.value, component.get("purpose", "")
+                        )
                         or ""
                     ),
                     config_keys=component.get("config_keys", []),
