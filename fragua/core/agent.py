@@ -10,13 +10,13 @@ warehouse.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, TYPE_CHECKING, cast
+from typing import Any, Dict, List, TYPE_CHECKING
 from datetime import datetime, timezone
 
 import pandas as pd
 
 from fragua.core.component import FraguaComponent
-from fragua.core.storage import Box, Container, Storage, STORAGE_CLASSES
+from fragua.core.storage import Box, Storage, STORAGE_CLASSES
 
 from fragua.utils.logger import get_logger
 from fragua.utils.metrics import add_metadata_to_storage, generate_metadata
@@ -47,7 +47,7 @@ class FraguaAgent(FraguaComponent):
     _ACTION_STORAGE_MAP: dict[ActionType, StorageType] = {
         ActionType.EXTRACT: StorageType.BOX,
         ActionType.TRANSFORM: StorageType.BOX,
-        ActionType.LOAD: StorageType.CONTAINER,
+        ActionType.LOAD: StorageType.BOX,
     }
 
     def __init__(self, agent_name: str, environment: FraguaEnvironment) -> None:
@@ -139,35 +139,17 @@ class FraguaAgent(FraguaComponent):
     def create_storage(
         self,
         *,
-        data: Any | None = None,
+        data: Any,
         function_name: str,
         storage_name: str | None = None,
-        sources: str | list[str] | None = None,
     ) -> Storage[Any]:
-        """Create appropriate Storage for given data and function name.
-
-        If the configured storage type is a Container, an optional ``sources``
-        parameter may be provided (single name or list of names) to pre-populate
-        the container with Boxes fetched from the warehouse.
-        """
+        """Create the appropriate Storage (Box) for the given data and function name."""
         storage_cls = STORAGE_CLASSES.get(self.storage_type)
 
         if not storage_cls:
             raise TypeError(f"Invalid storage type: '{self.storage_type}'.")
 
         name = storage_name or self._generate_storage_name(function_name)
-
-        if self.storage_type is StorageType.CONTAINER:
-            # Create empty container and populate if sources provided
-            container = cast(Container, storage_cls(name))
-
-            if sources:
-                names = [sources] if isinstance(sources, str) else sources
-                for src in names:
-                    box = self.get_from_warehouse(src)
-                    container.add_storage(src, box)
-
-            return container
 
         return storage_cls(name, data)
 
@@ -214,33 +196,15 @@ class FraguaAgent(FraguaComponent):
         return storage
 
     # ------------------------------------------------------------------
-    # Containers
+    # Containers (removed)
     # ------------------------------------------------------------------
-    def _create_container(self, sources: str | list[str]) -> Container:
-        """Create and populate a Container with the named warehouse storages.
-
-        Ensure the agent is in a LOAD execution context so that a Container
-        storage class is selected by :meth:`create_storage`.
-        """
-        # Ensure storage type is set to Container for load operations
-        self.set_execution_context(ActionType.LOAD)
-
-        container = self.create_storage(
-            function_name=ActionType.LOAD.value,
-            storage_name="load_container",
-            data=None,
-            sources=sources,
-        )
-
-        if not isinstance(container, Container):
-            raise TypeError("Expected Container storage.")
-
-        return container
 
     def _resolve_load_kwargs(self, box_name: str, **kwargs: Any) -> dict[str, Any]:
         resolved = dict(kwargs)
-        resolved.setdefault(FieldType.SHEET_NAME.value, box_name)
-        resolved.setdefault(FieldType.TABLE_NAME.value, box_name)
+        if resolved.get(FieldType.SHEET_NAME.value) is None:
+            resolved[FieldType.SHEET_NAME.value] = box_name
+        if resolved.get(FieldType.TABLE_NAME.value) is None:
+            resolved[FieldType.TABLE_NAME.value] = box_name
         return resolved
 
     # ------------------------------------------------------------------
@@ -519,10 +483,10 @@ class FraguaAgent(FraguaComponent):
         if not apply_to:
             raise TypeError("Missing required argument: 'apply_to'.")
 
-        container = self._create_container(apply_to)
+        names = [apply_to] if isinstance(apply_to, str) else apply_to
 
-        for box_name in container.list_storages():
-            box = container.get_storage(box_name)
+        for box_name in names:
+            box = self.get_from_warehouse(box_name)
             params = self._resolve_load_kwargs(box_name, **kwargs)
 
             self._execute(

@@ -31,8 +31,6 @@ from fragua.utils.types.enums import (
 
 logger = get_logger(__name__)
 
-AllowedTypes = Literal[StorageType.BOX, StorageType.ALL]
-
 StorageResult: TypeAlias = Union[
     Optional[Storage[Box]],
     Mapping[str, Storage[Box]],
@@ -130,28 +128,37 @@ class FraguaWarehouse(FraguaComponent):
         self._undo_stack.append(
             {
                 MetadataType.OPERATION.value: operation.value,
-                AttrType.NAME: name,
+                AttrType.NAME.value: name,
                 FieldType.BACKUP.value: py_copy.deepcopy(backup) if backup else None,
             }
         )
 
     def _resolve_targets(
         self,
-        storage_type: AllowedTypes,
+        storage_type: StorageType,
         storage_name: str,
     ) -> Dict[str, Storage[Box]]:
-        classes = (
-            Box
-            if storage_type.value == StorageType.ALL.value
-            else STORAGE_CLASSES[storage_type.value]
-        )
+        """Resolve target storages filtered by type and name.
 
+        This function supports querying a single named storage or all storages
+        matching the requested storage type. Using the StorageType enum here
+        keeps comparisons explicit and future-proof should other storage types
+        be reintroduced.
+        """
+        # Determine the class(es) to check against
+        if storage_type is StorageType.ALL:
+            classes = tuple(STORAGE_CLASSES.values())
+        else:
+            classes = STORAGE_CLASSES[storage_type.value]
+
+        # Specific storage requested
         if storage_name != StorageType.ALL.value:
             obj = self._storages.get(storage_name)
             if obj and isinstance(obj, classes):
                 return {storage_name: obj}
             return {}
 
+        # Return all matching storages
         return {
             name: obj
             for name, obj in self._storages.items()
@@ -200,7 +207,7 @@ class FraguaWarehouse(FraguaComponent):
         self,
         *,
         token: FraguaToken,
-        storage_type: AllowedTypes = StorageType.ALL,
+        storage_type: StorageType = StorageType.ALL,
         storage_name: str = StorageType.ALL.value,
         agent_name: str | None = None,
     ) -> StorageResult:
@@ -233,7 +240,7 @@ class FraguaWarehouse(FraguaComponent):
         self,
         *,
         token: FraguaToken,
-        storage_type: AllowedTypes = StorageType.ALL,
+        storage_type: StorageType = StorageType.ALL,
         storage_name: str = StorageType.ALL.value,
         agent_name: str | None = None,
     ) -> StorageResult:
