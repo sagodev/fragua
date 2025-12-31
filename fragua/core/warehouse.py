@@ -1,5 +1,9 @@
-"""
-Lightweight in-memory warehouse structure.
+"""Lightweight in-memory warehouse structure.
+
+This module implements a simple in-memory `FraguaWarehouse` used as
+an aggregate root for `Storage` objects. The warehouse provides
+authorization checks, movement logging, undo support and simple
+querying utilities used by agents during ETL operations.
 """
 
 from __future__ import annotations
@@ -45,9 +49,14 @@ if TYPE_CHECKING:
 class MovementLog:
     """
     Append-only log for warehouse operations.
+
+    The movement log stores timestamped, structured entries for each
+    significant warehouse operation (add, delete, get, copy, rename,
+    undo) and is intended for auditing and debugging.
     """
 
     def __init__(self) -> None:
+        # Store entries as ordered list of mapping objects
         self._entries: List[Mapping[str, object]] = []
 
     def record(
@@ -60,7 +69,13 @@ class MovementLog:
         success: bool,
         details: dict[str, Any] | None = None,
     ) -> None:
-        """Record a new log entry."""
+        """Record a new log entry and emit an informational log line.
+
+        Steps:
+        1. Build a timestamped entry containing operation metadata.
+        2. Append the entry to the internal store.
+        3. Emit an info-level log for system observability.
+        """
         now = datetime.now().astimezone()
         entry = {
             "date": now.date().isoformat(),
@@ -73,6 +88,8 @@ class MovementLog:
             "success": success,
             "details": details or {},
         }
+
+        # 1) Append entry and 2) emit structured log
         self._entries.append(entry)
 
         logger.info(
@@ -84,7 +101,7 @@ class MovementLog:
         )
 
     def snapshot(self) -> List[Mapping[str, object]]:
-        """Get a copy of all log entries."""
+        """Return a shallow copy of the movement log entries."""
         return self._entries.copy()
 
     def __len__(self) -> int:
@@ -106,13 +123,23 @@ class FraguaWarehouse(FraguaComponent):
     def __init__(self, warehouse_name: str, environment: FraguaEnvironment) -> None:
         super().__init__(instance_name=warehouse_name)
 
+        # Internal mapping for named storages
         self._storages: Dict[str, Storage[Box]] = {}
+        # Reference to parent environment used for authorization checks
         self._environment = environment
+        # Movement log and undo stack for operation tracking
         self._movement_log = MovementLog()
         self._undo_stack: list[dict[str, Any]] = []
 
     # ----------------------------- Security ---------------------------- #
     def _authorize(self, token: FraguaToken) -> None:
+        """Validate the provided token against the environment's security context.
+
+        Raises
+        ------
+        PermissionError
+            When the token is invalid or belongs to a different environment.
+        """
         if not self._environment.security.validate(token):
             raise PermissionError(
                 "Unauthorized warehouse access: invalid or foreign token."
@@ -125,6 +152,11 @@ class FraguaWarehouse(FraguaComponent):
         name: str,
         backup: Storage[Box] | None,
     ) -> None:
+        """Push an undo descriptor onto the internal undo stack.
+
+        For ADD operations we store a backup of the previous value (if any),
+        and for DELETE we store the removed object so it can be restored.
+        """
         self._undo_stack.append(
             {
                 MetadataType.OPERATION.value: operation.value,
@@ -176,7 +208,14 @@ class FraguaWarehouse(FraguaComponent):
         agent_name: str | None = None,
         overwrite: bool = False,
     ) -> bool:
-        """Add storage to warehouse."""
+        """Add storage to warehouse.
+
+        Steps:
+        1. Validate authorization.
+        2. Optionally prevent overwrite when an entry exists.
+        3. Store the item and register undo information.
+        4. Emit movement log entry.
+        """
         self._authorize(token)
 
         if name in self._storages and not overwrite:
@@ -212,7 +251,14 @@ class FraguaWarehouse(FraguaComponent):
         storage_name: str = StorageType.ALL.value,
         agent_name: str | None = None,
     ) -> StorageResult:
-        """Delete storage from warehouse."""
+        """Delete storage from warehouse.
+
+        Steps:
+        1. Authorize the request.
+        2. Resolve target storages matching the requested type/name.
+        3. Register undo data and remove matching entries.
+        4. Record the movement log and return removed items.
+        """
         self._authorize(token)
 
         targets = self._resolve_targets(storage_type, storage_name)
@@ -245,7 +291,13 @@ class FraguaWarehouse(FraguaComponent):
         storage_name: str = StorageType.ALL.value,
         agent_name: str | None = None,
     ) -> StorageResult:
-        """Get storage from warehouse."""
+        """Get storage from warehouse.
+
+        Steps:
+        1. Authorize the caller.
+        2. Resolve matching storages.
+        3. Emit movement log and return results.
+        """
         self._authorize(token)
 
         targets = self._resolve_targets(storage_type, storage_name)

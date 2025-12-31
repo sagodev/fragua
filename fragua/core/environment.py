@@ -1,4 +1,8 @@
-"""Base environment class for Fragua, refactored with docstrings."""
+"""Base environment class for Fragua, refactored with docstrings.
+
+Provides helpers to register, discover and manage core ETL components
+(agents, function registries and the warehouse) within a named environment.
+"""
 
 from __future__ import annotations
 
@@ -53,7 +57,8 @@ class FraguaEnvironment(FraguaComponent):
 
     This class represents the top-level orchestration layer of the framework.
     It encapsulates and coordinates all fundamental components, including
-    the warehouse, warehouse, action registries, and agents.
+    the warehouse, action registries and agents. It is responsible for
+    component registration, discovery and lifecycle management.
 
     The Environment is responsible for initializing, exposing, and managing
     the lifecycle of all ETL-related components within a given execution context.
@@ -121,6 +126,9 @@ class FraguaEnvironment(FraguaComponent):
     def _initialize_registry(self) -> FraguaRegistry:
         """Initialize fragua registry."""
 
+        # The registry contains several named FraguaSets. Function sets
+        # follow the convention "{action}_functions" (e.g. "extract_functions")
+        # while internal function specs are kept in their dedicated sets.
         sets: Dict[str, FraguaSet[Any]] = {
             "agent": FraguaSet("agent", components={}),
             "extract_functions": FraguaSet("extract_functions"),
@@ -295,8 +303,11 @@ class FraguaEnvironment(FraguaComponent):
 
     def _get_set(self, kind: ComponentType) -> FraguaSet:
 
+        # Query the registry for a set by its canonical name.
         components_set = self.registry.get_set(kind.value)
 
+        # If the runtime registry does not contain the requested set this
+        # is considered a configuration error and we raise to signal it.
         if components_set is None:
             raise ValueError(f"{kind.value.capitalize()} set not found.")
 
@@ -322,6 +333,9 @@ class FraguaEnvironment(FraguaComponent):
         Returns None if the component or set is not found.
         """
         # Action-scoped lookup: get(action, ComponentType.FUNCTION, name)
+        # This resolves functions that are registered under a specific action
+        # set (e.g. 'extract_functions'). If the named set does not exist we
+        # return None to signal an absence rather than raising an exception.
         if isinstance(kind_or_action, ActionType):
             action = kind_or_action
             kind = name_or_kind
@@ -334,6 +348,7 @@ class FraguaEnvironment(FraguaComponent):
             set_name = f"{action.value}_functions"
             components_set = self.registry.get_set(set_name)
             if components_set is None:
+                # Set missing: return None (caller may try other actions)
                 return None
             return components_set.get_one(name)
 
@@ -392,12 +407,14 @@ class FraguaEnvironment(FraguaComponent):
             return True
 
         # 1) Resolve the destination set
+        # Functions are stored in action-specific sets ("{action}_functions").
         if kind is ComponentType.FUNCTION:
             if action is None:
                 raise ValueError("Action is required when registering a function.")
             set_name = f"{action.value}_functions"
             component_set = self.registry.get_set(set_name)
             if component_set is None:
+                # Missing set indicates a registry misconfiguration
                 raise ValueError(f"{set_name} set not found.")
         else:
             component_set = self._get_set(kind)
@@ -491,6 +508,8 @@ class FraguaEnvironment(FraguaComponent):
             new_component = FraguaSet(name)
 
         # Create a placeholder internal function spec depending on the action
+        # These are convenience placeholders for internal transform/load
+        # implementations and make it easier to create named internal specs.
         elif kind is ComponentType.INTERNAL_TRANSFORM_FUNCTION:
             new_component = TransformInternalSpec(
                 func=_make_transform_placeholder(name),
@@ -505,6 +524,8 @@ class FraguaEnvironment(FraguaComponent):
                 config_keys=[],
                 data_arg=None,
             )
+
+
         else:
             raise ValueError(f"Unsupported component type: {kind}")
 

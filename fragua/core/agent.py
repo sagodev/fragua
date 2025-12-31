@@ -1,11 +1,20 @@
 """Fragua agent implementation.
 
-Provides the :class:`FraguaAgent` class which orchestrates extract-transform-load
-(ETL) operations inside a :class:`FraguaEnvironment`. Responsibilities include
-executing registered functions, creating and storing appropriate Storage
-objects (Box or Container), generating and attaching operation metadata,
-recording operations with undo support, and interacting with the environment
-warehouse.
+This module provides `FraguaAgent`, the central execution primitive used
+inside a `FraguaEnvironment` to drive Extract-Transform-Load (ETL)
+workflows. Agents resolve and execute registered functions, manage
+storage creation and persistence via the warehouse, generate operation
+metadata, and record operation history for introspection and undo.
+
+Typical usage:
+
+    env = FraguaEnvironment("env1", fg_config=True)
+    env.create(AGENT, "my_agent", action=ActionType.EXTRACT)
+    agent = env.get(AGENT, "my_agent")
+    agent.from_excel(path="input.xlsx", save_as="extracted")
+
+All public methods are documented below; internal helpers are annotated
+with comments explaining their step-by-step behavior.
 """
 
 from __future__ import annotations
@@ -44,6 +53,25 @@ logger = get_logger(__name__)
 class FraguaAgent(FraguaComponent):
     """
     Base class for ETL agents operating within a Fragua Environment.
+
+    Agents are responsible for executing registered functions belonging
+    to an action (extract/transform/load), converting their outputs into
+    `Storage` objects and persisting them to the environment warehouse.
+
+    Attributes
+    ----------
+    environment:
+        Reference to the owning `FraguaEnvironment` used for discovery and
+        access to the warehouse and registry.
+    token:
+        Security token assigned when the agent is created/registered.
+    action:
+        Current execution action (one of ActionType.EXTRACT/TRANSFORM/LOAD).
+    storage_type:
+        StorageType chosen based on the current action.
+
+    The agent exposes a fluent API (from_*/to_* helpers) and a low-level
+    `work()` method which can run a specific registered function.
     """
 
     _ACTION_STORAGE_MAP: dict[ActionType, StorageType] = {
@@ -53,14 +81,29 @@ class FraguaAgent(FraguaComponent):
     }
 
     def __init__(self, agent_name: str, environment: FraguaEnvironment) -> None:
-        """Initialize agent with a name and environment."""
+        """
+        Initialize agent with a name and environment.
+
+        Notes
+        -----
+        - The `token` is expected to be attached by the environment when the
+          agent is registered and should be available before the agent performs
+          warehouse operations.
+        - `action` and `storage_type` are set via `set_execution_context`.
+        """
         super().__init__(instance_name=agent_name)
 
+        # Reference to parent environment (used for registry/warehouse access)
         self.environment: FraguaEnvironment = environment
+
+        # Security token (populated when agent is registered)
         self.token: FraguaToken
+
+        # Execution context and corresponding storage type (set via set_execution_context)
         self.action: ActionType
         self.storage_type: StorageType
 
+        # Internal operation history and undo stack used for in-memory tracking
         self._operations: List[Dict[str, Any]] = []
         self._undo_stack: List[Dict[str, Any]] = []
 
@@ -68,11 +111,22 @@ class FraguaAgent(FraguaComponent):
     # Execution context
     # ------------------------------------------------------------------
     def set_execution_context(self, action: ActionType) -> None:
-        """Set the current execution action and corresponding storage type."""
+        """Set the current execution action and its storage type.
+
+        This method updates internal context so subsequent work calls
+        resolve the correct function set and storage type. It is typically
+        invoked by the environment when binding an agent to an action or
+        by the agent itself before performing a specific operation.
+        """
         self.action = action
         self.storage_type = self._ACTION_STORAGE_MAP[action]
 
     def _require_token(self) -> FraguaToken:
+        """Return the agent token or raise if it is not initialized.
+
+        Warehouse operations require a valid token; this helper centralizes
+        the check and the error message.
+        """
         if self.token is None:
             raise RuntimeError(
                 f"Security token not initialized for agent '{self.name}'."
@@ -83,6 +137,10 @@ class FraguaAgent(FraguaComponent):
     # Function resolution
     # ------------------------------------------------------------------
     def _get_function(self, function_key: str) -> Any:
+        """Resolve a function spec for the current action from the environment registry.
+
+        Returns a tuple (callable, name) or raises ValueError when not found.
+        """
         func_spec = self.environment.get(
             self.action,
             ComponentType.FUNCTION,
@@ -102,6 +160,14 @@ class FraguaAgent(FraguaComponent):
     # Input helpers
     # ------------------------------------------------------------------
     def _normalize_input_data(self, input_data: Any) -> pd.DataFrame:
+        """Normalize common input shapes into a pandas DataFrame.
+
+        Supported input types:
+        - None -> empty DataFrame
+        - pandas.DataFrame -> returned as-is
+        - list -> DataFrame constructed from list of rows
+        - dict -> either a mapping of columns->values or a single record
+        """
         if input_data is None:
             return pd.DataFrame()
 
@@ -123,6 +189,12 @@ class FraguaAgent(FraguaComponent):
         input_data: pd.DataFrame | None,
         apply_to: str | list[str] | None,
     ) -> pd.DataFrame | None:
+        """Return resolved input data.
+
+        If `input_data` is None but `apply_to` references existing warehouse
+        storages, the function will fetch and concatenate the referenced
+        Box data. Otherwise the original `input_data` is returned.
+        """
         if input_data is None and apply_to is not None:
             if isinstance(apply_to, list):
                 return pd.concat(
@@ -145,7 +217,14 @@ class FraguaAgent(FraguaComponent):
         function_name: str,
         storage_name: str | None = None,
     ) -> Storage[Any]:
-        """Create the appropriate Storage (Box) for the given data and function name."""
+        """Create the appropriate Storage instance and initialize metadata.
+
+        Steps:
+        1. Select the storage class based on the agent's current storage_type.
+        2. Resolve the final storage name from the provided `storage_name` or
+           by generating one from the function name and action.
+        3. Instantiate and return the storage object.
+        """
         storage_cls = STORAGE_CLASSES.get(self.storage_type)
 
         if not storage_cls:
@@ -277,10 +356,18 @@ class FraguaAgent(FraguaComponent):
         If ``function_callable`` is provided it will be used instead of resolving
         the function via the environment registry. ``function_name`` may be used
         to provide a human-readable name for metadata and storage naming.
+
+        Steps:
+        1. Set execution context (action, storage type).
+        2. Resolve the callable and a human-readable name.
+        3. Normalize input data into a DataFrame.
+        4. Execute the callable, handling action-specific expectations.
+        5. Wrap the result into a Storage, attach metadata and persist it.
         """
+        # 1) Ensure agent is in the correct execution context
         self.set_execution_context(action)
 
-        # Resolve function and name
+        # 2) Resolve function and its name
         if function_callable is None:
             if not target_type:
                 raise TypeError(
@@ -293,16 +380,18 @@ class FraguaAgent(FraguaComponent):
                 function_callable, "__name__", target_type or "<unknown>"
             )
 
+        # 3) Normalize input into a DataFrame for downstream functions
         data = self._normalize_input_data(input_data)
 
+        # 4) Execute depending on action type and validate the result
         if action is ActionType.EXTRACT:
+            # Extract functions are expected to return a DataFrame
             result = func(**kwargs)
             if not isinstance(result, pd.DataFrame):
                 raise TypeError("EXTRACT functions must return a DataFrame")
         else:
-            # Some user-provided transform functions expect a positional first
-            # argument (often named 'data') while others expect the keyword
-            # 'input_data'. Try keyword first and fall back to positional.
+            # For TRANSFORM/LOAD, prefer keyword 'input_data' and fall back
+            # to positional arg if the callable does not accept the keyword.
             try:
                 result = func(input_data=data, **kwargs)
             except TypeError as exc:  # try fallback to positional
@@ -312,18 +401,22 @@ class FraguaAgent(FraguaComponent):
                 else:
                     raise
 
+            # Transform-specific validation
             if action is ActionType.TRANSFORM and not isinstance(result, pd.DataFrame):
                 raise TypeError("TRANSFORM functions must return a DataFrame")
 
+        # 5) Create storage for the result and attach operation metadata
         storage = self.create_storage(
             data=result,
             function_name=func_name,
             storage_name=save_as,
         )
 
-        # Use the function name for operation metadata and registration
+        # Attach operation metadata and register operation history
         self._generate_operation_metadata(func_name, storage)
         self._register_operation(func_name)
+
+        # Persist the storage into the environment warehouse
         self.auto_store(storage)
 
     # ------------------------------------------------------------------
@@ -365,6 +458,7 @@ class FraguaAgent(FraguaComponent):
 
         # If no explicit function override, proceed normally
         if function is None:
+            # Use the action already set in the agent to resolve the target
             self._execute(
                 action=self.action,
                 target_type=target_type,
@@ -376,7 +470,8 @@ class FraguaAgent(FraguaComponent):
 
         # If a string provided, look up the function spec in the environment
         if isinstance(function, str):
-            # Build ordered list: prefer current action, then try the others
+            # Build an ordered list of actions to try when resolving the name
+            # (prefer current action first then fall back to known actions)
             actions_to_try = [
                 self.action,
                 ActionType.EXTRACT,
@@ -387,7 +482,7 @@ class FraguaAgent(FraguaComponent):
             action_to_use: ActionType | None = None
 
             for action_candidate in actions_to_try:
-                # avoid checking same action twice
+                # avoid checking same action twice (the list may contain duplicates)
                 if action_candidate == self.action and action_candidate in (
                     ActionType.EXTRACT,
                     ActionType.TRANSFORM,
@@ -395,6 +490,7 @@ class FraguaAgent(FraguaComponent):
                 ):
                     pass
 
+                # Query the environment registry for the named function under the candidate action
                 candidate = self.environment.get(
                     action_candidate, ComponentType.FUNCTION, function
                 )
@@ -408,8 +504,7 @@ class FraguaAgent(FraguaComponent):
                     f"Function '{function}' not registered for action '{self.action}'."
                 )
 
-            # func_spec can be either a dict record or a callable that was
-            # registered directly. Handle both shapes explicitly.
+            # func_spec can be either a dict record (common) or a callable
             if isinstance(func_spec, dict):
                 func_callable = func_spec[ComponentType.FUNCTION.value]
             elif callable(func_spec):
@@ -419,6 +514,7 @@ class FraguaAgent(FraguaComponent):
 
             func_name = getattr(func_callable, "__name__", function)
 
+            # Execute the resolved callable under the appropriate action context
             self._execute(
                 action=action_to_use or self.action,
                 target_type=target_type,
@@ -617,15 +713,25 @@ class FraguaAgent(FraguaComponent):
 
     # ---------------- Load ----------------
     def _load(self, target_type: str, apply_to: str | list[str], **kwargs: Any) -> None:
+        """Execute a load pipeline for one or many warehouse storages.
+
+        Steps:
+        1. Validate that a target to apply to is provided.
+        2. For each named Box, resolve load-specific kwargs (sheet/table names).
+        3. Execute the load action using the Box data as input.
+        """
         if not apply_to:
             raise TypeError("Missing required argument: 'apply_to'.")
 
         names = [apply_to] if isinstance(apply_to, str) else apply_to
 
         for box_name in names:
+            # 1) Retrieve the Box from the warehouse
             box = self.get_from_warehouse(box_name)
+            # 2) Resolve target-specific kwargs (e.g. sheet_name/table_name)
             params = self._resolve_load_kwargs(box_name, **kwargs)
 
+            # 3) Perform the load operation using the Box data
             self._execute(
                 action=ActionType.LOAD,
                 target_type=target_type,
@@ -729,7 +835,12 @@ class FraguaAgent(FraguaComponent):
     # Summary
     # ------------------------------------------------------------------
     def summary(self) -> Dict[str, Any]:
-        """Return agent metadata and a serialized view of recent operations."""
+        """Return agent metadata and a serialized view of recent operations.
+
+        The returned dictionary contains agent identity, token id, current
+        execution context and a short history of performed operations along
+        with the undo stack snapshot suitable for telemetry or debugging.
+        """
         env_name = getattr(self.environment, AttrType.NAME.value, None)
 
         ops_serialized = []
