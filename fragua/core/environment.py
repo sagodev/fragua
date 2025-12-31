@@ -301,7 +301,7 @@ class FraguaEnvironment(FraguaComponent):
 
         return component
 
-    def _get_set(self, kind: ComponentType) -> FraguaSet:
+    def _get_set(self, kind: ComponentType) -> FraguaSet[Any]:
 
         # Query the registry for a set by its canonical name.
         components_set = self.registry.get_set(kind.value)
