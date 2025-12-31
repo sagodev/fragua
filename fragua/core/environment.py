@@ -6,7 +6,7 @@ Provides helpers to register, discover and manage core ETL components
 
 from __future__ import annotations
 
-from typing import Any, Dict, cast, Optional
+from typing import Any, Dict, Literal, cast, Optional, overload
 
 # Placeholder factories for internal functions (avoid name collisions)
 from typing import Callable as _Callable
@@ -317,6 +317,21 @@ class FraguaEnvironment(FraguaComponent):
     # - get(kind, name)
     # - get(action, ComponentType.FUNCTION, name)
     # Returns None when the requested component or set does not exist.
+    @overload
+    def get(
+        self,
+        kind_or_action: Literal[ComponentType.AGENT],
+        name_or_kind: str,
+        name: None = None,
+    ) -> FraguaAgent: ...
+
+    @overload
+    def get(
+        self,
+        kind_or_action: Any,
+        name_or_kind: Any | None = None,
+        name: str | None = None,
+    ) -> Any: ...
 
     def get(
         self,
@@ -524,7 +539,6 @@ class FraguaEnvironment(FraguaComponent):
                 config_keys=[],
                 data_arg=None,
             )
-
 
         else:
             raise ValueError(f"Unsupported component type: {kind}")

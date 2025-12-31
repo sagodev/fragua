@@ -276,10 +276,6 @@ class FraguaAgent(FraguaComponent):
 
         return storage
 
-    # ------------------------------------------------------------------
-    # Containers (removed)
-    # ------------------------------------------------------------------
-
     def _resolve_load_kwargs(self, box_name: str, **kwargs: Any) -> dict[str, Any]:
         resolved = dict(kwargs)
         if resolved.get(FieldType.SHEET_NAME.value) is None:
