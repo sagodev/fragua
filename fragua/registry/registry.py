@@ -10,12 +10,12 @@ from fragua.sets.transform.internal_functions import INTERNAL_TRANSFORM_FUNCTION
 
 
 FRAGUA_SETS = {
-    "agents": FraguaSet("agents", components={}),
-    "extract_funtions": EXTRACT_FUNCTIONS,
+    "agent": FraguaSet("agent", components={}),
+    "extract_functions": EXTRACT_FUNCTIONS,
     "transform_functions": TRANSFORM_FUNCTIONS,
-    "transform_internal_functions": INTERNAL_TRANSFORM_FUNCTIONS,
+    "internal_transform_functions": INTERNAL_TRANSFORM_FUNCTIONS,
     "load_functions": LOAD_FUNCTIONS,
-    "load_internal_functions": INTERNAL_LOAD_FUNCTIONS,
+    "internal_load_functions": INTERNAL_LOAD_FUNCTIONS,
 }
 
 FRAGUA_REGISTRY = FraguaRegistry("fragua_registry", sets=FRAGUA_SETS)

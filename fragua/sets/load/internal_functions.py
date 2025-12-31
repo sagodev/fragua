@@ -271,6 +271,6 @@ INTERNAL_FUNCTIONS: Dict[str, LoadInternalSpec] = {
 # ---------------------------
 # Load Internal Functions Set
 # ---------------------------
-LOAD_INTERNAL_FUNCTIONS = FraguaSet(
-    set_name="load_internal_functions", components=INTERNAL_FUNCTIONS
+INTERNAL_LOAD_FUNCTIONS = FraguaSet(
+    set_name="internal_load_functions", components=INTERNAL_FUNCTIONS
 )

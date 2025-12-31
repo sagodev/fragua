@@ -6,6 +6,6 @@ This module contains:
 """
 
 from .functions import LOAD_FUNCTIONS
-from .internal_functions import LOAD_INTERNAL_FUNCTIONS
+from .internal_functions import INTERNAL_LOAD_FUNCTIONS
 
-__all__ = ["LOAD_FUNCTIONS", "LOAD_INTERNAL_FUNCTIONS"]
+__all__ = ["LOAD_FUNCTIONS", "INTERNAL_LOAD_FUNCTIONS"]
