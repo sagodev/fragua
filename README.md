@@ -223,9 +223,9 @@ python -m pip install -e .
 
 **Santiago Lanz**
 
-🌐 https://sagodev.github.io/My-Portfolio-Web/
-💼 https://www.linkedin.com/in/santiagolanz/
-🐙 https://github.com/SagoDev
+- 🌐 https://sagodev.github.io/My-Portfolio-Web/
+- 💼 https://www.linkedin.com/in/santiagolanz/
+- 🐙 https://github.com/SagoDev
 
 ---
 
