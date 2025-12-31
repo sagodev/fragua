@@ -26,7 +26,8 @@ class ComponentType(str, Enum):
 
     AGENT = "agent"
     FUNCTION = "function"
-    INTERNAL_FUNCTION = "internal_function"
+    INTERNAL_TRANSFORM_FUNCTION = "internal_transform_functions"
+    INTERNAL_LOAD_FUNCTION = "internal_load_functions"
     ENVIRONMENT = "environment"
     REGISTRY = "registry"
     SET = "set"
@@ -37,7 +38,8 @@ class ComponentType(str, Enum):
 
 AGENT = ComponentType.AGENT
 FUNCTION = ComponentType.FUNCTION
-INTERNAL_FUNCTION = ComponentType.INTERNAL_FUNCTION
+INTERNAL_TRANSFORM_FUNCTION = ComponentType.INTERNAL_TRANSFORM_FUNCTION
+INTERNAL_LOAD_FUNCTION = ComponentType.INTERNAL_LOAD_FUNCTION
 
 
 class StorageType(str, Enum):
