@@ -432,6 +432,6 @@ INTERNAL_FUNCTIONS: Dict[str, TransformInternalSpec] = {
 # Transform Internal Functions Set
 # --------------------------------
 
-TRANSFORM_INTERNAL_FUNCTIONS = FraguaSet(
-    set_name="transform_internal_functions", components=INTERNAL_FUNCTIONS
+INTERNAL_TRANSFORM_FUNCTIONS = FraguaSet(
+    set_name="internal_transform_functions", components=INTERNAL_FUNCTIONS
 )

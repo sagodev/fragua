@@ -7,7 +7,7 @@ from fragua.utils import *
 from .core import *
 
 # ------------------- Core Module ------------------- #
-from .registries import *
+from .registry import *
 
 # ------------------- Core Module ------------------- #
 from .sets import *

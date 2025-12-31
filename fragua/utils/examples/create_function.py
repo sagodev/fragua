@@ -16,9 +16,9 @@ OUTPUT_XLSX = BASE_DIR / "test_files" / "output_files"
 
 env = fg.FraguaEnvironment("env", fg_config=True)
 
-env.create(fg.EXTRACT, fg.AGENT, "agent_1")
+env.create(fg.AGENT, "agent_1")
 
-agent = env.get(fg.EXTRACT, fg.AGENT, "agent_1")
+agent = env.get(fg.AGENT, "agent_1")
 
 
 # -------------------------

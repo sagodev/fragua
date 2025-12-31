@@ -15,10 +15,10 @@ OUTPUT_XLSX = BASE_DIR / "test_files" / "output_files"
 env_1 = fg.FraguaEnvironment(env_name="fragua_1", fg_config=True)
 
 # create an agent
-env_1.create(fg.EXTRACT, fg.AGENT, "agent_1")
+env_1.create(fg.AGENT, "agent_1")
 
 # get the agent from agent set
-agent = env_1.get(fg.EXTRACT, fg.AGENT, "agent_1")
+agent = env_1.get(fg.AGENT, "agent_1")
 
 # here you can do a few different things;
 
@@ -40,7 +40,7 @@ agent.work(
     file_name="output_file",
 )
 
-# 2- if you not need use custom functions, you can use this options;
+# 2- if you not need to use custom functions, you can use this options;
 
 # also here you have 'from_csv', 'from_sql' and 'from_api' and the following.
 agent.from_excel(save_as="extracted_data", path=str(INPUT_XLSX))

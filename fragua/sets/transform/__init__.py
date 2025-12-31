@@ -6,10 +6,10 @@ This module contains:
 """
 
 from .functions import TRANSFORM_FUNCTIONS, execute_transform_pipeline
-from .internal_functions import TRANSFORM_INTERNAL_FUNCTIONS
+from .internal_functions import INTERNAL_TRANSFORM_FUNCTIONS
 
 __all__ = [
     "TRANSFORM_FUNCTIONS",
     "execute_transform_pipeline",
-    "TRANSFORM_INTERNAL_FUNCTIONS",
+    "INTERNAL_TRANSFORM_FUNCTIONS",
 ]

@@ -1,9 +1,15 @@
-"""
-Fragua Set class.
+"""Fragua set utilities.
+
+This module exposes `FraguaSet`, an abstract container used to manage
+homogeneous collections of runtime elements (for example: functions
+or agents). The class provides convenience helpers to add, retrieve,
+rename and remove entries and to produce human-friendly summaries
+suitable for logs, admin UIs or debugging output.
 """
 
 from abc import ABC
 from typing import Any, Dict, Generic, Optional, TypeVar
+from dataclasses import is_dataclass
 
 from fragua.core.component import FraguaComponent
 
@@ -15,7 +21,8 @@ class FraguaSet(ABC, Generic[T]):
     Logical container for Fragua components.
 
     A FraguaSet groups homogeneous elements under a common scope
-    (functions, agents, etc.).
+    (functions, agents, etc.). Implementations store elements in an
+    internal mapping keyed by the element name.
     """
 
     def __init__(
@@ -27,62 +34,61 @@ class FraguaSet(ABC, Generic[T]):
         """
         Initialize the set.
 
-        Args:
-            set_name:
-                Identifier of the set within its parent registry.
-            components:
-                Optional preloaded elements.
+        Parameters
+        ----------
+        set_name:
+            Identifier of the set within its parent registry.
+        components:
+            Optional preloaded elements.
         """
         self.set_name = set_name
+        # Internal storage mapping for items in the set
         self._components: Dict[str, T] = {} if components is None else components
 
     def _exists(self, key: str) -> bool:
+        """Return True if the element exists in the set."""
         return key in self._components
 
     def _not_exists(self, key: str) -> bool:
+        """Return True if the element does not exist in the set."""
         return key not in self._components
 
     def add(self, name: str, component: T) -> bool:
+        """Add a new element to the set.
+
+        Steps:
+        1. Check the name is not already present.
+        2. Insert the element into the internal mapping.
+
+        Returns ``True`` when added successfully, ``False`` when the name
+        is already taken.
         """
-        Add a new element to the set.
-        """
+        # 1) Ensure the name is available
         if self._not_exists(name):
+            # 2) Insert the component
             self._components[name] = component
             return True
         return False
 
     def get_one(self, name: str) -> Optional[T]:
-        """
-        Retrieve a single element by name.
+        """Retrieve a single element by name.
 
-        Args:
-            name: Name of the element.
-
-        Returns:
-            The element if found, otherwise None.
+        Returns the element or ``None`` if it is not present.
         """
+        # Direct dictionary lookup; callers validate presence as needed
         return self._components.get(name)
 
     def get_all(self) -> Dict[str, T]:
-        """
-        Retrieve all elements in the set.
-
-        Returns:
-            A dictionary mapping element names to elements.
-        """
+        """Return the full mapping of elements in this set."""
         return self._components
 
-    def update(self, old_name: str, new_name: str) -> bool:
-        """
-        Rename an element within the set.
+    def update_one(self, old_name: str, new_name: str) -> bool:
+        """Rename an element within the set.
 
-        Args:
-            old_name: Current element name.
-            new_name: New element name.
-
-        Returns:
-            True if the element was renamed successfully, False if the
-            old name does not exist or the new name is already in use.
+        Steps:
+        1. Verify the old name exists and the new name is free.
+        2. Move the stored element to the new key.
+        3. Return ``True`` on success, ``False`` otherwise.
         """
         if self._exists(old_name) and self._not_exists(new_name):
             self._components[new_name] = self._components.pop(old_name)
@@ -90,65 +96,61 @@ class FraguaSet(ABC, Generic[T]):
         return False
 
     def delete_one(self, name: str) -> bool:
-        """
-        Remove an element from the set.
+        """Remove an element from the set.
 
-        Args:
-            name: Name of the element to delete.
-
-        Returns:
-            True if the element was removed, False if it did not exist.
+        Returns ``True`` if removal happened, ``False`` if the element
+        was not present.
         """
         return self._components.pop(name, None) is not None
 
     def summary(self) -> Dict[str, Any]:
-        """
-        Return a structured summary of the set contents.
+        """Return a structured summary of the set contents.
 
-        Delegates summary generation to the contained elements
-        according to the declared content kind. Internal helper specs
-        (frozen dataclasses used for internal functions) are summarized
-        with their metadata (purpose/description, config_keys, etc.)
-        instead of their Python types.
+        The summary attempts to provide human-friendly representations for
+        elements based on their type: Fragua components delegate to their
+        own `summary()` implementation; mapping-like function records are
+        summarized recursively; dataclass-based specs are inspected for
+        user-facing fields; callables are represented by name; and a
+        fallback string is used for unknown types.
         """
-        from dataclasses import is_dataclass
 
         result: Dict[str, Any] = {}
 
         for name, component in self._components.items():
-            # Fragua components delegate to their own summary
+            # 1) If it's a FraguaComponent, use its own summary()
             if isinstance(component, FraguaComponent):
                 result[name] = component.summary()
 
-            # Standard mapping-like records (functions set entries)
+            # 2) If it's a mapping-like record (common for function specs),
+            #    summarize each nested value in a readable way.
             elif isinstance(component, dict):
                 nested: Dict[str, Any] = {}
                 for key, value in component.items():
                     # nested components keep their own summaries
                     if isinstance(value, FraguaComponent):
                         nested[key] = value.summary()
-                    # dataclass specs inside dict (rare) are summarized
+                    # dataclass specs inside dict are summarized using
+                    # _summarize_spec to pick relevant metadata fields
                     elif is_dataclass(value):
-                        # pick well-known fields when present
                         nested[key] = self._summarize_spec(value)
+                    # plain callables are represented by their __name__
                     elif callable(value):
-                        nested[key] = value.__name__
+                        nested[key] = getattr(value, "__name__", repr(value))
                     else:
                         nested[key] = value
                 result[name] = nested
 
-            # dataclass-based specs (TransformInternalSpec, LoadInternalSpec)
+            # 3) dataclass-based specs (TransformInternalSpec, LoadInternalSpec)
             elif is_dataclass(component):
                 result[name] = self._summarize_spec(component)
 
-            # Callables are represented by name
+            # 4) Callables are represented by name
             elif callable(component):
-                # Use getattr to satisfy static type checkers: callables may not have __name__
                 result[name] = getattr(
                     component, "__name__", component.__class__.__name__
                 )
 
-            # Fallback: show simple type name
+            # 5) Fallback: include the type name for unknown objects
             else:
                 result[name] = component.__class__.__name__
 
@@ -157,9 +159,8 @@ class FraguaSet(ABC, Generic[T]):
     def _summarize_spec(self, spec: object) -> Dict[str, Any]:
         """Extract friendly summary from an internal spec dataclass object.
 
-        We prefer to include human-readable fields (purpose/description)
-        and `config_keys`. For function members, we emit the function
-        name rather than the raw callable object.
+        The helper picks well-known fields (purpose/description, config_keys)
+        and emits a `function` entry when the spec contains a callable.
         """
         summary: Dict[str, Any] = {}
 
