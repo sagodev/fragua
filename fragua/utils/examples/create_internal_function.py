@@ -24,8 +24,8 @@ BASE_DIR = Path(__file__).parent
 env = fg.FraguaEnvironment("env_internal_fn", fg_config=True)
 
 # --- Create an agent (optional to run typical flows) ---
-env.create(fg.EXTRACT, fg.AGENT, "agent_1")
-agent = env.get(fg.EXTRACT, fg.AGENT, "agent_1")
+env.create(fg.AGENT, "agent_1")
+agent = env.get(fg.AGENT, "agent_1")
 
 
 # -------------------------
@@ -57,13 +57,15 @@ def remove_negative_numbers(
 
 # Register the function directly (the name will be `remove_negative_numbers`)
 env.add(
-    action=fg.TRANSFORM, kind=fg.INTERNAL_FUNCTION, component=remove_negative_numbers
+    action=fg.TRANSFORM,
+    kind=fg.INTERNAL_LOAD_FUNCTION,
+    component=remove_negative_numbers,
 )
 
 # It's also possible to register using a dict to add metadata and config_keys
 env.add(
     action=fg.TRANSFORM,
-    kind=fg.INTERNAL_FUNCTION,
+    kind=fg.INTERNAL_LOAD_FUNCTION,
     component={
         "function": remove_negative_numbers,
         "purpose": "Set negative numbers to a configurable threshold",
@@ -119,7 +121,7 @@ def ensure_id_column(data: pd.DataFrame) -> pd.DataFrame:
 # Register as a load internal function; indicate that the function receives 'data' via data_arg
 env.add(
     action=fg.LOAD,
-    kind=fg.INTERNAL_FUNCTION,
+    kind=fg.INTERNAL_LOAD_FUNCTION,
     component={
         "function": ensure_id_column,
         "purpose": "Ensure 'id' column exists in data",
@@ -129,7 +131,7 @@ env.add(
 )
 
 # Retrieve the internal function spec and execute it directly
-spec = env.get(fg.LOAD, fg.INTERNAL_FUNCTION, "ensure_id_column")
+spec = env.get(fg.INTERNAL_LOAD_FUNCTION, "ensure_id_column")
 print("Load internal spec:", spec)
 
 df_with_id = spec.func(test_df)
