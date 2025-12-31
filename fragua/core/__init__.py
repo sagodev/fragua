@@ -8,7 +8,6 @@ This module contains:
 - Storage class.
 - Set class.
 - Registry class.
-- Sections class.
 """
 
 from .environment import FraguaEnvironment
@@ -16,8 +15,6 @@ from .environment import FraguaEnvironment
 from .registry import FraguaRegistry
 
 from .set import FraguaSet
-
-from .sections import FraguaSections
 
 from .agent import FraguaAgent
 
@@ -28,8 +25,6 @@ from .storage import Storage, Box, STORAGE_CLASSES
 from .component import FraguaComponent
 
 __all__ = [
-    # Sections Class
-    "FraguaSections",
     # Environment Class
     "FraguaEnvironment",
     # Registry Class
