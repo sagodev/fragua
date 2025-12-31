@@ -4,6 +4,7 @@ Fragua Set class.
 
 from abc import ABC
 from typing import Any, Dict, Generic, Optional, TypeVar
+from dataclasses import is_dataclass
 
 from fragua.core.component import FraguaComponent
 
@@ -72,7 +73,7 @@ class FraguaSet(ABC, Generic[T]):
         """
         return self._components
 
-    def update(self, old_name: str, new_name: str) -> bool:
+    def update_one(self, old_name: str, new_name: str) -> bool:
         """
         Rename an element within the set.
 
@@ -111,7 +112,6 @@ class FraguaSet(ABC, Generic[T]):
         with their metadata (purpose/description, config_keys, etc.)
         instead of their Python types.
         """
-        from dataclasses import is_dataclass
 
         result: Dict[str, Any] = {}
 
