@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal, overload, cast, Optional
+from typing import Any, Dict, cast, Optional
 
 # Placeholder factories for internal functions (avoid name collisions)
 from typing import Callable as _Callable
 import pandas as _pd
 
 # Import internal spec classes at module level to avoid runtime imports inside methods
+from fragua.registry.registry import FRAGUA_REGISTRY
 from fragua.sets.transform.internal_functions import TransformInternalSpec
 from fragua.sets.load.internal_functions import LoadInternalSpec
 
 from fragua.core.agent import FraguaAgent
-from fragua.core.sections import FraguaSections
 from fragua.core.component import FraguaComponent
 from fragua.core.registry import FraguaRegistry
 from fragua.core.set import FraguaSet
@@ -21,7 +21,7 @@ from fragua.core.warehouse import FraguaWarehouse
 
 from fragua.utils.logger import get_logger
 from fragua.utils.security.security_context import FraguaSecurityContext, FraguaToken
-from fragua.utils.types.enums import ActionType, ComponentType, FieldType
+from fragua.utils.types.enums import ActionType, ComponentType, FieldType, OperationType
 
 
 def _make_transform_placeholder(name: str) -> _Callable[..., _pd.DataFrame]:
@@ -80,7 +80,7 @@ class FraguaEnvironment(FraguaComponent):
         self.fg_config = fg_config
         self.security = FraguaSecurityContext(env_name)
         self.warehouse = self._initialize_warehouse()
-        self.sections = self._initialize_actions()
+        self.registry = self._initialize_registry()
 
         logger.debug("Environment '%s' initialized.", self.name)
 
@@ -91,18 +91,13 @@ class FraguaEnvironment(FraguaComponent):
             component_name=name,
         )
 
-    # ---------------------- Error Handle ---------------------- #
-    def agent_not_found(self) -> ValueError:
-        """
-        Generate a standardized error for missing agents.
+    def _check_operation_result(self, op: OperationType, result: bool) -> None:
+        if not result:
+            raise ValueError(f"Failed to execute {op.value} operation.")
 
-        Returns:
-            ValueError:
-                Exception indicating that the requested agent
-                does not exist within the current environment.
-        """
-
-        return ValueError("Agent not found.")
+    def _check_component_state(self, component: Any) -> None:
+        if component is None:
+            raise ValueError("Component not found.")
 
     # ---------------------- Initializers ---------------------- #
     def _initialize_warehouse(self) -> FraguaWarehouse:
@@ -123,135 +118,30 @@ class FraguaEnvironment(FraguaComponent):
         logger.info("Default warehouse initialized for environment '%s'.", self.name)
         return warehouse
 
-    def _initialize_actions(self) -> FraguaSections:
-        """
-        Initialize action registries for the environment.
+    def _initialize_registry(self) -> FraguaRegistry:
+        """Initialize fragua registry."""
 
-        This method sets up all action-specific registries
-        (extract, transform, load), optionally preloading
-        default Fragua components when fg_config is enabled.
+        sets: Dict[str, FraguaSet[Any]] = {
+            "agent": FraguaSet("agent", components={}),
+            "extract_functions": FraguaSet("extract_functions"),
+            "transform_functions": FraguaSet("transform_functions"),
+            "load_functions": FraguaSet("load_functions"),
+            "internal_transform_functions": FraguaSet("internal_transform_functions"),
+            "internal_load_functions": FraguaSet("internal_load_functions"),
+        }
 
-        Returns:
-            FraguaSections:
-                Container holding all action registries.
-        """
+        # When fg_config is True, use the pre-populated global FRAGUA_REGISTRY
+        # so built-in sets/functions are available. Otherwise create a fresh
+        # runtime registry instance with the default (empty) sets.
+        registry = (
+            FRAGUA_REGISTRY
+            if self.fg_config
+            else FraguaRegistry("fragua_registry", sets=sets)
+        )
 
-        sections = FraguaSections(self.fg_config)
-        logger.info("Default actions initialized for environment '%s'.", self.name)
-        return sections
-
-    # ------------------- Helper Properties -------------------- #
-    @property
-    def extract(self) -> FraguaRegistry:
-        """
-        Access the Extract action registry.
-
-        Returns:
-            ExtractRegistry:
-                Registry containing all extract-related components
-                (agents, functions, etc).
-        """
-        return self.sections.extract
-
-    @property
-    def transform(self) -> FraguaRegistry:
-        """
-        Access the Transform action registry.
-
-        Returns:
-            TransformRegistry:
-                Registry containing all transform-related components
-                (agents, functions, etc).
-        """
-        return self.sections.transform
-
-    @property
-    def load(self) -> FraguaRegistry:
-        """
-        Access the Load action registry.
-
-        Returns:
-            LoadRegistry:
-                Registry containing all load-related components
-                (agents, functions, etc).
-        """
-        return self.sections.load
-
-    @property
-    def functions(self) -> Dict[str, FraguaSet[Any]]:
-        """Retrieve all function sets grouped by action."""
-        try:
-            return self._group_components(ComponentType.FUNCTION)
-        except ValueError as exc:
-            raise KeyError("Functions set not found in registry.") from exc
-
-    @property
-    def agents(self) -> Dict[str, FraguaSet[Any]]:
-        """Retrieve all agent sets grouped by action."""
-        try:
-            return self._group_components(ComponentType.AGENT)
-        except ValueError as exc:
-            raise KeyError("Agents set not found in registry.") from exc
+        return registry
 
     # ---------------------- Global API ---------------------- #
-    def _get_set(self, action: ActionType, kind: ComponentType) -> FraguaSet[Any]:
-        """
-        Resolve a FraguaSet by action and component kind.
-
-        If the requested set does not exist and the request concerns
-        internal functions, attempt to inject the canonical FraguaSet that
-        ships with the corresponding module (e.g. `TRANSFORM_INTERNAL_FUNCTIONS`).
-        This enables the environment CRUD API to work even when registries
-        were created without the `fg_config` bootstrap.
-        """
-        registry = self.sections.get_section(action.value)
-
-        fragua_set = registry.get_set(kind.value)
-
-        # If missing, handle special-case for internal functions
-        if fragua_set is None and kind is ComponentType.INTERNAL_FUNCTION:
-            # Try to attach the canonical internal functions set depending on action
-            if action is ActionType.TRANSFORM:
-                from fragua.sets.transform.internal_functions import (
-                    TRANSFORM_INTERNAL_FUNCTIONS,
-                )
-
-                # Register under the expected key so registry.get_set(kind.value)
-                # will succeed in subsequent lookups.
-                registry.get_sets()[
-                    ComponentType.INTERNAL_FUNCTION.value
-                ] = TRANSFORM_INTERNAL_FUNCTIONS
-                fragua_set = TRANSFORM_INTERNAL_FUNCTIONS
-
-            elif action is ActionType.LOAD:
-                from fragua.sets.load.internal_functions import (
-                    LOAD_INTERNAL_FUNCTIONS,
-                )
-
-                registry.get_sets()[
-                    ComponentType.INTERNAL_FUNCTION.value
-                ] = LOAD_INTERNAL_FUNCTIONS
-                fragua_set = LOAD_INTERNAL_FUNCTIONS
-
-        if fragua_set is None:
-            raise ValueError(f"Invalid action type: {action.value}")
-
-        return fragua_set
-
-    def _group_components(self, kind: ComponentType) -> Dict[str, FraguaSet[Any]]:
-        """Return a mapping of action name to the corresponding FraguaSet for a kind.
-
-        This consolidates the repeated logic used to build dictionaries of agents
-        or functions grouped by action and ensures a single failure mode if a
-        set is missing.
-        """
-        result: Dict[str, FraguaSet[Any]] = {}
-
-        for action in (ActionType.EXTRACT, ActionType.TRANSFORM, ActionType.LOAD):
-            result[action.value] = self._get_set(action, kind)
-
-        return result
-
     def _infer_name_from_component(self, component: Any) -> str:
         """Attempt to infer a registration name from a component.
 
@@ -302,8 +192,6 @@ class FraguaEnvironment(FraguaComponent):
         """
 
         if action is ActionType.TRANSFORM:
-            # TransformInternalSpec imported at module level
-
             if callable(component):
                 fn = cast(_Callable[..., _pd.DataFrame], component)
                 return TransformInternalSpec(func=fn, purpose="", config_keys=[])
@@ -336,8 +224,6 @@ class FraguaEnvironment(FraguaComponent):
             )
 
         if action is ActionType.LOAD:
-            # LoadInternalSpec imported at module level
-
             if callable(component):
                 fn = cast(_Callable[..., object], component)
                 return LoadInternalSpec(
@@ -387,69 +273,92 @@ class FraguaEnvironment(FraguaComponent):
             pass
 
     def _prepare_component_for_add(
-        self, action: ActionType, kind: ComponentType, component: Any
+        self, action: ActionType | None, kind: ComponentType, component: Any
     ) -> Any:
         """Perform kind-specific normalization of component before adding.
 
         For internal functions this wraps callables/dicts into the correct Spec type.
         For other kinds, the component is returned as-is.
         """
-        if kind is ComponentType.INTERNAL_FUNCTION:
+        # Normalize internal function registrations (two distinct kinds exist)
+        if kind in (
+            ComponentType.INTERNAL_TRANSFORM_FUNCTION,
+            ComponentType.INTERNAL_LOAD_FUNCTION,
+        ):
+            if action is None:
+                raise ValueError(
+                    "Action is required when registering an internal function."
+                )
             return self._wrap_internal_function(action, component)
+
         return component
 
-    @overload
-    def get(
-        self,
-        action: ActionType,
-        kind: Literal[ComponentType.AGENT],
-        name: str,
-    ) -> FraguaAgent: ...
+    def _get_set(self, kind: ComponentType) -> FraguaSet:
 
-    @overload
-    def get(
-        self,
-        action: ActionType,
-        kind: Literal[ComponentType.FUNCTION],
-        name: str,
-    ) -> Dict[str, Any]: ...
+        components_set = self.registry.get_set(kind.value)
 
-    @overload
-    def get(
-        self,
-        action: ActionType,
-        kind: ComponentType,
-        name: str,
-    ) -> Any: ...
+        if components_set is None:
+            raise ValueError(f"{kind.value.capitalize()} set not found.")
+
+        return components_set
+
+    # get() supports two forms:
+    # - get(kind, name)
+    # - get(action, ComponentType.FUNCTION, name)
+    # Returns None when the requested component or set does not exist.
 
     def get(
         self,
-        action: ActionType,
-        kind: ComponentType,
-        name: str,
+        kind_or_action: Any,
+        name_or_kind: Any | None = None,
+        name: str | None = None,
     ) -> Any:
-        """Retrieve a component by action/kind/name.
+        """Retrieve a component.
 
-        Special-cases `ComponentType.SET` which maps directly to named sets in
-        the action registry (i.e. registry.get_set(name)).
+        Usage:
+        - get(kind, name)
+        - get(action, ComponentType.FUNCTION, name)
+
+        Returns None if the component or set is not found.
         """
-        registry = self.sections.get_section(action.value)
+        # Action-scoped lookup: get(action, ComponentType.FUNCTION, name)
+        if isinstance(kind_or_action, ActionType):
+            action = kind_or_action
+            kind = name_or_kind
+            if kind is not ComponentType.FUNCTION:
+                raise ValueError(
+                    "Action-scoped get is only valid for function components"
+                )
+            if name is None:
+                raise TypeError("Missing component name for action-scoped get()")
+            set_name = f"{action.value}_functions"
+            components_set = self.registry.get_set(set_name)
+            if components_set is None:
+                return None
+            return components_set.get_one(name)
+
+        # Standard form: get(kind, name)
+        kind = kind_or_action
+        if name_or_kind is None:
+            raise TypeError("Missing component name")
+        component_name = name_or_kind
 
         if kind is ComponentType.SET:
-            result = registry.get_set(name)
-            if result is None:
-                raise ValueError("Set not found.")
-            return result
+            return self.registry.get_set(component_name)
 
-        fragua_set = self._get_set(action, kind)
-        return fragua_set.get_one(name)
+        try:
+            components_set = self._get_set(kind)
+        except ValueError:
+            return None
+
+        return components_set.get_one(component_name)
 
     def add(
         self,
-        action: ActionType,
         kind: ComponentType,
         component: Any,
         name: str | None = None,
+        action: ActionType | None = None,
     ) -> bool:
         """Add component using a small pipeline of handlers.
 
@@ -464,29 +373,34 @@ class FraguaEnvironment(FraguaComponent):
         if kind is ComponentType.SET:
             if not isinstance(component, FraguaSet):
                 raise ValueError(
-                    "To create a new set, provide a FraguaSet instance as component"
+                    "To create a new set, provide a FraguaSet instance as component."
                 )
 
             # Register the set into the action's registry
-            registry = self.sections.get_section(action.value)
-            created = registry.add_set(component)
-            if not created:
-                return False
+            created = self.registry.add_set(component)
+            self._check_operation_result(OperationType.CREATE, created)
 
             # attach token to the set instance if possible
             token = self._token(kind=kind.value, name=component.set_name)
             self._attach_token_if_applicable(component, token)
 
             logger.info(
-                "%s created: %s (%s)",
+                "%s created: %s",
                 kind.value.capitalize(),
                 component.set_name,
-                action.value,
             )
             return True
 
         # 1) Resolve the destination set
-        fragua_set = self._get_set(action, kind)
+        if kind is ComponentType.FUNCTION:
+            if action is None:
+                raise ValueError("Action is required when registering a function.")
+            set_name = f"{action.value}_functions"
+            component_set = self.registry.get_set(set_name)
+            if component_set is None:
+                raise ValueError(f"{set_name} set not found.")
+        else:
+            component_set = self._get_set(kind)
 
         # 2) Name resolution
         resolved_name = (
@@ -497,9 +411,8 @@ class FraguaEnvironment(FraguaComponent):
         prepared = self._prepare_component_for_add(action, kind, component)
 
         # 4) Add to the set
-        created = fragua_set.add(resolved_name, prepared)
-        if not created:
-            return False
+        created = component_set.add(resolved_name, prepared)
+        self._check_operation_result(OperationType.CREATE, created)
 
         # 5) Attach token if appropriate
         token = self._token(kind=kind.value, name=resolved_name)
@@ -509,83 +422,56 @@ class FraguaEnvironment(FraguaComponent):
             "%s registered: %s (%s)",
             kind.value.capitalize(),
             resolved_name,
-            action.value,
+            action.value if action is not None else kind.value,
         )
         return True
 
     def update(
         self,
         kind: ComponentType,
-        action: ActionType,
         old_name: str,
         new_name: str,
     ) -> bool:
         """Update a component."""
-        registry = self.sections.get_section(action.value)
+        components_set = self._get_set(kind)
 
-        if kind is ComponentType.SET:
-            updated = registry.update_set(old_name, new_name)
-            if not updated:
-                raise ValueError("Set not found.")
-            logger.info(
-                "%s renamed: %s -> %s (%s)",
-                kind.value.capitalize(),
-                old_name,
-                new_name,
-                action.value,
-            )
-            return updated
+        updated = components_set.update_one(old_name, new_name)
 
-        fragua_set = self._get_set(action, kind)
-        updated = fragua_set.update(old_name, new_name)
-
-        if not updated:
-            raise ValueError(f"{kind.value.capitalize()} not found.")
+        self._check_operation_result(OperationType.UPDATE, updated)
 
         logger.info(
-            "%s renamed: %s -> %s (%s)",
+            "%s renamed: %s -> %s",
             kind.value.capitalize(),
             old_name,
             new_name,
-            action.value,
         )
-
         return updated
 
-    def delete(self, kind: ComponentType, name: str, action: ActionType) -> bool:
+    def delete(self, kind: ComponentType, name: str) -> bool:
         """Delete a component."""
-        registry = self.sections.get_section(action.value)
 
-        if kind is ComponentType.SET:
-            deleted = registry.delete_set(name)
-            if not deleted:
-                raise ValueError("Set not found.")
-            logger.info(
-                "%s deleted: %s (%s)", kind.value.capitalize(), name, action.value
-            )
-            return deleted
+        components_set = self._get_set(kind)
 
-        fragua_set = self._get_set(action, kind)
-        deleted = fragua_set.delete_one(name)
+        deleted = components_set.delete_one(name)
 
-        if not deleted:
-            raise ValueError(f"{kind.value.capitalize()} not found.")
+        self._check_operation_result(OperationType.DELETE, deleted)
 
         logger.info(
-            "%s deleted: %s (%s)",
+            "%s deleted: %s",
             kind.value.capitalize(),
             name,
-            action.value,
         )
-
         return deleted
 
-    def create(self, action: ActionType, kind: ComponentType, name: str) -> bool:
+    def create(
+        self, kind: ComponentType, name: str, action: ActionType | None = None
+    ) -> bool:
         """Create and register a new component in the environment.
 
-        Supports creation of standard components (agent, registry, set) and
-        also allows creating a placeholder for internal functions under the
-        given action (e.g., a transform internal function).
+        The `action` parameter is optional to allow creating *unbound* agents
+        (i.e., agents that are not yet associated with a specific
+        ActionType). When creating internal functions, `action` is required
+        and will raise a ValueError if omitted.
         """
 
         new_component: Any = None
@@ -593,7 +479,10 @@ class FraguaEnvironment(FraguaComponent):
         # ---------- Component construction ----------
         if kind is ComponentType.AGENT:
             new_component = FraguaAgent(name, self)
-            new_component.set_execution_context(action)
+            # Only set the execution context when an action is provided. This
+            # allows creating agents that are not yet bound to an action.
+            if action is not None:
+                new_component.set_execution_context(action)
 
         elif kind is ComponentType.REGISTRY:
             new_component = FraguaRegistry(name)
@@ -601,43 +490,61 @@ class FraguaEnvironment(FraguaComponent):
         elif kind is ComponentType.SET:
             new_component = FraguaSet(name)
 
-        elif kind is ComponentType.INTERNAL_FUNCTION:
-            # Create a placeholder internal function spec depending on the action
-            if action is ActionType.TRANSFORM:
-                new_component = TransformInternalSpec(
-                    func=_make_transform_placeholder(name),
-                    purpose=f"Placeholder: {name}",
-                    config_keys=[],
-                )
+        # Create a placeholder internal function spec depending on the action
+        elif kind is ComponentType.INTERNAL_TRANSFORM_FUNCTION:
+            new_component = TransformInternalSpec(
+                func=_make_transform_placeholder(name),
+                purpose=f"Placeholder: {name}",
+                config_keys=[],
+            )
 
-            elif action is ActionType.LOAD:
-                new_component = LoadInternalSpec(
-                    func=_make_load_placeholder(name),
-                    description=f"Placeholder: {name}",
-                    config_keys=[],
-                    data_arg=None,
-                )
-
-            else:
-                raise ValueError(
-                    "Internal functions can only be created for transform or load actions"
-                )
-
+        elif kind is ComponentType.INTERNAL_LOAD_FUNCTION:
+            new_component = LoadInternalSpec(
+                func=_make_load_placeholder(name),
+                description=f"Placeholder: {name}",
+                config_keys=[],
+                data_arg=None,
+            )
         else:
             raise ValueError(f"Unsupported component type: {kind}")
 
         # ---------- Registration ----------
         # For internal functions, use fragua_set.add directly to avoid double-wrapping
-        if kind is ComponentType.INTERNAL_FUNCTION:
-            fragua_set = self._get_set(action, kind)
-            created = fragua_set.add(name, new_component)
+        if kind in (
+            ComponentType.INTERNAL_LOAD_FUNCTION,
+            ComponentType.INTERNAL_TRANSFORM_FUNCTION,
+        ):
+            component_set = self._get_set(kind)
 
-            if not created:
-                return False
+            created = component_set.add(name, new_component)
 
-            logger.info("Internal_function created: %s (%s)", name, action.value)
+            self._check_operation_result(OperationType.CREATE, created)
+
+            logger.info(
+                "Internal_function created: %s",
+                name,
+            )
             return True
 
+        # Special-case: if creating an agent without an action, create the
+        # instance, register it into the general `agent` set and attach a token.
+        if kind is ComponentType.AGENT and action is None:
+            token = self._token(kind=kind.value, name=name)
+
+            # Ensure the agent is discoverable by registering it in the agent set
+            agent_set = self._get_set(ComponentType.AGENT)
+            created = agent_set.add(name, new_component)
+            self._check_operation_result(OperationType.CREATE, created)
+
+            # Default the execution context to EXTRACT so convenience methods work
+            new_component.set_execution_context(ActionType.EXTRACT)
+
+            # Attach token and finish
+            self._attach_token_if_applicable(new_component, token)
+            logger.info("Agent created (unbound -> default extract): %s", name)
+            return True
+
+        # Otherwise delegate to add() which expects a valid action
         self.add(action=action, kind=kind, name=name, component=new_component)
         return True
 
@@ -663,7 +570,7 @@ class FraguaEnvironment(FraguaComponent):
         return {
             ComponentType.ENVIRONMENT.value: self.name,
             ComponentType.WAREHOUSE.value: self.warehouse.summary(),
-            ComponentType.ACTIONS.value: self.sections.summary(),
+            ComponentType.REGISTRY.value: self.registry.summary(),
         }
 
     def __repr__(self) -> str:
