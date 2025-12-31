@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 import pandas as pd
 from fragua.core.set import FraguaSet
 from fragua.sets.transform.internal_functions import (
-    TRANSFORM_INTERNAL_FUNCTIONS,
+    INTERNAL_TRANSFORM_FUNCTIONS,
 )
 
 from fragua.utils.types.enums import ITF, ActionType, FieldType, TargetType
@@ -51,7 +51,7 @@ def execute_transform_pipeline(
     callable accepting (data, *, config=None).
 
     The function resolves step names against the registered
-    `TRANSFORM_INTERNAL_FUNCTIONS` FraguaSet exposed in the transform
+    `INTERNAL_TRANSFORM_FUNCTIONS` FraguaSet exposed in the transform
     registry.
 
     Args:
@@ -70,7 +70,7 @@ def execute_transform_pipeline(
 
     for step in steps:
         if isinstance(step, str):
-            spec = TRANSFORM_INTERNAL_FUNCTIONS.get_one(step)
+            spec = INTERNAL_TRANSFORM_FUNCTIONS.get_one(step)
             if spec is None:
                 raise KeyError(f"Transform function '{step}' not registered.")
             fn = spec.func
