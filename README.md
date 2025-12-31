@@ -222,7 +222,7 @@ python -m pip install -e .
 ## Author
 
 **Santiago Lanz**
-🌐 https://sagodev.github.io/Portfolio-Web-Santiago-Lanz/
+🌐 https://sagodev.github.io/My-Portfolio-Web/
 💼 https://www.linkedin.com/in/santiagolanz/
 🐙 https://github.com/SagoDev
 
