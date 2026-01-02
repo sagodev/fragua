@@ -30,9 +30,6 @@ from .enums import (
     FieldType,
     AttrType,
     MetadataType,
-    ILF,
-    ITF,
-    ITFConfigKeys,
 )
 
 __all__ = [
@@ -65,7 +62,4 @@ __all__ = [
     "FieldType",
     "AttrType",
     "MetadataType",
-    "ILF",
-    "ITF",
-    "ITFConfigKeys",
 ]
