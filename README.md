@@ -1,4 +1,3 @@
-
 # Fragua
 
 **Fragua** is a modular Python library for modeling and orchestrating **ETL / ELT workflows**
@@ -15,10 +14,10 @@ In Fragua, **everything happens inside an Environment**.
 
 A `FraguaEnvironment` represents an isolated execution context that owns:
 
-- Component lifecycle and resolution
-- Execution context and security boundaries
-- Runtime state and metadata
-- Data persistence and traceability
+* Component lifecycle and resolution
+* Execution context and security boundaries
+* Runtime state and metadata
+* Data persistence and traceability
 
 Agents do not exist or operate independently.
 They are created, configured, and executed exclusively within an Environment.
@@ -29,14 +28,14 @@ They are created, configured, and executed exclusively within an Environment.
 
 The `FraguaEnvironment` is the central orchestrator of the system. It is responsible for:
 
-- Initializing and managing the **Warehouse**
-- Managing action contexts: `extract`, `transform`, `load`
-- Registering, resolving, and executing components
-- Managing execution credentials (tokens)
-- Providing a unified CRUD API for components
-- Exposing structured runtime summaries
+* Initializing and managing the **Warehouse**
+* Managing action contexts: `extract`,    `transform`,    `load`
+* Registering, resolving, and executing components
+* Managing execution credentials (tokens)
+* Providing a unified CRUD API for components
+* Exposing structured runtime summaries
 
-Multiple environments can coexist, each representing an independent pipeline,
+Multiple environments can coexist, each representing an independent pipeline, 
 experiment, or workflow.
 
 ---
@@ -48,33 +47,33 @@ exposed by the Environment.
 
 Components are resolved by:
 
-- **Action** (`extract`, `transform`, `load`)
-- **Component type** (`agent`, `function`, `internal_function`, `set`)
+* **Action** (`extract`,    `transform`,    `load`)
+* **Component type** (`agent`,    `function`,    `internal_function`,    `set`)
 
 This unified approach:
 
-- Eliminates duplicated logic
-- Reduces coupling between modules
-- Guarantees consistent runtime behavior
+* Eliminates duplicated logic
+* Reduces coupling between modules
+* Guarantees consistent runtime behavior
 
 ---
 
 ## Agents and Execution Model
 
-Fragua uses a **single unified agent model** (`FraguaAgent`).
+Fragua uses a **single unified agent model** ( `FraguaAgent` ).
 
 Agents:
 
-- Are instantiated exclusively by the Environment
-- Receive mandatory execution credentials
-- Can execute:
-  - Registered functions by name
-  - Callables provided at runtime
-  - Internal transform and load functions
-  - Full transform pipelines
-- Normalize inputs to `pandas.DataFrame`
-- Interact with data exclusively through the Warehouse
-- Generate execution metadata and operation records (with undo support)
+* Are instantiated exclusively by the Environment
+* Receive mandatory execution credentials
+* Can execute:
+  + Registered functions by name
+  + Callables provided at runtime
+  + Internal transform and load functions
+  + Full transform pipelines
+* Normalize inputs to `pandas.DataFrame`
+* Interact with data exclusively through the Warehouse
+* Generate execution metadata and operation records (with undo support)
 
 Agents act as controlled executors, not as owners of configuration or state.
 
@@ -84,17 +83,17 @@ Agents act as controlled executors, not as owners of configuration or state.
 
 Fragua follows an **explicit execution-context model**.
 
-- Parameters and configuration are passed explicitly through function calls
-- Transform pipelines propagate context between steps
-- Functions declare their supported configuration via metadata (`config_keys`)
-- No implicit or global parameter containers are used
+* Parameters and configuration are passed explicitly through function calls
+* Transform pipelines propagate context between steps
+* Functions declare their supported configuration via metadata (`config_keys`)
+* No implicit or global parameter containers are used
 
 This model improves:
 
-- Readability
-- Debuggability
-- Contract enforcement
-- Predictability of execution
+* Readability
+* Debuggability
+* Contract enforcement
+* Predictability of execution
 
 ---
 
@@ -105,10 +104,10 @@ for transform and load actions.
 
 Internal functions:
 
-- Can be registered as callables or metadata-based specifications
-- Expose explicit metadata (purpose, description, config keys)
-- Can be executed directly or composed into pipelines
-- Are fully managed through the Environment API
+* Can be registered as callables or metadata-based specifications
+* Expose explicit metadata (purpose, description, config keys)
+* Can be executed directly or composed into pipelines
+* Are fully managed through the Environment API
 
 ---
 
@@ -116,9 +115,9 @@ Internal functions:
 
 Fragua enforces an explicit internal security model:
 
-- The **Environment** issues execution tokens
-- **Agents** consume tokens to operate
-- The **Warehouse** validates tokens for protected operations
+* The **Environment** issues execution tokens
+* **Agents** consume tokens to operate
+* The **Warehouse** validates tokens for protected operations
 
 This ensures that no agent can execute or access data outside a valid
 environment context.
@@ -131,16 +130,16 @@ Fragua uses a strongly typed, enum-based domain vocabulary.
 
 Enums define all core concepts, including:
 
-- Actions and component types
-- Storage and target types
-- Operations, fields, and attributes
+* Actions and component types
+* Storage and target types
+* Operations, fields, and attributes
 
 This approach:
 
-- Eliminates magic strings
-- Centralizes validation
-- Improves IDE support and static analysis
-- Provides a clear and extensible domain language
+* Eliminates magic strings
+* Centralizes validation
+* Improves IDE support and static analysis
+* Provides a clear and extensible domain language
 
 Concise enum aliases are exported for ergonomic usage without sacrificing type safety.
 
@@ -150,20 +149,20 @@ Concise enum aliases are exported for ergonomic usage without sacrificing type s
 
 Fragua follows a layered component model:
 
-- **FraguaComponent**
+* **FraguaComponent**
   Base abstraction for all registrable elements.
 
-- **FraguaSet**
+* **FraguaSet**
   Logical container for homogeneous components.
   Responsible for:
-  - CRUD operations
-  - Validation
-  - Human-readable summaries
+  + CRUD operations
+  + Validation
+  + Human-readable summaries
 
-- **FraguaRegistry**
+* **FraguaRegistry**
   Groups and manages multiple `FraguaSet` instances within an Environment.
 
-This separation ensures clarity between component definition,
+This separation ensures clarity between component definition, 
 organization, and orchestration.
 
 ---
@@ -175,23 +174,23 @@ for all data artifacts.
 
 The Warehouse provides:
 
-- Controlled data operations
-- Full operation logging with timestamps
-- Undo support for destructive actions
-- Metadata-based summaries and inspection
+* Controlled data operations
+* Full operation logging with timestamps
+* Undo support for destructive actions
+* Metadata-based summaries and inspection
 
 ---
 
 ## Key Characteristics
 
-- Environment-centric orchestration
-- Unified agent model
-- Unified component lifecycle management
-- Explicit execution-context-based configuration
-- Strongly typed domain model
-- Isolated execution contexts
-- Centralized storage and traceability
-- Clear separation of responsibilities
+* Environment-centric orchestration
+* Unified agent model
+* Unified component lifecycle management
+* Explicit execution-context-based configuration
+* Strongly typed domain model
+* Isolated execution contexts
+* Centralized storage and traceability
+* Clear separation of responsibilities
 
 ---
 
@@ -201,8 +200,7 @@ The Warehouse provides:
 fragua/
 ├── __init__.py
 ├── core/
-├── registries/
-├── sets/
+├── registry/
 └── utils/
 ```
 
@@ -211,7 +209,7 @@ fragua/
 ## Installation
 
 ```bash
-python -m pip install -e .
+python pip install fragua.
 ```
 
 > ⚠️ Fragua is published for educational and experimental purposes.
@@ -223,9 +221,9 @@ python -m pip install -e .
 
 **Santiago Lanz**
 
-- 🌐 https://sagodev.github.io/My-Portfolio-Web/
-- 💼 https://www.linkedin.com/in/santiagolanz/
-- 🐙 https://github.com/SagoDev
+* https://sagodev.github.io/My-Portfolio-Web/
+* https://www.linkedin.com/in/santiagolanz/
+* https://github.com/SagoDev
 
 ---
 
