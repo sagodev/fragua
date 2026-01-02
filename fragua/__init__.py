@@ -8,6 +8,3 @@ from .core import *
 
 # ------------------- Core Module ------------------- #
 from .registry import *
-
-# ------------------- Core Module ------------------- #
-from .sets import *
