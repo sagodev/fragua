@@ -5,6 +5,3 @@ from fragua.utils import *
 
 # ------------------- Core Module ------------------- #
 from .core import *
-
-# ------------------- Core Module ------------------- #
-from .registry import *
