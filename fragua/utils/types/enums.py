@@ -42,13 +42,6 @@ INTERNAL_TRANSFORM_FUNCTION = ComponentType.INTERNAL_TRANSFORM_FUNCTION
 INTERNAL_LOAD_FUNCTION = ComponentType.INTERNAL_LOAD_FUNCTION
 
 
-class StorageType(str, Enum):
-    """Storage types class."""
-
-    BOX = "box"
-    ALL = "all"
-
-
 class TargetType(str, Enum):
     """Target types class."""
 
