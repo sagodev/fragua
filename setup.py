@@ -23,5 +23,6 @@ setup(
         "sqlalchemy",
         "requests",
         "scikit-learn",
+        "openpyl",
     ],
 )
