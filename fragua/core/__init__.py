@@ -21,8 +21,6 @@ from .agent import FraguaAgent
 from .warehouse import FraguaWarehouse
 
 
-from .component import FraguaComponent
-
 __all__ = [
     # Environment Class
     "FraguaEnvironment",
@@ -30,7 +28,6 @@ __all__ = [
     "FraguaRegistry",
     # Section Fragua Class
     "FraguaSet",
-    # Base Fragua Component
     # Agent Class
     "FraguaAgent",
     # Warehouse
