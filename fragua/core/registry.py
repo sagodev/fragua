@@ -1,122 +1,66 @@
-"""Registry abstraction for Fragua.
+"""Fragua registry.
 
-This module contains the `FraguaRegistry` which holds named
-`FraguaSet` instances. The registry is the primary discovery
-mechanism for runtime components and is typically attached to
-an environment instance.
+Defines a lightweight registry that indexes function sets
+and provides function resolution at runtime.
 """
 
-from typing import Any, Dict, Optional
+from typing import Callable, Dict, Optional
 
-from fragua.core.component import FraguaComponent
 from fragua.core.set import FraguaSet
 
 
-class FraguaRegistry(FraguaComponent):
+class FraguaRegistry:
     """
-    Runtime registry within a Fragua environment.
+    Runtime function registry.
 
-    A `FraguaRegistry` manages a collection of `FraguaSet` instances,
-    each representing a logical grouping of related components (e.g.
-    agents, functions, internal helper specs). Registries are stateful
-    and exist only at runtime; they provide a simple CRUD API for sets.
-
-    Attributes
-    ----------
-    name:
-        Inherited from `FraguaComponent`, the registry's logical name.
-    _sets:
-        Internal mapping of set_name -> FraguaSet.
+    A FraguaRegistry stores named FraguaSet instances and
+    resolves functions by set and function name.
     """
 
     def __init__(
         self,
-        registry_name: str,
-        sets: Optional[Dict[str, FraguaSet[Any]]] = None,
+        *,
+        sets: Optional[Dict[str, FraguaSet]] = None,
     ) -> None:
         """
-        Initialize the registry with an optional pre-populated set mapping.
+        Initialize the registry.
 
         Parameters
         ----------
-        registry_name:
-            Identifier used to reference this registry within the
-            environment.
         sets:
-            Optional mapping of initial FraguaSet instances.
+            Optional preloaded mapping of set name to FraguaSet.
         """
-        super().__init__(instance_name=registry_name)
+        self._sets: Dict[str, FraguaSet] = sets or {}
 
-        # Internal storage of named sets (key: set_name)
-        self._sets: Dict[str, FraguaSet[Any]] = sets if sets else {}
-
-    def _exists(self, key: str) -> bool:
-        """Return True if a set with `key` exists."""
-        return key in self._sets
-
-    def _not_exists(self, key: str) -> bool:
-        """Return True when a set with `key` is not present."""
-        return key not in self._sets
-
-    def get_sets(self) -> Dict[str, FraguaSet[Any]]:
-        """Retrieve all registered sets.
-
-        Returns
-        -------
-        dict
-            Mapping of set names to `FraguaSet` instances.
+    def register_set(self, set_: FraguaSet) -> bool:
         """
-        return self._sets
+        Register a function set.
 
-    def add_set(self, fragua_set: FraguaSet[Any]) -> bool:
-        """Register a new `FraguaSet` under its `set_name`.
-
-        Steps
-        -----
-        1. Check that the name is not already present.
-        2. Insert the set into the registry.
-
-        Returns
-        -------
-        bool
-            True if the set was created, False if it already existed.
+        Returns True if the set was registered,
+        False if a set with the same name already exists.
         """
-        if self._not_exists(fragua_set.set_name):
-            self._sets[fragua_set.set_name] = fragua_set
-            return True
-        return False
+        if set_.name in self._sets:
+            return False
 
-    def get_set(self, set_name: str) -> Optional[FraguaSet[Any]]:
-        """Retrieve a set by its name. Returns None when not found."""
-        return self._sets.get(set_name)
+        self._sets[set_.name] = set_
+        return True
 
-    def update_set(self, old_set_name: str, new_set_name: str) -> bool:
-        """Rename an existing set in the registry.
+    def get_set(self, name: str) -> Optional[FraguaSet]:
+        """Retrieve a set by name."""
+        return self._sets.get(name)
 
-        Returns True if rename succeeded, False otherwise.
+    def get_function(self, set_name: str, function_name: str) -> Optional[Callable]:
         """
-        if self._exists(old_set_name) and self._not_exists(new_set_name):
-            self._sets[new_set_name] = self._sets.pop(old_set_name)
-            return True
-        return False
+        Resolve a function from a given set.
 
-    def delete_set(self, set_name: str) -> bool:
-        """Remove a set by name and return whether removal occurred."""
-        return self._sets.pop(set_name, None) is not None
-
-    def summary(self) -> Dict[str, Any]:
-        """Return a summary of the registry contents.
-
-        The summary delegates to each contained `FraguaSet` to provide
-        a structured view of their contents.
+        Returns None if the set or function does not exist.
         """
-        summary: Dict[str, Dict[str, Any]] = {}
+        set_ = self._sets.get(set_name)
+        if not set_:
+            return None
 
-        for set_name, fragua_set in self._sets.items():
-            summary[set_name] = fragua_set.summary()
+        return set_.get(function_name)
 
-        return summary
-
-    def __repr__(self) -> str:
-        """Return a concise string representation of the registry."""
-        return f"{self.__class__.__name__}('{self.name}')"
+    def list_sets(self) -> list[str]:
+        """Return the list of registered set names."""
+        return list(self._sets.keys())
