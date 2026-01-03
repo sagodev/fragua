@@ -7,6 +7,7 @@ using a single agent, a function registry and a runtime warehouse.
 from typing import Any, Callable
 
 from fragua.core.agent import FraguaAgent
+from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
 from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.set import FraguaSet
@@ -55,33 +56,17 @@ class FraguaEnvironment:
 
         function_set.register(function_name, fn)
 
-    def run(
-        self,
-        action: str,
-        function_name: str,
-        **kwargs: Any,
-    ) -> Any:
+    def run(self, pipeline: FraguaPipeline) -> FraguaWarehouse:
         """
-        Execute a registered function and store its result.
+        Execute a pipeline using the environment's agent.
+
+        The environment delegates execution to the agent
+        and exposes the populated warehouse as execution output.
         """
-        function_set = self.registry.get_set(action)
-        if function_set is None:
-            raise ValueError(f"Unknown action set: {action}")
-
-        fn = function_set.get(function_name)
-        if fn is None:
-            raise ValueError(f"Function not found: {function_name}")
-
-        result = self.agent.execute(fn, **kwargs)
-
-        execution_key = f"{action}.{function_name}"
-        self.warehouse.store(
-            key=execution_key,
-            result=result,
-            metadata={"action": action},
+        self.agent.run_pipeline(
+            pipeline=pipeline,
+            registry=self.registry,
+            warehouse=self.warehouse,
         )
 
-        return result
-
-    def __repr__(self) -> str:
-        return f"<FraguaEnvironment name={self.name!r}>"
+        return self.warehouse
