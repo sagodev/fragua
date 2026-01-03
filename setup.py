@@ -7,7 +7,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="fragua",
-    version="1.0",
+    version="1.1",
     author="SagoDev",
     description=(
         "Framework for modeling, orchestrating,"
@@ -26,6 +26,6 @@ setup(
         "sqlalchemy",
         "requests",
         "scikit-learn",
-        "openpyl",
+        "openpyxl",
     ],
 )
