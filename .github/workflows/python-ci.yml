@@ -2,139 +2,114 @@ name: Python CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  smart-checks:
+  # ----------------------------
+  # Formatting
+  # ----------------------------
+  formatting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install formatters
+        run: |
+          python -m pip install --upgrade pip
+          pip install black mdformat mdformat-gfm
+
+      - name: Check Python formatting (Black)
+        run: |
+          black --check fragua
+
+      - name: Check Markdown formatting
+        run: |
+          mdformat --check $(find . -name "*.md" ! -name "README.md")
+
+  # ----------------------------
+  # Linting
+  # ----------------------------
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install lint dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pylint
+
+      - name: Run Pylint
+        run: |
+          pylint fragua \
+            --output-format=colorized \
+            --extension-pkg-whitelist=pydantic \
+            --disable=C0103,C0415
+
+  # ----------------------------
+  # Typing
+  # ----------------------------
+  typing:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11"]
 
-    env:
-      PYTHONPATH: ${{ github.workspace }}/fragua
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install dependencies
+      - name: Install typing dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install mypy pylint black
-          pip install mdformat mdformat-gfm
+          pip install mypy
 
-      # --- Detect changed files ---
-      - name: Detect changed files
-        id: changed-files
+      - name: Run mypy
         run: |
-          echo "Detecting modified files..."
-          git fetch origin main --depth=1 || true
-          CHANGED=$(git diff --name-only --diff-filter=ACM origin/main...HEAD || true)
-
-          # Filter Python and Markdown files, exclude __init__.py
-          PY_FILES=$(echo "$CHANGED" | grep '\.py$' | grep -v '__init__\.py$' | tr '\n' ' ')
-          MD_FILES=$(echo "$CHANGED" | grep '\.md$' | tr '\n' ' ')
-
-          echo "python_files=$PY_FILES" >> $GITHUB_OUTPUT
-          echo "markdown_files=$MD_FILES" >> $GITHUB_OUTPUT
-
-          echo "Python files: $PY_FILES"
-          echo "Markdown files: $MD_FILES"
-
-      # --- Skip if no relevant files ---
-      - name: Skip if no relevant files
-        if: steps.changed-files.outputs.python_files == '' && steps.changed-files.outputs.markdown_files == ''
-        run: |
-          echo "No Python or Markdown files changed. Skipping CI."
-          exit 0
-
-
-      # --- Auto-format Markdown on main ---
-      - name: Auto-format Markdown on main
-        if: github.ref == 'refs/heads/main' && steps.changed-files.outputs.markdown_files != ''
-        run: |
-          echo "Auto-formatting Markdown files..."
-          FILES=$(echo "${{ steps.changed-files.outputs.markdown_files }}" | tr ' ' '\n')
-          mdformat $FILES
-          if ! git diff --quiet; then
-            echo "Changes detected after formatting. Committing with 'docs:' prefix..."
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-            git add $FILES
-            git commit -m "docs: auto-format Markdown files"
-            git push
-          else
-            echo "Markdown already formatted correctly."
-
-      # --- Check Python code formatting with Black ---
-      - name: Check code formatting with Black
-        if: steps.changed-files.outputs.python_files != ''
-        run: |
-          echo "Running Black on changed Python files..."
-          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
-          black --check $FILES
-
-      # --- Auto-format Python files on main ---
-      - name: Auto-format Python files on main
-        if: github.ref == 'refs/heads/main' && steps.changed-files.outputs.python_files != ''
-        run: |
-          echo "Auto-formatting Python files..."
-          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
-          for file in $FILES; do
-            [ -f "$file" ] && black "$file"
-          done
-          if ! git diff --quiet; then
-            echo "Changes detected after Black. Committing with 'style:' prefix..."
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-            git add $FILES
-            git commit -m "style: auto-format Python files"
-            git push
-          else
-            echo "Python already formatted correctly."
-
-      # --- Lint with Pylint ---
-      - name: Lint with pylint
-        if: steps.changed-files.outputs.python_files != ''
-        run: |
-          echo "Running Pylint on changed Python files..."
-          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
-          pylint \
-            --output-format=colorized \
-            --extension-pkg-whitelist=pydantic \
-            --disable=C0103,C0415 \
-            $FILES \
-
-      # --- Type check with Mypy ---
-      - name: Type checking with mypy
-        if: steps.changed-files.outputs.python_files != ''
-        run: |
-          echo "Running Mypy on changed Python files..."
-          FILES=$(echo "${{ steps.changed-files.outputs.python_files }}" | tr ' ' '\n')
-          mypy \
+          mypy fragua \
             --strict \
             --pretty \
             --ignore-missing-imports \
             --disallow-untyped-defs \
-            --python-version 3.10 \
-            $FILES
+            --python-version ${{ matrix.python-version }}
+
+  # ----------------------------
+  # Package integrity
+  # ----------------------------
+  build-check:
+    needs: [formatting, lint, typing]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Build package
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+          python -m build
+
+      - name: Validate distribution
+        run: |
+          twine check dist/*

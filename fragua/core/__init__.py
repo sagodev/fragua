@@ -20,26 +20,20 @@ from .agent import FraguaAgent
 
 from .warehouse import FraguaWarehouse
 
-from .storage import Storage, Box, STORAGE_CLASSES
+from .pipeline import FraguaPipeline
 
-from .component import FraguaComponent
+from .step import FraguaStep
+
+from .box import FraguaBox
+
 
 __all__ = [
-    # Environment Class
     "FraguaEnvironment",
-    # Registry Class
     "FraguaRegistry",
-    # Section Fragua Class
     "FraguaSet",
-    # Base Fragua Component
-    "FraguaComponent",
-    # Agent Class
     "FraguaAgent",
-    # Warehouse
     "FraguaWarehouse",
-    # Storage
-    "Storage",
-    # Storage Types
-    "STORAGE_CLASSES",
-    "Box",
+    "FraguaStep",
+    "FraguaPipeline",
+    "FraguaBox",
 ]
