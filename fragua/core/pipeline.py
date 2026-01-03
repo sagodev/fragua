@@ -15,11 +15,12 @@ class FraguaPipeline:
 
     def add(self, step_or_steps: FraguaStep | List[FraguaStep]) -> None:
         """Add an step or an ordened sequence of steps to pipeline."""
-        if isinstance(step_or_steps, List):
-            for step in step_or_steps:
-                self._steps.append(step)
+        if isinstance(step_or_steps, list):
+            self._steps = step_or_steps
+            return
         if isinstance(step_or_steps, FraguaStep):
             self._steps.append(step_or_steps)
+            return
 
         raise ValueError(
             f"{step_or_steps} most be a FraguaStep or a order list of FraguaSteps."
