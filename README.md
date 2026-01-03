@@ -1,229 +1,192 @@
 # Fragua
 
-**Fragua** is a modular Python library for modeling and orchestrating **ETL / ELT workflows**
-through explicit execution environments, unified agents, and a strongly typed domain model.
+Fragua is a lightweight Python library designed to **test and validate ETL functions** in isolation.
 
-Fragua is designed as an educational and experimental framework focused on
-**architectural clarity**, **predictable execution**, and **explicit responsibility separation**.
+It provides a minimal execution environment where ETL functions can be registered, executed, and their results inspected at runtime — without introducing framework overhead, persistence layers, or external dependencies.
 
----
-
-## Core Concept
-
-In Fragua, **everything happens inside an Environment**.
-
-A `FraguaEnvironment` represents an isolated execution context that owns:
-
-* Component lifecycle and resolution
-* Execution context and security boundaries
-* Runtime state and metadata
-* Data persistence and traceability
-
-Agents do not exist or operate independently.
-They are created, configured, and executed exclusively within an Environment.
+Fragua is intentionally simple by design.
 
 ---
 
-## Environment Responsibilities
+## Purpose
 
-The `FraguaEnvironment` is the central orchestrator of the system. It is responsible for:
+Fragua exists to answer a single question:
 
-* Initializing and managing the **Warehouse**
-* Managing action contexts: `extract`,    `transform`,    `load`
-* Registering, resolving, and executing components
-* Managing execution credentials (tokens)
-* Providing a unified CRUD API for components
-* Exposing structured runtime summaries
+> *"Does this ETL function behave as expected?"*
 
-Multiple environments can coexist, each representing an independent pipeline, 
-experiment, or workflow.
+It is not an orchestration engine, scheduler, pipeline runner, or data platform.
+It is a **focused testing tool** for developing and validating ETL logic.
 
 ---
 
-## Unified Component Management
+## Core Concepts
 
-All components in Fragua are managed through a **single, unified CRUD API**
-exposed by the Environment.
+Fragua is composed of seven small components:
 
-Components are resolved by:
+### 1. FraguaSet
 
-* **Action** (`extract`,    `transform`,    `load`)
-* **Component type** (`agent`,    `function`,    `internal_function`,    `set`)
+A `FraguaSet` is a **namespace for ETL functions**.
 
-This unified approach:
+* Stores named callables
+* No execution logic
+* No awareness of environments or data
 
-* Eliminates duplicated logic
-* Reduces coupling between modules
-* Guarantees consistent runtime behavior
+Typical sets are:
 
----
-
-## Agents and Execution Model
-
-Fragua uses a **single unified agent model** ( `FraguaAgent` ).
-
-Agents:
-
-* Are instantiated exclusively by the Environment
-* Receive mandatory execution credentials
-* Can execute:
-  + Registered functions by name
-  + Callables provided at runtime
-  + Internal transform and load functions
-  + Full transform pipelines
-* Normalize inputs to `pandas.DataFrame`
-* Interact with data exclusively through the Warehouse
-* Generate execution metadata and operation records (with undo support)
-
-Agents act as controlled executors, not as owners of configuration or state.
+* `extract`
+* `transform`
+* `load`
 
 ---
 
-## Execution and Configuration Flow
+### 2. FraguaRegistry
 
-Fragua follows an **explicit execution-context model**.
+The registry is a **function index**.
 
-* Parameters and configuration are passed explicitly through function calls
-* Transform pipelines propagate context between steps
-* Functions declare their supported configuration via metadata (`config_keys`)
-* No implicit or global parameter containers are used
-
-This model improves:
-
-* Readability
-* Debuggability
-* Contract enforcement
-* Predictability of execution
+* Holds multiple `FraguaSet` instances
+* Resolves functions by `(set_name, function_name)`
+* Performs no execution or validation
 
 ---
 
-## Internal Functions and Pipelines
+### 3. FraguaAgent
 
-Fragua supports **runtime registration and management of internal functions**
-for transform and load actions.
+The agent is a **pure executor**.
 
-Internal functions:
+* Receives an serie of steps that each step represent an function
+* Executes the steps pipeline
+* Returns the result
 
-* Can be registered as callables or metadata-based specifications
-* Expose explicit metadata (purpose, description, config keys)
-* Can be executed directly or composed into pipelines
-* Are fully managed through the Environment API
+The agent contains no domain logic and no state.
+
+---
+### 4. FraguaPipeline
+
+The pipeline represents an **ordered execution plan**.
+
+* Defines a sequence of execution steps
+* Preserves execution order
+* Is fully declarative and contains no execution logic
+* Can be reused, inspected, or validated before execution
+
+A pipeline does not execute functions by itself.  
+It is consumed by an agent at runtime.
 
 ---
 
-## Security Model
+### 5. FraguaStep
 
-Fragua enforces an explicit internal security model:
+A step represents a **single unit of execution** within a pipeline.
 
-* The **Environment** issues execution tokens
-* **Agents** consume tokens to operate
-* The **Warehouse** validates tokens for protected operations
+* References a function by action and name
+* Declares execution parameters
+* Optionally consumes data produced by a previous step
+* Optionally stores its result under a custom key
 
-This ensures that no agent can execute or access data outside a valid
-environment context.
+A step contains no executable logic.  
+It only describes *what* should be executed, not *how*.
 
----
+### 6. FraguaWarehouse
 
-## Domain-Driven Typing
+The warehouse is an **in-memory store for execution results**.
 
-Fragua uses a strongly typed, enum-based domain vocabulary.
+* Stores results produced during runtime
+* Indexed by a logical execution key (e.g. `extract.from_csv`)
+* Intended for inspection, assertions, and debugging
 
-Enums define all core concepts, including:
-
-* Actions and component types
-* Storage and target types
-* Operations, fields, and attributes
-
-This approach:
-
-* Eliminates magic strings
-* Centralizes validation
-* Improves IDE support and static analysis
-* Provides a clear and extensible domain language
-
-Concise enum aliases are exported for ergonomic usage without sacrificing type safety.
+No persistence, security, or lifecycle management is included.
 
 ---
 
-## Component Architecture
+### 5. FraguaEnvironment
 
-Fragua follows a layered component model:
+The environment is the **only orchestration layer**.
 
-* **FraguaComponent**
-  Base abstraction for all registrable elements.
+It owns:
 
-* **FraguaSet**
-  Logical container for homogeneous components.
-  Responsible for:
-  + CRUD operations
-  + Validation
-  + Human-readable summaries
+* One agent
+* One registry (function sets)
+* One warehouse
 
-* **FraguaRegistry**
-  Groups and manages multiple `FraguaSet` instances within an Environment.
+It provides a small public API to:
 
-This separation ensures clarity between component definition, 
-organization, and orchestration.
+* Register functions
+* Execute step(functions) pipelines
+* Access stored results
 
 ---
 
-## Warehouse and Data Traceability
+## Typical Workflow
 
-Each Environment owns a **Warehouse**, which acts as the single source of truth
-for all data artifacts.
-
-The Warehouse provides:
-
-* Controlled data operations
-* Full operation logging with timestamps
-* Undo support for destructive actions
-* Metadata-based summaries and inspection
+1. Create an environment
+2. Register ETL functions
+3. Execute steps pipeline
+4. Inspect results from the warehouse
 
 ---
 
-## Key Characteristics
+## Example
 
-* Environment-centric orchestration
-* Unified agent model
-* Unified component lifecycle management
-* Explicit execution-context-based configuration
-* Strongly typed domain model
-* Isolated execution contexts
-* Centralized storage and traceability
-* Clear separation of responsibilities
+```python
+from fragua.core.environment import FraguaEnvironment
 
----
+# Create environment
+env = FraguaEnvironment("demo")
 
-## Project Structure
+# Define ETL function
+def extract_users(path: str) -> list[str]:
+    return ["alice", "bob"]
 
-```
-fragua/
-├── __init__.py
-├── core/
-├── registry/
-└── utils/
+# Register function
+env.register_function("extract", extract_users)
+
+# Execute
+result = env.run("extract", "extract_users", path="users.csv")
+
+# Inspect result
+assert result == ["alice", "bob"]
+
+stored = env.warehouse.get("extract.extract_users")
+assert stored == result
 ```
 
 ---
 
-## Installation
+## Design Principles
 
-```bash
-python pip install fragua.
-```
+Fragua is guided by the following principles:
 
-> ⚠️ Fragua is published for educational and experimental purposes.
-> It is **not recommended for production use yet**.
+* **Minimalism** — no feature without a clear purpose
+* **Single Responsibility** — each component does one thing
+* **Runtime-only** — no persistence or side effects
+* **Explicitness** — no hidden magic or implicit behavior
+
+If a feature does not directly support ETL function testing, it does not belong in Fragua.
 
 ---
 
-## Author
+## What Fragua Is Not
 
-**Santiago Lanz**
+Fragua deliberately avoids being:
 
-* https://sagodev.github.io/My-Portfolio-Web/
-* https://www.linkedin.com/in/santiagolanz/
-* https://github.com/SagoDev
+* A workflow orchestrator
+* A scheduler
+* A pipeline framework
+* A data warehouse
+* A production ETL engine
+
+It is a **developer tool**, not an execution platform.
+
+---
+
+## When to Use Fragua
+
+Use Fragua when you want to:
+
+* Test ETL functions independently
+* Validate transformations in isolation
+* Inspect intermediate results
+* Develop ETL logic incrementally
 
 ---
 
