@@ -4,6 +4,7 @@ Represents the final output of a pipeline execution.
 """
 
 from typing import Any, Dict
+import pandas as pd
 
 
 class FraguaBox:
@@ -18,7 +19,7 @@ class FraguaBox:
         self,
         *,
         key: str,
-        result: Any,
+        result: dict[str, pd.DataFrame],
         metadata: Dict[str, Any] | None = None,
     ) -> None:
         self.key = key

@@ -3,6 +3,7 @@
 Stateless execution primitive responsible for running pipelines.
 """
 
+import pandas as pd
 from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
 from fragua.core.box import FraguaBox
@@ -25,7 +26,7 @@ class FraguaAgent:
         registry: FraguaRegistry,
     ) -> FraguaBox:
         """
-        Execute a pipeline and return the final result box.
+        Execute a pipeline and return a single FraguaBox containing all step results.
 
         Parameters
         ----------
@@ -33,14 +34,18 @@ class FraguaAgent:
             Pipeline to execute.
         registry : FraguaRegistry
             Registry to resolve functions.
+
+        Returns
+        -------
+        FraguaBox
+            Single box containing all step results keyed by step.save_as or step.function.
         """
         function_set = registry.get_set("functions")
         if function_set is None:
             raise ValueError("Function registry set not found")
 
         context: dict[str, object] = {}
-        last_key: str | None = None
-        result: object | None = None
+        all_results: dict[str, pd.DataFrame] = {}
 
         for step in pipeline.steps():
             fn = function_set.get_function(step.function)
@@ -53,17 +58,19 @@ class FraguaAgent:
             else:
                 result = fn(**step.params)
 
-            last_key = step.save_as or step.function
-            context[last_key] = result
+            key = step.save_as or step.function
+            context[key] = result
+            all_results[key] = result
 
-        if last_key is None:
-            raise ValueError("Pipeline produced no result")
+        if not all_results:
+            raise ValueError("Pipeline produced no results.")
 
         return FraguaBox(
-            key=last_key,
-            result=result,
+            key=pipeline.name,
+            result=all_results,
             metadata={
-                "pipeline": pipeline.name,
                 "agent": self.name,
+                "pipeline": pipeline.name,
+                "steps": [step.function for step in pipeline.steps()],
             },
         )
