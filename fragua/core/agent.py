@@ -1,61 +1,69 @@
 """Fragua agent.
 
-Defines the minimal execution primitive responsible for
-running ETL functions.
+Stateless execution primitive responsible for running pipelines.
 """
 
-from fragua import FraguaRegistry, FraguaWarehouse
-
 from fragua.core.pipeline import FraguaPipeline
+from fragua.core.registry import FraguaRegistry
+from fragua.core.box import FraguaBox
 
 
 class FraguaAgent:
     """
     Stateless execution agent.
 
-    A FraguaAgent executes callables and returns their results.
-    It does not resolve functions, store data or manage metadata.
+    Executes pipeline steps and returns a FraguaBox containing
+    the final result.
     """
 
     def __init__(self, name: str) -> None:
-        """
-        Initialize the agent.
-
-        Parameters
-        ----------
-        name:
-            Logical name of the agent.
-        """
         self.name = name
 
     def run_pipeline(
         self,
         pipeline: FraguaPipeline,
         registry: FraguaRegistry,
-        warehouse: FraguaWarehouse,
-    ) -> None:
+    ) -> FraguaBox:
         """
-        Execute a pipeline step by step.
+        Execute a pipeline and return the final result box.
+
+        Parameters
+        ----------
+        pipeline : FraguaPipeline
+            Pipeline to execute.
+        registry : FraguaRegistry
+            Registry to resolve functions.
         """
+        function_set = registry.get_set("functions")
+        if function_set is None:
+            raise ValueError("Function registry set not found")
+
+        context: dict[str, object] = {}
+        last_key: str | None = None
+        result: object | None = None
 
         for step in pipeline.steps():
-            fn = registry.get_function(step.action, step.function)
+            fn = function_set.get_function(step.function)
             if fn is None:
-                raise ValueError(f"Function not found: {step.function} ({step.action})")
+                raise ValueError(f"Function not found: {step.function}")
 
             if step.use:
-                input_data = warehouse.get(step.use)
+                input_data = context.get(step.use)
                 result = fn(input_data=input_data, **step.params)
             else:
                 result = fn(**step.params)
 
-            key = step.save_as or step.function
-            warehouse.store(
-                key=key,
-                result=result,
-                metadata={
-                    "action": step.action,
-                    "function": step.function,
-                    "pipeline": pipeline.name,
-                },
-            )
+            last_key = step.save_as or step.function
+            context[last_key] = result
+
+        if last_key is None:
+            raise ValueError("Pipeline produced no result")
+
+        return FraguaBox(
+            key=last_key,
+            result=result,
+            metadata={
+                "pipeline": pipeline.name,
+                "agent": self.name,
+            },
+        )
