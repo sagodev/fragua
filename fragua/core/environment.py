@@ -7,6 +7,7 @@ using a single agent, a function registry and a runtime warehouse.
 from typing import Any, Callable
 
 from fragua.core.agent import FraguaAgent
+from fragua.core.box import FraguaBox
 from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
 from fragua.core.warehouse import FraguaWarehouse
@@ -17,7 +18,7 @@ class FraguaEnvironment:
     """
     Execution environment for Fragua.
 
-    An environment owns exactly one agent, one function registry
+    An environment owns exactly one agent, one registry
     and one runtime warehouse.
     """
 
@@ -30,43 +31,80 @@ class FraguaEnvironment:
 
     def _initialize_registry(self) -> FraguaRegistry:
         sets = {
-            "extract": FraguaSet("extract"),
-            "transform": FraguaSet("transform"),
-            "load": FraguaSet("load"),
+            "pipelines": FraguaSet("pipelines"),
+            "functions": FraguaSet("functions"),
         }
         return FraguaRegistry(sets=sets)
 
     # -------------------- Public API -------------------- #
 
-    def register_function(
+    def register(
         self,
-        action: str,
-        fn: Callable[..., Any],
+        item: Callable[..., Any] | FraguaPipeline,
         *,
         name: str | None = None,
     ) -> None:
         """
-        Register a function under an action set.
+        Register a function or pipeline in the environment.
+
+        The target set is inferred from the item type.
         """
-        function_name = name or fn.__name__
-        function_set = self.registry.get_set(action)
+        if isinstance(item, FraguaPipeline):
+            set_name = "pipelines"
+            item_name = name or item.name
 
-        if function_set is None:
-            raise ValueError(f"Unknown action set: {action}")
+        elif callable(item):
+            set_name = "functions"
+            item_name = name or item.__name__
 
-        function_set.register(function_name, fn)
+        else:
+            raise TypeError(
+                "Only callables or FraguaPipeline instances can be registered"
+            )
 
-    def run(self, pipeline: FraguaPipeline) -> FraguaWarehouse:
+        target_set = self.registry.get_set(set_name)
+        if target_set is None:
+            raise ValueError(f"Unknown registry set: {set_name}")
+
+        registered = target_set.register(item_name, item)
+        if not registered:
+            raise ValueError(
+                f"{set_name[:-1].capitalize()} '{item_name}' is already registered"
+            )
+
+    def run(self, pipeline: FraguaPipeline | str) -> FraguaBox:
         """
-        Execute a pipeline using the environment's agent.
-
-        The environment delegates execution to the agent
-        and exposes the populated warehouse as execution output.
+        Execute a pipeline by instance or by registered name.
         """
-        self.agent.run_pipeline(
-            pipeline=pipeline,
+        resolved_pipeline: FraguaPipeline
+
+        if isinstance(pipeline, str):
+            pipeline_set = self.registry.get_set("pipelines")
+            if pipeline_set is None:
+                raise ValueError("Pipeline registry set not found")
+
+            resolved = pipeline_set.get(pipeline)
+            if resolved is None:
+                raise ValueError(f"Pipeline not found: {pipeline}")
+
+            if not isinstance(resolved, FraguaPipeline):
+                raise TypeError(f"Registered item '{pipeline}' is not a FraguaPipeline")
+
+            resolved_pipeline = resolved
+
+        elif isinstance(pipeline, FraguaPipeline):
+            resolved_pipeline = pipeline
+
+        else:
+            raise TypeError(
+                "run() expects a FraguaPipeline instance or a registered pipeline name"
+            )
+
+        box: FraguaBox = self.agent.run_pipeline(
+            pipeline=resolved_pipeline,
             registry=self.registry,
-            warehouse=self.warehouse,
         )
 
-        return self.warehouse
+        self.warehouse.store(box)
+
+        return box
