@@ -10,7 +10,7 @@ import pandas as pd
 
 from fragua.core.pipeline import FraguaPipeline
 
-FraguaItem = Union[Callable, FraguaPipeline]
+FraguaItem = Union[Callable[..., pd.DataFrame], FraguaPipeline]
 
 
 class FraguaSet:

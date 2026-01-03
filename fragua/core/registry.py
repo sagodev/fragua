@@ -6,6 +6,8 @@ and provides function resolution at runtime.
 
 from typing import Callable, Dict, Optional
 
+import pandas as pd
+
 from fragua.core.set import FraguaSet
 
 
@@ -49,7 +51,9 @@ class FraguaRegistry:
         """Retrieve a set by name."""
         return self._sets.get(name)
 
-    def get_function(self, set_name: str, function_name: str) -> Optional[Callable]:
+    def get_function(
+        self, set_name: str, function_name: str
+    ) -> Optional[Callable[..., pd.DataFrame]]:
         """
         Resolve a function from a given set.
 

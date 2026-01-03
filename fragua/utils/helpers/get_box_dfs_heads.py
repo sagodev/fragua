@@ -1,14 +1,14 @@
 """Get dataframes heads of results in a FraguaBox."""
 
-from typing import List
+from typing import Dict, List
 import pandas as pd
 
 from fragua.core.step import FraguaStep
 
 
 def get_box_dfs_heads(
-    box: dict, steps: List[FraguaStep], n: int = 5
-) -> dict[str, pd.DataFrame]:
+    box: Dict[str, pd.DataFrame], steps: List[FraguaStep], n: int = 5
+) -> Dict[str, pd.DataFrame]:
     """
     Retrieve the head of DataFrames from a FraguaBox for the given steps.
 
