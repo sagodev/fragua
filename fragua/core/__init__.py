@@ -22,6 +22,8 @@ from .warehouse import FraguaWarehouse
 
 from .pipeline import FraguaPipeline
 
+from .step import FraguaStep
+
 
 __all__ = [
     "FraguaEnvironment",
@@ -29,5 +31,6 @@ __all__ = [
     "FraguaSet",
     "FraguaAgent",
     "FraguaWarehouse",
+    "FraguaStep",
     "FraguaPipeline",
 ]
