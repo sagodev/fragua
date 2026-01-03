@@ -20,16 +20,14 @@ from .agent import FraguaAgent
 
 from .warehouse import FraguaWarehouse
 
+from .pipeline import FraguaPipeline
+
 
 __all__ = [
-    # Environment Class
     "FraguaEnvironment",
-    # Registry Class
     "FraguaRegistry",
-    # Section Fragua Class
     "FraguaSet",
-    # Agent Class
     "FraguaAgent",
-    # Warehouse
     "FraguaWarehouse",
+    "FraguaPipeline",
 ]
