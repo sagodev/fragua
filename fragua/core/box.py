@@ -6,6 +6,8 @@ Represents the final output of a pipeline execution.
 from typing import Any, Dict
 import pandas as pd
 
+# pylint: disable=too-few-public-methods
+
 
 class FraguaBox:
     """

@@ -8,6 +8,8 @@ from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
 from fragua.core.box import FraguaBox
 
+# pylint: disable=too-few-public-methods
+
 
 class FraguaAgent:
     """
