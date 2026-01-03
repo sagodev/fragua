@@ -59,7 +59,7 @@ class FraguaRegistry:
         if not set_:
             return None
 
-        return set_.get(function_name)
+        return set_.get_function(function_name)
 
     def list_sets(self) -> list[str]:
         """Return the list of registered set names."""
