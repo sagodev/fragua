@@ -10,7 +10,6 @@ class FraguaStep:
     Represents a single execution step in a pipeline.
     """
 
-    action: str
     function: str
     params: Dict[str, Any]
     save_as: Optional[str] = None
