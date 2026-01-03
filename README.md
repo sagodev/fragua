@@ -1,6 +1,6 @@
 # Fragua
 
-Fragua is a lightweight Python library designed to **design, test, and validate ETL pipelines and functions** in a controlled, in-memory environment.
+Fragua is a lightweight Python framework designed to **design, test, and validate ETL pipelines and functions** in a controlled, in-memory environment.
 
 It provides a minimal execution model where ETL functions can be registered, composed, executed in sequence, and their intermediate or final results inspected — without schedulers, persistence layers, or external infrastructure.
 
