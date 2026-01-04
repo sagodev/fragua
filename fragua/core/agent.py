@@ -6,11 +6,11 @@ Stateless execution primitive responsible for running pipelines.
 from typing import Callable
 import pandas as pd
 
-from fragua.core.set import FraguaSet
 from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
 from fragua.core.box import FraguaBox
 from fragua.core.step import FraguaStep
+
 
 # pylint: disable=too-few-public-methods
 
@@ -30,21 +30,25 @@ class FraguaAgent:
 
     def run_pipeline(
         self,
+        *,
         pipeline: FraguaPipeline,
         registry: FraguaRegistry,
     ) -> FraguaBox:
         """
         Execute a pipeline and return a FraguaBox containing all step results.
         """
-        function_set = self._resolve_function_set(registry)
         context, results = self._initialize_execution_state()
 
-        self._execute_steps(
-            pipeline=pipeline,
-            function_set=function_set,
-            context=context,
-            results=results,
-        )
+        for step in pipeline.steps():
+            result = self._execute_step(
+                step=step,
+                registry=registry,
+                context=context,
+            )
+
+            key = self._resolve_step_result_key(step)
+            context[key] = result
+            results[key] = result
 
         self._validate_execution_results(results)
 
@@ -52,17 +56,6 @@ class FraguaAgent:
             pipeline=pipeline,
             results=results,
         )
-
-    # -------------------- Resolution helpers -------------------- #
-
-    def _resolve_function_set(self, registry: FraguaRegistry) -> FraguaSet:
-        """
-        Resolve the function registry set required for pipeline execution.
-        """
-        function_set = registry.get_set("functions")
-        if function_set is None:
-            raise ValueError("Function registry set not found")
-        return function_set
 
     # -------------------- Execution helpers -------------------- #
 
@@ -74,40 +67,19 @@ class FraguaAgent:
         """
         return {}, {}
 
-    def _execute_steps(
-        self,
-        *,
-        pipeline: FraguaPipeline,
-        function_set: FraguaSet,
-        context: dict[str, object],
-        results: dict[str, pd.DataFrame],
-    ) -> None:
-        """
-        Execute each pipeline step sequentially, mutating context and results.
-        """
-        for step in pipeline.steps():
-            result = self._execute_step(
-                step=step,
-                function_set=function_set,
-                context=context,
-            )
-
-            key = self._resolve_step_result_key(step)
-            context[key] = result
-            results[key] = result
-
     def _execute_step(
         self,
         *,
         step: FraguaStep,
-        function_set: FraguaSet,
+        registry: FraguaRegistry,
         context: dict[str, object],
     ) -> pd.DataFrame:
         """
         Execute a single pipeline step and return its result.
         """
         fn = self._resolve_step_function(
-            function_set=function_set,
+            registry=registry,
+            set_name=step.set_name,
             function_name=step.function,
         )
 
@@ -120,15 +92,23 @@ class FraguaAgent:
     def _resolve_step_function(
         self,
         *,
-        function_set: FraguaSet,
+        registry: FraguaRegistry,
+        set_name: str,
         function_name: str,
     ) -> Callable[..., pd.DataFrame]:
         """
-        Resolve a transformation function from the function set.
+        Resolve a function from a specific registry set.
         """
+        function_set = registry.get_set(set_name)
+        if function_set is None:
+            raise ValueError(f"Registry set not found: {set_name}")
+
         fn = function_set.get_function(function_name)
         if fn is None:
-            raise ValueError(f"Function not found: {function_name}")
+            raise ValueError(
+                f"Function '{function_name}' not found in set '{set_name}'"
+            )
+
         return fn
 
     def _resolve_step_result_key(self, step: FraguaStep) -> str:
