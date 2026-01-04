@@ -21,6 +21,6 @@ class DocumentType(str, Enum):
     """Document types class."""
 
     DATAFRAME = "dataframe"
-    DICT = "dict"
-    LIST = "list"
-    SCALAR = "scalar"
+    JSON = "json"
+    EXCEL = "excel"
+    CSV = "csv"

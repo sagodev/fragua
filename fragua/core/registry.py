@@ -34,7 +34,7 @@ class FraguaRegistry:
         """
         self._sets: Dict[str, FraguaSet] = sets or {}
 
-    def register_set(self, set_: FraguaSet) -> bool:
+    def add_set(self, set_: FraguaSet) -> bool:
         """
         Register a function set.
 
@@ -58,6 +58,19 @@ class FraguaRegistry:
             return False
 
         self._sets[set_.name] = set_
+        return True
+
+    def delete_set(self, name: str) -> bool:
+        """
+        Remove a function set from the registry.
+
+        Returns True if the set was removed,
+        False if no set with the given name exists.
+        """
+        if name not in self._sets:
+            return False
+
+        del self._sets[name]
         return True
 
     def get_set(self, name: str) -> Optional[FraguaSet]:
