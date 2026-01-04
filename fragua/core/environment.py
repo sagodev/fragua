@@ -4,7 +4,7 @@ Defines the orchestration layer for executing ETL functions
 using a single agent, a function registry and a runtime warehouse.
 """
 
-from typing import Any, Callable
+from typing import Any, Callable, Tuple
 
 from fragua.core.agent import FraguaAgent
 from fragua.core.box import FraguaBox
@@ -30,6 +30,7 @@ class FraguaEnvironment:
         self.warehouse = FraguaWarehouse(name=f"{name}_warehouse")
 
     def _initialize_registry(self) -> FraguaRegistry:
+        """Create and preload the default registry sets."""
         sets = {
             "pipelines": FraguaSet("pipelines"),
             "functions": FraguaSet("functions"),
@@ -37,7 +38,6 @@ class FraguaEnvironment:
         return FraguaRegistry(sets=sets)
 
     # -------------------- Public API -------------------- #
-
     def register(
         self,
         item: Callable[..., Any] | FraguaPipeline,
@@ -47,64 +47,108 @@ class FraguaEnvironment:
         """
         Register a function or pipeline in the environment.
 
-        The target set is inferred from the item type.
+        The target registry set and item name are inferred
+        from the provided object.
         """
-        if isinstance(item, FraguaPipeline):
-            set_name = "pipelines"
-            item_name = name or item.name
-
-        elif callable(item):
-            set_name = "functions"
-            item_name = name or item.__name__
-
-        else:
-            raise TypeError(
-                "Only callables or FraguaPipeline instances can be registered"
-            )
-
-        target_set = self.registry.get_set(set_name)
-        if target_set is None:
-            raise ValueError(f"Unknown registry set: {set_name}")
-
-        registered = target_set.register(item_name, item)
-        if not registered:
-            raise ValueError(
-                f"{set_name[:-1].capitalize()} '{item_name}' is already registered"
-            )
+        set_name, item_name = self._resolve_registration_target(item, name)
+        target_set = self._get_registry_set(set_name)
+        self._register_item(target_set, item_name, item)
 
     def run(self, pipeline: FraguaPipeline | str) -> FraguaBox:
         """
         Execute a pipeline by instance or by registered name.
+
+        The resulting execution box is persisted in the warehouse.
         """
-        resolved_pipeline: FraguaPipeline
+        resolved_pipeline = self._resolve_pipeline(pipeline)
+        box = self._execute_pipeline(resolved_pipeline)
+        self._store_execution_result(box)
+        return box
+
+    # -------------------- Registration helpers -------------------- #
+
+    def _resolve_registration_target(
+        self,
+        item: Callable[..., Any] | FraguaPipeline,
+        name: str | None,
+    ) -> Tuple[str, str]:
+        """
+        Determine the registry set name and item name
+        based on the provided object.
+        """
+        if isinstance(item, FraguaPipeline):
+            return "pipelines", name or item.name
+
+        if callable(item):
+            return "functions", name or item.__name__
+
+        raise TypeError("Only callables or FraguaPipeline instances can be registered")
+
+    def _get_registry_set(self, set_name: str) -> FraguaSet:
+        """
+        Retrieve a registry set by name or fail fast if it does not exist.
+        """
+        target_set = self.registry.get_set(set_name)
+        if target_set is None:
+            raise ValueError(f"Unknown registry set: {set_name}")
+        return target_set
+
+    def _register_item(
+        self,
+        target_set: FraguaSet,
+        item_name: str,
+        item: Callable[..., Any] | FraguaPipeline,
+    ) -> None:
+        """
+        Register an item in the given registry set.
+
+        Raises if the item name already exists.
+        """
+        registered = target_set.register(item_name, item)
+        if not registered:
+            raise ValueError(
+                f"{target_set.name[:-1].capitalize()} '{item_name}' is already registered"
+            )
+
+    # -------------------- Execution helpers -------------------- #
+
+    def _resolve_pipeline(
+        self,
+        pipeline: FraguaPipeline | str,
+    ) -> FraguaPipeline:
+        """
+        Resolve a pipeline either directly or from the registry by name.
+        """
+        if isinstance(pipeline, FraguaPipeline):
+            return pipeline
 
         if isinstance(pipeline, str):
-            pipeline_set = self.registry.get_set("pipelines")
-            if pipeline_set is None:
-                raise ValueError("Pipeline registry set not found")
-
+            pipeline_set = self._get_registry_set("pipelines")
             resolved = pipeline_set.get(pipeline)
+
             if resolved is None:
                 raise ValueError(f"Pipeline not found: {pipeline}")
 
             if not isinstance(resolved, FraguaPipeline):
                 raise TypeError(f"Registered item '{pipeline}' is not a FraguaPipeline")
 
-            resolved_pipeline = resolved
+            return resolved
 
-        elif isinstance(pipeline, FraguaPipeline):
-            resolved_pipeline = pipeline
+        raise TypeError(
+            "run() expects a FraguaPipeline instance or a registered pipeline name"
+        )
 
-        else:
-            raise TypeError(
-                "run() expects a FraguaPipeline instance or a registered pipeline name"
-            )
-
-        box: FraguaBox = self.agent.run_pipeline(
-            pipeline=resolved_pipeline,
+    def _execute_pipeline(self, pipeline: FraguaPipeline) -> FraguaBox:
+        """
+        Execute the pipeline using the environment agent.
+        """
+        return self.agent.run_pipeline(
+            pipeline=pipeline,
             registry=self.registry,
         )
 
+    def _store_execution_result(self, box: FraguaBox) -> None:
+        """
+        Persist the execution result in the runtime warehouse.
+        """
         self.warehouse.store(box)
-
-        return box

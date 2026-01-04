@@ -47,6 +47,19 @@ class FraguaRegistry:
         self._sets[set_.name] = set_
         return True
 
+    def replace_set(self, set_: FraguaSet) -> bool:
+        """
+        Replace an existing function set with a new one.
+
+        Returns True if the set was replaced,
+        False if no set with the same name exists.
+        """
+        if set_.name not in self._sets:
+            return False
+
+        self._sets[set_.name] = set_
+        return True
+
     def get_set(self, name: str) -> Optional[FraguaSet]:
         """Retrieve a set by name."""
         return self._sets.get(name)
