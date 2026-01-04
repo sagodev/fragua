@@ -1,8 +1,8 @@
 """Extract result DataFrame from a FraguaBox and create a document of a given type."""
 
 from typing import Any
-import pandas as pd
 import io
+import pandas as pd
 
 from fragua.utils.types.enums import DocumentType
 
