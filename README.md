@@ -1,85 +1,89 @@
 # Fragua
 
-Fragua is a lightweight Python framework designed to **design, test, and validate ETL pipelines and functions** in a controlled, in-memory environment.
+Fragua is a lightweight Python framework designed to **design, validate, and reason about ETL logic** in a fully controlled, in-memory environment.
 
-It provides a minimal execution model where ETL functions can be registered, composed, executed in sequence, and their intermediate or final results inspected — without schedulers, persistence layers, or external infrastructure.
+It provides a minimal and explicit execution model where ETL functions are registered, composed, executed sequentially, and inspected — **without schedulers, persistence layers, or external infrastructure**.
 
-Fragua is intentionally simple and explicit by design.
+Fragua is intentionally simple. Its goal is clarity over completeness.
 
 ---
 
 ## Purpose
 
-Fragua exists to answer a small set of focused questions:
+Fragua exists to answer a small, focused set of questions:
 
 > *Does this ETL function behave as expected?*  
 > *Does this sequence of ETL steps produce the correct result?*
 
-It is not a workflow orchestrator or a production ETL engine.  
-It is a **developer-oriented tool** for modeling, validating, and experimenting with ETL logic.
+It is **not** a workflow orchestrator nor a production-grade ETL engine.  
+Fragua is a **developer-oriented framework** for modeling, validating, and experimenting with ETL logic during development.
 
 ---
 
-## Core Concepts
+## Core Model
 
-Fragua is composed of a small set of orthogonal components.
+Fragua is built around a small set of orthogonal, loosely coupled components.
 
 ### 1. FraguaSet
 
-A `FraguaSet` is a **namespace for ETL functions**.
+A `FraguaSet` is a **logical namespace for functions**.
 
 * Stores named callables
-* No execution logic
-* No awareness of pipelines or data
+* Groups functions by purpose (e.g. `extract`, `transform`, `load`, `utility`)
+* Contains no execution logic
+* Has no knowledge of pipelines or data
 
-Typical sets are: `extract`, `transform`, `load`.
+Sets are created explicitly and only when needed.
 
 ---
 
 ### 2. FraguaRegistry
 
-The registry is a **function index**.
+The registry is a **lookup and organization layer**.
 
 * Holds multiple `FraguaSet` instances
-* Resolves functions by name
-* Performs no execution
+* Resolves functions by `(set_name, function_name)`
+* Does not execute anything
+
+The registry enables flexible function categorization without hardcoded assumptions.
 
 ---
 
-### 3. FraguaAgent
+### 3. FraguaStep
 
-The agent is a **pure executor**.
+A `FraguaStep` represents a **single declarative execution unit**.
 
-* Receives a pipeline
-* Executes steps sequentially
-* Returns execution results
+* References a function by name (resolved at runtime)
+* Declares execution parameters
+* Optionally consumes the output of a previous step
+* Stores its result under a logical key (`save_as`)
 
-The agent contains no domain logic and no state.
+A step defines *what should happen*, not *how it happens*.
 
 ---
 
 ### 4. FraguaPipeline
 
-The pipeline represents an **ordered execution plan**.
+A pipeline is an **ordered execution plan**.
 
 * Defines a sequence of `FraguaStep`
 * Preserves execution order
-* Declarative only (no execution logic)
+* Contains no execution logic
 
-A pipeline is executed by an agent at runtime.
+Pipelines are pure definitions executed by an agent at runtime.
 
 ---
 
-### 5. FraguaStep
+### 5. FraguaAgent
 
-A step represents a **single unit of execution**.
+The agent is a **stateless execution primitive**.
 
-* References a registered function
-* Declares parameters
-* Optionally consumes the output of a previous step
-* Stores its result under a logical key (`save_as`)
+* Receives a pipeline
+* Resolves step functions via the registry
+* Executes steps sequentially
+* Produces execution results
 
-A step describes *what* to execute, not *how*.
+The agent contains no domain logic and holds no state between runs.
 
 ---
 
@@ -87,15 +91,17 @@ A step describes *what* to execute, not *how*.
 
 The warehouse is an **in-memory result store**.
 
-* Holds all step outputs
+* Stores outputs of all executed steps
 * Indexed by `save_as`
 * Intended for inspection, debugging, and assertions
+
+The warehouse exists purely at runtime.
 
 ---
 
 ### 7. FraguaEnvironment
 
-The environment is the **orchestration boundary**.
+The environment is the **composition and orchestration boundary**.
 
 It owns:
 
@@ -105,19 +111,22 @@ It owns:
 
 It provides APIs to:
 
+* Create and manage function sets
 * Register functions and pipelines
 * Execute pipelines
-* Retrieve results
+* Retrieve execution results
+
+The environment does not impose structure — it enables it.
 
 ---
 
 ## Helper Abstractions
 
-Fragua includes optional helpers to reduce boilerplate.
+Fragua includes optional helpers to reduce boilerplate while preserving explicitness.
 
 ### Composite Transform Functions
 
-`transform_fn_schema` allows composing multiple transformation functions into a single reusable transform:
+`transform_fn_schema` allows composing multiple transformation functions into a reusable unit:
 
 ```python
 basic_transformation = fg.transform_fn_schema(
@@ -127,58 +136,63 @@ basic_transformation = fg.transform_fn_schema(
         ("add_derived_columns", None),
     ],
     registry=env.registry,
+    set_name="transform",
 )
 ```
 
-This enables declarative, reusable transformation logic.
+This enables declarative and reusable transformation logic without hidden execution.
 
 ---
 
 ### Automatic Step Generation
 
-`generate_steps_sequence` creates a pipeline step sequence from function names:
+`generate_steps_sequence` generates pipeline steps from function declarations:
 
 ```python
 steps = fg.generate_steps_sequence(
     ("extract_excel", {"path": "input.xlsx"}),
     ("basic_transformation", {}),
     ("load_to_csv", {"path": "output.csv"}),
+    set_name="extract",
 )
 ```
+
+Step generation remains explicit and deterministic.
 
 ---
 
 ### Result Inspection
 
-`get_box_dfs_heads` retrieves DataFrame previews from the warehouse with validation:
+Helpers such as `get_box_dfs_heads` allow validated inspection of runtime results:
 
 ```python
 heads = fg.get_box_dfs_heads(box_result, pipeline.steps())
 ```
 
-Errors are raised if results are missing or invalid.
+Errors are raised if expected outputs are missing or invalid.
 
 ---
 
 ## Typical Workflow
 
 1. Create an environment
-2. Register ETL functions
-3. Optionally compose transformations
-4. Build a pipeline (manually or automatically)
-5. Execute the pipeline
-6. Inspect results from the warehouse
+2. Create one or more function sets
+3. Register ETL functions into sets
+4. Optionally compose transformations
+5. Define a pipeline
+6. Execute the pipeline
+7. Inspect results from the warehouse
 
 ---
 
 ## Design Principles
 
-Fragua follows these principles:
+Fragua adheres to the following principles:
 
-* **Minimalism** — no feature without purpose
-* **Explicitness** — no hidden magic
+* **Minimalism** — no feature without a clear purpose
+* **Explicitness** — no hidden behavior
 * **Single Responsibility** — each component does one thing
-* **Runtime-only** — no persistence or side effects
+* **Runtime-only** — no persistence, no side effects
 
 ---
 
@@ -191,7 +205,7 @@ Fragua is not:
 * A production ETL engine
 * A data platform
 
-It is a **developer tool** for ETL design and validation.
+It is a **developer framework for ETL design and validation**.
 
 ---
 
