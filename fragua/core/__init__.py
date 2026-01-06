@@ -28,6 +28,9 @@ from .box import FraguaBox
 
 from .step_builder import FraguaStepBuilder
 
+from .step_index import FraguaStepIndex
+
+
 __all__ = [
     "FraguaEnvironment",
     "FraguaRegistry",
@@ -38,4 +41,5 @@ __all__ = [
     "FraguaPipeline",
     "FraguaBox",
     "FraguaStepBuilder",
+    "FraguaStepIndex",
 ]
