@@ -62,6 +62,32 @@ A step defines *what should happen*, not *how it happens*.
 
 ---
 
+### 3.1 FraguaStepBuilder
+
+A `FraguaStepBuilder` is a **mutable builder** for constructing immutable `FraguaStep` objects.
+
+* Provides a fluent interface for step configuration
+* Allows method chaining (`.with_params()`, `.with_save_as()`, `.with_use()`)
+* Produces immutable steps via `.build()`
+* Enables safe, incremental step construction
+
+The builder reduces boilerplate while preserving step immutability.
+
+---
+
+### 3.2 FraguaStepIndex
+
+A `FraguaStepIndex` is a **template registry** for preconfigured step builders.
+
+* Stores `FraguaStepBuilder` templates by name
+* Returns fresh builder copies from templates
+* Enables discoverable step composition
+* Provides safe access to registered step patterns
+
+The index facilitates reusable step templates without sacrificing explicitness.
+
+---
+
 ### 4. FraguaPipeline
 
 A pipeline is an **ordered execution plan**.
