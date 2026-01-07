@@ -17,6 +17,28 @@ class FraguaStepBuilder:
         self.save_as: Optional[str] = None
         self.use: Optional[str] = None
 
+    @classmethod
+    def from_dict(cls, data: dict) -> "FraguaStepBuilder":
+        """Create a step builder from a declarative dict."""
+        try:
+            builder = cls(
+                set_name=data["set"],
+                function=data["function"],
+            )
+        except KeyError as exc:
+            raise ValueError(f"Missing required step field: {exc}") from exc
+
+        if "params" in data:
+            builder.with_params(**data["params"])
+
+        if "use" in data:
+            builder.with_use(data["use"])
+
+        if "save_as" in data:
+            builder.with_save_as(data["save_as"])
+
+        return builder
+
     def with_params(self, **params: Any) -> "FraguaStepBuilder":
         """Set step params."""
         self.params.update(params)
