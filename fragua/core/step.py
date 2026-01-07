@@ -1,7 +1,9 @@
 """Step Class."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 @dataclass(frozen=True)
@@ -12,6 +14,6 @@ class FraguaStep:
 
     set_name: str
     function: str
-    params: Dict[str, Any]
+    params: dict[str, Any]
     save_as: Optional[str] = None
     use: Optional[str] = None

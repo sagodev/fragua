@@ -2,12 +2,14 @@
 Base classes module.
 
 This module contains:
-- Component class.
 - Environment class.
-- Warehouse class.
-- Storage class.
-- Set class.
 - Registry class.
+- Set class.
+- Warehouse class.
+- Pipeline class.
+- Step class.
+- Box class.
+- Step Index class.
 """
 
 from .environment import FraguaEnvironment
@@ -26,8 +28,6 @@ from .step import FraguaStep
 
 from .box import FraguaBox
 
-from .step_builder import FraguaStepBuilder
-
 from .step_index import FraguaStepIndex
 
 
@@ -40,6 +40,5 @@ __all__ = [
     "FraguaStep",
     "FraguaPipeline",
     "FraguaBox",
-    "FraguaStepBuilder",
     "FraguaStepIndex",
 ]
