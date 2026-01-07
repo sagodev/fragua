@@ -37,6 +37,7 @@ class FraguaAgent:
         """
         Execute a pipeline and return a FraguaBox containing all step results.
         """
+        pipeline.validate()
         context, results = self._initialize_execution_state()
 
         for step in pipeline.steps():
@@ -84,8 +85,8 @@ class FraguaAgent:
         )
 
         if step.use:
-            input_data = context.get(step.use)
-            return fn(input_data=input_data, **step.params)
+            df = context.get(step.use)
+            return fn(df=df, **step.params)
 
         return fn(**step.params)
 
