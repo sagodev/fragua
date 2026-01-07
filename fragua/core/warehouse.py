@@ -32,8 +32,8 @@ class FraguaWarehouse:
             The execution result container to persist.
         """
         self._records[box.key] = {
-            "result": box.result,  # type: Dict[str, pd.DataFrame]
-            "metadata": box.metadata,  # type: Dict[str, Any]
+            "result": box.result,
+            "metadata": box.metadata,
             "created_at": datetime.now(),
         }
 

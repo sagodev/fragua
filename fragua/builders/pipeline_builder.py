@@ -1,3 +1,5 @@
+"""Fragua Pipeline Builder Class."""
+
 from __future__ import annotations
 from typing import Iterable, List, Dict
 
