@@ -22,11 +22,11 @@ class FraguaPipelineBuilder:
         self._steps = []
 
     @classmethod
-    def from_dict(cls, data: Dict) -> FraguaPipelineBuilder:
+    def from_dict(cls, data: Dict[str, object]) -> FraguaPipelineBuilder:
         """Create a pipeline builder from a declarative dict."""
         try:
-            name: str = data["name"]
-            steps: list = data["steps"]
+            name: str = data["name"]  # type: ignore
+            steps: list = data["steps"]  # type: ignore
         except KeyError as exc:
             raise ValueError(f"Missing pipeline field: {exc}") from exc
 

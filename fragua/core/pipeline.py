@@ -17,22 +17,6 @@ class FraguaPipeline:
         self.name = name
         self._steps = []
 
-    def validate(self) -> None:
-        """Validate step dependencies and uniqueness of outputs."""
-        known_keys: set[str] = set()
-
-        for step in self._steps:
-            if step.use and step.use not in known_keys:
-                raise ValueError(
-                    f"Step '{step.function}' depends on unknown step '{step.use}'"
-                )
-
-            key: str = step.save_as or step.function
-            if key in known_keys:
-                raise ValueError(f"Duplicated step output key: {key}")
-
-            known_keys.add(key)
-
     def add(self, step_or_steps: Union[FraguaStep, List[FraguaStep]]) -> None:
         """
         Add a single step or a list of steps to the pipeline.

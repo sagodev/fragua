@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fragua.builders.step_builder import FraguaStepBuilder
+
 if TYPE_CHECKING:
     from typing import List
-
-from fragua.builders.step_builder import FraguaStepBuilder
 
 
 class FraguaStepIndex:

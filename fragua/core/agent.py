@@ -9,6 +9,8 @@ from fragua.core.registry import FraguaRegistry
 from fragua.core.box import FraguaBox
 from fragua.core.step import FraguaStep
 
+# pylint: disable=too-few-public-methods
+
 
 class FraguaAgent:
     """
@@ -34,7 +36,6 @@ class FraguaAgent:
         """
         Execute a pipeline and return a FraguaBox containing all step results.
         """
-        pipeline.validate()
         context, results = self._initialize_execution_state()
 
         for step in pipeline.steps():
