@@ -32,10 +32,18 @@ class FraguaStepBuilder:
         self.use = name
         return self
 
+    def copy(self) -> "FraguaStepBuilder":
+        """Return an StepBuilder copy."""
+        return FraguaStepBuilder(
+            set_name=self.set_name,
+            function=self.function,
+        )
+
     def build(self) -> FraguaStep:
         """
         Finalize and return an immutable FraguaStep.
         """
+
         return FraguaStep(
             set_name=self.set_name,
             function=self.function,

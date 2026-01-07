@@ -2,7 +2,7 @@
 
 from typing import Dict
 
-from fragua.core.step_builder import FraguaStepBuilder
+from fragua.builders.step_builder import FraguaStepBuilder
 
 
 class FraguaStepIndex:
