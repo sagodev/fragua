@@ -12,10 +12,10 @@ Fragua is intentionally simple. Its goal is clarity over completeness.
 
 Fragua exists to answer a small, focused set of questions:
 
-> *Does this ETL function behave as expected?*  
+> *Does this ETL function behave as expected?*
 > *Does this sequence of ETL steps produce the correct result?*
 
-It is **not** a workflow orchestrator nor a production-grade ETL engine.  
+It is **not** a workflow orchestrator nor a production-grade ETL engine.
 Fragua is a **developer-oriented framework** for modeling, validating, and experimenting with ETL logic during development.
 
 ---
@@ -88,7 +88,7 @@ The index facilitates reusable step templates without sacrificing explicitness.
 
 ---
 
-### 4. FraguaPipeline
+## 4. FraguaPipeline and PipelineBuilder
 
 A pipeline is an **ordered execution plan**.
 
@@ -96,11 +96,17 @@ A pipeline is an **ordered execution plan**.
 * Preserves execution order
 * Contains no execution logic
 
+`PipelineBuilder` and declarative compilation now allow:
+
+* Adding multiple steps at once
+* Defining pipelines with macros that expand automatically into steps
+* Setting `save_as` for the final output of a macro for easy downstream use
+
 Pipelines are pure definitions executed by an agent at runtime.
 
 ---
 
-### 5. FraguaAgent
+## 5. FraguaAgent
 
 The agent is a **stateless execution primitive**.
 
@@ -113,7 +119,7 @@ The agent contains no domain logic and holds no state between runs.
 
 ---
 
-### 6. FraguaWarehouse
+## 6. FraguaWarehouse
 
 The warehouse is an **in-memory result store**.
 
@@ -125,7 +131,7 @@ The warehouse exists purely at runtime.
 
 ---
 
-### 7. FraguaEnvironment
+## 7. FraguaEnvironment
 
 The environment is the **composition and orchestration boundary**.
 
@@ -134,11 +140,13 @@ It owns:
 * One registry
 * One agent
 * One warehouse
+* One StepIndex
 
 It provides APIs to:
 
-* Create and manage function sets
+* Create and manage function sets (optionally tagged to prevent step builder creation)
 * Register functions and pipelines
+* Compile declarative pipelines with macros
 * Execute pipelines
 * Retrieve execution results
 
@@ -148,44 +156,13 @@ The environment does not impose structure — it enables it.
 
 ## Helper Abstractions
 
-Fragua includes optional helpers to reduce boilerplate while preserving explicitness.
+### Macros and Declarative Pipelines
 
-### Composite Transform Functions
-
-`transform_fn_schema` allows composing multiple transformation functions into a reusable unit:
-
-```python
-basic_transformation = fg.transform_fn_schema(
-    name="basic_transformation",
-    steps=[
-        ("standardize", None),
-        ("add_derived_columns", None),
-    ],
-    registry=env.registry,
-    set_name="transform",
-)
-```
-
-This enables declarative and reusable transformation logic without hidden execution.
-
----
+Macros (e.g., `transform_chain`) allow expanding multiple steps automatically. They can define a `save_as` for the last step, enabling downstream steps to reference macro output naturally.
 
 ### Automatic Step Generation
 
-`generate_steps_sequence` generates pipeline steps from function declarations:
-
-```python
-steps = fg.generate_steps_sequence(
-    ("extract_excel", {"path": "input.xlsx"}),
-    ("basic_transformation", {}),
-    ("load_to_csv", {"path": "output.csv"}),
-    set_name="extract",
-)
-```
-
-Step generation remains explicit and deterministic.
-
----
+Functions like `create_transform_steps` generate sequences of `FraguaStep` from function names, chaining them automatically.
 
 ### Result Inspection
 
@@ -204,16 +181,15 @@ Errors are raised if expected outputs are missing or invalid.
 1. Create an environment
 2. Create one or more function sets
 3. Register ETL functions into sets
-4. Optionally compose transformations
-5. Define a pipeline
-6. Execute the pipeline
-7. Inspect results from the warehouse
+4. Optionally compose transformations and macros
+5. Define a declarative pipeline
+6. Compile the pipeline
+7. Execute the pipeline
+8. Inspect results from the warehouse
 
 ---
 
 ## Design Principles
-
-Fragua adheres to the following principles:
 
 * **Minimalism** — no feature without a clear purpose
 * **Explicitness** — no hidden behavior
