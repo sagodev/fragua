@@ -86,6 +86,11 @@ class FraguaAgent:
 
         if step.use:
             df = context.get(step.use)
+            if df is None:
+                raise ValueError(
+                    f"Step '{step.function}' expected input from '{step.use}', but got None"
+                )
+
             return fn(df=df, **step.params)
 
         return fn(**step.params)
