@@ -1,6 +1,11 @@
 """Step index class."""
 
-from typing import Dict
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import List
 
 from fragua.builders.step_builder import FraguaStepBuilder
 
@@ -14,7 +19,7 @@ class FraguaStepIndex:
     """
 
     def __init__(self) -> None:
-        self._steps: Dict[str, FraguaStepBuilder] = {}
+        self._steps: dict[str, FraguaStepBuilder] = {}
 
     def register(
         self,
@@ -33,13 +38,12 @@ class FraguaStepIndex:
         if name not in self._steps:
             raise KeyError(f"Step not found: {name}")
 
-        # Return a fresh builder copy
         template = self._steps[name]
         return FraguaStepBuilder(
             set_name=template.set_name,
             function=template.function,
         )
 
-    def list(self) -> list[str]:
+    def list(self) -> List[str]:
         """Return the list of registered item names."""
         return sorted(self._steps.keys())

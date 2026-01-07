@@ -1,6 +1,5 @@
-"""Pipeline Builder class."""
-
-from typing import Iterable, List
+from __future__ import annotations
+from typing import Iterable, List, Dict
 
 from fragua.builders.step_builder import FraguaStepBuilder
 from fragua.core.pipeline import FraguaPipeline
@@ -15,16 +14,19 @@ class FraguaPipelineBuilder:
     an ordered sequence of FraguaStep objects.
     """
 
+    name: str
+    _steps: List[FraguaStep]
+
     def __init__(self, name: str) -> None:
         self.name = name
-        self._steps: List[FraguaStep] = []
+        self._steps = []
 
     @classmethod
-    def from_dict(cls, data: dict) -> "FraguaPipelineBuilder":
-        """Create an pipeline builder from an declarative dict."""
+    def from_dict(cls, data: Dict) -> FraguaPipelineBuilder:
+        """Create a pipeline builder from a declarative dict."""
         try:
-            name = data["name"]
-            steps = data["steps"]
+            name: str = data["name"]
+            steps: list = data["steps"]
         except KeyError as exc:
             raise ValueError(f"Missing pipeline field: {exc}") from exc
 
@@ -34,12 +36,12 @@ class FraguaPipelineBuilder:
         builder = cls(name=name)
 
         for step_def in steps:
-            step = FraguaStepBuilder.from_dict(step_def).build()
+            step: FraguaStep = FraguaStepBuilder.from_dict(step_def).build()
             builder.add(step)
 
         return builder
 
-    def add(self, *steps: FraguaStep) -> "FraguaPipelineBuilder":
+    def add(self, *steps: FraguaStep) -> FraguaPipelineBuilder:
         """
         Add one or more steps to the pipeline.
         """
@@ -49,12 +51,11 @@ class FraguaPipelineBuilder:
         for step in steps:
             if not isinstance(step, FraguaStep):
                 raise TypeError("Expected FraguaStep instances")
-
             self._steps.append(step)
 
         return self
 
-    def extend(self, steps: Iterable[FraguaStep]) -> "FraguaPipelineBuilder":
+    def extend(self, steps: Iterable[FraguaStep]) -> FraguaPipelineBuilder:
         """Add multiple steps to the pipeline."""
         for step in steps:
             self.add(step)
@@ -70,7 +71,7 @@ class FraguaPipelineBuilder:
                     f"Step '{step.function}' depends on unknown step '{step.use}'"
                 )
 
-            key = step.save_as or step.function
+            key: str = step.save_as or step.function
             if key in known_keys:
                 raise ValueError(f"Duplicated step output key: {key}")
 
@@ -85,6 +86,6 @@ class FraguaPipelineBuilder:
         """
         self.validate()
 
-        pipeline = FraguaPipeline(self.name)
+        pipeline: FraguaPipeline = FraguaPipeline(self.name)
         pipeline.add(list(self._steps))
         return pipeline

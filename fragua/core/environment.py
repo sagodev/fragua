@@ -1,10 +1,6 @@
-"""Fragua execution environment.
+"""Fragua Environment Class."""
 
-Defines the orchestration layer for executing ETL functions
-using a single agent, a registry and a runtime warehouse.
-"""
-
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from fragua.builders.pipeline_builder import FraguaPipelineBuilder
 from fragua.core.agent import FraguaAgent
@@ -26,6 +22,12 @@ class FraguaEnvironment:
     and one runtime warehouse.
     """
 
+    name: str
+    agent: FraguaAgent
+    registry: FraguaRegistry
+    warehouse: FraguaWarehouse
+    step_index: FraguaStepIndex
+
     def __init__(self, name: str) -> None:
         self.name = name
         self.agent = FraguaAgent(name=f"{name}_agent")
@@ -34,9 +36,6 @@ class FraguaEnvironment:
         self.step_index = FraguaStepIndex()
 
     def _initialize_registry(self) -> FraguaRegistry:
-        """
-        Create and preload the default registry sets.
-        """
         return FraguaRegistry(
             sets={
                 "pipelines": FraguaSet("pipelines", step_enabled=False),
@@ -49,13 +48,9 @@ class FraguaEnvironment:
         """
         Create a new registry set.
 
-        Parameters
-        ----------
-        name:
-            Name of the registry set.
-        step_enabled:
-            Whether callables registered in this set should
-            generate FraguaStepBuilder templates.
+        Args:
+            name: Name of the set to create.
+            step_enabled: Whether steps can be created from this set.
         """
         if self.registry.get_set(name) is not None:
             raise ValueError(f"Registry set already exists: {name}")
@@ -72,29 +67,34 @@ class FraguaEnvironment:
         *,
         step_names: Iterable[str],
         step_prefix: str,
-        start_from: str | None,
+        start_from: Optional[str],
     ) -> List[FraguaStep]:
         """
-        Generate a sequence of FraguaStep objects using the environment's StepIndex,
-        chaining them automatically.
+        Create a chain of transform steps.
+
+        Args:
+            step_names: Names of the steps to create from the step index.
+            step_prefix: Prefix for naming saved results.
+            start_from: Optional name of the step to start from.
+
+        Returns:
+            List of created FraguaStep instances.
         """
-        steps: list[FraguaStep] = []
-        previous_step_name: str | None = start_from
+        steps: List[FraguaStep] = []
+        previous_step_name: Optional[str] = start_from
 
         for index, step_name in enumerate(step_names, start=1):
-            builder = self.step_index.get(step_name)
+            builder: Optional[FraguaStepBuilder] = self.step_index.get(step_name)
             if builder is None:
                 raise ValueError(f"Step not found in StepIndex: {step_name}")
 
-            save_as = f"{step_prefix}_step_{index}"
-
+            save_as: str = f"{step_prefix}_step_{index}"
             builder = builder.with_params().with_save_as(save_as)
 
             if previous_step_name is not None:
                 builder = builder.with_use(previous_step_name)
 
-            step = builder.build()
-
+            step: FraguaStep = builder.build()
             steps.append(step)
             previous_step_name = save_as
 
@@ -102,17 +102,13 @@ class FraguaEnvironment:
 
     def create_pipeline(self, name: str) -> FraguaPipelineBuilder:
         """
-        Create a pipeline builder bound to this environment.
+        Create a new pipeline builder.
 
-        Parameters
-        ----------
-        name:
-            Name of the pipeline to be built.
+        Args:
+            name: Name of the pipeline.
 
-        Returns
-        -------
-        FraguaPipelineBuilder
-            A new pipeline builder instance.
+        Returns:
+            FraguaPipelineBuilder instance for constructing the pipeline.
         """
         if self.registry.get_set("pipelines") is None:
             raise RuntimeError("Pipelines registry set is not initialized")
@@ -121,31 +117,33 @@ class FraguaEnvironment:
 
     def register(
         self,
-        item: Callable[..., Any] | FraguaPipeline,
+        item: Union[Callable[..., Any], FraguaPipeline],
         *,
-        set_name: str | None = None,
-        name: str | None = None,
+        set_name: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> None:
         """
-        Register a function or pipeline in the environment.
+        Register an item in the environment's registry.
+
+        Args:
+            item: Callable or FraguaPipeline to register.
+            set_name: Name of the registry set (required for callables).
+            name: Optional custom name for the item.
         """
         if isinstance(item, FraguaPipeline):
-            target_set = self._get_registry_set("pipelines")
-            item_name = name or item.name
-
+            target_set: FraguaSet = self._get_registry_set("pipelines")
+            item_name: str = name or item.name
         elif callable(item):
             if not set_name:
                 raise ValueError("set_name is required when registering callables")
-
             target_set = self._get_registry_set(set_name)
             item_name = name or item.__name__
-
         else:
             raise TypeError(
                 "Only callables or FraguaPipeline instances can be registered"
             )
 
-        registered = target_set.register(item_name, item)
+        registered: bool = target_set.register(item_name, item)
         if not registered:
             raise ValueError(
                 f"Item '{item_name}' is already registered in set '{target_set.name}'"
@@ -159,12 +157,18 @@ class FraguaEnvironment:
             ),
         )
 
-    def run(self, pipeline: FraguaPipeline | str) -> FraguaBox:
+    def run(self, pipeline: Union[FraguaPipeline, str]) -> FraguaBox:
         """
-        Execute a pipeline by instance or by registered name.
+        Execute a pipeline and return the result.
+
+        Args:
+            pipeline: FraguaPipeline instance or name of registered pipeline.
+
+        Returns:
+            FraguaBox containing the pipeline execution results.
         """
-        resolved_pipeline = self._resolve_pipeline(pipeline)
-        box = self.agent.run_pipeline(
+        resolved_pipeline: FraguaPipeline = self._resolve_pipeline(pipeline)
+        box: FraguaBox = self.agent.run_pipeline(
             pipeline=resolved_pipeline,
             registry=self.registry,
         )
@@ -173,32 +177,37 @@ class FraguaEnvironment:
 
     def compile_pipeline(self, definition: Dict[str, Any]) -> FraguaPipeline:
         """
-        Compile a declarative pipeline definition into a FraguaPipeline.
+        Compile a pipeline from a dictionary definition.
+
+        Args:
+            definition: Dictionary containing pipeline name and steps.
+
+        Returns:
+            Compiled FraguaPipeline ready for execution.
         """
         self._validate_pipeline_definition(definition)
 
-        expanded_steps: list[dict[str, Any]] = []
+        expanded_steps: List[Dict[str, Any]] = []
 
-        # 1. Expand macros into concrete step definitions
         for step in definition["steps"]:
             if self._is_macro(step):
-                macro_steps = self._expand_macro(step)
+                macro_steps: List[Dict[str, Any]] = self._expand_macro(step)
                 expanded_steps.extend(macro_steps)
             else:
                 expanded_steps.append(step)
 
-        # 2. Normalize all steps (macros are gone at this point)
-        normalized_steps = [self._normalize_step(step) for step in expanded_steps]
+        normalized_steps: List[Dict[str, Any]] = [
+            self._normalize_step(step) for step in expanded_steps
+        ]
 
-        # 3. Validate compiled structure
         self._validate_step_dependencies(normalized_steps)
         self._validate_registry_bindings(normalized_steps)
 
-        # 4. Compile steps into FraguaStep
-        compiled_steps = [self._compile_step(step) for step in normalized_steps]
+        compiled_steps: List[FraguaStep] = [
+            self._compile_step(step) for step in normalized_steps
+        ]
 
-        # 5. Build pipeline
-        pipeline = FraguaPipeline(name=definition["name"])
+        pipeline: FraguaPipeline = FraguaPipeline(name=definition["name"])
         pipeline.add(compiled_steps)
 
         return pipeline
@@ -206,17 +215,18 @@ class FraguaEnvironment:
     # -------------------- Helpers -------------------- #
 
     def _get_registry_set(self, set_name: str) -> FraguaSet:
-        target_set = self.registry.get_set(set_name)
+        target_set: Optional[FraguaSet] = self.registry.get_set(set_name)
         if target_set is None:
             raise ValueError(f"Unknown registry set: {set_name}")
         return target_set
 
-    def _resolve_pipeline(self, pipeline: FraguaPipeline | str) -> FraguaPipeline:
+    def _resolve_pipeline(self, pipeline: Union[FraguaPipeline, str]) -> FraguaPipeline:
         if isinstance(pipeline, FraguaPipeline):
             return pipeline
 
-        pipeline_set = self._get_registry_set("pipelines")
-        resolved = pipeline_set.get(pipeline)
+        pipeline_set: FraguaSet = self._get_registry_set("pipelines")
+
+        resolved: Optional[FraguaPipeline] = pipeline_set.get_pipeline(pipeline)
 
         if resolved is None:
             raise ValueError(f"Pipeline not found: {pipeline}")
@@ -226,7 +236,7 @@ class FraguaEnvironment:
 
         return resolved
 
-    def _normalize_step(self, raw_step: Dict) -> Dict:
+    def _normalize_step(self, raw_step: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(raw_step, dict):
             raise ValueError("Each step must be a dictionary.")
 
@@ -241,12 +251,12 @@ class FraguaEnvironment:
             "use": raw_step.get("use"),
         }
 
-    def _validate_step_dependencies(self, steps: List[Dict]) -> None:
-        available_keys = set()
+    def _validate_step_dependencies(self, steps: List[Dict[str, Any]]) -> None:
+        available_keys: set[str] = set()
 
         for step in steps:
-            use = step.get("use")
-            save_as = step.get("save_as")
+            use: Optional[str] = step.get("use")
+            save_as: Optional[str] = step.get("save_as")
 
             if use and use not in available_keys:
                 raise ValueError(f"Step uses undefined result '{use}'.")
@@ -256,13 +266,15 @@ class FraguaEnvironment:
                     raise ValueError(f"Duplicate save_as key '{save_as}'.")
                 available_keys.add(save_as)
 
-    def _validate_registry_bindings(self, steps: List[Dict]) -> None:
+    def _validate_registry_bindings(self, steps: List[Dict[str, Any]]) -> None:
         for step in steps:
-            function_set = self.registry.get_set(step["set"])
+            function_set: Optional[FraguaSet] = self.registry.get_set(step["set"])
             if function_set is None:
                 raise ValueError(f"Registry set not found: {step['set']}")
 
-            fn = function_set.get_function(step["function"])
+            fn: Optional[Callable[..., Any]] = function_set.get_function(
+                step["function"]
+            )
             if fn is None:
                 raise ValueError(
                     f"Function '{step['function']}' not found in set '{step['set']}'"
@@ -284,9 +296,8 @@ class FraguaEnvironment:
         if not definition["steps"]:
             raise ValueError("Pipeline must contain at least one step.")
 
-    def _compile_step(self, step: Dict) -> FraguaStep:
-        function_set = self.registry.get_set(step["set"])
-
+    def _compile_step(self, step: Dict[str, Any]) -> FraguaStep:
+        function_set: Optional[FraguaSet] = self.registry.get_set(step["set"])
         if function_set is None:
             raise ValueError("Function set not found.")
 
@@ -299,7 +310,7 @@ class FraguaEnvironment:
                 use=step["use"],
             )
 
-        builder = FraguaStepBuilder(
+        builder: FraguaStepBuilder = FraguaStepBuilder(
             set_name=step["set"],
             function=step["function"],
         )
@@ -315,38 +326,22 @@ class FraguaEnvironment:
 
         return builder.build()
 
-    def _compile_macro(self, macro_def: dict) -> list[FraguaStep]:
-        macro_name = macro_def["macro"]
-
-        if macro_name != "transform_chain":
-            raise ValueError(f"Unknown macro: {macro_name}")
-
-        return self.create_transform_steps(
-            step_names=macro_def["step_names"],
-            step_prefix=macro_def["step_prefix"],
-            start_from=macro_def.get("start_from"),
-        )
-
     def _is_macro(self, step_def: Dict[str, Any]) -> bool:
-        """
-        Return True if the step definition represents a macro expansion.
-        """
         return "macro" in step_def
 
-    def _expand_macro(self, macro_def: Dict[str, Any]) -> list[Dict[str, Any]]:
-        steps = self.create_transform_steps(
+    def _expand_macro(self, macro_def: Dict[str, Any]) -> List[Dict[str, Any]]:
+        steps: List[FraguaStep] = self.create_transform_steps(
             step_names=macro_def["step_names"],
             step_prefix=macro_def["step_prefix"],
             start_from=macro_def.get("start_from"),
         )
 
-        final_save_as = macro_def.get("save_as")
+        final_save_as: Optional[str] = macro_def.get("save_as")
 
-        expanded_steps = []
+        expanded_steps: List[Dict[str, Any]] = []
 
         for index, step in enumerate(steps):
-            is_last = index == len(steps) - 1
-
+            is_last: bool = index == len(steps) - 1
             expanded_steps.append(
                 {
                     "set": step.set_name,

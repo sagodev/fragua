@@ -1,10 +1,16 @@
 """Runtime warehouse for execution results."""
 
 from __future__ import annotations
-from typing import Any, Dict
+
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, List
+
+import pandas as pd
 
 from fragua.core.box import FraguaBox
+
+if TYPE_CHECKING:
+    from typing import Dict
 
 
 class FraguaWarehouse:
@@ -16,7 +22,7 @@ class FraguaWarehouse:
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self._records: Dict[str, Dict[str, Any]] = {}
+        self._records: dict[str, dict[str, Any]] = {}
 
     def store(self, box: FraguaBox) -> None:
         """
@@ -33,19 +39,19 @@ class FraguaWarehouse:
             "created_at": datetime.now(),
         }
 
-    def get(self, key: str) -> Any:
+    def get(self, key: str) -> dict[str, pd.DataFrame]:
         """Retrieve the stored result by key."""
         return self._records[key]["result"]
 
-    def get_record(self, key: str) -> Dict[str, Any]:
+    def get_record(self, key: str) -> dict[str, Any]:
         """Retrieve the full stored record."""
         return dict(self._records[key])
 
-    def list_keys(self) -> list[str]:
+    def list_keys(self) -> List[str]:
         """List all stored keys."""
         return list(self._records.keys())
 
-    def snapshot(self) -> Dict[str, Dict[str, FraguaBox]]:
+    def snapshot(self) -> dict[str, dict[str, Any]]:
         """Return a shallow copy of all records."""
         return dict(self._records)
 

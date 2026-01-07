@@ -4,13 +4,13 @@ Defines a minimal container for registering and retrieving
 ETL functions and pipelines at runtime.
 """
 
-from typing import Any, Dict, Optional, Union, Callable
+from typing import Callable, Dict, Optional, Union
 
 import pandas as pd
 
 from fragua.core.pipeline import FraguaPipeline
 
-FraguaItem = Union[Callable[..., pd.DataFrame | Any], FraguaPipeline]
+FraguaItem = Union[Callable[..., pd.DataFrame], FraguaPipeline]
 
 
 class FraguaSet:
@@ -74,7 +74,7 @@ class FraguaSet:
         item = self.get(name)
         return item if isinstance(item, FraguaPipeline) else None
 
-    def get_function(self, name: str) -> Optional[Callable[..., pd.DataFrame | Any]]:
+    def get_function(self, name: str) -> Optional[Callable[..., pd.DataFrame]]:
         """Retrieve a callable item. If not exist return None."""
         item = self.get(name)
         return item if callable(item) else None

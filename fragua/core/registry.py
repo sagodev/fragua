@@ -1,11 +1,7 @@
-"""Fragua registry.
+"""Fragua registry Class."""
 
-Defines a lightweight registry that indexes function sets
-and provides function resolution at runtime.
-"""
-
-from typing import Callable, Dict, Optional
-
+from __future__ import annotations
+from typing import Callable, Dict, Optional, List
 import pandas as pd
 
 from fragua.core.set import FraguaSet
@@ -18,6 +14,8 @@ class FraguaRegistry:
     A FraguaRegistry stores named FraguaSet instances and
     resolves functions by set and function name.
     """
+
+    _sets: Dict[str, FraguaSet]
 
     def __init__(
         self,
@@ -32,7 +30,7 @@ class FraguaRegistry:
         sets:
             Optional preloaded mapping of set name to FraguaSet.
         """
-        self._sets: Dict[str, FraguaSet] = sets or {}
+        self._sets = sets or {}
 
     def add_set(self, set_: FraguaSet) -> bool:
         """
@@ -85,12 +83,12 @@ class FraguaRegistry:
 
         Returns None if the set or function does not exist.
         """
-        set_ = self._sets.get(set_name)
+        set_: Optional[FraguaSet] = self._sets.get(set_name)
         if not set_:
             return None
 
         return set_.get_function(function_name)
 
-    def list_sets(self) -> list[str]:
+    def list_sets(self) -> List[str]:
         """Return the list of registered set names."""
         return list(self._sets.keys())

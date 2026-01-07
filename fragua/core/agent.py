@@ -1,18 +1,13 @@
-"""Fragua agent.
+"""Fragua Agent Class."""
 
-Stateless execution primitive responsible for running pipelines.
-"""
-
-from typing import Callable
+from __future__ import annotations
+from typing import Callable, Dict, Tuple
 import pandas as pd
 
 from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
 from fragua.core.box import FraguaBox
 from fragua.core.step import FraguaStep
-
-
-# pylint: disable=too-few-public-methods
 
 
 class FraguaAgent:
@@ -22,6 +17,8 @@ class FraguaAgent:
     Executes pipeline steps and returns a FraguaBox containing
     the final result.
     """
+
+    name: str
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -41,13 +38,13 @@ class FraguaAgent:
         context, results = self._initialize_execution_state()
 
         for step in pipeline.steps():
-            result = self._execute_step(
+            result: pd.DataFrame = self._execute_step(
                 step=step,
                 registry=registry,
                 context=context,
             )
 
-            key = self._resolve_step_result_key(step)
+            key: str = self._resolve_step_result_key(step)
             context[key] = result
             results[key] = result
 
@@ -62,7 +59,7 @@ class FraguaAgent:
 
     def _initialize_execution_state(
         self,
-    ) -> tuple[dict[str, object], dict[str, pd.DataFrame]]:
+    ) -> Tuple[Dict[str, object], Dict[str, pd.DataFrame]]:
         """
         Initialize the execution context and results container.
         """
@@ -73,19 +70,19 @@ class FraguaAgent:
         *,
         step: FraguaStep,
         registry: FraguaRegistry,
-        context: dict[str, object],
+        context: Dict[str, object],
     ) -> pd.DataFrame:
         """
         Execute a single pipeline step and return its result.
         """
-        fn = self._resolve_step_function(
+        fn: Callable[..., pd.DataFrame] = self._resolve_step_function(
             registry=registry,
             set_name=step.set_name,
             function_name=step.function,
         )
 
         if step.use:
-            df = context.get(step.use)
+            df: pd.DataFrame = context.get(step.use)  # type: ignore
             if df is None:
                 raise ValueError(
                     f"Step '{step.function}' expected input from '{step.use}', but got None"
@@ -127,7 +124,7 @@ class FraguaAgent:
 
     def _validate_execution_results(
         self,
-        results: dict[str, pd.DataFrame],
+        results: Dict[str, pd.DataFrame],
     ) -> None:
         """
         Validate that the pipeline produced at least one result.
@@ -141,7 +138,7 @@ class FraguaAgent:
         self,
         *,
         pipeline: FraguaPipeline,
-        results: dict[str, pd.DataFrame],
+        results: Dict[str, pd.DataFrame],
     ) -> FraguaBox:
         """
         Build the FraguaBox containing execution results and metadata.
