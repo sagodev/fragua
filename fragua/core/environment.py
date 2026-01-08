@@ -221,10 +221,6 @@ class FraguaEnvironment:
             )
             return self._run_pipeline(compiled)
 
-        logger.error(
-            "Invalid pipeline input type: %s",
-            type(pipeline).__name__,
-        )
         raise TypeError(
             "execute_pipeline expects a FraguaPipeline, "
             "a pipeline name (str), or a pipeline definition (dict)"
