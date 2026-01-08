@@ -1,191 +1,225 @@
 # Fragua
 
-Fragua is a lightweight Python framework designed to **design, validate, and reason about ETL logic** in a fully controlled, in-memory environment.
+Fragua is a lightweight Python framework designed to **model, validate, and execute ETL logic** in a fully controlled, in-memory environment.
 
-It provides a minimal and explicit execution model where ETL functions are registered, composed, executed sequentially, and inspected — **without schedulers, persistence layers, or external infrastructure**.
+It provides an explicit and minimal execution model where **ETL functions, declarative pipelines, and macros** are composed and executed deterministically — **without schedulers, persistence layers, or external infrastructure**.
 
-Fragua is intentionally simple. Its goal is clarity over completeness.
+Fragua intentionally prioritizes **clarity over completeness**.
 
 ---
 
 ## Purpose
 
-Fragua exists to answer a small, focused set of questions:
+Fragua exists to answer a focused set of development-time questions:
 
-> *Does this ETL function behave as expected?*
-> *Does this sequence of ETL steps produce the correct result?*
+> *Does this ETL function behave as expected?*  
+> *Does this declarative pipeline produce the correct result when executed?*
 
-It is **not** a workflow orchestrator nor a production-grade ETL engine.
-Fragua is a **developer-oriented framework** for modeling, validating, and experimenting with ETL logic during development.
+Fragua is **not** a workflow orchestrator nor a production ETL engine.  
+It is a **developer-oriented framework** for designing, validating, and reasoning about ETL logic during development.
 
 ---
 
 ## Core Model
 
-Fragua is built around a small set of orthogonal, loosely coupled components.
-
-### 1. FraguaSet
-
-A `FraguaSet` is a **logical namespace for functions**.
-
-* Stores named callables
-* Groups functions by purpose (e.g. `extract`, `transform`, `load`, `utility`)
-* Contains no execution logic
-* Has no knowledge of pipelines or data
-
-Sets are created explicitly and only when needed.
+Fragua is built around a small number of orthogonal, loosely coupled components with strictly defined responsibilities.
 
 ---
 
-### 2. FraguaRegistry
+## 1. FraguaSet
 
-The registry is a **lookup and organization layer**.
+A `FraguaSet` is a **logical container for executable definitions**.
+
+* Stores named **callable ETL functions**
+* Stores **declarative pipeline definitions** (`dict[str, Any]`)
+* Groups items by purpose (e.g. `extract`, `transform`, `load`, `pipelines`)
+* Contains no execution logic
+* Can optionally expose its functions as step templates
+
+A set is purely an organizational and lookup construct.
+
+---
+
+## 2. FraguaRegistry
+
+The registry is a **resolution layer**.
 
 * Holds multiple `FraguaSet` instances
-* Resolves functions by `(set_name, function_name)`
-* Does not execute anything
+* Resolves functions by `(set_name, function_name)` at runtime
+* Resolves pipeline definitions by name
+* Performs no execution or compilation
 
-The registry enables flexible function categorization without hardcoded assumptions.
+The registry enables flexible composition without hard-coded dependencies.
 
 ---
 
-### 3. FraguaStep
+## 3. FraguaStep
 
 A `FraguaStep` represents a **single declarative execution unit**.
 
-* References a function by name (resolved at runtime)
+* References a function by `(set, function)`
 * Declares execution parameters
 * Optionally consumes the output of a previous step
 * Stores its result under a logical key (`save_as`)
 
-A step defines *what should happen*, not *how it happens*.
+A step defines **what should happen**, not **how it happens**.
 
 ---
 
-### 3.1 FraguaStepBuilder
+## 3.1 FraguaStepBuilder
 
-A `FraguaStepBuilder` is a **mutable builder** for constructing immutable `FraguaStep` objects.
+A `FraguaStepBuilder` is a **mutable builder** used to construct immutable `FraguaStep` objects.
 
-* Provides a fluent interface for step configuration
-* Allows method chaining (`.with_params()`, `.with_save_as()`, `.with_use()`)
+* Provides a fluent configuration API
+* Supports method chaining (`with_params`, `with_use`, `with_save_as`)
 * Produces immutable steps via `.build()`
-* Enables safe, incremental step construction
+* Enables safe and incremental step composition
 
-The builder reduces boilerplate while preserving step immutability.
+Builders reduce boilerplate while preserving immutability.
 
 ---
 
-### 3.2 FraguaStepIndex
+## 3.2 FraguaStepIndex
 
-A `FraguaStepIndex` is a **template registry** for preconfigured step builders.
+A `FraguaStepIndex` is a **template registry for step builders**.
 
 * Stores `FraguaStepBuilder` templates by name
-* Returns fresh builder copies from templates
-* Enables discoverable step composition
-* Provides safe access to registered step patterns
+* Returns fresh builder instances on access
+* Is populated automatically from `FraguaSet` definitions
+* Is consumed exclusively by macros
 
-The index facilitates reusable step templates without sacrificing explicitness.
-
----
-
-## 4. FraguaPipeline and PipelineBuilder
-
-A pipeline is an **ordered execution plan**.
-
-* Defines a sequence of `FraguaStep`
-* Preserves execution order
-* Contains no execution logic
-
-`PipelineBuilder` and declarative compilation now allow:
-
-* Adding multiple steps at once
-* Defining pipelines with macros that expand automatically into steps
-* Setting `save_as` for the final output of a macro for easy downstream use
-
-Pipelines are pure definitions executed by an agent at runtime.
+This enables reusable step patterns without implicit behavior.
 
 ---
 
-## 5. FraguaAgent
+## 4. Declarative Pipelines
+
+Pipelines in Fragua are **pure declarative definitions**, represented as dictionaries.
+
+```python
+{
+    "name": "daily_sales",
+    "steps": [
+        {"set": "extract", "function": "read_csv"},
+        {"set": "transform", "function": "clean_data"},
+        {"set": "load", "function": "write_db"},
+    ]
+}
+```
+
+Key characteristics:
+
+* Pipelines are **editable, replaceable, and updateable**
+* They contain no runtime state
+* They are compiled into `FraguaPipeline` objects only at execution time
+* Compilation expands macros and validates dependencies
+
+Runtime pipelines are ephemeral and never persisted.
+
+---
+
+## 5. FraguaPipeline (Runtime Artifact)
+
+A `FraguaPipeline` is a **compiled execution plan**.
+
+* Contains an ordered list of `FraguaStep`
+* Is produced from a declarative definition
+* Is executed by the agent
+* Is discarded after execution
+
+It exists only at runtime.
+
+---
+
+## 6. FraguaAgent
 
 The agent is a **stateless execution primitive**.
 
-* Receives a pipeline
-* Resolves step functions via the registry
+* Receives a compiled pipeline
+* Resolves functions via the registry
 * Executes steps sequentially
-* Produces execution results
+* Produces a `FraguaBox` with results
 
-The agent contains no domain logic and holds no state between runs.
+The agent holds no state between runs.
 
 ---
 
-## 6. FraguaWarehouse
+## 7. FraguaWarehouse
 
 The warehouse is an **in-memory result store**.
 
-* Stores outputs of all executed steps
+* Stores execution outputs
 * Indexed by `save_as`
 * Intended for inspection, debugging, and assertions
 
-The warehouse exists purely at runtime.
+The warehouse exists only during runtime.
 
 ---
 
-## 7. FraguaEnvironment
+## 8. FraguaEnvironment
 
-The environment is the **composition and orchestration boundary**.
+The environment is the **orchestration boundary** of Fragua.
 
-It owns:
+It owns exactly one:
 
-* One registry
-* One agent
-* One warehouse
-* One StepIndex
+* `FraguaRegistry`
+* `FraguaAgent`
+* `FraguaWarehouse`
+* `FraguaStepIndex`
 
-It provides APIs to:
+It provides high-level APIs to:
 
-* Create and manage function sets (optionally tagged to prevent step builder creation)
-* Register functions and pipelines
-* Compile declarative pipelines with macros
-* Execute pipelines
-* Retrieve execution results
+* Create and register sets
+* Register functions and pipeline definitions
+* Automatically index step builders from sets
+* Compile declarative pipelines (with macro expansion)
+* Execute pipelines from multiple representations
+* Update or replace pipeline definitions
+* Inspect execution results
 
-The environment does not impose structure — it enables it.
+The environment enables structure without enforcing it.
 
 ---
 
-## Helper Abstractions
+## Macros and Step Composition
 
-### Macros and Declarative Pipelines
+Macros (e.g. `transform_chain`) expand into multiple steps automatically.
 
-Macros (e.g., `transform_chain`) allow expanding multiple steps automatically. They can define a `save_as` for the last step, enabling downstream steps to reference macro output naturally.
+* Macros consume **only** `FraguaStepBuilder` templates from the `StepIndex`
+* Expansion happens at compile time
+* The final macro step may expose a `save_as` key for downstream use
 
-### Automatic Step Generation
+Macros are declarative and deterministic.
 
-Functions like `create_transform_steps` generate sequences of `FraguaStep` from function names, chaining them automatically.
+---
 
-### Result Inspection
+## Execution Entry Point
 
-Helpers such as `get_box_dfs_heads` allow validated inspection of runtime results:
+Fragua exposes a single execution API:
 
 ```python
-heads = fg.get_box_dfs_heads(box_result, pipeline.steps())
+env.execute_pipeline(pipeline)
 ```
 
-Errors are raised if expected outputs are missing or invalid.
+Supported inputs:
+
+* `FraguaPipeline` → executed directly
+* `str` → resolved from registry, compiled, then executed
+* `dict` → compiled inline, then executed
+
+This unifies execution flow and removes ambiguity.
 
 ---
 
 ## Typical Workflow
-
+    
 1. Create an environment
-2. Create one or more function sets
-3. Register ETL functions into sets
-4. Optionally compose transformations and macros
-5. Define a declarative pipeline
-6. Compile the pipeline
-7. Execute the pipeline
-8. Inspect results from the warehouse
+2. Define one or more `FraguaSet`
+3. Register functions into sets
+4. Register declarative pipeline definitions
+5. Optionally update or replace pipeline definitions
+6. Execute pipelines
+7. Inspect results from the warehouse
 
 ---
 
@@ -194,7 +228,8 @@ Errors are raised if expected outputs are missing or invalid.
 * **Minimalism** — no feature without a clear purpose
 * **Explicitness** — no hidden behavior
 * **Single Responsibility** — each component does one thing
-* **Runtime-only** — no persistence, no side effects
+* **Declarative First** — definitions before execution
+* **Runtime Only** — no persistence, no side effects
 
 ---
 
@@ -207,7 +242,7 @@ Fragua is not:
 * A production ETL engine
 * A data platform
 
-It is a **developer framework for ETL design and validation**.
+Fragua is a **development framework for ETL design, validation, and reasoning**.
 
 ---
 
