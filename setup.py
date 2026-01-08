@@ -7,7 +7,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="fragua",
-    version="1.6",
+    version="1.6.1",
     author="SagoDev",
     description=(
         "Framework for modeling, orchestrating,"
