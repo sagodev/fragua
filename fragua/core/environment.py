@@ -115,6 +115,30 @@ class FraguaEnvironment:
 
         return FraguaPipelineBuilder(name)
 
+    def register_pipelines(
+        self,
+        *pipelines: FraguaPipeline,
+    ) -> None:
+        """
+        Register one or more FraguaPipeline instances
+        in the pipelines registry set.
+        """
+        target_set = self.registry.get_set("pipelines")
+
+        if target_set is None:
+            raise ValueError("'Pipelines' set not found.")
+
+        for pipeline in pipelines:
+            if not isinstance(pipeline, FraguaPipeline):
+                raise TypeError(
+                    "register_pipelines only accepts FraguaPipeline instances"
+                )
+
+            pipeline_name = pipeline.name
+
+            registered = target_set.register(pipeline_name, pipeline)
+            if not registered:
+                raise ValueError(f"Pipeline '{pipeline_name}' is already registered")
     def run(self, pipeline: Union[FraguaPipeline, str]) -> FraguaBox:
         """
         Execute a pipeline and return the result.
