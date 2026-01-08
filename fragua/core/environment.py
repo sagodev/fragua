@@ -476,28 +476,34 @@ class FraguaEnvironment:
         return "macro" in step_def
 
     def _expand_macro(self, macro_def: Dict[str, Any]) -> List[Dict[str, Any]]:
-        steps: List[FraguaStep] = self.create_transform_steps(
-            step_names=macro_def["step_names"],
-            step_prefix=macro_def["step_prefix"],
-            start_from=macro_def.get("start_from"),
-        )
+        steps_def = macro_def["steps"]
 
+        if not isinstance(steps_def, list) or not steps_def:
+            raise ValueError("Macro 'steps' must be a non-empty list")
+
+        expanded: List[Dict[str, Any]] = []
+
+        previous_save_as: Optional[str] = macro_def.get("start_from")
+        prefix: str = macro_def.get("step_prefix", "step")
         final_save_as: Optional[str] = macro_def.get("save_as")
 
-        expanded_steps: List[Dict[str, Any]] = []
+        for index, step_def in enumerate(steps_def, start=1):
+            function = step_def["function"]
+            params = step_def.get("params", {})
 
-        for index, step in enumerate(steps):
-            is_last: bool = index == len(steps) - 1
-            expanded_steps.append(
+            save_as = f"{prefix}_{index}"
+            is_last = index == len(steps_def)
+
+            expanded.append(
                 {
-                    "set": step.set_name,
-                    "function": step.function,
-                    "params": step.params,
-                    "use": step.use,
-                    "save_as": (
-                        final_save_as if is_last and final_save_as else step.save_as
-                    ),
+                    "set": macro_def.get("set", "transform"),
+                    "function": function,
+                    "params": params,
+                    "use": previous_save_as,
+                    "save_as": final_save_as if is_last and final_save_as else save_as,
                 }
             )
 
-        return expanded_steps
+            previous_save_as = save_as
+
+        return expanded
