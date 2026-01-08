@@ -12,6 +12,9 @@ from fragua.builders.step_builder import FraguaStepBuilder
 from fragua.core.step_index import FraguaStepIndex
 from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.set import FraguaSet
+from fragua.utils.logger import get_logger
+
+logger = get_logger("env_logger")
 
 
 class FraguaEnvironment:
@@ -115,7 +118,7 @@ class FraguaEnvironment:
 
         return FraguaPipelineBuilder(name)
 
-    def register_pipelines(
+    def add_pipelines(
         self,
         *pipelines: FraguaPipeline,
     ) -> None:
@@ -140,7 +143,7 @@ class FraguaEnvironment:
             if not registered:
                 raise ValueError(f"Pipeline '{pipeline_name}' is already registered")
 
-    def register_functions(
+    def add_functions(
         self,
         *functions: Callable[..., Any],
         set_name: str,
@@ -179,7 +182,7 @@ class FraguaEnvironment:
                     builder=builder,
                 )
 
-    def register_sets(self, *sets: FraguaSet) -> None:
+    def add_sets(self, *sets: FraguaSet) -> None:
         """
         Register one or more FraguaSet instances into the environment.
 
@@ -219,7 +222,49 @@ class FraguaEnvironment:
                     builder=builder,
                 )
 
-    def run(self, pipeline: Union[FraguaPipeline, str]) -> FraguaBox:
+    def execute_pipeline(
+        self,
+        pipeline: Union[FraguaPipeline, str, Dict[str, Any]],
+    ) -> FraguaBox:
+        """
+        Execute a pipeline from multiple possible representations.
+        """
+        if isinstance(pipeline, FraguaPipeline):
+            logger.info(
+                "Executing FraguaPipeline instance: %s",
+                pipeline.name,
+            )
+            return self._run_pipeline(pipeline)
+
+        if isinstance(pipeline, str):
+            logger.info(
+                "Executing pipeline by name: %s",
+                pipeline,
+            )
+            return self._run_pipeline(pipeline)
+
+        if isinstance(pipeline, dict):
+            logger.info(
+                "Compiling pipeline from inline definition",
+            )
+            compiled = self._compile_pipeline(pipeline)
+            logger.info(
+                "Executing compiled pipeline: %s",
+                compiled.name,
+            )
+            return self._run_pipeline(compiled)
+
+        logger.error(
+            "Invalid pipeline input type: %s",
+            type(pipeline).__name__,
+        )
+        raise TypeError(
+            "execute_pipeline expects a FraguaPipeline, "
+            "a pipeline name (str), or a pipeline definition (dict)"
+        )
+
+    # -------------------- Helpers -------------------- #
+    def _run_pipeline(self, pipeline: Union[FraguaPipeline, str]) -> FraguaBox:
         """
         Execute a pipeline and return the result.
 
@@ -237,7 +282,7 @@ class FraguaEnvironment:
         self.warehouse.store(box)
         return box
 
-    def compile_pipeline(self, definition: Dict[str, Any]) -> FraguaPipeline:
+    def _compile_pipeline(self, definition: Dict[str, Any]) -> FraguaPipeline:
         """
         Compile a pipeline from a dictionary definition.
 
@@ -273,8 +318,6 @@ class FraguaEnvironment:
         pipeline.add(compiled_steps)
 
         return pipeline
-
-    # -------------------- Helpers -------------------- #
 
     def _get_registry_set(self, set_name: str) -> FraguaSet:
         target_set: Optional[FraguaSet] = self.registry.get_set(set_name)
