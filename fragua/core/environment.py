@@ -139,6 +139,46 @@ class FraguaEnvironment:
             registered = target_set.register(pipeline_name, pipeline)
             if not registered:
                 raise ValueError(f"Pipeline '{pipeline_name}' is already registered")
+
+    def register_functions(
+        self,
+        *functions: Callable[..., Any],
+        set_name: str,
+    ) -> None:
+        """
+        Register one or more callable functions in a registry set.
+
+        If the target set has step_enabled=True, corresponding
+        FraguaStepBuilder templates are automatically indexed.
+        """
+        target_set = self.registry.get_set(set_name)
+
+        if target_set is None:
+            raise ValueError(f"{set_name} set not found.")
+
+        for fn in functions:
+            if not callable(fn):
+                raise TypeError("register_functions only accepts callable objects")
+
+            fn_name = fn.__name__
+
+            registered = target_set.register(fn_name, fn)
+            if not registered:
+                raise ValueError(
+                    f"Function '{fn_name}' is already registered in set '{set_name}'"
+                )
+
+            if target_set.step_enabled:
+                builder = FraguaStepBuilder(
+                    set_name=target_set.name,
+                    function=fn_name,
+                )
+
+                self.step_index.register(
+                    name=fn_name,
+                    builder=builder,
+                )
+
     def run(self, pipeline: Union[FraguaPipeline, str]) -> FraguaBox:
         """
         Execute a pipeline and return the result.
