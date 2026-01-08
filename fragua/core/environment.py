@@ -12,6 +12,9 @@ from fragua.builders.step_builder import FraguaStepBuilder
 from fragua.core.step_index import FraguaStepIndex
 from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.set import FraguaSet
+from fragua.utils.logger import get_logger
+
+logger = get_logger("env_logger")
 
 
 class FraguaEnvironment:
@@ -44,22 +47,183 @@ class FraguaEnvironment:
 
     # -------------------- Public API -------------------- #
 
-    def create_set(self, name: str, *, step_enabled: bool = True) -> None:
+    def add_sets(self, *sets: FraguaSet) -> None:
         """
-        Create a new registry set.
+        Register one or more FraguaSet instances into the environment.
+
+        This method:
+        - Registers each set in the FraguaRegistry
+        - Automatically creates and indexes FraguaStepBuilder templates
+        for callable items when step_enabled=True
 
         Args:
-            name: Name of the set to create.
-            step_enabled: Whether steps can be created from this set.
+            sets: One or more FraguaSet instances.
         """
-        if self.registry.get_set(name) is not None:
-            raise ValueError(f"Registry set already exists: {name}")
+        for fragua_set in sets:
+            # 1. Register set in registry
+            if self.registry.get_set(fragua_set.name) is not None:
+                raise ValueError(f"Registry set already exists: {fragua_set.name}")
 
-        self.registry.add_set(
-            FraguaSet(
-                name=name,
-                step_enabled=step_enabled,
+            self.registry.add_set(fragua_set)
+
+            # 2. Skip step generation if disabled
+            if not fragua_set.step_enabled:
+                continue
+
+            # 3. Create StepBuilders for callable items only
+            for item_name in fragua_set.list():
+                fn = fragua_set.get_function(item_name)
+                if fn is None:
+                    # Skip pipelines or non-callables
+                    continue
+
+                builder = FraguaStepBuilder(
+                    set_name=fragua_set.name,
+                    function=item_name,
+                )
+
+                self.step_index.register(
+                    name=item_name,
+                    builder=builder,
+                )
+
+    def create_pipeline(self, name: str) -> FraguaPipelineBuilder:
+        """
+        Create a new pipeline builder.
+
+        Args:
+            name: Name of the pipeline.
+
+        Returns:
+            FraguaPipelineBuilder instance for constructing the pipeline.
+        """
+        if self.registry.get_set("pipelines") is None:
+            raise RuntimeError("Pipelines registry set is not initialized")
+
+        return FraguaPipelineBuilder(name)
+
+    def add_pipelines(
+        self,
+        *pipelines: Dict[str, Any],
+    ) -> None:
+        """
+        Register one or more FraguaPipeline instances
+        in the pipelines registry set.
+        """
+        target_set = self.registry.get_set("pipelines")
+
+        if target_set is None:
+            raise ValueError("'Pipelines' set not found.")
+
+        for pipeline in pipelines:
+            if not isinstance(pipeline, FraguaPipeline):
+                raise TypeError(
+                    "register_pipelines only accepts FraguaPipeline instances"
+                )
+
+            pipeline_name = pipeline.name
+
+            registered = target_set.register(pipeline_name, pipeline)
+            if not registered:
+                raise ValueError(f"Pipeline '{pipeline_name}' is already registered")
+
+    def replace_pipeline(
+        self,
+        definition: Dict[str, Any],
+    ) -> None:
+        """
+        Replace an existing pipeline definition.
+
+        The pipeline must already exist.
+        """
+        if not isinstance(definition, dict):
+            raise TypeError("Pipeline definition must be a dictionary")
+
+        if "name" not in definition:
+            raise ValueError("Pipeline definition must include a 'name'")
+
+        pipeline_set = self._get_registry_set("pipelines")
+        name = definition["name"]
+
+        if not pipeline_set.exists(name):
+            raise ValueError(f"Pipeline '{name}' does not exist")
+
+        pipeline_set.remove(name)
+        pipeline_set.register(name, definition)
+
+        logger.info("Replaced pipeline definition: %s", name)
+
+    def update_pipeline(
+        self,
+        name: str,
+        updates: Dict[str, Any],
+    ) -> None:
+        """
+        Update an existing pipeline definition partially.
+        """
+        if not isinstance(updates, dict):
+            raise TypeError("Updates must be a dictionary")
+
+        pipeline_set = self._get_registry_set("pipelines")
+
+        existing = pipeline_set.get(name)
+        if existing is None:
+            raise ValueError(f"Pipeline '{name}' does not exist")
+
+        if not isinstance(existing, dict):
+            raise TypeError(f"Registered pipeline '{name}' is not declarative")
+
+        updated = dict(existing)
+
+        if "name" in updates and updates["name"] != name:
+            raise ValueError("Pipeline name cannot be changed")
+
+        for key, value in updates.items():
+            if key == "name":
+                continue
+            updated[key] = value
+
+        pipeline_set.remove(name)
+        pipeline_set.register(name, updated)
+
+        logger.info("Updated pipeline definition: %s", name)
+
+    def execute_pipeline(
+        self,
+        pipeline: Union[FraguaPipeline, str, Dict[str, Any]],
+    ) -> FraguaBox:
+        """
+        Execute a pipeline from multiple possible representations.
+        """
+        if isinstance(pipeline, FraguaPipeline):
+            logger.info(
+                "Executing FraguaPipeline instance: %s",
+                pipeline.name,
             )
+            return self._run_pipeline(pipeline)
+
+        if isinstance(pipeline, str):
+            logger.info(
+                "Executing pipeline by name: %s",
+                pipeline,
+            )
+            compiled = self._resolve_pipeline(pipeline)
+            return self._run_pipeline(compiled)
+
+        if isinstance(pipeline, dict):
+            logger.info(
+                "Compiling pipeline from inline definition",
+            )
+            compiled = self._compile_pipeline(pipeline)
+            logger.info(
+                "Executing compiled pipeline: %s",
+                compiled.name,
+            )
+            return self._run_pipeline(compiled)
+
+        raise TypeError(
+            "execute_pipeline expects a FraguaPipeline, "
+            "a pipeline name (str), or a pipeline definition (dict)"
         )
 
     def create_transform_steps(
@@ -100,64 +264,47 @@ class FraguaEnvironment:
 
         return steps
 
-    def create_pipeline(self, name: str) -> FraguaPipelineBuilder:
-        """
-        Create a new pipeline builder.
-
-        Args:
-            name: Name of the pipeline.
-
-        Returns:
-            FraguaPipelineBuilder instance for constructing the pipeline.
-        """
-        if self.registry.get_set("pipelines") is None:
-            raise RuntimeError("Pipelines registry set is not initialized")
-
-        return FraguaPipelineBuilder(name)
-
-    def register(
+    def add_functions(
         self,
-        item: Union[Callable[..., Any], FraguaPipeline],
-        *,
-        set_name: Optional[str] = None,
-        name: Optional[str] = None,
+        *functions: Callable[..., Any],
+        set_name: str,
     ) -> None:
         """
-        Register an item in the environment's registry.
+        Register one or more callable functions in a registry set.
 
-        Args:
-            item: Callable or FraguaPipeline to register.
-            set_name: Name of the registry set (required for callables).
-            name: Optional custom name for the item.
+        If the target set has step_enabled=True, corresponding
+        FraguaStepBuilder templates are automatically indexed.
         """
-        if isinstance(item, FraguaPipeline):
-            target_set: FraguaSet = self._get_registry_set("pipelines")
-            item_name: str = name or item.name
-        elif callable(item):
-            if not set_name:
-                raise ValueError("set_name is required when registering callables")
-            target_set = self._get_registry_set(set_name)
-            item_name = name or item.__name__
-        else:
-            raise TypeError(
-                "Only callables or FraguaPipeline instances can be registered"
-            )
+        target_set = self.registry.get_set(set_name)
 
-        registered: bool = target_set.register(item_name, item)
-        if not registered:
-            raise ValueError(
-                f"Item '{item_name}' is already registered in set '{target_set.name}'"
-            )
+        if target_set is None:
+            raise ValueError(f"{set_name} set not found.")
 
-        self.step_index.register(
-            name=item_name,
-            builder=FraguaStepBuilder(
-                set_name=target_set.name,
-                function=item_name,
-            ),
-        )
+        for fn in functions:
+            if not callable(fn):
+                raise TypeError("register_functions only accepts callable objects")
 
-    def run(self, pipeline: Union[FraguaPipeline, str]) -> FraguaBox:
+            fn_name = fn.__name__
+
+            registered = target_set.register(fn_name, fn)
+            if not registered:
+                raise ValueError(
+                    f"Function '{fn_name}' is already registered in set '{set_name}'"
+                )
+
+            if target_set.step_enabled:
+                builder = FraguaStepBuilder(
+                    set_name=target_set.name,
+                    function=fn_name,
+                )
+
+                self.step_index.register(
+                    name=fn_name,
+                    builder=builder,
+                )
+
+    # -------------------- Helpers -------------------- #
+    def _run_pipeline(self, pipeline: FraguaPipeline) -> FraguaBox:
         """
         Execute a pipeline and return the result.
 
@@ -167,15 +314,14 @@ class FraguaEnvironment:
         Returns:
             FraguaBox containing the pipeline execution results.
         """
-        resolved_pipeline: FraguaPipeline = self._resolve_pipeline(pipeline)
-        box: FraguaBox = self.agent.run_pipeline(
-            pipeline=resolved_pipeline,
+        box = self.agent.run_pipeline(
+            pipeline=pipeline,
             registry=self.registry,
         )
         self.warehouse.store(box)
         return box
 
-    def compile_pipeline(self, definition: Dict[str, Any]) -> FraguaPipeline:
+    def _compile_pipeline(self, definition: Dict[str, Any]) -> FraguaPipeline:
         """
         Compile a pipeline from a dictionary definition.
 
@@ -212,73 +358,23 @@ class FraguaEnvironment:
 
         return pipeline
 
-    # -------------------- Helpers -------------------- #
+    def _resolve_pipeline(self, pipeline: str) -> FraguaPipeline:
+        """
+        Resolve a pipeline name to a compiled FraguaPipeline.
+        """
+        pipeline_set = self._get_registry_set("pipelines")
 
-    def _get_registry_set(self, set_name: str) -> FraguaSet:
-        target_set: Optional[FraguaSet] = self.registry.get_set(set_name)
-        if target_set is None:
-            raise ValueError(f"Unknown registry set: {set_name}")
-        return target_set
-
-    def _resolve_pipeline(self, pipeline: Union[FraguaPipeline, str]) -> FraguaPipeline:
-        if isinstance(pipeline, FraguaPipeline):
-            return pipeline
-
-        pipeline_set: FraguaSet = self._get_registry_set("pipelines")
-
-        resolved: Optional[FraguaPipeline] = pipeline_set.get_pipeline(pipeline)
-
-        if resolved is None:
+        definition = pipeline_set.get(pipeline)
+        if definition is None:
             raise ValueError(f"Pipeline not found: {pipeline}")
 
-        if not isinstance(resolved, FraguaPipeline):
-            raise TypeError(f"Registered item '{pipeline}' is not a FraguaPipeline")
-
-        return resolved
-
-    def _normalize_step(self, raw_step: Dict[str, Any]) -> Dict[str, Any]:
-        if not isinstance(raw_step, dict):
-            raise ValueError("Each step must be a dictionary.")
-
-        if "set" not in raw_step or "function" not in raw_step:
-            raise ValueError("Each step must define 'set' and 'function'.")
-
-        return {
-            "set": raw_step["set"],
-            "function": raw_step["function"],
-            "params": raw_step.get("params", {}),
-            "save_as": raw_step.get("save_as"),
-            "use": raw_step.get("use"),
-        }
-
-    def _validate_step_dependencies(self, steps: List[Dict[str, Any]]) -> None:
-        available_keys: set[str] = set()
-
-        for step in steps:
-            use: Optional[str] = step.get("use")
-            save_as: Optional[str] = step.get("save_as")
-
-            if use and use not in available_keys:
-                raise ValueError(f"Step uses undefined result '{use}'.")
-
-            if save_as:
-                if save_as in available_keys:
-                    raise ValueError(f"Duplicate save_as key '{save_as}'.")
-                available_keys.add(save_as)
-
-    def _validate_registry_bindings(self, steps: List[Dict[str, Any]]) -> None:
-        for step in steps:
-            function_set: Optional[FraguaSet] = self.registry.get_set(step["set"])
-            if function_set is None:
-                raise ValueError(f"Registry set not found: {step['set']}")
-
-            fn: Optional[Callable[..., Any]] = function_set.get_function(
-                step["function"]
+        if not isinstance(definition, dict):
+            raise TypeError(
+                f"Registered pipeline '{pipeline}' is not a pipeline definition"
             )
-            if fn is None:
-                raise ValueError(
-                    f"Function '{step['function']}' not found in set '{step['set']}'"
-                )
+
+        logger.info("Compiling registered pipeline: %s", pipeline)
+        return self._compile_pipeline(definition)
 
     def _validate_pipeline_definition(self, definition: Dict[str, Any]) -> None:
         if not isinstance(definition, dict):
@@ -325,6 +421,56 @@ class FraguaEnvironment:
             builder.with_use(step["use"])
 
         return builder.build()
+
+    def _normalize_step(self, raw_step: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(raw_step, dict):
+            raise ValueError("Each step must be a dictionary.")
+
+        if "set" not in raw_step or "function" not in raw_step:
+            raise ValueError("Each step must define 'set' and 'function'.")
+
+        return {
+            "set": raw_step["set"],
+            "function": raw_step["function"],
+            "params": raw_step.get("params", {}),
+            "save_as": raw_step.get("save_as"),
+            "use": raw_step.get("use"),
+        }
+
+    def _validate_step_dependencies(self, steps: List[Dict[str, Any]]) -> None:
+        available_keys: set[str] = set()
+
+        for step in steps:
+            use: Optional[str] = step.get("use")
+            save_as: Optional[str] = step.get("save_as")
+
+            if use and use not in available_keys:
+                raise ValueError(f"Step uses undefined result '{use}'.")
+
+            if save_as:
+                if save_as in available_keys:
+                    raise ValueError(f"Duplicate save_as key '{save_as}'.")
+                available_keys.add(save_as)
+
+    def _get_registry_set(self, set_name: str) -> FraguaSet:
+        target_set: Optional[FraguaSet] = self.registry.get_set(set_name)
+        if target_set is None:
+            raise ValueError(f"Unknown registry set: {set_name}")
+        return target_set
+
+    def _validate_registry_bindings(self, steps: List[Dict[str, Any]]) -> None:
+        for step in steps:
+            function_set: Optional[FraguaSet] = self.registry.get_set(step["set"])
+            if function_set is None:
+                raise ValueError(f"Registry set not found: {step['set']}")
+
+            fn: Optional[Callable[..., Any]] = function_set.get_function(
+                step["function"]
+            )
+            if fn is None:
+                raise ValueError(
+                    f"Function '{step['function']}' not found in set '{step['set']}'"
+                )
 
     def _is_macro(self, step_def: Dict[str, Any]) -> bool:
         return "macro" in step_def
