@@ -249,6 +249,41 @@ class FraguaEnvironment:
 
         logger.info("Replaced pipeline definition: %s", name)
 
+    def update_pipeline(
+        self,
+        name: str,
+        updates: Dict[str, Any],
+    ) -> None:
+        """
+        Update an existing pipeline definition partially.
+        """
+        if not isinstance(updates, dict):
+            raise TypeError("Updates must be a dictionary")
+
+        pipeline_set = self._get_registry_set("pipelines")
+
+        existing = pipeline_set.get(name)
+        if existing is None:
+            raise ValueError(f"Pipeline '{name}' does not exist")
+
+        if not isinstance(existing, dict):
+            raise TypeError(f"Registered pipeline '{name}' is not declarative")
+
+        updated = dict(existing)
+
+        if "name" in updates and updates["name"] != name:
+            raise ValueError("Pipeline name cannot be changed")
+
+        for key, value in updates.items():
+            if key == "name":
+                continue
+            updated[key] = value
+
+        pipeline_set.remove(name)
+        pipeline_set.register(name, updated)
+
+        logger.info("Updated pipeline definition: %s", name)
+
     def execute_pipeline(
         self,
         pipeline: Union[FraguaPipeline, str, Dict[str, Any]],
