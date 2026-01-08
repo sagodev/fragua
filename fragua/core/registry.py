@@ -32,6 +32,21 @@ class FraguaRegistry:
         """
         self._sets = sets or {}
 
+    def create_set(self, name: str, *, step_enabled: bool = True) -> FraguaSet:
+        """
+        Create a new registry set.
+
+        Args:
+            name: Name of the set to create.
+            step_enabled: Whether steps can be created from this set.
+        """
+        if self.get_set(name) is not None:
+            raise ValueError(f"Registry set already exists: {name}")
+
+        new_set = FraguaSet(name=name, step_enabled=step_enabled)
+
+        return new_set
+
     def add_set(self, set_: FraguaSet) -> bool:
         """
         Register a function set.
