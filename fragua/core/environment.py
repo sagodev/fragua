@@ -179,6 +179,46 @@ class FraguaEnvironment:
                     builder=builder,
                 )
 
+    def register_sets(self, *sets: FraguaSet) -> None:
+        """
+        Register one or more FraguaSet instances into the environment.
+
+        This method:
+        - Registers each set in the FraguaRegistry
+        - Automatically creates and indexes FraguaStepBuilder templates
+        for callable items when step_enabled=True
+
+        Args:
+            sets: One or more FraguaSet instances.
+        """
+        for fragua_set in sets:
+            # 1. Register set in registry
+            if self.registry.get_set(fragua_set.name) is not None:
+                raise ValueError(f"Registry set already exists: {fragua_set.name}")
+
+            self.registry.add_set(fragua_set)
+
+            # 2. Skip step generation if disabled
+            if not fragua_set.step_enabled:
+                continue
+
+            # 3. Create StepBuilders for callable items only
+            for item_name in fragua_set.list():
+                fn = fragua_set.get_function(item_name)
+                if fn is None:
+                    # Skip pipelines or non-callables
+                    continue
+
+                builder = FraguaStepBuilder(
+                    set_name=fragua_set.name,
+                    function=item_name,
+                )
+
+                self.step_index.register(
+                    name=item_name,
+                    builder=builder,
+                )
+
     def run(self, pipeline: Union[FraguaPipeline, str]) -> FraguaBox:
         """
         Execute a pipeline and return the result.
