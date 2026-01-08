@@ -115,48 +115,6 @@ class FraguaEnvironment:
 
         return FraguaPipelineBuilder(name)
 
-    def register(
-        self,
-        item: Union[Callable[..., Any], FraguaPipeline],
-        *,
-        set_name: Optional[str] = None,
-        name: Optional[str] = None,
-    ) -> None:
-        """
-        Register an item in the environment's registry.
-
-        Args:
-            item: Callable or FraguaPipeline to register.
-            set_name: Name of the registry set (required for callables).
-            name: Optional custom name for the item.
-        """
-        if isinstance(item, FraguaPipeline):
-            target_set: FraguaSet = self._get_registry_set("pipelines")
-            item_name: str = name or item.name
-        elif callable(item):
-            if not set_name:
-                raise ValueError("set_name is required when registering callables")
-            target_set = self._get_registry_set(set_name)
-            item_name = name or item.__name__
-        else:
-            raise TypeError(
-                "Only callables or FraguaPipeline instances can be registered"
-            )
-
-        registered: bool = target_set.register(item_name, item)
-        if not registered:
-            raise ValueError(
-                f"Item '{item_name}' is already registered in set '{target_set.name}'"
-            )
-
-        self.step_index.register(
-            name=item_name,
-            builder=FraguaStepBuilder(
-                set_name=target_set.name,
-                function=item_name,
-            ),
-        )
-
     def run(self, pipeline: Union[FraguaPipeline, str]) -> FraguaBox:
         """
         Execute a pipeline and return the result.
