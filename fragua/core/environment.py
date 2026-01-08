@@ -222,6 +222,33 @@ class FraguaEnvironment:
                     builder=builder,
                 )
 
+
+    def replace_pipeline(
+        self,
+        definition: Dict[str, Any],
+    ) -> None:
+        """
+        Replace an existing pipeline definition.
+
+        The pipeline must already exist.
+        """
+        if not isinstance(definition, dict):
+            raise TypeError("Pipeline definition must be a dictionary")
+
+        if "name" not in definition:
+            raise ValueError("Pipeline definition must include a 'name'")
+
+        pipeline_set = self._get_registry_set("pipelines")
+        name = definition["name"]
+
+        if not pipeline_set.exists(name):
+            raise ValueError(f"Pipeline '{name}' does not exist")
+
+        pipeline_set.remove(name)
+        pipeline_set.register(name, definition)
+
+        logger.info("Replaced pipeline definition: %s", name)
+
     def execute_pipeline(
         self,
         pipeline: Union[FraguaPipeline, str, Dict[str, Any]],
