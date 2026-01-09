@@ -116,12 +116,12 @@ class FraguaEnvironment:
             raise ValueError("'Pipelines' set not found.")
 
         for pipeline in pipelines:
-            if not isinstance(pipeline, FraguaPipeline):
+            if not isinstance(pipeline, dict):
                 raise TypeError(
-                    "register_pipelines only accepts FraguaPipeline instances"
+                    "register_pipelines only accepts declarative pipeline definition: Dict[str,Any]"
                 )
 
-            pipeline_name = pipeline.name
+            pipeline_name = pipeline["name"]
 
             registered = target_set.register(pipeline_name, pipeline)
             if not registered:
