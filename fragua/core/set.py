@@ -6,10 +6,10 @@ ETL functions and declarative pipelines at runtime.
 
 from typing import Any, Callable, Dict, Optional, Union
 
-import pandas as pd
+from fragua.utils import DataFrameLike
 
 FraguaItem = Union[
-    Callable[..., pd.DataFrame],
+    Callable[..., DataFrameLike],
     Dict[str, Any],  # Declarative pipeline definition
 ]
 
@@ -76,7 +76,7 @@ class FraguaSet:
     def get_function(
         self,
         name: str,
-    ) -> Optional[Callable[..., pd.DataFrame]]:
+    ) -> Optional[Callable[..., object]]:
         """Retrieve a callable item. If not exist return None."""
         item = self.get(name)
         return item if callable(item) else None

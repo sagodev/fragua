@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 from typing import Callable, Dict, Tuple
-import pandas as pd
 
 from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
@@ -39,7 +38,7 @@ class FraguaAgent:
         context, results = self._initialize_execution_state()
 
         for step in pipeline.steps():
-            result: pd.DataFrame = self._execute_step(
+            result: object = self._execute_step(
                 step=step,
                 registry=registry,
                 context=context,
@@ -60,7 +59,7 @@ class FraguaAgent:
 
     def _initialize_execution_state(
         self,
-    ) -> Tuple[Dict[str, object], Dict[str, pd.DataFrame]]:
+    ) -> Tuple[Dict[str, object], Dict[str, object]]:
         """
         Initialize the execution context and results container.
         """
@@ -72,11 +71,11 @@ class FraguaAgent:
         step: FraguaStep,
         registry: FraguaRegistry,
         context: Dict[str, object],
-    ) -> pd.DataFrame:
+    ) -> object:
         """
         Execute a single pipeline step and return its result.
         """
-        fn: Callable[..., pd.DataFrame] = self._resolve_step_function(
+        fn: Callable[..., object] = self._resolve_step_function(
             registry=registry,
             set_name=step.set_name,
             function_name=step.function,
@@ -99,7 +98,7 @@ class FraguaAgent:
         registry: FraguaRegistry,
         set_name: str,
         function_name: str,
-    ) -> Callable[..., pd.DataFrame]:
+    ) -> Callable[..., object]:
         """
         Resolve a function from a specific registry set.
         """
@@ -125,7 +124,7 @@ class FraguaAgent:
 
     def _validate_execution_results(
         self,
-        results: Dict[str, pd.DataFrame],
+        results: Dict[str, object],
     ) -> None:
         """
         Validate that the pipeline produced at least one result.
@@ -139,7 +138,7 @@ class FraguaAgent:
         self,
         *,
         pipeline: FraguaPipeline,
-        results: Dict[str, pd.DataFrame],
+        results: Dict[str, object],
     ) -> FraguaBox:
         """
         Build the FraguaBox containing execution results and metadata.
