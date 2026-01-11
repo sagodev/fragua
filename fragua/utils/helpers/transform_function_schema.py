@@ -1,7 +1,6 @@
 """Function factory for transform functions."""
 
 from typing import Callable, List, Tuple, Dict, Any, Optional
-import pandas as pd
 
 from fragua.core.registry import FraguaRegistry
 
@@ -10,19 +9,19 @@ def transform_function_schema(
     name: str,
     steps: List[Tuple[str, str, Optional[Dict[str, Any]]]],
     registry: FraguaRegistry,
-) -> Callable[[pd.DataFrame], pd.DataFrame]:
+) -> Callable[[object], object]:
     """
     Factory to create a composite transformation function.
 
     Each step definition is a tuple:
         (set_name, function_name, params)
 
-    The resulting function receives a DataFrame and applies
+    The resulting function receives an object and applies
     the registered functions sequentially.
     """
 
-    def transformation(input_data: pd.DataFrame) -> pd.DataFrame:
-        result_df = input_data.copy()
+    def transformation(input_data: object) -> object:
+        result_data = input_data
 
         for idx, (set_name, func_name, params) in enumerate(steps):
             function_set = registry.get_set(set_name)
@@ -42,14 +41,14 @@ def transform_function_schema(
             func_params = params or {}
 
             try:
-                result_df = func(result_df, **func_params)
+                result_data = func(result_data, **func_params)
             except Exception as e:
                 raise RuntimeError(
                     f"Error applying step {idx + 1} "
                     f"('{set_name}.{func_name}') in '{name}': {e}"
                 ) from e
 
-        return result_df
+        return result_data
 
     transformation.__name__ = name
     return transformation
