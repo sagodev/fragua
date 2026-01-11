@@ -6,10 +6,9 @@ ETL functions and declarative pipelines at runtime.
 
 from typing import Any, Callable, Dict, Optional, Union
 
-from fragua.utils import DataFrameLike
 
 FraguaItem = Union[
-    Callable[..., DataFrameLike],
+    Callable[..., object],
     Dict[str, Any],  # Declarative pipeline definition
 ]
 
