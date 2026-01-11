@@ -1,8 +1,7 @@
-"""Extract result DataFrame from a FraguaBox and create a document of a given type."""
+"""Extract result object from a FraguaBox and create a document of a given type."""
 
 from typing import Any
 import io
-import pandas as pd
 
 from fragua.utils.types.enums import DocumentType
 
@@ -14,14 +13,20 @@ def from_box_to_doc(
     doc_type: DocumentType,
 ) -> Any:
     """
-    Extract a DataFrame result from a FraguaBox and serialize it
+    Extract a tabular-like result object from a FraguaBox and serialize it
     into the requested document type.
+
+    The stored object is expected to follow a DataFrame-like interface
+    (duck typing), providing the required serialization methods:
+        - to_csv()
+        - to_json()
+        - to_excel()
 
     Args:
         box:
             FraguaBox result mapping.
         key:
-            Key under which the DataFrame is stored.
+            Key under which the result object is stored.
         doc_type:
             Desired output document type.
 
@@ -31,21 +36,15 @@ def from_box_to_doc(
     Raises:
         KeyError:
             If the key does not exist in the box.
-        TypeError:
-            If the stored result is not a DataFrame.
         ValueError:
             If the document type is unsupported.
+        AttributeError:
+            If the result object does not provide the required methods.
     """
     if key not in box:
         raise KeyError(f"Result key '{key}' not found in FraguaBox.")
 
     result = box[key]
-
-    if not isinstance(result, pd.DataFrame):
-        raise TypeError(
-            f"Expected pandas.DataFrame for key '{key}', "
-            f"got {type(result).__name__}."
-        )
 
     if doc_type is DocumentType.DATAFRAME:
         return result

@@ -4,7 +4,6 @@ Represents the final output of a pipeline execution.
 """
 
 from typing import Any, Dict
-import pandas as pd
 
 # pylint: disable=too-few-public-methods
 
@@ -21,7 +20,7 @@ class FraguaBox:
         self,
         *,
         key: str,
-        result: dict[str, pd.DataFrame],
+        result: dict[str, object],
         metadata: Dict[str, Any] | None = None,
     ) -> None:
         self.key = key

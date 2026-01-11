@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 from typing import Callable, Dict, Optional, List
-import pandas as pd
 
 from fragua.core.set import FraguaSet
 
@@ -92,7 +91,7 @@ class FraguaRegistry:
 
     def get_function(
         self, set_name: str, function_name: str
-    ) -> Optional[Callable[..., pd.DataFrame]]:
+    ) -> Optional[Callable[..., object]]:
         """
         Resolve a function from a given set.
 

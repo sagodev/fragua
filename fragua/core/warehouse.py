@@ -3,7 +3,6 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List
-import pandas as pd
 
 from fragua.core.box import FraguaBox
 
@@ -16,7 +15,7 @@ class FraguaWarehouse:
     """
 
     name: str
-    _records: Dict[str, Dict[str, Any]]
+    _records: Dict[str, Dict[str, object]]
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -37,7 +36,7 @@ class FraguaWarehouse:
             "created_at": datetime.now(),
         }
 
-    def get(self, key: str) -> Dict[str, pd.DataFrame]:
+    def get(self, key: str) -> Dict[str, Any]:
         """Retrieve the stored result by key."""
         return self._records[key]["result"]  # type: ignore
 
