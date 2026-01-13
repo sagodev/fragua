@@ -10,7 +10,6 @@ from fragua.core.registry import FraguaRegistry
 from fragua.core.step import FraguaStep
 from fragua.builders.step_builder import FraguaStepBuilder
 from fragua.core.step_index import FraguaStepIndex
-from fragua.core.warehouse import FraguaWarehouse
 from fragua.core.set import FraguaSet
 from fragua.utils.logger import get_logger
 
@@ -21,21 +20,14 @@ class FraguaEnvironment:
     """
     Execution environment for Fragua.
 
-    An environment owns exactly one agent, one registry
-    and one runtime warehouse.
+    Owns one agent and one registry.
+    Stateless with respect to execution results.
     """
-
-    name: str
-    agent: FraguaAgent
-    registry: FraguaRegistry
-    warehouse: FraguaWarehouse
-    step_index: FraguaStepIndex
 
     def __init__(self, name: str) -> None:
         self.name = name
         self.agent = FraguaAgent(name=f"{name}_agent")
         self.registry = self._initialize_registry()
-        self.warehouse = FraguaWarehouse(name=f"{name}_warehouse")
         self.step_index = FraguaStepIndex()
 
     def _initialize_registry(self) -> FraguaRegistry:
@@ -191,35 +183,26 @@ class FraguaEnvironment:
     def execute_pipeline(
         self,
         pipeline: Union[FraguaPipeline, str, Dict[str, Any]],
+        *,
+        inputs: Dict[str, Any] | None = None,
     ) -> FraguaBox:
         """
-        Execute a pipeline from multiple possible representations.
+        Execute a pipeline and return a FraguaBox.
         """
         if isinstance(pipeline, FraguaPipeline):
-            logger.info(
-                "Executing FraguaPipeline instance: %s",
-                pipeline.name,
-            )
-            return self._run_pipeline(pipeline)
+            logger.info("Executing FraguaPipeline instance: %s", pipeline.name)
+            return self._run_pipeline(pipeline=pipeline, inputs=inputs)
 
         if isinstance(pipeline, str):
-            logger.info(
-                "Executing pipeline by name: %s",
-                pipeline,
-            )
+            logger.info("Executing pipeline by name: %s", pipeline)
             compiled = self._resolve_pipeline(pipeline)
-            return self._run_pipeline(compiled)
+            return self._run_pipeline(pipeline=compiled, inputs=inputs)
 
         if isinstance(pipeline, dict):
-            logger.info(
-                "Compiling pipeline from inline definition",
-            )
+            logger.info("Compiling pipeline from inline definition")
             compiled = self._compile_pipeline(pipeline)
-            logger.info(
-                "Executing compiled pipeline: %s",
-                compiled.name,
-            )
-            return self._run_pipeline(compiled)
+            logger.info("Executing compiled pipeline: %s", compiled.name)
+            return self._run_pipeline(pipeline=compiled, inputs=inputs)
 
         raise TypeError(
             "execute_pipeline expects a FraguaPipeline, "
@@ -304,22 +287,17 @@ class FraguaEnvironment:
                 )
 
     # -------------------- Helpers -------------------- #
-    def _run_pipeline(self, pipeline: FraguaPipeline) -> FraguaBox:
-        """
-        Execute a pipeline and return the result.
-
-        Args:
-            pipeline: FraguaPipeline instance or name of registered pipeline.
-
-        Returns:
-            FraguaBox containing the pipeline execution results.
-        """
-        box = self.agent.run_pipeline(
+    def _run_pipeline(
+        self,
+        *,
+        pipeline: FraguaPipeline,
+        inputs: Dict[str, Any] | None = None,
+    ) -> FraguaBox:
+        return self.agent.run_pipeline(
             pipeline=pipeline,
             registry=self.registry,
+            inputs=inputs,
         )
-        self.warehouse.store(box)
-        return box
 
     def _compile_pipeline(self, definition: Dict[str, Any]) -> FraguaPipeline:
         """
