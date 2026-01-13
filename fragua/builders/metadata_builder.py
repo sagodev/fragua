@@ -25,7 +25,7 @@ def _sanitize_params(params: Dict[str, Any]) -> Dict[str, Any]:
     if not params:
         return {}
 
-    sanitized = {}
+    sanitized: Dict[str, Any] = {}
 
     for key, value in params.items():
         # Check for potential file paths
@@ -69,9 +69,6 @@ def _is_file_path(text: str) -> bool:
     Returns:
         True if the string appears to be a file path
     """
-    if not isinstance(text, str):
-        return False
-
     # Check for absolute path patterns
     if re.match(r"^[A-Za-z]:\\\\", text):  # Windows path like C:\\
         return True
