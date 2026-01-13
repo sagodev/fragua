@@ -9,6 +9,8 @@ import re
 
 from fragua.core.step import FraguaStep
 
+# pylint: disable=too-many-arguments
+
 
 def _sanitize_params(params: Dict[str, Any]) -> Dict[str, Any]:
     """
