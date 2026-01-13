@@ -1,7 +1,7 @@
 """Fragua Agent Class."""
 
 from __future__ import annotations
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Any
 
 from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
@@ -15,11 +15,8 @@ class FraguaAgent:
     """
     Stateless execution agent.
 
-    Executes pipeline steps and returns a FraguaBox containing
-    the final result.
+    Executes pipeline steps in-memory and returns a FraguaBox.
     """
-
-    name: str
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -31,64 +28,62 @@ class FraguaAgent:
         *,
         pipeline: FraguaPipeline,
         registry: FraguaRegistry,
+        inputs: Dict[str, Any] | None = None,
     ) -> FraguaBox:
         """
-        Execute a pipeline and return a FraguaBox containing all step results.
+        Execute a pipeline with explicit inputs.
         """
-        context, results = self._initialize_execution_state()
+        inputs = inputs or {}
+        working_data: Dict[str, object] = {}
 
         for step in pipeline.steps():
-            result: object = self._execute_step(
+            result = self._execute_step(
                 step=step,
                 registry=registry,
-                context=context,
+                inputs=inputs,
+                working_data=working_data,
             )
 
-            key: str = self._resolve_step_result_key(step)
-            context[key] = result
-            results[key] = result
+            key = self._resolve_step_result_key(step)
+            working_data[key] = result
 
-        self._validate_execution_results(results)
+        self._validate_execution_results(working_data)
 
         return self._build_result_box(
             pipeline=pipeline,
-            results=results,
+            results=working_data,
         )
 
     # -------------------- Execution helpers -------------------- #
-
-    def _initialize_execution_state(
-        self,
-    ) -> Tuple[Dict[str, object], Dict[str, object]]:
-        """
-        Initialize the execution context and results container.
-        """
-        return {}, {}
 
     def _execute_step(
         self,
         *,
         step: FraguaStep,
         registry: FraguaRegistry,
-        context: Dict[str, object],
+        inputs: Dict[str, Any],
+        working_data: Dict[str, object],
     ) -> object:
         """
-        Execute a single pipeline step and return its result.
+        Execute a single pipeline step.
         """
-        fn: Callable[..., object] = self._resolve_step_function(
+        fn = self._resolve_step_function(
             registry=registry,
             set_name=step.set_name,
             function_name=step.function,
         )
 
         if step.use:
-            df = context.get(step.use)
-            if df is None:
+            if step.use in working_data:
+                value = working_data[step.use]
+            elif step.use in inputs:
+                value = inputs[step.use]
+            else:
                 raise ValueError(
-                    f"Step '{step.function}' expected input from '{step.use}', but got None"
+                    f"Step '{step.function}' expected input from '{step.use}', but it was not found"
                 )
 
-            return fn(df=df, **step.params)
+            return fn(df=value, **step.params)
 
         return fn(**step.params)
 
@@ -100,7 +95,7 @@ class FraguaAgent:
         function_name: str,
     ) -> Callable[..., object]:
         """
-        Resolve a function from a specific registry set.
+        Resolve a function from a registry set.
         """
         function_set = registry.get_set(set_name)
         if function_set is None:
@@ -147,7 +142,6 @@ class FraguaAgent:
             key=pipeline.name,
             result=results,
             metadata={
-                "agent": self.name,
                 "pipeline": pipeline.name,
                 "steps": [step.function for step in pipeline.steps()],
             },
