@@ -16,6 +16,8 @@ from fragua.utils.logger import get_logger
 
 logger = get_logger("env_logger")
 
+# pylint: disable=too-many-locals
+
 
 class FraguaEnvironment:
     """
