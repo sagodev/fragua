@@ -1,7 +1,6 @@
 """Fragua Environment Class."""
 
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
-from datetime import datetime
 
 from fragua.builders.pipeline_builder import FraguaPipelineBuilder
 from fragua.builders.metadata_builder import MetadataBuilder
@@ -319,15 +318,21 @@ class FraguaEnvironment:
         )
 
         # Enhance metadata with environment-level information
-        box.metadata.setdefault("environment_context", {
-            "registry_sets": self.registry.list_sets(),
-            "steps_available": len(self.step_index.list()),
-        })
+        box.metadata.setdefault(
+            "environment_context",
+            {
+                "registry_sets": self.registry.list_sets(),
+                "steps_available": len(self.step_index.list()),
+            },
+        )
 
-        box.metadata.setdefault("io", {
-            "inputs": list((inputs or {}).keys()),
-            "outputs": list(box.result.keys()),
-        })
+        box.metadata.setdefault(
+            "io",
+            {
+                "inputs": list((inputs or {}).keys()),
+                "outputs": list(box.result.keys()),
+            },
+        )
 
         return box
 
