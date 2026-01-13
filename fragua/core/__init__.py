@@ -20,8 +20,6 @@ from .set import FraguaSet
 
 from .agent import FraguaAgent
 
-from .warehouse import FraguaWarehouse
-
 from .pipeline import FraguaPipeline
 
 from .step import FraguaStep
@@ -36,7 +34,6 @@ __all__ = [
     "FraguaRegistry",
     "FraguaSet",
     "FraguaAgent",
-    "FraguaWarehouse",
     "FraguaStep",
     "FraguaPipeline",
     "FraguaBox",
