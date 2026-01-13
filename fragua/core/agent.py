@@ -1,7 +1,7 @@
 """Fragua Agent Class."""
 
 from __future__ import annotations
-from typing import Callable, Dict, Any
+from typing import Callable, Dict, Any, List
 
 from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
@@ -22,7 +22,6 @@ class FraguaAgent:
         self.name = name
 
     # -------------------- Public API -------------------- #
-
     def run_pipeline(
         self,
         *,
@@ -36,7 +35,9 @@ class FraguaAgent:
         inputs = inputs or {}
         working_data: Dict[str, object] = {}
 
-        for step in pipeline.steps():
+        steps_metadata: List[Dict[str, Any]] = []
+
+        for index, step in enumerate(pipeline.steps(), start=1):
             result = self._execute_step(
                 step=step,
                 registry=registry,
@@ -47,11 +48,30 @@ class FraguaAgent:
             key = self._resolve_step_result_key(step)
             working_data[key] = result
 
+            step_meta: Dict[str, Any] = {
+                "order": index,
+                "set": step.set_name,
+                "function": step.function,
+                "used_input": step.use,
+                "produced_key": key,
+                "params": step.params,
+                "status": "ok",
+            }
+
+            # ---- Macro-aware enrichment (PASSIVE) ----
+            origin = getattr(step, "origin", None)
+            if isinstance(origin, dict):
+                step_meta["origin"] = origin
+
+            steps_metadata.append(step_meta)
+
         self._validate_execution_results(working_data)
 
         return self._build_result_box(
             pipeline=pipeline,
             results=working_data,
+            inputs=inputs,
+            steps_metadata=steps_metadata,
         )
 
     # -------------------- Execution helpers -------------------- #
@@ -134,15 +154,46 @@ class FraguaAgent:
         *,
         pipeline: FraguaPipeline,
         results: Dict[str, object],
+        inputs: Dict[str, Any],
+        steps_metadata: List[Dict[str, Any]],
     ) -> FraguaBox:
         """
-        Build the FraguaBox containing execution results and metadata.
+        Build the FraguaBox containing only input and final result,
+        plus agent-level execution metadata.
         """
+        last_step = pipeline.steps()[-1]
+        final_key = last_step.save_as or last_step.function
+
+        if final_key not in results:
+            raise RuntimeError("Final step result not found in execution results")
+
+        box_result: Dict[str, object] = {}
+
+        # Store original inputs
+        for key, value in inputs.items():
+            box_result[f"input::{key}"] = value
+
+        # Store final output only
+        box_result["result"] = results[final_key]
+
+        # Normalize steps metadata
+        steps_block: Dict[str, Any] = {
+            "total": len(steps_metadata),
+            "items": steps_metadata,
+        }
+
         return FraguaBox(
             key=pipeline.name,
-            result=results,
+            result=box_result,
             metadata={
-                "pipeline": pipeline.name,
-                "steps": [step.function for step in pipeline.steps()],
+                "agent": {
+                    "name": self.name,
+                    "executed_steps": len(steps_metadata),
+                },
+                "pipeline": {
+                    "name": pipeline.name,
+                    "final_step": final_key,
+                },
+                "steps": steps_block,
             },
         )

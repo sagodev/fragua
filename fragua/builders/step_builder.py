@@ -16,6 +16,7 @@ class FraguaStepBuilder:
     params: Dict[str, Any]
     save_as: Optional[str]
     use: Optional[str]
+    origin: Optional[Dict[str, Any]]
 
     def __init__(self, *, set_name: str, function: str) -> None:
         self.set_name = set_name
@@ -23,6 +24,7 @@ class FraguaStepBuilder:
         self.params = {}
         self.save_as = None
         self.use = None
+        self.origin = None
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> FraguaStepBuilder:
@@ -44,6 +46,9 @@ class FraguaStepBuilder:
         if "save_as" in data and isinstance(data["save_as"], str):
             builder.with_save_as(data["save_as"])
 
+        if "origin" in data and isinstance(data["origin"], dict):
+            builder.with_origin(data["origin"])
+
         return builder
 
     def with_params(self, **params: Any) -> FraguaStepBuilder:
@@ -59,6 +64,11 @@ class FraguaStepBuilder:
     def with_use(self, name: str) -> FraguaStepBuilder:
         """Set 'use' step argument."""
         self.use = name
+        return self
+
+    def with_origin(self, origin: Dict[str, Any]) -> FraguaStepBuilder:
+        """Set step origin metadata."""
+        self.origin = origin
         return self
 
     def copy(self) -> FraguaStepBuilder:
@@ -77,7 +87,8 @@ class FraguaStepBuilder:
         return FraguaStep(
             set_name=self.set_name,
             function=self.function,
-            params=dict(self.params),  # defensive copy
+            params=dict(self.params),
             save_as=self.save_as,
             use=self.use,
+            origin=self.origin,
         )

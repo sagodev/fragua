@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 
 @dataclass(frozen=True)
@@ -17,3 +17,4 @@ class FraguaStep:
     params: dict[str, Any]
     save_as: Optional[str] = None
     use: Optional[str] = None
+    origin: Optional[Dict[str, Any]] = None

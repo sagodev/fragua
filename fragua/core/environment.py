@@ -1,6 +1,7 @@
 """Fragua Environment Class."""
 
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from datetime import datetime
 
 from fragua.builders.pipeline_builder import FraguaPipelineBuilder
 from fragua.core.agent import FraguaAgent
@@ -14,6 +15,8 @@ from fragua.core.set import FraguaSet
 from fragua.utils.logger import get_logger
 
 logger = get_logger("env_logger")
+
+# pylint: disable=too-many-locals
 
 
 class FraguaEnvironment:
@@ -189,25 +192,57 @@ class FraguaEnvironment:
         """
         Execute a pipeline and return a FraguaBox.
         """
-        if isinstance(pipeline, FraguaPipeline):
-            logger.info("Executing FraguaPipeline instance: %s", pipeline.name)
-            return self._run_pipeline(pipeline=pipeline, inputs=inputs)
 
-        if isinstance(pipeline, str):
-            logger.info("Executing pipeline by name: %s", pipeline)
-            compiled = self._resolve_pipeline(pipeline)
-            return self._run_pipeline(pipeline=compiled, inputs=inputs)
+        started_at = datetime.now()
+        box: FraguaBox | None = None
+        status = "error"
+        error: str | None = None
 
-        if isinstance(pipeline, dict):
-            logger.info("Compiling pipeline from inline definition")
-            compiled = self._compile_pipeline(pipeline)
-            logger.info("Executing compiled pipeline: %s", compiled.name)
-            return self._run_pipeline(pipeline=compiled, inputs=inputs)
+        try:
+            if isinstance(pipeline, FraguaPipeline):
+                logger.info("Executing FraguaPipeline instance: %s", pipeline.name)
+                compiled = pipeline
 
-        raise TypeError(
-            "execute_pipeline expects a FraguaPipeline, "
-            "a pipeline name (str), or a pipeline definition (dict)"
-        )
+            elif isinstance(pipeline, str):
+                logger.info("Executing pipeline by name: %s", pipeline)
+                compiled = self._resolve_pipeline(pipeline)
+
+            elif isinstance(pipeline, dict):
+                logger.info("Compiling pipeline from inline definition")
+                compiled = self._compile_pipeline(pipeline)
+                logger.info("Executing compiled pipeline: %s", compiled.name)
+
+            else:
+                raise TypeError(
+                    "execute_pipeline expects a FraguaPipeline, "
+                    "a pipeline name (str), or a pipeline definition (dict)"
+                )
+
+            box = self._run_pipeline(pipeline=compiled, inputs=inputs)
+            status = "success"
+
+            return box
+
+        except Exception as exc:  # noqa: BLE001
+            error = str(exc)
+            raise
+
+        finally:
+            finished_at = datetime.utcnow()
+            duration_ms = int((finished_at - started_at).total_seconds() * 1000)
+
+            if box is not None:
+                box.metadata.setdefault("execution", {})
+                box.metadata["execution"].update(
+                    {
+                        "environment": self.name,
+                        "status": status,
+                        "started_at": started_at.isoformat(),
+                        "finished_at": finished_at.isoformat(),
+                        "duration_ms": duration_ms,
+                        "error": error,
+                    }
+                )
 
     def create_transform_steps(
         self,
@@ -293,11 +328,30 @@ class FraguaEnvironment:
         pipeline: FraguaPipeline,
         inputs: Dict[str, Any] | None = None,
     ) -> FraguaBox:
-        return self.agent.run_pipeline(
+        box = self.agent.run_pipeline(
             pipeline=pipeline,
             registry=self.registry,
             inputs=inputs,
         )
+
+        # Environment-level structural metadata
+        box.metadata.setdefault("pipeline", {})
+        box.metadata["pipeline"].update(
+            {
+                "name": pipeline.name,
+                "steps_count": len(pipeline.steps()),
+            }
+        )
+
+        box.metadata.setdefault("io", {})
+        box.metadata["io"].update(
+            {
+                "inputs": list((inputs or {}).keys()),
+                "outputs": list(box.result.keys()),
+            }
+        )
+
+        return box
 
     def _compile_pipeline(self, definition: Dict[str, Any]) -> FraguaPipeline:
         """
@@ -464,13 +518,17 @@ class FraguaEnvironment:
         previous_save_as: Optional[str] = macro_def.get("start_from")
         prefix: str = macro_def.get("step_prefix", "step")
         final_save_as: Optional[str] = macro_def.get("save_as")
+        macro_name: str = macro_def.get("name") or prefix
+
+        total_steps = len(steps_def)
 
         for index, step_def in enumerate(steps_def, start=1):
             function = step_def["function"]
             params = step_def.get("params", {})
 
-            save_as = f"{prefix}_{index}"
-            is_last = index == len(steps_def)
+            auto_save_as = f"{prefix}_{index}"
+            is_last = index == total_steps
+            produced_key = final_save_as if is_last and final_save_as else auto_save_as
 
             expanded.append(
                 {
@@ -478,10 +536,16 @@ class FraguaEnvironment:
                     "function": function,
                     "params": params,
                     "use": previous_save_as,
-                    "save_as": final_save_as if is_last and final_save_as else save_as,
+                    "save_as": produced_key,
+                    "origin": {
+                        "type": "macro",
+                        "name": macro_name,
+                        "index": index,
+                        "total": total_steps,
+                    },
                 }
             )
 
-            previous_save_as = save_as
+            previous_save_as = produced_key
 
         return expanded
