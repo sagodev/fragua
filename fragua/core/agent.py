@@ -3,6 +3,7 @@
 from __future__ import annotations
 from typing import Callable, Dict, Any, List
 
+from fragua.builders.metadata_builder import MetadataBuilder
 from fragua.core.pipeline import FraguaPipeline
 from fragua.core.registry import FraguaRegistry
 from fragua.core.box import FraguaBox
@@ -28,16 +29,25 @@ class FraguaAgent:
         pipeline: FraguaPipeline,
         registry: FraguaRegistry,
         inputs: Dict[str, Any] | None = None,
+        metadata_builder: MetadataBuilder | None = None,
     ) -> FraguaBox:
         """
-        Execute a pipeline with explicit inputs.
+        Execute a pipeline with explicit inputs, using MetadataBuilder
+        to collect execution metadata.
         """
         inputs = inputs or {}
         working_data: Dict[str, object] = {}
 
-        steps_metadata: List[Dict[str, Any]] = []
+        # Initialize metadata builder if not provided
+        if metadata_builder is None:
+            metadata_builder = MetadataBuilder(
+                environment=self.name,
+                agent_name=self.name,
+                pipeline_name=pipeline.name,
+            )
 
         for index, step in enumerate(pipeline.steps(), start=1):
+            # Execute the step
             result = self._execute_step(
                 step=step,
                 registry=registry,
@@ -45,33 +55,33 @@ class FraguaAgent:
                 working_data=working_data,
             )
 
+            # Determine the storage key
             key = self._resolve_step_result_key(step)
             working_data[key] = result
 
-            step_meta: Dict[str, Any] = {
-                "order": index,
-                "set": step.set_name,
-                "function": step.function,
-                "used_input": step.use,
-                "produced_key": key,
-                "params": step.params,
-                "status": "ok",
-            }
+            # Register step in metadata builder
+            metadata_builder.add_step(
+                order=index,
+                step=step,
+                produced_key=key,
+                status="ok",
+            )
 
-            # ---- Macro-aware enrichment (PASSIVE) ----
-            origin = getattr(step, "origin", None)
-            if isinstance(origin, dict):
-                step_meta["origin"] = origin
-
-            steps_metadata.append(step_meta)
-
+        # Validate that at least one result was generated
         self._validate_execution_results(working_data)
 
-        return self._build_result_box(
-            pipeline=pipeline,
-            results=working_data,
-            inputs=inputs,
-            steps_metadata=steps_metadata,
+        # Get the final step key for metadata finalization
+        final_step_key = self._resolve_step_result_key(pipeline.steps()[-1])
+
+        # Finalize metadata and create FraguaBox with inputs and final result
+        box_result: Dict[str, object] = {"result": working_data[final_step_key]}
+        for k, v in inputs.items():
+            box_result[f"input::{k}"] = v
+
+        return FraguaBox(
+            key=pipeline.name,
+            result=box_result,
+            metadata=metadata_builder.finalize(final_step_key=final_step_key),
         )
 
     # -------------------- Execution helpers -------------------- #

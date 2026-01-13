@@ -5,8 +5,6 @@ Represents the final output of a pipeline execution.
 
 from typing import Any, Dict
 
-# pylint: disable=too-few-public-methods
-
 
 class FraguaBox:
     """Represents the final output of a pipeline execution."""
@@ -21,35 +19,30 @@ class FraguaBox:
         """Initialize a FraguaBox instance.
 
         Args:
-            key: Unique identifier for the execution box
-            result: Dictionary containing execution results
-            metadata: Optional metadata about the execution
+            key: Unique identifier for the execution box.
+            result: Dictionary containing execution results.
+            metadata: Normalized execution metadata.
         """
         self.key = key
         self.result = result
         self.metadata = metadata or {}
 
-    def summary(self) -> dict[str, Any]:
-        """Return a summary of the execution box.
+    # -------------------- High-level views -------------------- #
 
-        Returns:
-            Dictionary containing key information about the execution
-            including outputs, status, and duration.
-        """
+    def summary(self) -> dict[str, Any]:
+        """Return a concise execution summary."""
+        execution = self.metadata.get("execution", {})
+
         return {
             "key": self.key,
             "outputs": list(self.result.keys()),
-            "status": self.metadata.get("execution", {}).get("status"),
-            "duration_ms": self.metadata.get("execution", {}).get("duration_ms"),
+            "status": execution.get("status"),
+            "duration_ms": execution.get("duration_ms"),
+            "environment": execution.get("environment"),
         }
 
     def describe(self) -> str:
-        """Generate a detailed description of the execution box.
-
-        Returns:
-            Formatted string containing information about the agent,
-            pipeline, steps executed, and their details.
-        """
+        """Generate a detailed human-readable description."""
         lines: list[str] = []
 
         lines.append(f"FraguaBox: {self.key}")
@@ -62,50 +55,51 @@ class FraguaBox:
         lines.append(f"- Final step: {pipeline.get('final_step', 'unknown')}")
 
         steps_meta = self.metadata.get("steps", {})
-        total_steps = steps_meta.get("total", "n/a")
+        total_steps = steps_meta.get("total", 0)
         lines.append(f"- Steps executed: {total_steps}")
 
         step_items = steps_meta.get("items", [])
         if step_items:
             lines.append("- Step details:")
             for step in step_items:
+                origin = step.get("origin")
+
+                origin_info = ""
+                if origin and origin.get("type") == "macro":
+                    origin_info = (
+                        f" [macro:{origin.get('name')} "
+                        f"{origin.get('index')}/{origin.get('total')}]"
+                    )
+
                 lines.append(
-                    f"  • {step.get('function', 'unknown')} "
+                    f"  • {step.get('function', 'unknown')}"
+                    f"{origin_info} "
                     f"(set={step.get('set')}, status={step.get('status', 'ok')})"
                 )
 
+        if self.has_errors():
+            lines.append("- Errors:")
+            for error in self.metadata.get("errors", []):
+                lines.append(f"  • {error.get('message')}")
+
         return "\n".join(lines)
 
+    # -------------------- Access helpers -------------------- #
+
     def get_output(self, key: str) -> object:
-        """Retrieve a specific output from the execution result.
-
-        Args:
-            key: The key of the output to retrieve
-
-        Returns:
-            The output value associated with the given key
-
-        Raises:
-            KeyError: If the output key is not found in the result
-        """
+        """Retrieve a specific output value."""
         if key not in self.result:
             raise KeyError(f"Output '{key}' not found in FraguaBox.")
         return self.result[key]
 
     def has_errors(self) -> bool:
-        """Check if the execution contains any errors.
-
-        Returns:
-            True if errors are present in metadata, False otherwise
-        """
+        """Return True if execution errors are present."""
         return bool(self.metadata.get("errors"))
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the execution box to a dictionary representation.
+    # -------------------- Serialization -------------------- #
 
-        Returns:
-            Dictionary containing the key, result, and metadata
-        """
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the FraguaBox to a dictionary."""
         return {
             "key": self.key,
             "result": self.result,

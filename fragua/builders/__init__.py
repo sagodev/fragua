@@ -9,4 +9,6 @@ from .step_builder import FraguaStepBuilder
 
 from .pipeline_builder import FraguaPipelineBuilder
 
-__all__ = ["FraguaStepBuilder", "FraguaPipelineBuilder"]
+from .metadata_builder import MetadataBuilder
+
+__all__ = ["FraguaStepBuilder", "FraguaPipelineBuilder", "MetadataBuilder"]
