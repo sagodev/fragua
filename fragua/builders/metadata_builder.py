@@ -76,7 +76,7 @@ def _is_file_path(text: str) -> bool:
     if re.match(r"^[A-Za-z]:\\\\", text):  # Windows path like C:\\
         return True
 
-    if re.match(r"^[A-Za-z]:/", text):  # Unix-like absolute path like /home/user/
+    if re.match(r"^/", text):  # Unix-like absolute path like /home/user/
         return True
 
     # Check for common file extensions
