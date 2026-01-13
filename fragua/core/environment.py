@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 from datetime import datetime
 
 from fragua.builders.pipeline_builder import FraguaPipelineBuilder
+from fragua.builders.metadata_builder import MetadataBuilder
 from fragua.core.agent import FraguaAgent
 from fragua.core.box import FraguaBox
 from fragua.core.pipeline import FraguaPipeline
@@ -192,12 +193,6 @@ class FraguaEnvironment:
         """
         Execute a pipeline and return a FraguaBox.
         """
-
-        started_at = datetime.now()
-        box: FraguaBox | None = None
-        status = "error"
-        error: str | None = None
-
         try:
             if isinstance(pipeline, FraguaPipeline):
                 logger.info("Executing FraguaPipeline instance: %s", pipeline.name)
@@ -219,30 +214,11 @@ class FraguaEnvironment:
                 )
 
             box = self._run_pipeline(pipeline=compiled, inputs=inputs)
-            status = "success"
-
             return box
 
         except Exception as exc:  # noqa: BLE001
-            error = str(exc)
+            logger.error("Pipeline execution failed: %s", str(exc))
             raise
-
-        finally:
-            finished_at = datetime.utcnow()
-            duration_ms = int((finished_at - started_at).total_seconds() * 1000)
-
-            if box is not None:
-                box.metadata.setdefault("execution", {})
-                box.metadata["execution"].update(
-                    {
-                        "environment": self.name,
-                        "status": status,
-                        "started_at": started_at.isoformat(),
-                        "finished_at": finished_at.isoformat(),
-                        "duration_ms": duration_ms,
-                        "error": error,
-                    }
-                )
 
     def create_transform_steps(
         self,
@@ -328,28 +304,30 @@ class FraguaEnvironment:
         pipeline: FraguaPipeline,
         inputs: Dict[str, Any] | None = None,
     ) -> FraguaBox:
+        # Initialize MetadataBuilder with environment context
+        metadata_builder = MetadataBuilder(
+            environment=self.name,
+            agent_name=self.agent.name,
+            pipeline_name=pipeline.name,
+        )
+
         box = self.agent.run_pipeline(
             pipeline=pipeline,
             registry=self.registry,
             inputs=inputs,
+            metadata_builder=metadata_builder,
         )
 
-        # Environment-level structural metadata
-        box.metadata.setdefault("pipeline", {})
-        box.metadata["pipeline"].update(
-            {
-                "name": pipeline.name,
-                "steps_count": len(pipeline.steps()),
-            }
-        )
+        # Enhance metadata with environment-level information
+        box.metadata.setdefault("environment_context", {
+            "registry_sets": self.registry.list_sets(),
+            "steps_available": len(self.step_index.list()),
+        })
 
-        box.metadata.setdefault("io", {})
-        box.metadata["io"].update(
-            {
-                "inputs": list((inputs or {}).keys()),
-                "outputs": list(box.result.keys()),
-            }
-        )
+        box.metadata.setdefault("io", {
+            "inputs": list((inputs or {}).keys()),
+            "outputs": list(box.result.keys()),
+        })
 
         return box
 
