@@ -4,8 +4,79 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+import os
+import re
 
 from fragua.core.step import FraguaStep
+
+
+def _sanitize_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Sanitize parameters to remove sensitive information like file paths.
+    
+    Args:
+        params: Original parameters dictionary
+        
+    Returns:
+        Sanitized parameters with sensitive information filtered out
+    """
+    if not params:
+        return {}
+    
+    sanitized = {}
+    
+    for key, value in params.items():
+        # Check for potential file paths
+        if isinstance(value, str):
+            # Detect common file path patterns
+            if _is_file_path(value):
+                # Extract just the filename without the full path
+                sanitized[key] = f"[FILE] {os.path.basename(value)}"
+            else:
+                sanitized[key] = value
+        elif isinstance(value, dict):
+            # Recursively sanitize nested dictionaries
+            sanitized[key] = _sanitize_params(value)
+        elif isinstance(value, list):
+            # Handle lists by sanitizing each item if it's a dict or string
+            sanitized[key] = [
+                _sanitize_params(item) if isinstance(item, dict) else 
+                (f"[FILE] {os.path.basename(item)}" if isinstance(item, str) and _is_file_path(item) else item)
+                for item in value
+            ]
+        else:
+            sanitized[key] = value
+    
+    return sanitized
+
+
+def _is_file_path(text: str) -> bool:
+    """
+    Check if a string looks like a file path.
+    
+    Args:
+        text: String to check
+        
+    Returns:
+        True if the string appears to be a file path
+    """
+    if not isinstance(text, str):
+        return False
+    
+    # Check for absolute path patterns
+    if re.match(r'^[A-Za-z]:\\\\', text):  # Windows path like C:\\
+        return True
+    
+    if re.match(r'^[A-Za-z]:/', text):  # Unix-like absolute path like /home/user/
+        return True
+    
+    # Check for common file extensions
+    if re.search(r'\.(xlsx|xls|csv|json|txt|log|py|md)$', text, re.IGNORECASE):
+        # Additional check: contains directory separators
+        if '\\' in text or '/' in text:
+            return True
+    
+    return False
 
 
 class MetadataBuilder:
@@ -50,7 +121,7 @@ class MetadataBuilder:
                 "order": order,
                 "set": step.set_name,
                 "function": step.function,
-                "params": step.params,
+                "params": _sanitize_params(step.params),
                 "used_input": step.use,
                 "produced_key": produced_key,
                 "status": status,
