@@ -1,10 +1,19 @@
 # Fragua
 
+[![Python Version](https://img.shields.io/badge/python-%3E%3D3.10-blue)](https://python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Fragua is a lightweight Python framework designed to **model, validate, and execute ETL logic** in a fully controlled, in-memory environment.
 
 It provides an explicit and minimal execution model where **ETL functions, declarative pipelines, and macros** are composed and executed deterministically — **without schedulers, persistence layers, or external infrastructure**.
 
 Fragua intentionally prioritizes **clarity over completeness**.
+
+## Installation
+
+```bash
+pip install fragua
+```
 
 ---
 
@@ -18,9 +27,52 @@ Fragua exists to answer a focused set of development-time questions:
 Fragua is **not** a workflow orchestrator nor a production ETL engine.  
 It is a **developer-oriented framework** for designing, validating, and reasoning about ETL logic during development.
 
+## Quick Start
+
+```python
+import fragua as fg
+import pandas as pd
+
+# Create environment
+env = fg.FraguaEnvironment(name="my_etl")
+
+# Define functions
+def extract_data() -> pd.DataFrame:
+    return pd.read_csv("input.csv")
+
+def transform_data(df: pd.DataFrame) -> pd.DataFrame:
+    return df.dropna()
+
+def load_data(df: pd.DataFrame) -> None:
+    df.to_csv("output.csv", index=False)
+
+# Register functions in sets
+extract_set = env.registry.create_set("extract")
+transform_set = env.registry.create_set("transform")  
+load_set = env.registry.create_set("load")
+
+env.add_sets(extract_set, transform_set, load_set)
+env.add_functions(extract_data, set_name="extract")
+env.add_functions(transform_data, set_name="transform")
+env.add_functions(load_data, set_name="load")
+
+# Define and execute pipeline
+pipeline = {
+    "name": "simple_etl",
+    "steps": [
+        {"set": "extract", "function": "extract_data", "save_as": "raw_data"},
+        {"set": "transform", "function": "transform_data", "use": "raw_data", "save_as": "clean_data"},
+        {"set": "load", "function": "load_data", "use": "clean_data"}
+    ]
+}
+
+result = env.execute_pipeline(pipeline)
+print(result.metadata)
+```
+
 ---
 
-## Core Model
+## Core Architecture
 
 Fragua is built around a small number of orthogonal, loosely coupled components with strictly defined responsibilities.
 
@@ -245,6 +297,60 @@ Fragua is not:
 Fragua is a **development framework for ETL design, validation, and reasoning**.
 
 ---
+
+## Key Features
+
+- **🔧 Declarative Pipeline Definition**: Define ETL pipelines as simple dictionaries
+- **⚡ In-Memory Execution**: Fast, stateless execution without external dependencies
+- **🏗️ Component-Based Architecture**: Modular design with clear separation of concerns
+- **🧪 Development-Focused**: Perfect for testing and validating ETL logic before production
+- **🔍 Macro Support**: Automate common patterns with expandable macros
+- **📊 Result Inspection**: Built-in result storage for debugging and analysis
+
+## Examples
+
+### Using Transform Chains
+
+```python
+# Define a transformation chain with multiple steps
+pipeline = {
+    "name": "data_cleaning",
+    "steps": [
+        {"set": "extract", "function": "read_excel", "save_as": "raw_data"},
+        {
+            "macro": "transform_chain",
+            "set": "transform", 
+            "step_prefix": "clean",
+            "start_from": "raw_data",
+            "save_as": "clean_data",
+            "steps": [
+                {"function": "remove_duplicates"},
+                {"function": "fill_missing_values"},
+                {"function": "standardize_columns"}
+            ]
+        },
+        {"set": "load", "function": "write_csv", "use": "clean_data"}
+    ]
+}
+```
+
+### Programmatic Pipeline Building
+
+```python
+# Build pipelines using the fluent API
+pipeline = (
+    env.create_pipeline("excel_pipeline")
+    .add(extract_step)
+    .add(*transform_steps)
+    .add(load_step)
+    .build()
+)
+```
+
+## Requirements
+
+- Python 3.10+
+- pandas
 
 ## License
 
